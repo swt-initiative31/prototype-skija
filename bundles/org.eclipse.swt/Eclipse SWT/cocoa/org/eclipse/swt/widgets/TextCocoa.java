@@ -59,7 +59,7 @@ import org.eclipse.swt.widgets.Display.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Text extends Scrollable {
+public class TextCocoa extends Scrollable {
 	int textLimit = LIMIT, tabs = 8;
 	char echoCharacter;
 	boolean doubleClick, receivingFocus;
@@ -136,7 +136,7 @@ public class Text extends Scrollable {
  * @see Widget#checkSubclass
  * @see Widget#getStyle
  */
-public Text (Composite parent, int style) {
+public TextCocoa (Composite parent, int style) {
 	super (parent, checkStyle (style));
 	if ((style & SWT.SEARCH) != 0) {
 		/*
