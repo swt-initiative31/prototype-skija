@@ -16,8 +16,11 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+<<<<<<< HEAD:bundles/org.eclipse.swt/Eclipse SWT/gtk/org/eclipse/swt/widgets/Caret.java
 import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
+=======
+>>>>>>> def61a019c (Render own `Text`):bundles/org.eclipse.swt/Eclipse SWT/common/org/eclipse/swt/widgets/CCaret.java
 
 /**
  * Instances of this class provide an i-beam that is typically used
@@ -37,17 +40,15 @@ import org.eclipse.swt.internal.gtk.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Caret extends Widget {
+public class CCaret extends Widget {
 	Canvas parent;
-	// Table or Tree the parent might be embedded into (also indirectly)
-	Composite embeddedInto;
 	int x, y, width, height;
 	boolean isVisible, isShowing;
 	int blinkRate;
 	Image image;
 	Font font;
 
-	static final int DEFAULT_WIDTH = 1;
+	static final int DEFAULT_WIDTH	= 1;
 
 /**
  * Constructs a new instance of this class given its parent
@@ -77,18 +78,10 @@ public class Caret extends Widget {
  * @see Widget#checkSubclass
  * @see Widget#getStyle
  */
-public Caret (Canvas parent, int style) {
+public CCaret (Canvas parent, int style) {
 	super (parent, style);
 	this.parent = parent;
-	createWidget (0);
-	Composite p = parent.getParent();
-	while (p != null) {
-		if (p instanceof Tree || p instanceof Table) {
-			embeddedInto = p;
-			break;
-		}
-		p = p.getParent();
-	}
+	createWidget ();
 }
 
 boolean blinkCaret () {
@@ -99,34 +92,29 @@ boolean blinkCaret () {
 }
 
 @Override
-void createWidget (int index) {
-	super.createWidget (index);
+void createWidget () {
+	super.createWidget ();
 	blinkRate = display.getCaretBlinkTime ();
 	isVisible = true;
 	if (parent.getCaret () == null) {
-		parent.setCaret (this);
+		parent.setCaret ((Caret) this);
 	}
 }
 
 boolean drawCaret () {
 	if (parent == null) return false;
 	if (parent.isDisposed ()) return false;
-	if (embeddedInto != null && !embeddedInto.isDisposed() && isFocusCaret()) {
-		// Draw differently if we are in the embedded cell editor
-		// See Table.setParentGdkResource() and Tree.setParentGdkResource()
-		drawInCellEditor(embeddedInto.paintWindow());
-	} else {
-		GTK.gtk_widget_queue_draw(parent.handle);
-	}
-	return true;
-}
+	int nWidth = width, nHeight = height;
+	if (nWidth <= 0) nWidth = DEFAULT_WIDTH;
 
-private void drawInCellEditor(long window) {
-	long cairo = GDK.gdk_cairo_create(window);
-	Point pt = display.map(parent, embeddedInto, new Point(0,0));
-	Cairo.cairo_translate (cairo, pt.x, pt.y);
-	parent.drawCaretInFocus(parent.handle, cairo);
-	Cairo.cairo_destroy(cairo);
+	GC gc = new GC(parent);
+	if (image != null) {
+		Rectangle imageBounds = image.getBounds();
+		gc.drawImage(image, 0, 0, imageBounds.width, imageBounds.height, x, y, nWidth, nHeight);
+	}
+	gc.fillRectangle(x, y, nWidth, nHeight);
+	parent.redraw();
+	return true;
 }
 
 /**
@@ -143,7 +131,7 @@ private void drawInCellEditor(long window) {
 public Rectangle getBounds () {
 	checkWidget();
 	if (image != null) {
-		Rectangle rect = image.getBoundsInPixels ();
+		Rectangle rect = image.getBounds ();
 		return new Rectangle (x, y, rect.width, rect.height);
 	} else {
 		if (width == 0) {
@@ -228,7 +216,7 @@ public Canvas getParent () {
 public Point getSize () {
 	checkWidget();
 	if (image != null) {
-		Rectangle rect = image.getBoundsInPixels ();
+		Rectangle rect = image.getBounds ();
 		return new Point (rect.width, rect.height);
 	} else {
 		if (width == 0) {
@@ -313,7 +301,6 @@ void releaseWidget () {
 	}
 	parent = null;
 	image = null;
-	embeddedInto = null;
 }
 
 /**
@@ -337,9 +324,10 @@ public void setBounds (int x, int y, int width, int height) {
 	if (this.x == x && this.y == y && this.width == width && this.height == height) return;
 	boolean isFocus = isFocusCaret ();
 	if (isFocus && isVisible) hideCaret ();
-	this.x = x; this.y = y;
-	this.width = width; this.height = height;
-	parent.updateCaret ();
+	this.x = x;
+	this.y = y;
+	this.width = width;
+	this.height = height;
 	if (isFocus && isVisible) showCaret ();
 }
 
@@ -364,7 +352,7 @@ public void setBounds (Rectangle rect) {
 
 void setFocus () {
 	if (display.currentCaret == this) return;
-	display.setCurrentCaret (this);
+	display.setCurrentCaret ((Caret)this);
 	if (isVisible) showCaret ();
 }
 
@@ -506,10 +494,6 @@ public void setSize (Point size) {
  */
 public void setVisible (boolean visible) {
 	checkWidget();
-	Canvas canvas = getParent();
-	canvas.blink = true;
-	canvas.drawFlag = visible;
-	display.resetCaretTiming();
 	if (visible == isVisible) return;
 	isVisible = visible;
 	if (!isFocusCaret ()) return;
