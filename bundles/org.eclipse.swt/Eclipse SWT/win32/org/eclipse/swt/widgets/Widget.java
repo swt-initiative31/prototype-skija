@@ -67,7 +67,7 @@ public abstract class Widget {
 	public int nativeZoom;
 	int style, state;
 	Display display;
-	EventTable eventTable;
+	protected EventTable eventTable;
 	Object data;
 
 	/* Global state flags */
@@ -500,7 +500,7 @@ void error (int code) {
 	SWT.error(code);
 }
 
-boolean filters (int eventType) {
+protected boolean filters (int eventType) {
 	return display.filters (eventType);
 }
 
@@ -744,7 +744,7 @@ public int getStyle () {
  *
  * @see #isListening
  */
-boolean hooks (int eventType) {
+protected boolean hooks (int eventType) {
 	if (eventTable == null) return false;
 	return eventTable.hooks (eventType);
 }
@@ -1175,11 +1175,11 @@ void sendEvent (Event event) {
 	}
 }
 
-void sendEvent (int eventType) {
+protected void sendEvent (int eventType) {
 	sendEvent (eventType, null, true);
 }
 
-void sendEvent (int eventType, Event event) {
+protected void sendEvent (int eventType, Event event) {
 	sendEvent (eventType, event, true);
 }
 
