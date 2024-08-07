@@ -185,14 +185,7 @@ public class SkijaGC extends GC {
 		Canvas c = surface.getCanvas();
 
 		Paint p = new Paint();
-<<<<<<< HEAD
-		p.setColor(getForeground().getIntRGB());
-=======
-
-		Color fg = getForeground();
-
-		p.setColor(convertSWTColorToSkijaColor(fg));
->>>>>>> 70f2b90e90 (Skija GC. Used in Label. Works utterly bad, but it works...)
+		p.setColor(convertSWTColorToSkijaColor(getForeground()));
 		c.drawLine(x1, y1, x2, y2, p);
 
 	}
