@@ -17,7 +17,8 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.win32.*;
+import org.eclipse.swt.internal.cairo.*;
+import org.eclipse.swt.internal.gtk.*;
 
 /**
  * Instances of this class provide an i-beam that is typically used
@@ -38,20 +39,16 @@ import org.eclipse.swt.internal.win32.*;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class Caret extends Widget {
-	/** The Caret last updated on the OS-level */
-	private static Caret currentCaret;
-
 	Canvas parent;
+	// Table or Tree the parent might be embedded into (also indirectly)
+	Composite embeddedInto;
 	int x, y, width, height;
-	boolean moved, resized;
-	boolean isVisible;
+	boolean isVisible, isShowing;
+	int blinkRate;
 	Image image;
 	Font font;
-	LOGFONT oldFont;
 
-static {
-	DPIZoomChangeRegistry.registerHandler(Caret::handleDPIChange, Caret.class);
-}
+	static final int DEFAULT_WIDTH = 1;
 
 /**
  * Constructs a new instance of this class given its parent
@@ -84,28 +81,53 @@ static {
 public Caret (Canvas parent, int style) {
 	super (parent, style);
 	this.parent = parent;
-	createWidget ();
+	createWidget (0);
+	Composite p = parent.getParent();
+	while (p != null) {
+		if (p instanceof Tree || p instanceof Table) {
+			embeddedInto = p;
+			break;
+		}
+		p = p.getParent();
+	}
 }
 
-void createWidget () {
+boolean blinkCaret () {
+	if (!isVisible) return true;
+	if (!isShowing) return showCaret ();
+	if (blinkRate == 0) return true;
+	return hideCaret ();
+}
+
+@Override
+void createWidget (int index) {
+	super.createWidget (index);
+	blinkRate = display.getCaretBlinkTime ();
 	isVisible = true;
 	if (parent.getCaret () == null) {
 		parent.setCaret (this);
 	}
 }
 
-long defaultFont () {
-	long hwnd = parent.handle;
-	long hwndIME = OS.ImmGetDefaultIMEWnd (hwnd);
-	long hFont = 0;
-	if (hwndIME != 0) {
-		hFont = OS.SendMessage (hwndIME, OS.WM_GETFONT, 0, 0);
+boolean drawCaret () {
+	if (parent == null) return false;
+	if (parent.isDisposed ()) return false;
+	if (embeddedInto != null && !embeddedInto.isDisposed() && isFocusCaret()) {
+		// Draw differently if we are in the embedded cell editor
+		// See Table.setParentGdkResource() and Tree.setParentGdkResource()
+		drawInCellEditor(embeddedInto.paintWindow());
+	} else {
+		GTK.gtk_widget_queue_draw(parent.handle);
 	}
-	if (hFont == 0) {
-		hFont = OS.SendMessage (hwnd, OS.WM_GETFONT, 0, 0);
-	}
-	if (hFont == 0) return parent.defaultFont ();
-	return hFont;
+	return true;
+}
+
+private void drawInCellEditor(long window) {
+	long cairo = GDK.gdk_cairo_create(window);
+	Point pt = display.map(parent, embeddedInto, new Point(0,0));
+	Cairo.cairo_translate (cairo, pt.x, pt.y);
+	parent.drawCaretInFocus(parent.handle, cairo);
+	Cairo.cairo_destroy(cairo);
 }
 
 /**
@@ -121,25 +143,20 @@ long defaultFont () {
  */
 public Rectangle getBounds () {
 	checkWidget();
-	return DPIUtil.scaleDown(getBoundsInPixels(), getZoom());
+	return DPIUtil.autoScaleDown(getBoundsInPixels());
 }
 
 Rectangle getBoundsInPixels () {
+	checkWidget();
 	if (image != null) {
-<<<<<<< HEAD
-		Rectangle rect = DPIUtil.scaleUp(image.getBounds(), getZoom());
-=======
 		Rectangle rect = image.getBoundsInPixels ();
->>>>>>> e13f2db9e4 (Make `Caret` platform-dependant, again, at least for now)
-		return new Rectangle (getXInPixels(), getYInPixels(), rect.width, rect.height);
-	}
-	if (width == 0) {
-		int [] buffer = new int [1];
-		if (OS.SystemParametersInfo (OS.SPI_GETCARETWIDTH, 0, buffer, 0)) {
-			return new Rectangle (getXInPixels(), getYInPixels(), buffer [0], getHeightInPixels());
+		return new Rectangle (x, y, rect.width, rect.height);
+	} else {
+		if (width == 0) {
+			return new Rectangle (x, y, DEFAULT_WIDTH, height);
 		}
 	}
-	return new Rectangle (getXInPixels(), getYInPixels(), getWidthInPixels(), getHeightInPixels());
+	return new Rectangle (x, y, width, height);
 }
 
 /**
@@ -154,15 +171,8 @@ Rectangle getBoundsInPixels () {
  */
 public Font getFont () {
 	checkWidget();
-	if (font == null) {
-		long hFont = defaultFont ();
-<<<<<<< HEAD
-		return Font.win32_new (display, hFont, getNativeZoom());
-=======
-		return Font.win32_new (display, hFont, getZoom());
->>>>>>> e13f2db9e4 (Make `Caret` platform-dependant, again, at least for now)
-	}
-	return font;
+	if (font != null) return font;
+	return parent.getFont ();
 }
 
 /**
@@ -192,6 +202,11 @@ public Image getImage () {
  * </ul>
  */
 public Point getLocation () {
+	checkWidget();
+	return DPIUtil.autoScaleDown(getLocationInPixels());
+}
+
+Point getLocationInPixels () {
 	checkWidget();
 	return new Point (x, y);
 }
@@ -223,41 +238,20 @@ public Canvas getParent () {
  */
 public Point getSize () {
 	checkWidget();
-	return DPIUtil.scaleDown(getSizeInPixels(), getZoom());
+	return DPIUtil.autoScaleDown(getSizeInPixels());
 }
 
 Point getSizeInPixels () {
+	checkWidget();
 	if (image != null) {
-<<<<<<< HEAD
-		Rectangle rect = DPIUtil.scaleUp(image.getBounds(), getZoom());
-=======
 		Rectangle rect = image.getBoundsInPixels ();
->>>>>>> e13f2db9e4 (Make `Caret` platform-dependant, again, at least for now)
 		return new Point (rect.width, rect.height);
-	}
-	if (width == 0) {
-		int [] buffer = new int [1];
-		if (OS.SystemParametersInfo (OS.SPI_GETCARETWIDTH, 0, buffer, 0)) {
-			return new Point (buffer [0], getHeightInPixels());
+	} else {
+		if (width == 0) {
+			return new Point (DEFAULT_WIDTH, height);
 		}
 	}
-	return new Point (getWidthInPixels(), getHeightInPixels());
-}
-
-private int getWidthInPixels() {
-	return DPIUtil.scaleUp(width, getZoom());
-}
-
-private int getHeightInPixels() {
-	return DPIUtil.scaleUp(height, getZoom());
-}
-
-private int getXInPixels() {
-	return DPIUtil.scaleUp(x, getZoom());
-}
-
-private int getYInPixels() {
-	return DPIUtil.scaleUp(y, getZoom());
+	return new Point (width, height);
 }
 
 /**
@@ -282,12 +276,10 @@ public boolean getVisible () {
 	return isVisible;
 }
 
-boolean hasFocus () {
-	return parent.handle == OS.GetFocus ();
-}
-
-boolean isFocusCaret () {
-	return parent.caret == this && hasFocus ();
+boolean hideCaret () {
+	if (!isShowing) return true;
+	isShowing = false;
+	return drawCaret ();
 }
 
 /**
@@ -306,50 +298,17 @@ boolean isFocusCaret () {
  */
 public boolean isVisible () {
 	checkWidget();
-	return isVisible && parent.isVisible () && hasFocus ();
+	return isVisible && parent.isVisible () && parent.hasFocus ();
+}
+
+boolean isFocusCaret () {
+	return this == display.currentCaret;
 }
 
 void killFocus () {
-	OS.DestroyCaret ();
-	restoreIMEFont ();
-}
-
-void move () {
-	moved = false;
-	setCurrentCaret(this);
-	if (!OS.SetCaretPos (getXInPixels(), getYInPixels())) return;
-	resizeIME ();
-}
-
-void resizeIME () {
-	if (!OS.IsDBLocale) return;
-	POINT ptCurrentPos = new POINT ();
-	if (!OS.GetCaretPos (ptCurrentPos)) return;
-	long hwnd = parent.handle;
-	long hIMC = OS.ImmGetContext (hwnd);
-	IME ime = parent.getIME ();
-	if (ime != null && ime.isInlineEnabled ()) {
-		Point size = getSizeInPixels ();
-		CANDIDATEFORM lpCandidate = new CANDIDATEFORM ();
-		lpCandidate.dwStyle = OS.CFS_EXCLUDE;
-		lpCandidate.ptCurrentPos = ptCurrentPos;
-		lpCandidate.rcArea = new RECT ();
-		OS.SetRect (lpCandidate.rcArea, ptCurrentPos.x, ptCurrentPos.y, ptCurrentPos.x + size.x, ptCurrentPos.y + size.y);
-		OS.ImmSetCandidateWindow (hIMC, lpCandidate);
-	} else {
-		RECT rect = new RECT ();
-		OS.GetClientRect (hwnd, rect);
-		COMPOSITIONFORM lpCompForm = new COMPOSITIONFORM ();
-		lpCompForm.dwStyle = OS.CFS_RECT;
-		lpCompForm.x = ptCurrentPos.x;
-		lpCompForm.y = ptCurrentPos.y;
-		lpCompForm.left = rect.left;
-		lpCompForm.right = rect.right;
-		lpCompForm.top = rect.top;
-		lpCompForm.bottom = rect.bottom;
-		OS.ImmSetCompositionWindow (hIMC, lpCompForm);
-	}
-	OS.ImmReleaseContext (hwnd, hIMC);
+	if (display.currentCaret != this) return;
+	display.setCurrentCaret (null);
+	if (isVisible) hideCaret ();
 }
 
 @Override
@@ -364,41 +323,13 @@ void releaseParent () {
 @Override
 void releaseWidget () {
 	super.releaseWidget ();
-	if (isCurrentCaret()) {
-		setCurrentCaret(null);
+	if (display.currentCaret == this) {
+		hideCaret ();
+		display.setCurrentCaret (null);
 	}
 	parent = null;
 	image = null;
-	font = null;
-	oldFont = null;
-}
-
-void resize () {
-	resized = false;
-	long hwnd = parent.handle;
-	OS.DestroyCaret ();
-	long hBitmap = image != null ? Image.win32_getHandle(image, getZoom()) : 0;
-	int widthInPixels = this.getWidthInPixels();
-	if (image == null && widthInPixels == 0) {
-		int [] buffer = new int [1];
-		if (OS.SystemParametersInfo (OS.SPI_GETCARETWIDTH, 0, buffer, 0)) {
-			widthInPixels = buffer [0];
-		}
-	}
-	OS.CreateCaret (hwnd, hBitmap, widthInPixels, getHeightInPixels());
-	OS.SetCaretPos (getXInPixels(), getYInPixels());
-	OS.ShowCaret (hwnd);
-	move ();
-}
-
-void restoreIMEFont () {
-	if (!OS.IsDBLocale) return;
-	if (oldFont == null) return;
-	long hwnd = parent.handle;
-	long hIMC = OS.ImmGetContext (hwnd);
-	OS.ImmSetCompositionFont (hIMC, oldFont);
-	OS.ImmReleaseContext (hwnd, hIMC);
-	oldFont = null;
+	embeddedInto = null;
 }
 
 /**
@@ -419,20 +350,18 @@ void restoreIMEFont () {
  */
 public void setBounds (int x, int y, int width, int height) {
 	checkWidget();
-	boolean samePosition = this.x == x && this.y == y;
-	boolean sameExtent = this.width == width && this.height == height;
-	if (samePosition && sameExtent && isCurrentCaret()) return;
-	this.x = x;
-	this.y = y;
-	this.width = width;
-	this.height = height;
-	if (sameExtent) {
-		moved = true;
-		if (isVisible && hasFocus ()) move ();
-	} else {
-		resized = true;
-		if (isVisible && hasFocus ()) resize ();
-	}
+	setBounds (new Rectangle (x, y, width, height));
+}
+
+void setBoundsInPixels (int x, int y, int width, int height) {
+	checkWidget();
+	if (this.x == x && this.y == y && this.width == width && this.height == height) return;
+	boolean isFocus = isFocusCaret ();
+	if (isFocus && isVisible) hideCaret ();
+	this.x = x; this.y = y;
+	this.width = width; this.height = height;
+	parent.updateCaret ();
+	if (isFocus && isVisible) showCaret ();
 }
 
 /**
@@ -449,25 +378,21 @@ public void setBounds (int x, int y, int width, int height) {
  * </ul>
  */
 public void setBounds (Rectangle rect) {
+	checkWidget();
+	rect = DPIUtil.autoScaleUp(rect);
+	setBoundsInPixels(rect);
+}
+
+void setBoundsInPixels (Rectangle rect) {
+	checkWidget();
 	if (rect == null) error (SWT.ERROR_NULL_ARGUMENT);
-	setBounds(rect.x, rect.y, rect.width, rect.height);
+	setBoundsInPixels (rect.x, rect.y, rect.width, rect.height);
 }
 
 void setFocus () {
-	long hwnd = parent.handle;
-	long hBitmap = 0;
-	if (image != null) hBitmap = Image.win32_getHandle(image, getZoom());
-	int widthInPixels = this.getWidthInPixels();
-	if (image == null && widthInPixels == 0) {
-		int [] buffer = new int [1];
-		if (OS.SystemParametersInfo (OS.SPI_GETCARETWIDTH, 0, buffer, 0)) {
-			widthInPixels = buffer [0];
-		}
-	}
-	OS.CreateCaret (hwnd, hBitmap, widthInPixels, getHeightInPixels());
-	move ();
-	setIMEFont ();
-	if (isVisible) OS.ShowCaret (hwnd);
+	if (display.currentCaret == this) return;
+	display.setCurrentCaret (this);
+	if (isVisible) showCaret ();
 }
 
 /**
@@ -490,13 +415,7 @@ public void setFont (Font font) {
 	if (font != null && font.isDisposed ()) {
 		error (SWT.ERROR_INVALID_ARGUMENT);
 	}
-<<<<<<< HEAD
-	this.font = font == null ? null : Font.win32_new(font, getNativeZoom());
-=======
-	Shell shell = parent.getShell();
-	this.font = font == null ? null : Font.win32_new(font, shell.nativeZoom);
->>>>>>> e13f2db9e4 (Make `Caret` platform-dependant, again, at least for now)
-	if (hasFocus ()) setIMEFont ();
+	this.font = font;
 }
 
 /**
@@ -519,32 +438,10 @@ public void setImage (Image image) {
 	if (image != null && image.isDisposed ()) {
 		error (SWT.ERROR_INVALID_ARGUMENT);
 	}
+	boolean isFocus = isFocusCaret ();
+	if (isFocus && isVisible) hideCaret ();
 	this.image = image;
-	if (isVisible && hasFocus ()) resize ();
-}
-
-void setIMEFont () {
-	if (!OS.IsDBLocale) return;
-	long hFont = 0;
-<<<<<<< HEAD
-	if (font != null) hFont = SWTFontProvider.getFontHandle(font, getNativeZoom());
-=======
-	if (font != null) hFont = font.handle;
->>>>>>> e13f2db9e4 (Make `Caret` platform-dependant, again, at least for now)
-	if (hFont == 0) hFont = defaultFont ();
-	long hwnd = parent.handle;
-	long hIMC = OS.ImmGetContext (hwnd);
-	/* Save the current IME font */
-	if (oldFont == null) {
-		oldFont = new LOGFONT ();
-		if (!OS.ImmGetCompositionFont (hIMC, oldFont)) oldFont = null;
-	}
-	/* Set new IME font */
-	LOGFONT logFont = new LOGFONT ();
-	if (OS.GetObject (hFont, LOGFONT.sizeof, logFont) != 0) {
-		OS.ImmSetCompositionFont (hIMC, logFont);
-	}
-	OS.ImmReleaseContext (hwnd, hIMC);
+	if (isFocus && isVisible) showCaret ();
 }
 
 /**
@@ -562,18 +459,12 @@ void setIMEFont () {
  */
 public void setLocation (int x, int y) {
 	checkWidget();
-	if (this.x == x && this.y == y && isCurrentCaret())  return;
-	this.x = x;  this.y = y;
-	moved = true;
-	if (isVisible && hasFocus ()) move ();
+	setLocation (new Point (x, y));
 }
 
-private boolean isCurrentCaret() {
-	return Caret.currentCaret == this;
-}
-
-private void setCurrentCaret(Caret caret) {
-	Caret.currentCaret = caret;
+void setLocationInPixels (int x, int y) {
+	checkWidget();
+	setBoundsInPixels (x, y, width, height);
 }
 
 /**
@@ -590,8 +481,13 @@ private void setCurrentCaret(Caret caret) {
  */
 public void setLocation (Point location) {
 	checkWidget();
+	setLocationInPixels (DPIUtil.autoScaleUp (location));
+}
+
+void setLocationInPixels (Point location) {
+	checkWidget();
 	if (location == null) error (SWT.ERROR_NULL_ARGUMENT);
-	setLocation(location.x, location.y);
+	setLocationInPixels (location.x, location.y);
 }
 
 /**
@@ -607,11 +503,12 @@ public void setLocation (Point location) {
  */
 public void setSize (int width, int height) {
 	checkWidget();
-	if (this.width == width && this.height == height && isCurrentCaret()) return;
-	this.width = width;
-	this.height = height;
-	resized = true;
-	if (isVisible && hasFocus ()) resize ();
+	setSize (new Point (width,height));
+}
+
+void setSizeInPixels (int width, int height) {
+	checkWidget();
+	setBoundsInPixels (x, y, width, height);
 }
 
 /**
@@ -629,8 +526,13 @@ public void setSize (int width, int height) {
  */
 public void setSize (Point size) {
 	checkWidget();
+	setSizeInPixels(DPIUtil.autoScaleUp (size));
+}
+
+void setSizeInPixels (Point size) {
+	checkWidget();
 	if (size == null) error (SWT.ERROR_NULL_ARGUMENT);
-	setSize(size.x, size.y);
+	setSizeInPixels (size.x, size.y);
 }
 
 /**
@@ -651,64 +553,24 @@ public void setSize (Point size) {
  */
 public void setVisible (boolean visible) {
 	checkWidget();
+	Canvas canvas = getParent();
+	canvas.blink = true;
+	canvas.drawFlag = visible;
+	display.resetCaretTiming();
 	if (visible == isVisible) return;
 	isVisible = visible;
-	long hwnd = parent.handle;
-	if (OS.GetFocus () != hwnd) return;
-	if (!isVisible) {
-		OS.HideCaret (hwnd);
+	if (!isFocusCaret ()) return;
+	if (isVisible) {
+		showCaret ();
 	} else {
-		if (resized) {
-			resize ();
-		} else {
-			if (moved) move ();
-		}
-		OS.ShowCaret (hwnd);
+		hideCaret ();
 	}
 }
 
-/**
- * <b>IMPORTANT:</b> This method is not part of the public
- * API for Image. It is marked public only so that it
- * can be shared within the packages provided by SWT. It is not
- * available on all platforms, and should never be called from
- * application code.
- *
- * Sets the height o the caret in points.
- *
- * @param caret the caret to set the height of
- * @param height the height of caret to be set in points.
- *
- * @noreference This method is not intended to be referenced by clients.
- */
-public static void win32_setHeight(Caret caret, int height) {
-	caret.checkWidget();
-<<<<<<< HEAD
-	if(caret.height != height) {
-		caret.height = height;
-		caret.resized = true;
-	}
-=======
-	if(caret.height == height && caret.isCurrentCaret()) return;
-	caret.height = height;
-	caret.resized = true;
->>>>>>> e13f2db9e4 (Make `Caret` platform-dependant, again, at least for now)
-	if(caret.isVisible && caret.hasFocus()) caret.resize();
+boolean showCaret () {
+	if (isShowing) return true;
+	isShowing = true;
+	return drawCaret ();
 }
 
-private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-	if (!(widget instanceof Caret caret)) {
-		return;
-	}
-
-	Image image = caret.getImage();
-	if (image != null) {
-		caret.setImage(image);
-	}
-
-	if (caret.font != null) {
-		caret.setFont(caret.font);
-	}
 }
-}
-
