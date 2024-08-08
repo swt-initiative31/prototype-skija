@@ -23,6 +23,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
+import org.eclipse.swt.widgets.painter.*;
 
 /**
  * Instances of this class implement a selectable user interface
@@ -74,7 +75,13 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Table extends Composite {
+public class Table extends Canvas {
+
+	private TablePainter tablePainter = new TablePainter(this);
+	private BodyPainter bodyPainter = new BodyPainter(this);
+	private HeaderPainter headerPainter = new HeaderPainter(this);
+	private CellsPainter cellPainter = new CellsPainter(this);
+
 	TableItem [] items;
 	int [] keys;
 	TableColumn [] columns;
@@ -152,6 +159,24 @@ public class Table extends Composite {
  */
 public Table (Composite parent, int style) {
 	super (parent, checkStyle (style));
+
+	addPaintListener(this::onPaint);
+
+	addTraverseListener(event -> {
+		if (event.detail == SWT.TRAVERSE_MNEMONIC) {
+			onMnemonic(event);
+		}
+	});
+
+	addListener(SWT.Dispose, this::onDispose);
+
+	initAccessible();
+}
+
+private void initAccessible() {
+}
+
+void onMnemonic(TraverseEvent event) {
 }
 
 @Override
@@ -5656,1681 +5681,1681 @@ int widgetStyle () {
 	return bits;
 }
 
-@Override
-TCHAR windowClass () {
-	return TableClass;
-}
-
-@Override
-long windowProc () {
-	return TableProc;
-}
-
-@Override
-long windowProc (long hwnd, int msg, long wParam, long lParam) {
-	if (handle == 0) return 0;
-	if (hwnd != handle) {
-		switch (msg) {
-			case OS.WM_CONTEXTMENU: {
-				LRESULT result = wmContextMenu (hwnd, wParam, lParam);
-				if (result != null) return result.value;
-				break;
-			}
-			case OS.WM_MOUSELEAVE: {
-				/*
-				* Bug in Windows.  On XP, when a tooltip is hidden
-				* due to a time out or mouse press, the tooltip
-				* remains active although no longer visible and
-				* won't show again until another tooltip becomes
-				* active.  The fix is to reset the tooltip bounds.
-				*/
-				updateHeaderToolTips ();
-				updateHeaderToolTips ();
-				break;
-			}
-			case OS.WM_NOTIFY: {
-				NMHDR hdr = new NMHDR ();
-				OS.MoveMemory (hdr, lParam, NMHDR.sizeof);
-				switch (hdr.code) {
-					case OS.TTN_SHOW:
-					case OS.TTN_POP:
-					case OS.TTN_GETDISPINFO:
-						return OS.SendMessage (handle, msg, wParam, lParam);
-				}
-				break;
-			}
-			case OS.WM_SETCURSOR: {
-				if (wParam == hwnd) {
-					int hitTest = (short) OS.LOWORD (lParam);
-					if (hitTest == OS.HTCLIENT) {
-						HDHITTESTINFO pinfo = new HDHITTESTINFO ();
-						int pos = OS.GetMessagePos ();
-						POINT pt = new POINT ();
-						OS.POINTSTOPOINT (pt, pos);
-						OS.ScreenToClient (hwnd, pt);
-						pinfo.x = pt.x;
-						pinfo.y = pt.y;
-						long hwndHeader = OS.SendMessage (handle, OS.LVM_GETHEADER, 0, 0);
-						int index = (int)OS.SendMessage (hwndHeader, OS.HDM_HITTEST, 0, pinfo);
-						if (0 <= index && index < columnCount && !columns [index].resizable) {
-							if ((pinfo.flags & (OS.HHT_ONDIVIDER | OS.HHT_ONDIVOPEN)) != 0) {
-								OS.SetCursor (OS.LoadCursor (0, OS.IDC_ARROW));
-								return 1;
-							}
-						}
-					}
-				}
-				break;
-			}
-		}
-		return callWindowProc (hwnd, msg, wParam, lParam);
-	}
-	if (msg == Display.DI_GETDRAGIMAGE) {
-		/*
-		* Bug in Windows.  On Vista, for some reason, DI_GETDRAGIMAGE
-		* returns an image that does not contain strings.
-		*
-		* Bug in Windows. For custom draw control the window origin the
-		* in HDC is wrong.
-		*
-		* The fix for both cases is to create the image using PrintWindow().
-		*/
-		int topIndex = (int)OS.SendMessage (handle, OS.LVM_GETTOPINDEX, 0, 0);
-		int selection = (int)OS.SendMessage (handle, OS.LVM_GETNEXTITEM, topIndex - 1, OS.LVNI_SELECTED);
-		if (selection == -1) return 0;
-		POINT mousePos = new POINT ();
-		OS.POINTSTOPOINT (mousePos, OS.GetMessagePos ());
-		OS.MapWindowPoints(0, handle, mousePos, 1);
-		RECT clientRect = new RECT ();
-		OS.GetClientRect (handle, clientRect);
-		TableItem item = _getItem (selection);
-		RECT rect = item.getBounds (selection, 0, true, true, true);
-		if ((style & SWT.FULL_SELECTION) != 0) {
-			int width = DRAG_IMAGE_SIZE;
-			rect.left = Math.max (clientRect.left, mousePos.x - width / 2);
-			if (clientRect.right > rect.left + width) {
-				rect.right = rect.left + width;
-			} else {
-				rect.right = clientRect.right;
-				rect.left = Math.max (clientRect.left, rect.right - width);
-			}
-		}
-		long hRgn = OS.CreateRectRgn (rect.left, rect.top, rect.right, rect.bottom);
-		while ((selection = (int)OS.SendMessage (handle, OS.LVM_GETNEXTITEM, selection, OS.LVNI_SELECTED)) != -1) {
-			if (rect.bottom - rect.top > DRAG_IMAGE_SIZE) break;
-			if (rect.bottom > clientRect.bottom) break;
-			RECT itemRect = item.getBounds (selection, 0, true, true, true);
-			long rectRgn = OS.CreateRectRgn (rect.left, itemRect.top, rect.right, itemRect.bottom);
-			OS.CombineRgn (hRgn, hRgn, rectRgn, OS.RGN_OR);
-			OS.DeleteObject (rectRgn);
-			rect.bottom = itemRect.bottom;
-		}
-		OS.GetRgnBox (hRgn, rect);
-
-		/* Create resources */
-		long hdc = OS.GetDC (handle);
-		long memHdc = OS.CreateCompatibleDC (hdc);
-		BITMAPINFOHEADER bmiHeader = new BITMAPINFOHEADER ();
-		bmiHeader.biSize = BITMAPINFOHEADER.sizeof;
-		bmiHeader.biWidth = rect.right - rect.left;
-		bmiHeader.biHeight = -(rect.bottom - rect.top);
-		bmiHeader.biPlanes = 1;
-		bmiHeader.biBitCount = 32;
-		bmiHeader.biCompression = OS.BI_RGB;
-		byte []	bmi = new byte [BITMAPINFOHEADER.sizeof];
-		OS.MoveMemory (bmi, bmiHeader, BITMAPINFOHEADER.sizeof);
-		long [] pBits = new long [1];
-		long memDib = OS.CreateDIBSection (0, bmi, OS.DIB_RGB_COLORS, pBits, 0, 0);
-		if (memDib == 0) error (SWT.ERROR_NO_HANDLES);
-		long oldMemBitmap = OS.SelectObject (memHdc, memDib);
-		int colorKey = 0x0000FD;
-		POINT pt = new POINT();
-		OS.SetWindowOrgEx (memHdc, rect.left, rect.top, pt);
-		OS.FillRect (memHdc, rect, findBrush (colorKey, OS.BS_SOLID));
-		OS.OffsetRgn (hRgn, -rect.left, -rect.top);
-		OS.SelectClipRgn (memHdc, hRgn);
-		OS.PrintWindow (handle, memHdc, 0);
-		OS.SetWindowOrgEx (memHdc, pt.x, pt.y, null);
-		OS.SelectObject (memHdc, oldMemBitmap);
-		OS.DeleteDC (memHdc);
-		OS.ReleaseDC (0, hdc);
-		OS.DeleteObject (hRgn);
-
-		SHDRAGIMAGE shdi = new SHDRAGIMAGE ();
-		shdi.hbmpDragImage = memDib;
-		shdi.crColorKey = colorKey;
-		shdi.sizeDragImage.cx = bmiHeader.biWidth;
-		shdi.sizeDragImage.cy = -bmiHeader.biHeight;
-		shdi.ptOffset.x = mousePos.x - rect.left;
-		shdi.ptOffset.y = mousePos.y - rect.top;
-		if ((style & SWT.MIRRORED) != 0) {
-			shdi.ptOffset.x = shdi.sizeDragImage.cx - shdi.ptOffset.x;
-		}
-		OS.MoveMemory (lParam, shdi, SHDRAGIMAGE.sizeof);
-		return 1;
-	}
-	return super.windowProc (hwnd, msg, wParam, lParam);
-}
-
-@Override
-LRESULT WM_CHAR (long wParam, long lParam) {
-	LRESULT result = super.WM_CHAR (wParam, lParam);
-	if (result != null) return result;
-	switch ((int)wParam) {
-		case ' ':
-			if ((style & SWT.CHECK) != 0) {
-				int index = -1;
-				while ((index = (int)OS.SendMessage (handle, OS.LVM_GETNEXTITEM, index, OS.LVNI_SELECTED)) != -1) {
-					TableItem item = _getItem (index);
-					item.setChecked (!item.getChecked (), true);
-					OS.NotifyWinEvent (OS.EVENT_OBJECT_FOCUS, handle, OS.OBJID_CLIENT, index + 1);
-				}
-			}
-			/*
-			* NOTE: Call the window proc with WM_KEYDOWN rather than WM_CHAR
-			* so that the key that was ignored during WM_KEYDOWN is processed.
-			* This allows the application to cancel an operation that is normally
-			* performed in WM_KEYDOWN from WM_CHAR.
-			*/
-			long code = callWindowProc (handle, OS.WM_KEYDOWN, wParam, lParam);
-			return new LRESULT (code);
-		case SWT.CR:
-			/*
-			* Feature in Windows.  Windows sends LVN_ITEMACTIVATE from WM_KEYDOWN
-			* instead of WM_CHAR.  This means that application code that expects
-			* to consume the key press and therefore avoid a SWT.DefaultSelection
-			* event will fail.  The fix is to ignore LVN_ITEMACTIVATE when it is
-			* caused by WM_KEYDOWN and send SWT.DefaultSelection from WM_CHAR.
-			*/
-			int index = (int)OS.SendMessage (handle, OS.LVM_GETNEXTITEM, -1, OS.LVNI_FOCUSED);
-			if (index != -1) {
-				Event event = new Event ();
-				event.item = _getItem (index);
-				sendSelectionEvent (SWT.DefaultSelection, event, false);
-			}
-			return LRESULT.ZERO;
-	}
-	return result;
-}
-
-@Override
-LRESULT WM_CONTEXTMENU (long wParam, long lParam) {
-	/*
-	* Feature in Windows.  For some reason, when the right
-	* mouse button is pressed over an item, Windows sends
-	* a WM_CONTEXTMENU from WM_RBUTTONDOWN, instead of from
-	* WM_RBUTTONUP.  This causes two context menus requests
-	* to be sent.  The fix is to ignore WM_CONTEXTMENU on
-	* mouse down.
-	*
-	* NOTE: This only happens when dragging is disabled.
-	* When the table is detecting drag, the WM_CONTEXTMENU
-	* is not sent WM_RBUTTONUP.
-	*/
-	if (!display.runDragDrop) return LRESULT.ZERO;
-	return super.WM_CONTEXTMENU (wParam, lParam);
-}
-
-@Override
-LRESULT WM_ERASEBKGND (long wParam, long lParam) {
-	LRESULT result = super.WM_ERASEBKGND (wParam, lParam);
-	if (findImageControl () != null) return LRESULT.ONE;
-	return result;
-}
-
-@Override
-LRESULT WM_GETOBJECT (long wParam, long lParam) {
-	/*
-	* Ensure that there is an accessible object created for this
-	* control because support for checked item accessibility is
-	* temporarily implemented in the accessibility package.
-	*/
-	if ((style & SWT.CHECK) != 0) {
-		if (accessible == null) accessible = new_Accessible (this);
-	}
-	return super.WM_GETOBJECT (wParam, lParam);
-}
-
-@Override
-LRESULT WM_KEYDOWN (long wParam, long lParam) {
-	LRESULT result = super.WM_KEYDOWN (wParam, lParam);
-	if (result != null) return result;
-	switch ((int)wParam) {
-		case OS.VK_SPACE:
-			/*
-			* Ensure that the window proc does not process VK_SPACE
-			* so that it can be handled in WM_CHAR.  This allows the
-			* application to cancel an operation that is normally
-			* performed in WM_KEYDOWN from WM_CHAR.
-			*/
-			return LRESULT.ZERO;
-		case OS.VK_ADD:
-			if (OS.GetKeyState (OS.VK_CONTROL) < 0) {
-				int index = 0;
-				while (index < columnCount) {
-					if (!columns [index].getResizable ()) break;
-					index++;
-				}
-				if (index != columnCount || hooks (SWT.MeasureItem)) {
-					TableColumn [] newColumns = new TableColumn [columnCount];
-					System.arraycopy (columns, 0, newColumns, 0, columnCount);
-					for (TableColumn column : newColumns) {
-						if (!column.isDisposed () && column.getResizable ()) {
-							column.pack ();
-						}
-					}
-					return LRESULT.ZERO;
-				}
-			}
-			break;
-		case OS.VK_PRIOR:
-		case OS.VK_NEXT:
-		case OS.VK_HOME:
-		case OS.VK_END:
-			/*
-			* When there are many columns in a table, scrolling performance
-			* can be improved by temporarily unsubclassing the window proc
-			* so that internal messages are dispatched directly to the table.
-			* If the application expects to see a paint event, the window
-			* proc cannot be unsubclassed or the event will not be seen.
-			*
-			* NOTE: The header tooltip can subclass the header proc so the
-			* current proc must be restored or header tooltips stop working.
-			*/
-			long oldHeaderProc = 0, oldTableProc = 0;
-			long hwndHeader = OS.SendMessage (handle, OS.LVM_GETHEADER, 0, 0);
-			boolean fixSubclass = isOptimizedRedraw ();
-			if (fixSubclass) {
-				oldTableProc = OS.SetWindowLongPtr (handle, OS.GWLP_WNDPROC, TableProc);
-				oldHeaderProc = OS.SetWindowLongPtr (hwndHeader, OS.GWLP_WNDPROC, HeaderProc);
-			}
-			long code = callWindowProc (handle, OS.WM_KEYDOWN, wParam, lParam);
-			result = code == 0 ? LRESULT.ZERO : new LRESULT (code);
-			if (fixSubclass) {
-				OS.SetWindowLongPtr (handle, OS.GWLP_WNDPROC, oldTableProc);
-				OS.SetWindowLongPtr (hwndHeader, OS.GWLP_WNDPROC, oldHeaderProc);
-			}
-			//FALL THROUGH
-		case OS.VK_UP:
-		case OS.VK_DOWN:
-			OS.SendMessage (handle, OS.WM_CHANGEUISTATE, OS.UIS_INITIALIZE, 0);
-			break;
-	}
-	return result;
-}
-
-@Override
-LRESULT WM_KILLFOCUS (long wParam, long lParam) {
-	LRESULT result = super.WM_KILLFOCUS (wParam, lParam);
-	/*
-	* Bug in Windows.  When focus is lost, Windows does not
-	* redraw the selection properly, leaving the image and
-	* check box appearing selected.  The fix is to redraw
-	* the table.
-	*/
-	if (imageList != null || (style & SWT.CHECK) != 0) {
-		OS.InvalidateRect (handle, null, false);
-	}
-	return result;
-}
-
-@Override
-LRESULT WM_LBUTTONDBLCLK (long wParam, long lParam) {
-
-	/*
-	* Feature in Windows.  When the user selects outside of
-	* a table item, Windows deselects all the items, even
-	* when the table is multi-select.  While not strictly
-	* wrong, this is unexpected.  The fix is to detect the
-	* case and avoid calling the window proc.
-	*/
-	LVHITTESTINFO pinfo = new LVHITTESTINFO ();
-	pinfo.x = OS.GET_X_LPARAM (lParam);
-	pinfo.y = OS.GET_Y_LPARAM (lParam);
-	int index = (int)OS.SendMessage (handle, OS.LVM_HITTEST, 0, pinfo);
-	Display display = this.display;
-	display.captureChanged = false;
-	sendMouseEvent (SWT.MouseDown, 1, handle, lParam);
-	if (!sendMouseEvent (SWT.MouseDoubleClick, 1, handle, lParam)) {
-		if (!display.captureChanged && !isDisposed ()) {
-			if (OS.GetCapture () != handle) OS.SetCapture (handle);
-		}
-		return LRESULT.ZERO;
-	}
-	if (pinfo.iItem != -1) callWindowProc (handle, OS.WM_LBUTTONDBLCLK, wParam, lParam);
-	if (!display.captureChanged && !isDisposed ()) {
-		if (OS.GetCapture () != handle) OS.SetCapture (handle);
-	}
-
-	/* Look for check/uncheck */
-	if ((style & SWT.CHECK) != 0) {
-		/*
-		* Note that when the table has LVS_EX_FULLROWSELECT and the
-		* user clicks anywhere on a row except on the check box, all
-		* of the bits are set.  The hit test flags are LVHT_ONITEM.
-		* This means that a bit test for LVHT_ONITEMSTATEICON is not
-		* the correct way to determine that the user has selected
-		* the check box, equality is needed.
-		*/
-		if (index != -1 && pinfo.flags == OS.LVHT_ONITEMSTATEICON) {
-			TableItem item = _getItem (index);
-			if (item != null && !item.isDisposed ()) {
-				item.setChecked (!item.getChecked (), true);
-				OS.NotifyWinEvent (OS.EVENT_OBJECT_FOCUS, handle, OS.OBJID_CLIENT, index + 1);
-			}
-		}
-	}
-	return LRESULT.ZERO;
-}
-
-@Override
-LRESULT WM_LBUTTONDOWN (long wParam, long lParam) {
-	/*
-	* Feature in Windows.  For some reason, capturing
-	* the mouse after processing the mouse event for the
-	* widget interferes with the normal mouse processing
-	* for the widget.  The fix is to avoid the automatic
-	* mouse capture.
-	*/
-	LRESULT result = sendMouseDownEvent (SWT.MouseDown, 1, OS.WM_LBUTTONDOWN, wParam, lParam);
-	if (result == LRESULT.ZERO) return result;
-
-	/* Look for check/uncheck */
-	if ((style & SWT.CHECK) != 0) {
-		LVHITTESTINFO pinfo = new LVHITTESTINFO ();
-		pinfo.x = OS.GET_X_LPARAM (lParam);
-		pinfo.y = OS.GET_Y_LPARAM (lParam);
-		/*
-		* Note that when the table has LVS_EX_FULLROWSELECT and the
-		* user clicks anywhere on a row except on the check box, all
-		* of the bits are set.  The hit test flags are LVHT_ONITEM.
-		* This means that a bit test for LVHT_ONITEMSTATEICON is not
-		* the correct way to determine that the user has selected
-		* the check box, equality is needed.
-		*/
-		int index = (int)OS.SendMessage (handle, OS.LVM_HITTEST, 0, pinfo);
-		if (index != -1 && pinfo.flags == OS.LVHT_ONITEMSTATEICON) {
-			TableItem item = _getItem (index);
-			if (item != null && !item.isDisposed ()) {
-				item.setChecked (!item.getChecked (), true);
-				OS.NotifyWinEvent (OS.EVENT_OBJECT_FOCUS, handle, OS.OBJID_CLIENT, index + 1);
-			}
-		}
-	}
-	return result;
-}
-
-@Override
-LRESULT WM_MOUSEHOVER (long wParam, long lParam) {
-	/*
-	* Feature in Windows.  Despite the fact that hot
-	* tracking is not enabled, the hot tracking code
-	* in WM_MOUSEHOVER is executed causing the item
-	* under the cursor to be selected.  The fix is to
-	* avoid calling the window proc.
-	*/
-	LRESULT result = super.WM_MOUSEHOVER (wParam, lParam);
-	int bits = (int)OS.SendMessage (handle, OS.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0);
-	int mask = OS.LVS_EX_ONECLICKACTIVATE | OS.LVS_EX_TRACKSELECT | OS.LVS_EX_TWOCLICKACTIVATE;
-	if ((bits & mask) != 0) return result;
-	return LRESULT.ZERO;
-}
-
-@Override
-LRESULT WM_PAINT (long wParam, long lParam) {
-	if ((state & DISPOSE_SENT) != 0) return LRESULT.ZERO;
-
-	_checkShrink();
-	if (fixScrollWidth) setScrollWidth (null, true);
-	return super.WM_PAINT (wParam, lParam);
-}
-
-@Override
-LRESULT WM_RBUTTONDBLCLK (long wParam, long lParam) {
-	/*
-	* Feature in Windows.  When the user selects outside of
-	* a table item, Windows deselects all the items, even
-	* when the table is multi-select.  While not strictly
-	* wrong, this is unexpected.  The fix is to detect the
-	* case and avoid calling the window proc.
-	*/
-	LVHITTESTINFO pinfo = new LVHITTESTINFO ();
-	pinfo.x = OS.GET_X_LPARAM (lParam);
-	pinfo.y = OS.GET_Y_LPARAM (lParam);
-	OS.SendMessage (handle, OS.LVM_HITTEST, 0, pinfo);
-	Display display = this.display;
-	display.captureChanged = false;
-	sendMouseEvent (SWT.MouseDown, 3, handle, lParam);
-	if (sendMouseEvent (SWT.MouseDoubleClick, 3, handle, lParam)) {
-		if (pinfo.iItem != -1) callWindowProc (handle, OS.WM_RBUTTONDBLCLK, wParam, lParam);
-	}
-	if (!display.captureChanged && !isDisposed ()) {
-		if (OS.GetCapture () != handle) OS.SetCapture (handle);
-	}
-	return LRESULT.ZERO;
-}
-
-@Override
-LRESULT WM_RBUTTONDOWN (long wParam, long lParam) {
-	/*
-	* Feature in Windows.  For some reason, capturing
-	* the mouse after processing the mouse event for the
-	* widget interferes with the normal mouse processing
-	* for the widget.  The fix is to avoid the automatic
-	* mouse capture.
-	*/
-	return sendMouseDownEvent (SWT.MouseDown, 3, OS.WM_RBUTTONDOWN, wParam, lParam);
-}
-
-@Override
-LRESULT WM_SETFOCUS (long wParam, long lParam) {
-	LRESULT result = super.WM_SETFOCUS (wParam, lParam);
-	/*
-	* Bug in Windows.  When focus is gained after the
-	* selection has been changed using LVM_SETITEMSTATE,
-	* Windows redraws the selected text but does not
-	* redraw the image or the check box, leaving them
-	* appearing unselected.  The fix is to redraw
-	* the table.
-	*/
-	if (imageList != null || (style & SWT.CHECK) != 0) {
-		OS.InvalidateRect (handle, null, false);
-	}
-
-	/*
-	* Bug in Windows.  For some reason, the table does
-	* not set the default focus rectangle to be the first
-	* item in the table when it gets focus and there is
-	* no selected item.  The fix to make the first item
-	* be the focus item.
-	*/
-	int count = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
-	if (count == 0) return result;
-	int index = (int)OS.SendMessage (handle, OS.LVM_GETNEXTITEM, -1, OS.LVNI_FOCUSED);
-	if (index == -1) {
-		LVITEM lvItem = new LVITEM ();
-		lvItem.state = OS.LVIS_FOCUSED;
-		lvItem.stateMask = OS.LVIS_FOCUSED;
-		ignoreSelect = true;
-		OS.SendMessage (handle, OS.LVM_SETITEMSTATE, 0, lvItem);
-		ignoreSelect = false;
-	}
-	return result;
-}
-
-@Override
-LRESULT WM_SETFONT (long wParam, long lParam) {
-	LRESULT result = super.WM_SETFONT (wParam, lParam);
-	if (result != null) return result;
-
-	/*
-	* Bug in Windows.  When a header has a sort indicator
-	* triangle, Windows resizes the indicator based on the
-	* size of the n-1th font.  The fix is to always make
-	* the n-1th font be the default.  This makes the sort
-	* indicator always be the default size.
-	*
-	* NOTE: The table window proc sets the actual font in
-	* the header so that all that is necessary here is to
-	* set the default first.
-	*/
-	OS.SendMessage (hwndHeader, OS.WM_SETFONT, 0, lParam);
-
-	if (headerToolTipHandle != 0) {
-		OS.SendMessage (headerToolTipHandle, OS.WM_SETFONT, wParam, lParam);
-	}
-	return result;
-}
-
-@Override
-LRESULT WM_SETREDRAW (long wParam, long lParam) {
-	LRESULT result = super.WM_SETREDRAW (wParam, lParam);
-	if (result != null) return result;
-	/*
-	* Feature in Windows.  When LVM_SETBKCOLOR is used with CLR_NONE
-	* to make the background of the table transparent, drawing becomes
-	* slow.  The fix is to temporarily clear CLR_NONE when redraw is
-	* turned off.
-	*/
-	if (wParam == 1) {
-		if ((int)OS.SendMessage (handle, OS.LVM_GETBKCOLOR, 0, 0) != OS.CLR_NONE) {
-			if (hooks (SWT.MeasureItem) || hooks (SWT.EraseItem) || hooks (SWT.PaintItem)) {
-				OS.SendMessage (handle, OS.LVM_SETBKCOLOR, 0, OS.CLR_NONE);
-			}
-		}
-	}
-	/*
-	* Bug in Windows.  When WM_SETREDRAW is used to turn off
-	* redraw for a list, table or tree, the background of the
-	* control is drawn.  The fix is to call DefWindowProc(),
-	* which stops all graphics output to the control.
-	*/
-	OS.DefWindowProc (handle, OS.WM_SETREDRAW, wParam, lParam);
-	long code = callWindowProc (handle, OS.WM_SETREDRAW, wParam, lParam);
-	if (wParam == 0) {
-		if ((int)OS.SendMessage (handle, OS.LVM_GETBKCOLOR, 0, 0) == OS.CLR_NONE) {
-			OS.SendMessage (handle, OS.LVM_SETBKCOLOR, 0, 0xFFFFFF);
-		}
-	}
-	return code == 0 ? LRESULT.ZERO : new LRESULT (code);
-}
-
-@Override
-LRESULT WM_SIZE (long wParam, long lParam) {
-	if (ignoreResize) return null;
-	if (hooks (SWT.EraseItem) || hooks (SWT.PaintItem)) {
-		OS.InvalidateRect (handle, null, true);
-	}
-	if (resizeCount != 0) {
-		wasResized = true;
-		return null;
-	}
-	return super.WM_SIZE (wParam, lParam);
-}
-
-@Override
-LRESULT WM_SYSCOLORCHANGE (long wParam, long lParam) {
-	LRESULT result = super.WM_SYSCOLORCHANGE (wParam, lParam);
-	if (result != null) return result;
-	if (findBackgroundControl () == null) {
-		setBackgroundPixel (defaultBackground ());
-	} else {
-		int oldPixel = (int)OS.SendMessage (handle, OS.LVM_GETBKCOLOR, 0, 0);
-		if (oldPixel != OS.CLR_NONE) {
-			if (findImageControl () == null) {
-				if ((style & SWT.CHECK) != 0) fixCheckboxImageListColor (true);
-			}
-		}
-	}
-	return result;
-}
-
-@Override
-LRESULT WM_HSCROLL (long wParam, long lParam) {
-	/*
-	* Bug in Windows.  When a table that is drawing grid lines
-	* is slowly scrolled horizontally to the left, the table does
-	* not redraw the newly exposed vertical grid lines.  The fix
-	* is to save the old scroll position, call the window proc,
-	* get the new scroll position and redraw the new area.
-	*/
-	int oldPos = 0;
-	if (_getLinesVisible()) {
-		SCROLLINFO info = new SCROLLINFO ();
-		info.cbSize = SCROLLINFO.sizeof;
-		info.fMask = OS.SIF_POS;
-		OS.GetScrollInfo (handle, OS.SB_HORZ, info);
-		oldPos = info.nPos;
-	}
-
-	/*
-	* Feature in Windows.  When there are many columns in a table,
-	* scrolling performance can be improved by unsubclassing the
-	* window proc so that internal messages are dispatched directly
-	* to the table.  If the application expects to see a paint event
-	* or has a child whose font, foreground or background color might
-	* be needed, the window proc cannot be unsubclassed
-	*
-	* NOTE: The header tooltip can subclass the header proc so the
-	* current proc must be restored or header tooltips stop working.
-	*/
-	long oldHeaderProc = 0, oldTableProc = 0;
-	long hwndHeader = OS.SendMessage (handle, OS.LVM_GETHEADER, 0, 0);
-	boolean fixSubclass = isOptimizedRedraw ();
-	if (fixSubclass) {
-		oldTableProc = OS.SetWindowLongPtr (handle, OS.GWLP_WNDPROC, TableProc);
-		oldHeaderProc = OS.SetWindowLongPtr (hwndHeader, OS.GWLP_WNDPROC, HeaderProc);
-	}
-
-	/*
-	* Feature in Windows.  For some reason, when the table window
-	* proc processes WM_HSCROLL or WM_VSCROLL when there are many
-	* columns in the table, scrolling is slow and the table does
-	* not keep up with the position of the scroll bar.  The fix
-	* is to turn off redraw, scroll, turn redraw back on and redraw
-	* the entire table.  Strangly, redrawing the entire table is
-	* faster.
-	*/
-	boolean fixScroll = false;
-	if (OS.LOWORD (wParam) != OS.SB_ENDSCROLL) {
-		if (columnCount > H_SCROLL_LIMIT) {
-			int rowCount = (int)OS.SendMessage (handle, OS.LVM_GETCOUNTPERPAGE, 0, 0);
-			if (rowCount > V_SCROLL_LIMIT) fixScroll = getDrawing () && OS.IsWindowVisible (handle);
-		}
-	}
-	if (fixScroll) OS.DefWindowProc (handle, OS.WM_SETREDRAW, 0, 0);
-	LRESULT result = super.WM_HSCROLL (wParam, lParam);
-	if (fixScroll) {
-		OS.DefWindowProc (handle, OS.WM_SETREDRAW, 1, 0);
-		int flags = OS.RDW_ERASE | OS.RDW_FRAME | OS.RDW_INVALIDATE | OS.RDW_ALLCHILDREN;
-		OS.RedrawWindow (handle, null, 0, flags);
-		/*
-		* Feature in Windows.  On Vista only, it is faster to
-		* compute and answer the data for the visible columns
-		* of a table when scrolling, rather than just return
-		* the data for each column when asked.
-		*/
-		RECT headerRect = new RECT (), rect = new RECT ();
-		OS.GetClientRect (handle, rect);
-		boolean [] visible = new boolean [columnCount];
-		for (int i=0; i<columnCount; i++) {
-			visible [i] = true;
-			headerRect.top = i;
-			headerRect.left = OS.LVIR_BOUNDS;
-			if (OS.SendMessage (handle, OS.LVM_GETSUBITEMRECT, 0, headerRect) != 0) {
-				headerRect.top = rect.top;
-				headerRect.bottom = rect.bottom;
-				visible [i] = OS.IntersectRect(headerRect, rect, headerRect);
-			}
-		}
-		try {
-			columnVisible = visible;
-			OS.UpdateWindow (handle);
-		} finally {
-			columnVisible = null;
-		}
-	}
-
-	if (fixSubclass) {
-		OS.SetWindowLongPtr (handle, OS.GWLP_WNDPROC, oldTableProc);
-		OS.SetWindowLongPtr (hwndHeader, OS.GWLP_WNDPROC, oldHeaderProc);
-	}
-
-	/*
-	* Bug in Windows.  When a table that is drawing grid lines
-	* is slowly scrolled horizontally to the left, the table does
-	* not redraw the newly exposed vertical grid lines.  The fix
-	* is to save the old scroll position, call the window proc,
-	* get the new scroll position and redraw the new area.
-	*/
-	if (_getLinesVisible()) {
-		SCROLLINFO info = new SCROLLINFO ();
-		info.cbSize = SCROLLINFO.sizeof;
-		info.fMask = OS.SIF_POS;
-		OS.GetScrollInfo (handle, OS.SB_HORZ, info);
-		int newPos = info.nPos;
-		if (newPos < oldPos) {
-			RECT rect = new RECT ();
-			OS.GetClientRect (handle, rect);
-			rect.right = oldPos - newPos + GRID_WIDTH;
-			OS.InvalidateRect (handle, rect, true);
-		}
-	}
-	return result;
-}
-
-@Override
-LRESULT WM_VSCROLL (long wParam, long lParam) {
-	/*
-	* When there are many columns in a table, scrolling performance
-	* can be improved by temporarily unsubclassing the window proc
-	* so that internal messages are dispatched directly to the table.
-	* If the application expects to see a paint event or has a child
-	* whose font, foreground or background color might be needed,
-	* the window proc cannot be unsubclassed.
-	*
-	* NOTE: The header tooltip can subclass the header proc so the
-	* current proc must be restored or header tooltips stop working.
-	*/
-	long oldHeaderProc = 0, oldTableProc = 0;
-	long hwndHeader = OS.SendMessage (handle, OS.LVM_GETHEADER, 0, 0);
-	boolean fixSubclass = isOptimizedRedraw ();
-	if (fixSubclass) {
-		oldTableProc = OS.SetWindowLongPtr (handle, OS.GWLP_WNDPROC, TableProc);
-		oldHeaderProc = OS.SetWindowLongPtr (hwndHeader, OS.GWLP_WNDPROC, HeaderProc);
-	}
-
-	/*
-	* Feature in Windows.  For some reason, when the table window
-	* proc processes WM_HSCROLL or WM_VSCROLL when there are many
-	* columns in the table, scrolling is slow and the table does
-	* not keep up with the position of the scroll bar.  The fix
-	* is to turn off redraw, scroll, turn redraw back on and redraw
-	* the entire table.  Strangly, redrawing the entire table is
-	* faster.
-	*/
-	boolean fixScroll = false;
-	if (OS.LOWORD (wParam) != OS.SB_ENDSCROLL) {
-		if (columnCount > H_SCROLL_LIMIT) {
-			int rowCount = (int)OS.SendMessage (handle, OS.LVM_GETCOUNTPERPAGE, 0, 0);
-			if (rowCount > V_SCROLL_LIMIT) fixScroll = getDrawing () && OS.IsWindowVisible (handle);
-		}
-	}
-	if (fixScroll) OS.DefWindowProc (handle, OS.WM_SETREDRAW, 0, 0);
-	LRESULT result = super.WM_VSCROLL (wParam, lParam);
-	if (fixScroll) {
-		OS.DefWindowProc (handle, OS.WM_SETREDRAW, 1, 0);
-		int flags = OS.RDW_ERASE | OS.RDW_FRAME | OS.RDW_INVALIDATE | OS.RDW_ALLCHILDREN;
-		OS.RedrawWindow (handle, null, 0, flags);
-		/*
-		* Feature in Windows.  On Vista only, it is faster to
-		* compute and answer the data for the visible columns
-		* of a table when scrolling, rather than just return
-		* the data for each column when asked.
-		*/
-		RECT headerRect = new RECT (), rect = new RECT ();
-		OS.GetClientRect (handle, rect);
-		boolean [] visible = new boolean [columnCount];
-		for (int i=0; i<columnCount; i++) {
-			visible [i] = true;
-			headerRect.top = i;
-			headerRect.left = OS.LVIR_BOUNDS;
-			if (OS.SendMessage (handle, OS.LVM_GETSUBITEMRECT, 0, headerRect) != 0) {
-				headerRect.top = rect.top;
-				headerRect.bottom = rect.bottom;
-				visible [i] = OS.IntersectRect(headerRect, rect, headerRect);
-			}
-		}
-		try {
-			columnVisible = visible;
-			OS.UpdateWindow (handle);
-		} finally {
-			columnVisible = null;
-		}
-	}
-
-	if (fixSubclass) {
-		OS.SetWindowLongPtr (handle, OS.GWLP_WNDPROC, oldTableProc);
-		OS.SetWindowLongPtr (hwndHeader, OS.GWLP_WNDPROC, oldHeaderProc);
-	}
-
-	/*
-	* Bug in Windows.  When a table is drawing grid lines and the
-	* user scrolls vertically up or down by a line or a page, the
-	* table does not redraw the grid lines for newly exposed items.
-	* The fix is to invalidate the items.
-	*/
-	if (_getLinesVisible()) {
-		int code = OS.LOWORD (wParam);
-		switch (code) {
-			case OS.SB_ENDSCROLL:
-			case OS.SB_THUMBPOSITION:
-			case OS.SB_THUMBTRACK:
-			case OS.SB_TOP:
-			case OS.SB_BOTTOM:
-				break;
-			case OS.SB_LINEDOWN:
-			case OS.SB_LINEUP:
-				RECT rect = new RECT ();
-				OS.GetWindowRect (hwndHeader, rect);
-				int headerHeight = rect.bottom - rect.top;
-				RECT clientRect = new RECT ();
-				OS.GetClientRect (handle, clientRect);
-				clientRect.top += headerHeight;
-				long empty = OS.SendMessage (handle, OS.LVM_APPROXIMATEVIEWRECT, 0, 0);
-				long oneItem = OS.SendMessage (handle, OS.LVM_APPROXIMATEVIEWRECT, 1, 0);
-				int itemHeight = OS.HIWORD (oneItem) - OS.HIWORD (empty);
-				if (code == OS.SB_LINEDOWN) {
-					clientRect.top = clientRect.bottom - itemHeight - GRID_WIDTH;
-				} else {
-					clientRect.bottom = clientRect.top + itemHeight + GRID_WIDTH;
-				}
-				OS.InvalidateRect (handle, clientRect, true);
-				break;
-			case OS.SB_PAGEDOWN:
-			case OS.SB_PAGEUP:
-				OS.InvalidateRect (handle, null, true);
-				break;
-		}
-	}
-	return result;
-}
-
-@Override
-LRESULT wmMeasureChild (long wParam, long lParam) {
-	MEASUREITEMSTRUCT struct = new MEASUREITEMSTRUCT ();
-	OS.MoveMemory (struct, lParam, MEASUREITEMSTRUCT.sizeof);
-	if (itemHeight == -1) {
-		long empty = OS.SendMessage (handle, OS.LVM_APPROXIMATEVIEWRECT, 0, 0);
-		long oneItem = OS.SendMessage (handle, OS.LVM_APPROXIMATEVIEWRECT, 1, 0);
-		struct.itemHeight = OS.HIWORD (oneItem) - OS.HIWORD (empty);
-	} else {
-		struct.itemHeight = itemHeight;
-	}
-	OS.MoveMemory (lParam, struct, MEASUREITEMSTRUCT.sizeof);
-	return null;
-}
-
-@Override
-LRESULT wmNotify (NMHDR hdr, long wParam, long lParam) {
-	long hwndToolTip = OS.SendMessage (handle, OS.LVM_GETTOOLTIPS, 0, 0);
-	if (hdr.hwndFrom == hwndToolTip) {
-		if (hdr.hwndFrom != itemToolTipHandle) {
-			maybeEnableDarkSystemTheme(hdr.hwndFrom);
-			itemToolTipHandle = hdr.hwndFrom;
-		}
-		LRESULT result = wmNotifyToolTip (hdr, wParam, lParam);
-		if (result != null) return result;
-	}
-	if (hdr.hwndFrom == hwndHeader) {
-		LRESULT result = wmNotifyHeader (hdr, wParam, lParam);
-		if (result != null) return result;
-	}
-	return super.wmNotify (hdr, wParam, lParam);
-}
-
-@Override
-LRESULT wmNotifyChild (NMHDR hdr, long wParam, long lParam) {
-	switch (hdr.code) {
-		case OS.LVN_ODFINDITEM: {
-			if ((style & SWT.VIRTUAL) != 0) return new LRESULT (-1);
-			break;
-		}
-		case OS.LVN_ODSTATECHANGED: {
-			if ((style & SWT.VIRTUAL) != 0) {
-				if (!ignoreSelect) {
-					NMLVODSTATECHANGE lpStateChange  = new NMLVODSTATECHANGE ();
-					OS.MoveMemory (lpStateChange, lParam, NMLVODSTATECHANGE.sizeof);
-					boolean oldSelected = (lpStateChange.uOldState & OS.LVIS_SELECTED) != 0;
-					boolean newSelected = (lpStateChange.uNewState & OS.LVIS_SELECTED) != 0;
-					if (oldSelected != newSelected) wasSelected = true;
-				}
-			}
-			break;
-		}
-		case OS.LVN_GETDISPINFO: {
-//			if (drawCount != 0 || !OS.IsWindowVisible (handle)) break;
-			NMLVDISPINFO plvfi = new NMLVDISPINFO ();
-			OS.MoveMemory (plvfi, lParam, NMLVDISPINFO.sizeof);
-
-			if (columnVisible != null && !columnVisible [plvfi.iSubItem]) {
-				break;
-			}
-
-			/*
-			* Feature in Windows.  When a new table item is inserted
-			* using LVM_INSERTITEM in a table that is transparent
-			* (ie. LVM_SETBKCOLOR has been called with CLR_NONE),
-			* TVM_INSERTITEM calls LVN_GETDISPINFO before the item
-			* has been added to the array.  The fix is to check for
-			* null.
-			*
-			* NOTE: Force the item to be created if it does not exist.
-			*/
-			TableItem item = _getItem (plvfi.iItem);
-			if (item == null) break;
-
-			/*
-			* Feature in Windows. On Vista, the list view expects the item array
-			* to be up to date when a LVM_DELETEITEM message is being processed.
-			*
-			* Also, when the table is virtual, do not allow the application to
-			* provide data for a new item that becomes visible until the item has
-			* been removed from the items array.  Because arbitrary application
-			* code can run during the callback, the items array might be accessed
-			* in an inconsistent state.
-			*
-			* On both cases, Rather than answering the data right away, queue a
-			* redraw for later.
-			*/
-			if (ignoreShrink) {
-				/*
-				* Feature in Windows Vista and newer. Using LVM_REDRAWITEMS causes LVN_GETDISPINFO
-				* to be sent before the method returns. For this reason, LVM_REDRAWITEMS
-				* can never be used from a LVN_GETDISPINFO handler. The fix is to
-				* InvalidateRect() passing the bounds for the entire item.
-				*/
-				RECT rect = new RECT ();
-				rect.left = OS.LVIR_BOUNDS;
-				ignoreCustomDraw = true;
-				long code = OS.SendMessage (handle, OS. LVM_GETITEMRECT, plvfi.iItem, rect);
-				ignoreCustomDraw = false;
-				if (code != 0) OS.InvalidateRect (handle, rect, true);
-				break;
-			}
-
-			/*
-			* The cached flag is used by both virtual and non-virtual
-			* tables to indicate that Windows has asked at least once
-			* for a table item.
-			*/
-			if (!item.cached) {
-				if ((style & SWT.VIRTUAL) != 0) {
-					lastIndexOf = plvfi.iItem;
-					if (!checkData (item, lastIndexOf, false)) break;
-					TableItem newItem = fixScrollWidth ? null : item;
-					if (setScrollWidth (newItem, true)) {
-						OS.InvalidateRect (handle, null, true);
-					}
-				}
-				item.cached = true;
-			}
-			if ((plvfi.mask & OS.LVIF_TEXT) != 0) {
-				String string = null;
-				if (plvfi.iSubItem == 0) {
-					string = item.text;
-				} else {
-					String [] strings  = item.strings;
-					if (strings != null && plvfi.iSubItem < strings.length) string = strings [plvfi.iSubItem];
-				}
-				if (string != null) {
-					/*
-					* Bug in Windows.  When pszText points to a zero length
-					* NULL terminated string, Windows correctly draws the
-					* empty string but the cache of the bounds for the item
-					* is not reset.  This means that when the text for the
-					* item is set and then reset to an empty string, the
-					* selection draws using the bounds of the previous text.
-					* The fix is to use a space rather than an empty string
-					* when anything but a tool tip is requested (to avoid
-					* a tool tip that is a single space).
-					*
-					* NOTE: This is only a problem for items in the first
-					* column.  Assigning NULL to other columns stops Windows
-					* from drawing the selection when LVS_EX_FULLROWSELECT
-					* is set.
-					*/
-					int length = Math.min (string.length (), Math.max (0, plvfi.cchTextMax - 1));
-					if (!tipRequested && plvfi.iSubItem == 0 && length == 0) {
-						string = " "; //$NON-NLS-1$
-						length = 1;
-					}
-					if (length > 1 && (state & HAS_AUTO_DIRECTION) != 0) {
-						switch (BidiUtil.resolveTextDirection(string)) {
-							case SWT.LEFT_TO_RIGHT:
-								string = LRE + string;
-								length++;
-								break;
-							case SWT.RIGHT_TO_LEFT:
-								string = RLE + string;
-								length++;
-								break;
-						}
-					}
-					char [] buffer = display.tableBuffer;
-					if (buffer == null || plvfi.cchTextMax > buffer.length) {
-						buffer = display.tableBuffer = new char [plvfi.cchTextMax];
-					}
-					string.getChars (0, length, buffer, 0);
-					if (tipRequested) {
-						/*
-						 * Bug in Windows. The tooltip is only displayed up to
-						 * the first line delimiter. The fix is to remove all
-						 * line delimiter characters.
-						 */
-						int shift = 0;
-						for (int i = 0; i < length; i++) {
-							switch (buffer [i]) {
-								case '\r':
-								case '\n':
-									shift++;
-									break;
-								default:
-									if (shift != 0) buffer [i - shift] = buffer [i];
-							}
-						}
-						length -= shift;
-					}
-					buffer [length++] = 0;
-					OS.MoveMemory (plvfi.pszText, buffer, length * 2);
-				}
-			}
-			boolean move = false;
-			if ((plvfi.mask & OS.LVIF_IMAGE) != 0) {
-				Image image = null;
-				if (plvfi.iSubItem == 0) {
-					image = item.image;
-				} else {
-					Image [] images = item.images;
-					if (images != null && plvfi.iSubItem < images.length) image = images [plvfi.iSubItem];
-				}
-				if (image != null) {
-					plvfi.iImage = imageIndex (image, plvfi.iSubItem);
-					move = true;
-				}
-			}
-			if ((plvfi.mask & OS.LVIF_STATE) != 0) {
-				if (plvfi.iSubItem == 0) {
-					int state = 1;
-					if (item.checked) state++;
-					if (item.grayed) state +=2;
-					if (!OS.IsWindowEnabled (handle)) state += 4;
-					plvfi.state = state << 12;
-					plvfi.stateMask = OS.LVIS_STATEIMAGEMASK;
-					move = true;
-				}
-			}
-			if ((plvfi.mask & OS.LVIF_INDENT) != 0) {
-				if (plvfi.iSubItem == 0) {
-					plvfi.iIndent = item.imageIndent;
-					move = true;
-				}
-			}
-			if (move) OS.MoveMemory (lParam, plvfi, NMLVDISPINFO.sizeof);
-			break;
-		}
-		case OS.NM_CUSTOMDRAW: {
-			long hwndHeader = OS.SendMessage (handle, OS.LVM_GETHEADER, 0, 0);
-			if (hdr.hwndFrom == hwndHeader) break;
-			if (!customDraw && findImageControl () == null) {
-				/*
-				* Feature in Windows.  When the table is disabled, it draws
-				* with a gray background but does not gray the text.  The fix
-				* is to explicitly gray the text using Custom Draw.
-				*/
-				if (OS.IsWindowEnabled (handle)) {
-					/*
-					* Feature in Windows.  On Vista using the explorer theme,
-					* Windows draws a vertical line to separate columns.  When
-					* there is only a single column, the line looks strange.
-					* The fix is to draw the background using custom draw.
-					*/
-					if (!explorerTheme || columnCount != 0) break;
-				}
-			}
-			NMLVCUSTOMDRAW nmcd = new NMLVCUSTOMDRAW ();
-			OS.MoveMemory (nmcd, lParam, NMLVCUSTOMDRAW.sizeof);
-			switch (nmcd.dwDrawStage) {
-				case OS.CDDS_PREPAINT: return CDDS_PREPAINT (nmcd, wParam, lParam);
-				case OS.CDDS_ITEMPREPAINT: return CDDS_ITEMPREPAINT (nmcd, wParam, lParam);
-				case OS.CDDS_ITEMPOSTPAINT: return CDDS_ITEMPOSTPAINT (nmcd, wParam, lParam);
-				case OS.CDDS_SUBITEMPREPAINT: return CDDS_SUBITEMPREPAINT (nmcd, wParam, lParam);
-				case OS.CDDS_SUBITEMPOSTPAINT: return CDDS_SUBITEMPOSTPAINT (nmcd, wParam, lParam);
-				case OS.CDDS_POSTPAINT: return CDDS_POSTPAINT (nmcd, wParam, lParam);
-			}
-			break;
-		}
-		case OS.LVN_MARQUEEBEGIN: {
-			if ((style & SWT.SINGLE) != 0) return LRESULT.ONE;
-			if (hooks (SWT.MouseDown) || hooks (SWT.MouseUp)) {
-				return LRESULT.ONE;
-			}
-			if ((style & SWT.RIGHT_TO_LEFT) != 0) {
-				if (findImageControl () != null) return LRESULT.ONE;
-			}
-			break;
-		}
-		case OS.LVN_BEGINDRAG:
-		case OS.LVN_BEGINRDRAG: {
-			if (OS.GetKeyState (OS.VK_LBUTTON) >= 0) break;
-			dragStarted = true;
-			if (hdr.code == OS.LVN_BEGINDRAG) {
-				int pos = OS.GetMessagePos ();
-				POINT pt = new POINT ();
-				OS.POINTSTOPOINT (pt, pos);
-				OS.ScreenToClient (handle, pt);
-				sendDragEvent (1, pt.x, pt.y);
-			}
-			break;
-		}
-		case OS.LVN_COLUMNCLICK: {
-			NMLISTVIEW pnmlv = new NMLISTVIEW ();
-			OS.MoveMemory(pnmlv, lParam, NMLISTVIEW.sizeof);
-			TableColumn column = columns [pnmlv.iSubItem];
-			if (column != null) {
-				column.sendSelectionEvent (SWT.Selection);
-			}
-			break;
-		}
-		case OS.LVN_ITEMACTIVATE: {
-			if (ignoreActivate) break;
-			NMLISTVIEW pnmlv = new NMLISTVIEW ();
-			OS.MoveMemory(pnmlv, lParam, NMLISTVIEW.sizeof);
-			if (pnmlv.iItem != -1) {
-				Event event = new Event ();
-				event.item = _getItem (pnmlv.iItem);
-				sendSelectionEvent (SWT.DefaultSelection, event, false);
-			}
-			break;
-		}
-		case OS.LVN_ITEMCHANGED: {
-			if (fullRowSelect) {
-				fullRowSelect = false;
-				OS.DefWindowProc (handle, OS.WM_SETREDRAW, 1, 0);
-				OS.SendMessage (handle, OS.LVM_SETEXTENDEDLISTVIEWSTYLE, OS.LVS_EX_FULLROWSELECT, 0);
-			}
-			if (!ignoreSelect) {
-				NMLISTVIEW pnmlv = new NMLISTVIEW ();
-				OS.MoveMemory (pnmlv, lParam, NMLISTVIEW.sizeof);
-				if ((pnmlv.uChanged & OS.LVIF_STATE) != 0) {
-					if (pnmlv.iItem == -1) {
-						wasSelected = true;
-					} else {
-						boolean oldSelected = (pnmlv.uOldState & OS.LVIS_SELECTED) != 0;
-						boolean newSelected = (pnmlv.uNewState & OS.LVIS_SELECTED) != 0;
-						if (oldSelected != newSelected) wasSelected = true;
-					}
-				}
-			}
-			if (hooks (SWT.EraseItem) || hooks (SWT.PaintItem)) {
-				long hwndHeader = OS.SendMessage (handle, OS.LVM_GETHEADER, 0, 0);
-				int count = (int)OS.SendMessage (hwndHeader, OS.HDM_GETITEMCOUNT, 0, 0);
-				if (count != 0) {
-					forceResize ();
-					RECT rect = new RECT ();
-					OS.GetClientRect (handle, rect);
-					NMLISTVIEW pnmlv = new NMLISTVIEW ();
-					OS.MoveMemory (pnmlv, lParam, NMLISTVIEW.sizeof);
-					if (pnmlv.iItem != -1) {
-						RECT itemRect = new RECT ();
-						itemRect.left = OS.LVIR_BOUNDS;
-						ignoreCustomDraw = true;
-						OS.SendMessage (handle, OS. LVM_GETITEMRECT, pnmlv.iItem, itemRect);
-						ignoreCustomDraw = false;
-						RECT headerRect = new RECT ();
-						int index = (int)OS.SendMessage (hwndHeader, OS.HDM_ORDERTOINDEX, count - 1, 0);
-						OS.SendMessage (hwndHeader, OS.HDM_GETITEMRECT, index, headerRect);
-						OS.MapWindowPoints (hwndHeader, handle, headerRect, 2);
-						rect.left = headerRect.right;
-						rect.top = itemRect.top;
-						rect.bottom = itemRect.bottom;
-						OS.InvalidateRect (handle, rect, true);
-					}
-				}
-			}
-			break;
-		}
-	}
-	return super.wmNotifyChild (hdr, wParam, lParam);
-}
-
-LRESULT wmNotifyHeader (NMHDR hdr, long wParam, long lParam) {
-	/*
-	* Feature in Windows.  On NT, the automatically created
-	* header control is created as a UNICODE window, not an
-	* ANSI window despite the fact that the parent is created
-	* as an ANSI window.  This means that it sends UNICODE
-	* notification messages to the parent window on NT for
-	* no good reason.  The data and size in the NMHEADER and
-	* HDITEM structs is identical between the platforms so no
-	* different message is actually necessary.  Despite this,
-	* Windows sends different messages.  The fix is to look
-	* for both messages, despite the platform.  This works
-	* because only one will be sent on either platform, never
-	* both.
-	*/
-	switch (hdr.code) {
-		case OS.HDN_BEGINTRACK:
-		case OS.HDN_DIVIDERDBLCLICK: {
-			if (columnCount == 0) return LRESULT.ONE;
-			NMHEADER phdn = new NMHEADER ();
-			OS.MoveMemory (phdn, lParam, NMHEADER.sizeof);
-			TableColumn column = columns [phdn.iItem];
-			if (column != null && !column.getResizable ()) {
-				return LRESULT.ONE;
-			}
-			ignoreColumnMove = true;
-			if (hdr.code == OS.HDN_DIVIDERDBLCLICK) {
-				if (column != null && hooks (SWT.MeasureItem)) {
-					column.pack ();
-					return LRESULT.ONE;
-				}
-			}
-			break;
-		}
-		case OS.NM_CUSTOMDRAW: {
-			NMCUSTOMDRAW nmcd = new NMCUSTOMDRAW();
-			OS.MoveMemory(nmcd, lParam, NMCUSTOMDRAW.sizeof);
-			switch (nmcd.dwDrawStage) {
-				case OS.CDDS_PREPAINT: {
-					/* Drawing here will be deleted by further drawing steps, even with OS.CDRF_SKIPDEFAULT.
-					   Changing the TextColor and returning OS.CDRF_NEWFONT has no effect. */
-					return new LRESULT (customHeaderDrawing() ? OS.CDRF_NOTIFYITEMDRAW | OS.CDRF_NOTIFYPOSTPAINT : OS.CDRF_DODEFAULT);
-				}
-				case OS.CDDS_ITEMPREPAINT: {
-					// draw background
-					RECT rect = new RECT();
-					OS.SetRect(rect, nmcd.left, nmcd.top, nmcd.right, nmcd.bottom);
-					int pixel = getHeaderBackgroundPixel();
-					if ((nmcd.uItemState & OS.CDIS_SELECTED) != 0) {
-						pixel = getDifferentColor(pixel);
-					}
-					/*
-					 * Don't change the header background color for set selected column, similar to
-					 * Windows 10 which itself does not use any different color for sort header. For
-					 * more details refer bug 536020
-					 */
-//					else if (columns[(int) nmcd.dwItemSpec] == sortColumn && sortDirection != SWT.NONE) {
-//						pixel = getSlightlyDifferentColor(pixel);
+//@Override
+//TCHAR windowClass () {
+//	return TableClass;
+//}
+//
+//@Override
+//long windowProc () {
+//	return TableProc;
+//}
+//
+//@Override
+//long windowProc (long hwnd, int msg, long wParam, long lParam) {
+//	if (handle == 0) return 0;
+//	if (hwnd != handle) {
+//		switch (msg) {
+//			case OS.WM_CONTEXTMENU: {
+//				LRESULT result = wmContextMenu (hwnd, wParam, lParam);
+//				if (result != null) return result.value;
+//				break;
+//			}
+//			case OS.WM_MOUSELEAVE: {
+//				/*
+//				* Bug in Windows.  On XP, when a tooltip is hidden
+//				* due to a time out or mouse press, the tooltip
+//				* remains active although no longer visible and
+//				* won't show again until another tooltip becomes
+//				* active.  The fix is to reset the tooltip bounds.
+//				*/
+//				updateHeaderToolTips ();
+//				updateHeaderToolTips ();
+//				break;
+//			}
+//			case OS.WM_NOTIFY: {
+//				NMHDR hdr = new NMHDR ();
+//				OS.MoveMemory (hdr, lParam, NMHDR.sizeof);
+//				switch (hdr.code) {
+//					case OS.TTN_SHOW:
+//					case OS.TTN_POP:
+//					case OS.TTN_GETDISPINFO:
+//						return OS.SendMessage (handle, msg, wParam, lParam);
+//				}
+//				break;
+//			}
+//			case OS.WM_SETCURSOR: {
+//				if (wParam == hwnd) {
+//					int hitTest = (short) OS.LOWORD (lParam);
+//					if (hitTest == OS.HTCLIENT) {
+//						HDHITTESTINFO pinfo = new HDHITTESTINFO ();
+//						int pos = OS.GetMessagePos ();
+//						POINT pt = new POINT ();
+//						OS.POINTSTOPOINT (pt, pos);
+//						OS.ScreenToClient (hwnd, pt);
+//						pinfo.x = pt.x;
+//						pinfo.y = pt.y;
+//						long hwndHeader = OS.SendMessage (handle, OS.LVM_GETHEADER, 0, 0);
+//						int index = (int)OS.SendMessage (hwndHeader, OS.HDM_HITTEST, 0, pinfo);
+//						if (0 <= index && index < columnCount && !columns [index].resizable) {
+//							if ((pinfo.flags & (OS.HHT_ONDIVIDER | OS.HHT_ONDIVOPEN)) != 0) {
+//								OS.SetCursor (OS.LoadCursor (0, OS.IDC_ARROW));
+//								return 1;
+//							}
+//						}
 //					}
-					long brush = OS.CreateSolidBrush(pixel);
-					OS.FillRect(nmcd.hdc, rect, brush);
-					OS.DeleteObject(brush);
-
-					return new LRESULT(OS.CDRF_SKIPDEFAULT); // if we got here, we will paint everything ourself
-				}
-				case OS.CDDS_POSTPAINT: {
-					// get the cursor position
-					POINT cursorPos = new POINT();
-					OS.GetCursorPos(cursorPos);
-					OS.MapWindowPoints(0, hwndHeader, cursorPos, 1);
-
-					// drawing all cells
-					int highlightedHeaderDividerX = -1;
-					int lastColumnRight = -1;
-					RECT [] rects = new RECT [columnCount];
-					for (int i=0; i<columnCount; i++) {
-						rects [i] = new RECT ();
-						OS.SendMessage (hwndHeader, OS.HDM_GETITEMRECT, i, rects [i]);
-						if (rects[i].right > lastColumnRight) {
-							lastColumnRight = rects[i].right;
-						}
-
-						if (columns[i] == sortColumn && sortDirection != SWT.NONE) {
-							// the display.getSortImage looks terrible after scaling up.
-							long pen = OS.CreatePen (OS.PS_SOLID, 1, getHeaderForegroundPixel());
-							long oldPen = OS.SelectObject (nmcd.hdc, pen);
-							int center = rects[i].left + (rects[i].right - rects[i].left) / 2;
-							/*
-							 * Sort indicator size needs to scale as per the Native Windows OS DPI level
-							 * when header is custom drawn. For more details refer bug 537097.
-							 */
-							int leg = DPIUtil.scaleUp(3, nativeZoom);
-							if (sortDirection == SWT.UP) {
-								OS.Polyline(nmcd.hdc, new int[] {center-leg, 1+leg, center+1, 0}, 2);
-								OS.Polyline(nmcd.hdc, new int[] {center+leg, 1+leg, center-1, 0}, 2);
-							} else if (sortDirection == SWT.DOWN) {
-								OS.Polyline(nmcd.hdc, new int[] {center-leg, 1, center+1, 1+leg+1}, 2);
-								OS.Polyline(nmcd.hdc, new int[] {center+leg, 1, center-1, 1+leg+1}, 2);
-							}
-							OS.SelectObject (nmcd.hdc, oldPen);
-							OS.DeleteObject (pen);
-						}
-
-						int alignmentCorrection = _getLinesVisible () ? 0 : 1;
-
-						/* Windows 7 and 10 always draw a nearly invisible vertical line between the columns, even if lines are disabled.
-						   This line uses no fixed color constant, but calculates it from the background color.
-						   The method getSlightlyDifferentColor gives us a color, that is near enough to the windows algorithm.
-
-						   NOTE: This code has no effect since Bug 517003, because next OS.Polyline() draws over the same coords.
-
-						long pen = OS.CreatePen (OS.PS_SOLID, getGridLineWidthInPixels(), getSlightlyDifferentColor(getHeaderBackgroundPixel()));
-						long oldPen = OS.SelectObject (nmcd.hdc, pen);
-						OS.Polyline(nmcd.hdc, new int[] {rects[i].right-alignmentCorrection, rects[i].top, rects[i].right-alignmentCorrection, rects[i].bottom}, 2);
-						OS.SelectObject (nmcd.hdc, oldPen);
-						OS.DeleteObject (pen);
-						*/
-
-						int lineColor = (display.tableHeaderLinePixel != -1) ? display.tableHeaderLinePixel : OS.GetSysColor(OS.COLOR_3DFACE);
-						long pen = OS.CreatePen (OS.PS_SOLID, getGridLineWidthInPixels(), lineColor);
-						long oldPen = OS.SelectObject (nmcd.hdc, pen);
-						/* To differentiate headers, always draw header column separator. */
-						OS.Polyline(nmcd.hdc, new int[] {rects[i].right - alignmentCorrection, rects[i].top, rects[i].right - alignmentCorrection, rects[i].bottom}, 2);
-						/* To differentiate header & content area, always draw the line separator between header & first row. */
-						if (i == 0) OS.Polyline(nmcd.hdc, new int[] {nmcd.left, nmcd.bottom-1, nmcd.right+1, nmcd.bottom-1}, 2);
-						OS.SelectObject (nmcd.hdc, oldPen);
-						OS.DeleteObject (pen);
-
-						if (headerItemDragging && highlightedHeaderDividerX == -1) {
-							int distanceToLeftBorder = cursorPos.x - rects[i].left;
-							int distanceToRightBorder = rects[i].right - cursorPos.x;
-							if (distanceToLeftBorder >= 0 && distanceToRightBorder >= 0) {
-								// the cursor is in the current rectangle
-								highlightedHeaderDividerX = distanceToLeftBorder <= distanceToRightBorder ? rects[i].left-1 : rects[i].right;
-							}
-						}
-
-						int x = rects[i].left + INSET + 2;
-						if (columns[i].image != null) {
-							GCData data = new GCData();
-							data.device = display;
-							GC gc = createNewGC(nmcd.hdc, data);
-							int y = Math.max (0, (nmcd.bottom - columns[i].image.getBoundsInPixels().height) / 2);
-							int zoom = getZoom();
-							gc.drawImage (columns[i].image, DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(y, zoom));
-							x += columns[i].image.getBoundsInPixels().width + 12;
-							gc.dispose ();
-						}
-
-						if (columns[i].text != null) {
-							int flags = OS.DT_NOPREFIX | OS.DT_SINGLELINE | OS.DT_VCENTER;
-							if ((columns[i].style & SWT.CENTER) != 0) flags |= OS.DT_CENTER;
-							if ((columns[i].style & SWT.RIGHT) != 0) flags |= OS.DT_RIGHT;
-							char [] buffer = columns[i].text.toCharArray ();
-							OS.SetBkMode(nmcd.hdc, OS.TRANSPARENT);
-							OS.SetTextColor(nmcd.hdc, getHeaderForegroundPixel());
-							RECT textRect = new RECT();
-							textRect.left = x;
-							textRect.top = rects[i].top;
-							textRect.right = rects[i].right - (x - rects[i].left);
-							textRect.bottom = rects[i].bottom;
-							OS.DrawText (nmcd.hdc, buffer, buffer.length, textRect, flags);
-						}
-					}
-
-					if (lastColumnRight < nmcd.right) {
-						// draw background of the 'no column' area
-						RECT rect = new RECT();
-						lastColumnRight += _getLinesVisible() ? 1 : 0;
-						OS.SetRect(rect, lastColumnRight, nmcd.top, nmcd.right, nmcd.bottom-1);
-						long brush = OS.CreateSolidBrush(getHeaderBackgroundPixel());
-						OS.FillRect(nmcd.hdc, rect, brush);
-						OS.DeleteObject(brush);
-					}
-
-					// always draw the highlighted border at the end, to avoid overdrawing by other borders.
-					if (highlightedHeaderDividerX != -1) {
-						long pen = OS.CreatePen (OS.PS_SOLID, 4, OS.GetSysColor(OS.COLOR_HIGHLIGHT));
-						long oldPen = OS.SelectObject (nmcd.hdc, pen);
-						OS.Polyline(nmcd.hdc, new int[] {highlightedHeaderDividerX, nmcd.top, highlightedHeaderDividerX, nmcd.bottom}, 2);
-						OS.SelectObject (nmcd.hdc, oldPen);
-						OS.DeleteObject (pen);
-					}
-
-					return new LRESULT(OS.CDRF_DODEFAULT);
-				}
-			}
-			break;
-		}
-		case OS.NM_RELEASEDCAPTURE: {
-			if (!ignoreColumnMove) {
-				for (int i=0; i<columnCount; i++) {
-					TableColumn column = columns [i];
-					column.updateToolTip (i);
-				}
-			}
-			ignoreColumnMove = false;
-			break;
-		}
-		case OS.HDN_BEGINDRAG: {
-			if (ignoreColumnMove) return LRESULT.ONE;
-			int bits = (int)OS.SendMessage (handle, OS.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0);
-			if ((bits & OS.LVS_EX_HEADERDRAGDROP) != 0) {
-				if (columnCount == 0) return LRESULT.ONE;
-				NMHEADER phdn = new NMHEADER ();
-				OS.MoveMemory (phdn, lParam, NMHEADER.sizeof);
-				if (phdn.iItem != -1) {
-					TableColumn column = columns [phdn.iItem];
-					if (column != null && !column.getMoveable ()) {
-						ignoreColumnMove = true;
-						return LRESULT.ONE;
-					}
-				}
-				headerItemDragging = true;
-			}
-			break;
-		}
-		case OS.HDN_ENDDRAG: {
-			headerItemDragging = false;
-			int bits = (int)OS.SendMessage (handle, OS.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0);
-			if ((bits & OS.LVS_EX_HEADERDRAGDROP) == 0) break;
-			NMHEADER phdn = new NMHEADER ();
-			OS.MoveMemory (phdn, lParam, NMHEADER.sizeof);
-			if (phdn.iItem != -1 && phdn.pitem != 0) {
-				HDITEM pitem = new HDITEM ();
-				OS.MoveMemory (pitem, phdn.pitem, HDITEM.sizeof);
-				if ((pitem.mask & OS.HDI_ORDER) != 0 && pitem.iOrder != -1) {
-					if (columnCount == 0) break;
-					int [] order = new int [columnCount];
-					OS.SendMessage (handle, OS.LVM_GETCOLUMNORDERARRAY, columnCount, order);
-					int index = 0;
-					while (index < order.length) {
-						if (order [index] == phdn.iItem) break;
-						index++;
-					}
-					if (index == order.length) index = 0;
-					if (index == pitem.iOrder) break;
-					int start = Math.min (index, pitem.iOrder);
-					int end = Math.max (index, pitem.iOrder);
-					ignoreColumnMove = false;
-					for (int i=start; i<=end; i++) {
-						TableColumn column = columns [order [i]];
-						if (!column.isDisposed ()) {
-							column.postEvent (SWT.Move);
-						}
-					}
-				}
-			}
-			break;
-		}
-		case OS.HDN_ITEMCHANGED: {
-			/*
-			* Bug in Windows.  When a table has the LVS_EX_GRIDLINES extended
-			* style and the user drags any column over the first column in the
-			* table, making the size become zero, when the user drags a column
-			* such that the size of the first column becomes non-zero, the grid
-			* lines are not redrawn.  The fix is to detect the case and force
-			* a redraw of the first column.
-			*/
-			int width = (int)OS.SendMessage (handle, OS.LVM_GETCOLUMNWIDTH, 0, 0);
-			if (lastWidth == 0 && width > 0) {
-				if (_getLinesVisible()) {
-					RECT rect = new RECT ();
-					OS.GetClientRect (handle, rect);
-					rect.right = rect.left + width;
-					OS.InvalidateRect (handle, rect, true);
-				}
-			}
-			lastWidth = width;
-			if (!ignoreColumnResize) {
-				NMHEADER phdn = new NMHEADER ();
-				OS.MoveMemory (phdn, lParam, NMHEADER.sizeof);
-				if (phdn.pitem != 0) {
-					HDITEM pitem = new HDITEM ();
-					OS.MoveMemory (pitem, phdn.pitem, HDITEM.sizeof);
-					if ((pitem.mask & OS.HDI_WIDTH) != 0) {
-						TableColumn column = columns [phdn.iItem];
-						if (column != null) {
-							column.updateToolTip (phdn.iItem);
-							column.sendEvent (SWT.Resize);
-							if (isDisposed ()) return LRESULT.ZERO;
-							/*
-							* It is possible (but unlikely), that application
-							* code could have disposed the column in the move
-							* event.  If this happens, process the move event
-							* for those columns that have not been destroyed.
-							*/
-							TableColumn [] newColumns = new TableColumn [columnCount];
-							System.arraycopy (columns, 0, newColumns, 0, columnCount);
-							int [] order = new int [columnCount];
-							OS.SendMessage (handle, OS.LVM_GETCOLUMNORDERARRAY, columnCount, order);
-							boolean moved = false;
-							for (int i=0; i<columnCount; i++) {
-								TableColumn nextColumn = newColumns [order [i]];
-								if (moved && !nextColumn.isDisposed ()) {
-									nextColumn.updateToolTip (order [i]);
-									nextColumn.sendEvent (SWT.Move);
-								}
-								if (nextColumn == column) moved = true;
-							}
-						}
-					}
-				}
-			}
-			break;
-		}
-		case OS.HDN_ITEMDBLCLICK: {
-			NMHEADER phdn = new NMHEADER ();
-			OS.MoveMemory (phdn, lParam, NMHEADER.sizeof);
-			TableColumn column = columns [phdn.iItem];
-			if (column != null) {
-				column.sendSelectionEvent (SWT.DefaultSelection);
-			}
-			break;
-		}
-	}
-	return null;
-}
-
-LRESULT wmNotifyToolTip (NMHDR hdr, long wParam, long lParam) {
-	switch (hdr.code) {
-		case OS.NM_CUSTOMDRAW: {
-			if (toolTipText != null) break;
-			if (isCustomToolTip ()) {
-				NMTTCUSTOMDRAW nmcd = new NMTTCUSTOMDRAW ();
-				OS.MoveMemory (nmcd, lParam, NMTTCUSTOMDRAW.sizeof);
-				return wmNotifyToolTip (nmcd, lParam);
-			}
-			break;
-		}
-		case OS.TTN_GETDISPINFO:
-		case OS.TTN_SHOW: {
-			LRESULT result = super.wmNotify (hdr, wParam, lParam);
-			if (result != null) return result;
-			if (hdr.code != OS.TTN_SHOW) tipRequested = true;
-			long code = callWindowProc (handle, OS.WM_NOTIFY, wParam, lParam);
-			if (hdr.code != OS.TTN_SHOW) tipRequested = false;
-			if (toolTipText != null) break;
-			if (isCustomToolTip ()) {
-				LVHITTESTINFO pinfo = new LVHITTESTINFO ();
-				int pos = OS.GetMessagePos ();
-				POINT pt = new POINT();
-				OS.POINTSTOPOINT (pt, pos);
-				OS.ScreenToClient (handle, pt);
-				pinfo.x = pt.x;
-				pinfo.y = pt.y;
-				/*
-				*  Bug in Windows.  When LVM_SUBITEMHITTEST is used to hittest
-				*  a point that is above the table, instead of returning -1 to
-				*  indicate that the hittest failed, a negative index is returned.
-				*  The fix is to consider any value that is negative a failure.
-				*/
-				if (OS.SendMessage (handle, OS.LVM_SUBITEMHITTEST, 0, pinfo) >= 0) {
-					TableItem item = _getItem (pinfo.iItem);
-					long hDC = OS.GetDC (handle);
-					long oldFont = 0, newFont = OS.SendMessage (handle, OS.WM_GETFONT, 0, 0);
-					if (newFont != 0) oldFont = OS.SelectObject (hDC, newFont);
-					long hFont = item.fontHandle (pinfo.iSubItem);
-					if (hFont != -1) hFont = OS.SelectObject (hDC, hFont);
-					Event event = sendMeasureItemEvent (item, pinfo.iItem, pinfo.iSubItem, hDC);
-					if (!isDisposed () && !item.isDisposed ()) {
-						RECT itemRect = new RECT ();
-						Rectangle boundsInPixels = DPIUtil.scaleUp(event.getBounds(), getZoom());
-						OS.SetRect (itemRect, boundsInPixels.x, boundsInPixels.y, boundsInPixels.x + boundsInPixels.width, boundsInPixels.y + boundsInPixels.height);
-						if (hdr.code == OS.TTN_SHOW) {
-							RECT toolRect = toolTipRect (itemRect);
-							OS.MapWindowPoints (handle, 0, toolRect, 2);
-							long hwndToolTip = OS.SendMessage (handle, OS.LVM_GETTOOLTIPS, 0, 0);
-							int flags = OS.SWP_NOACTIVATE | OS.SWP_NOZORDER;
-							int width = toolRect.right - toolRect.left, height = toolRect.bottom - toolRect.top;
-							OS.SetWindowPos (hwndToolTip, 0, toolRect.left , toolRect.top, width, height, flags);
-						} else {
-							NMTTDISPINFO lpnmtdi = new NMTTDISPINFO ();
-							OS.MoveMemory (lpnmtdi, lParam, NMTTDISPINFO.sizeof);
-							if (lpnmtdi.lpszText != 0) {
-								OS.MoveMemory (lpnmtdi.lpszText, new char [1], 2);
-								OS.MoveMemory (lParam, lpnmtdi, NMTTDISPINFO.sizeof);
-							}
-							RECT cellRect = item.getBounds (pinfo.iItem, pinfo.iSubItem, true, true, true, true, hDC);
-							RECT clientRect = new RECT ();
-							OS.GetClientRect (handle, clientRect);
-							if (itemRect.right > cellRect.right || itemRect.right > clientRect.right) {
-								//TEMPORARY CODE
-								String string = " ";
-//								String string = null;
-//								if (pinfo.iSubItem == 0) {
-//									string = item.text;
-//								} else {
-//									String [] strings  = item.strings;
-//									if (strings != null) string = strings [pinfo.iSubItem];
+//				}
+//				break;
+//			}
+//		}
+//		return callWindowProc (hwnd, msg, wParam, lParam);
+//	}
+//	if (msg == Display.DI_GETDRAGIMAGE) {
+//		/*
+//		* Bug in Windows.  On Vista, for some reason, DI_GETDRAGIMAGE
+//		* returns an image that does not contain strings.
+//		*
+//		* Bug in Windows. For custom draw control the window origin the
+//		* in HDC is wrong.
+//		*
+//		* The fix for both cases is to create the image using PrintWindow().
+//		*/
+//		int topIndex = (int)OS.SendMessage (handle, OS.LVM_GETTOPINDEX, 0, 0);
+//		int selection = (int)OS.SendMessage (handle, OS.LVM_GETNEXTITEM, topIndex - 1, OS.LVNI_SELECTED);
+//		if (selection == -1) return 0;
+//		POINT mousePos = new POINT ();
+//		OS.POINTSTOPOINT (mousePos, OS.GetMessagePos ());
+//		OS.MapWindowPoints(0, handle, mousePos, 1);
+//		RECT clientRect = new RECT ();
+//		OS.GetClientRect (handle, clientRect);
+//		TableItem item = _getItem (selection);
+//		RECT rect = item.getBounds (selection, 0, true, true, true);
+//		if ((style & SWT.FULL_SELECTION) != 0) {
+//			int width = DRAG_IMAGE_SIZE;
+//			rect.left = Math.max (clientRect.left, mousePos.x - width / 2);
+//			if (clientRect.right > rect.left + width) {
+//				rect.right = rect.left + width;
+//			} else {
+//				rect.right = clientRect.right;
+//				rect.left = Math.max (clientRect.left, rect.right - width);
+//			}
+//		}
+//		long hRgn = OS.CreateRectRgn (rect.left, rect.top, rect.right, rect.bottom);
+//		while ((selection = (int)OS.SendMessage (handle, OS.LVM_GETNEXTITEM, selection, OS.LVNI_SELECTED)) != -1) {
+//			if (rect.bottom - rect.top > DRAG_IMAGE_SIZE) break;
+//			if (rect.bottom > clientRect.bottom) break;
+//			RECT itemRect = item.getBounds (selection, 0, true, true, true);
+//			long rectRgn = OS.CreateRectRgn (rect.left, itemRect.top, rect.right, itemRect.bottom);
+//			OS.CombineRgn (hRgn, hRgn, rectRgn, OS.RGN_OR);
+//			OS.DeleteObject (rectRgn);
+//			rect.bottom = itemRect.bottom;
+//		}
+//		OS.GetRgnBox (hRgn, rect);
+//
+//		/* Create resources */
+//		long hdc = OS.GetDC (handle);
+//		long memHdc = OS.CreateCompatibleDC (hdc);
+//		BITMAPINFOHEADER bmiHeader = new BITMAPINFOHEADER ();
+//		bmiHeader.biSize = BITMAPINFOHEADER.sizeof;
+//		bmiHeader.biWidth = rect.right - rect.left;
+//		bmiHeader.biHeight = -(rect.bottom - rect.top);
+//		bmiHeader.biPlanes = 1;
+//		bmiHeader.biBitCount = 32;
+//		bmiHeader.biCompression = OS.BI_RGB;
+//		byte []	bmi = new byte [BITMAPINFOHEADER.sizeof];
+//		OS.MoveMemory (bmi, bmiHeader, BITMAPINFOHEADER.sizeof);
+//		long [] pBits = new long [1];
+//		long memDib = OS.CreateDIBSection (0, bmi, OS.DIB_RGB_COLORS, pBits, 0, 0);
+//		if (memDib == 0) error (SWT.ERROR_NO_HANDLES);
+//		long oldMemBitmap = OS.SelectObject (memHdc, memDib);
+//		int colorKey = 0x0000FD;
+//		POINT pt = new POINT();
+//		OS.SetWindowOrgEx (memHdc, rect.left, rect.top, pt);
+//		OS.FillRect (memHdc, rect, findBrush (colorKey, OS.BS_SOLID));
+//		OS.OffsetRgn (hRgn, -rect.left, -rect.top);
+//		OS.SelectClipRgn (memHdc, hRgn);
+//		OS.PrintWindow (handle, memHdc, 0);
+//		OS.SetWindowOrgEx (memHdc, pt.x, pt.y, null);
+//		OS.SelectObject (memHdc, oldMemBitmap);
+//		OS.DeleteDC (memHdc);
+//		OS.ReleaseDC (0, hdc);
+//		OS.DeleteObject (hRgn);
+//
+//		SHDRAGIMAGE shdi = new SHDRAGIMAGE ();
+//		shdi.hbmpDragImage = memDib;
+//		shdi.crColorKey = colorKey;
+//		shdi.sizeDragImage.cx = bmiHeader.biWidth;
+//		shdi.sizeDragImage.cy = -bmiHeader.biHeight;
+//		shdi.ptOffset.x = mousePos.x - rect.left;
+//		shdi.ptOffset.y = mousePos.y - rect.top;
+//		if ((style & SWT.MIRRORED) != 0) {
+//			shdi.ptOffset.x = shdi.sizeDragImage.cx - shdi.ptOffset.x;
+//		}
+//		OS.MoveMemory (lParam, shdi, SHDRAGIMAGE.sizeof);
+//		return 1;
+//	}
+//	return super.windowProc (hwnd, msg, wParam, lParam);
+//}
+//
+//@Override
+//LRESULT WM_CHAR (long wParam, long lParam) {
+//	LRESULT result = super.WM_CHAR (wParam, lParam);
+//	if (result != null) return result;
+//	switch ((int)wParam) {
+//		case ' ':
+//			if ((style & SWT.CHECK) != 0) {
+//				int index = -1;
+//				while ((index = (int)OS.SendMessage (handle, OS.LVM_GETNEXTITEM, index, OS.LVNI_SELECTED)) != -1) {
+//					TableItem item = _getItem (index);
+//					item.setChecked (!item.getChecked (), true);
+//					OS.NotifyWinEvent (OS.EVENT_OBJECT_FOCUS, handle, OS.OBJID_CLIENT, index + 1);
+//				}
+//			}
+//			/*
+//			* NOTE: Call the window proc with WM_KEYDOWN rather than WM_CHAR
+//			* so that the key that was ignored during WM_KEYDOWN is processed.
+//			* This allows the application to cancel an operation that is normally
+//			* performed in WM_KEYDOWN from WM_CHAR.
+//			*/
+//			long code = callWindowProc (handle, OS.WM_KEYDOWN, wParam, lParam);
+//			return new LRESULT (code);
+//		case SWT.CR:
+//			/*
+//			* Feature in Windows.  Windows sends LVN_ITEMACTIVATE from WM_KEYDOWN
+//			* instead of WM_CHAR.  This means that application code that expects
+//			* to consume the key press and therefore avoid a SWT.DefaultSelection
+//			* event will fail.  The fix is to ignore LVN_ITEMACTIVATE when it is
+//			* caused by WM_KEYDOWN and send SWT.DefaultSelection from WM_CHAR.
+//			*/
+//			int index = (int)OS.SendMessage (handle, OS.LVM_GETNEXTITEM, -1, OS.LVNI_FOCUSED);
+//			if (index != -1) {
+//				Event event = new Event ();
+//				event.item = _getItem (index);
+//				sendSelectionEvent (SWT.DefaultSelection, event, false);
+//			}
+//			return LRESULT.ZERO;
+//	}
+//	return result;
+//}
+//
+//@Override
+//LRESULT WM_CONTEXTMENU (long wParam, long lParam) {
+//	/*
+//	* Feature in Windows.  For some reason, when the right
+//	* mouse button is pressed over an item, Windows sends
+//	* a WM_CONTEXTMENU from WM_RBUTTONDOWN, instead of from
+//	* WM_RBUTTONUP.  This causes two context menus requests
+//	* to be sent.  The fix is to ignore WM_CONTEXTMENU on
+//	* mouse down.
+//	*
+//	* NOTE: This only happens when dragging is disabled.
+//	* When the table is detecting drag, the WM_CONTEXTMENU
+//	* is not sent WM_RBUTTONUP.
+//	*/
+//	if (!display.runDragDrop) return LRESULT.ZERO;
+//	return super.WM_CONTEXTMENU (wParam, lParam);
+//}
+//
+//@Override
+//LRESULT WM_ERASEBKGND (long wParam, long lParam) {
+//	LRESULT result = super.WM_ERASEBKGND (wParam, lParam);
+//	if (findImageControl () != null) return LRESULT.ONE;
+//	return result;
+//}
+//
+//@Override
+//LRESULT WM_GETOBJECT (long wParam, long lParam) {
+//	/*
+//	* Ensure that there is an accessible object created for this
+//	* control because support for checked item accessibility is
+//	* temporarily implemented in the accessibility package.
+//	*/
+//	if ((style & SWT.CHECK) != 0) {
+//		if (accessible == null) accessible = new_Accessible (this);
+//	}
+//	return super.WM_GETOBJECT (wParam, lParam);
+//}
+//
+//@Override
+//LRESULT WM_KEYDOWN (long wParam, long lParam) {
+//	LRESULT result = super.WM_KEYDOWN (wParam, lParam);
+//	if (result != null) return result;
+//	switch ((int)wParam) {
+//		case OS.VK_SPACE:
+//			/*
+//			* Ensure that the window proc does not process VK_SPACE
+//			* so that it can be handled in WM_CHAR.  This allows the
+//			* application to cancel an operation that is normally
+//			* performed in WM_KEYDOWN from WM_CHAR.
+//			*/
+//			return LRESULT.ZERO;
+//		case OS.VK_ADD:
+//			if (OS.GetKeyState (OS.VK_CONTROL) < 0) {
+//				int index = 0;
+//				while (index < columnCount) {
+//					if (!columns [index].getResizable ()) break;
+//					index++;
+//				}
+//				if (index != columnCount || hooks (SWT.MeasureItem)) {
+//					TableColumn [] newColumns = new TableColumn [columnCount];
+//					System.arraycopy (columns, 0, newColumns, 0, columnCount);
+//					for (TableColumn column : newColumns) {
+//						if (!column.isDisposed () && column.getResizable ()) {
+//							column.pack ();
+//						}
+//					}
+//					return LRESULT.ZERO;
+//				}
+//			}
+//			break;
+//		case OS.VK_PRIOR:
+//		case OS.VK_NEXT:
+//		case OS.VK_HOME:
+//		case OS.VK_END:
+//			/*
+//			* When there are many columns in a table, scrolling performance
+//			* can be improved by temporarily unsubclassing the window proc
+//			* so that internal messages are dispatched directly to the table.
+//			* If the application expects to see a paint event, the window
+//			* proc cannot be unsubclassed or the event will not be seen.
+//			*
+//			* NOTE: The header tooltip can subclass the header proc so the
+//			* current proc must be restored or header tooltips stop working.
+//			*/
+//			long oldHeaderProc = 0, oldTableProc = 0;
+//			long hwndHeader = OS.SendMessage (handle, OS.LVM_GETHEADER, 0, 0);
+//			boolean fixSubclass = isOptimizedRedraw ();
+//			if (fixSubclass) {
+//				oldTableProc = OS.SetWindowLongPtr (handle, OS.GWLP_WNDPROC, TableProc);
+//				oldHeaderProc = OS.SetWindowLongPtr (hwndHeader, OS.GWLP_WNDPROC, HeaderProc);
+//			}
+//			long code = callWindowProc (handle, OS.WM_KEYDOWN, wParam, lParam);
+//			result = code == 0 ? LRESULT.ZERO : new LRESULT (code);
+//			if (fixSubclass) {
+//				OS.SetWindowLongPtr (handle, OS.GWLP_WNDPROC, oldTableProc);
+//				OS.SetWindowLongPtr (hwndHeader, OS.GWLP_WNDPROC, oldHeaderProc);
+//			}
+//			//FALL THROUGH
+//		case OS.VK_UP:
+//		case OS.VK_DOWN:
+//			OS.SendMessage (handle, OS.WM_CHANGEUISTATE, OS.UIS_INITIALIZE, 0);
+//			break;
+//	}
+//	return result;
+//}
+//
+//@Override
+//LRESULT WM_KILLFOCUS (long wParam, long lParam) {
+//	LRESULT result = super.WM_KILLFOCUS (wParam, lParam);
+//	/*
+//	* Bug in Windows.  When focus is lost, Windows does not
+//	* redraw the selection properly, leaving the image and
+//	* check box appearing selected.  The fix is to redraw
+//	* the table.
+//	*/
+//	if (imageList != null || (style & SWT.CHECK) != 0) {
+//		OS.InvalidateRect (handle, null, false);
+//	}
+//	return result;
+//}
+//
+//@Override
+//LRESULT WM_LBUTTONDBLCLK (long wParam, long lParam) {
+//
+//	/*
+//	* Feature in Windows.  When the user selects outside of
+//	* a table item, Windows deselects all the items, even
+//	* when the table is multi-select.  While not strictly
+//	* wrong, this is unexpected.  The fix is to detect the
+//	* case and avoid calling the window proc.
+//	*/
+//	LVHITTESTINFO pinfo = new LVHITTESTINFO ();
+//	pinfo.x = OS.GET_X_LPARAM (lParam);
+//	pinfo.y = OS.GET_Y_LPARAM (lParam);
+//	int index = (int)OS.SendMessage (handle, OS.LVM_HITTEST, 0, pinfo);
+//	Display display = this.display;
+//	display.captureChanged = false;
+//	sendMouseEvent (SWT.MouseDown, 1, handle, lParam);
+//	if (!sendMouseEvent (SWT.MouseDoubleClick, 1, handle, lParam)) {
+//		if (!display.captureChanged && !isDisposed ()) {
+//			if (OS.GetCapture () != handle) OS.SetCapture (handle);
+//		}
+//		return LRESULT.ZERO;
+//	}
+//	if (pinfo.iItem != -1) callWindowProc (handle, OS.WM_LBUTTONDBLCLK, wParam, lParam);
+//	if (!display.captureChanged && !isDisposed ()) {
+//		if (OS.GetCapture () != handle) OS.SetCapture (handle);
+//	}
+//
+//	/* Look for check/uncheck */
+//	if ((style & SWT.CHECK) != 0) {
+//		/*
+//		* Note that when the table has LVS_EX_FULLROWSELECT and the
+//		* user clicks anywhere on a row except on the check box, all
+//		* of the bits are set.  The hit test flags are LVHT_ONITEM.
+//		* This means that a bit test for LVHT_ONITEMSTATEICON is not
+//		* the correct way to determine that the user has selected
+//		* the check box, equality is needed.
+//		*/
+//		if (index != -1 && pinfo.flags == OS.LVHT_ONITEMSTATEICON) {
+//			TableItem item = _getItem (index);
+//			if (item != null && !item.isDisposed ()) {
+//				item.setChecked (!item.getChecked (), true);
+//				OS.NotifyWinEvent (OS.EVENT_OBJECT_FOCUS, handle, OS.OBJID_CLIENT, index + 1);
+//			}
+//		}
+//	}
+//	return LRESULT.ZERO;
+//}
+//
+//@Override
+//LRESULT WM_LBUTTONDOWN (long wParam, long lParam) {
+//	/*
+//	* Feature in Windows.  For some reason, capturing
+//	* the mouse after processing the mouse event for the
+//	* widget interferes with the normal mouse processing
+//	* for the widget.  The fix is to avoid the automatic
+//	* mouse capture.
+//	*/
+//	LRESULT result = sendMouseDownEvent (SWT.MouseDown, 1, OS.WM_LBUTTONDOWN, wParam, lParam);
+//	if (result == LRESULT.ZERO) return result;
+//
+//	/* Look for check/uncheck */
+//	if ((style & SWT.CHECK) != 0) {
+//		LVHITTESTINFO pinfo = new LVHITTESTINFO ();
+//		pinfo.x = OS.GET_X_LPARAM (lParam);
+//		pinfo.y = OS.GET_Y_LPARAM (lParam);
+//		/*
+//		* Note that when the table has LVS_EX_FULLROWSELECT and the
+//		* user clicks anywhere on a row except on the check box, all
+//		* of the bits are set.  The hit test flags are LVHT_ONITEM.
+//		* This means that a bit test for LVHT_ONITEMSTATEICON is not
+//		* the correct way to determine that the user has selected
+//		* the check box, equality is needed.
+//		*/
+//		int index = (int)OS.SendMessage (handle, OS.LVM_HITTEST, 0, pinfo);
+//		if (index != -1 && pinfo.flags == OS.LVHT_ONITEMSTATEICON) {
+//			TableItem item = _getItem (index);
+//			if (item != null && !item.isDisposed ()) {
+//				item.setChecked (!item.getChecked (), true);
+//				OS.NotifyWinEvent (OS.EVENT_OBJECT_FOCUS, handle, OS.OBJID_CLIENT, index + 1);
+//			}
+//		}
+//	}
+//	return result;
+//}
+//
+//@Override
+//LRESULT WM_MOUSEHOVER (long wParam, long lParam) {
+//	/*
+//	* Feature in Windows.  Despite the fact that hot
+//	* tracking is not enabled, the hot tracking code
+//	* in WM_MOUSEHOVER is executed causing the item
+//	* under the cursor to be selected.  The fix is to
+//	* avoid calling the window proc.
+//	*/
+//	LRESULT result = super.WM_MOUSEHOVER (wParam, lParam);
+//	int bits = (int)OS.SendMessage (handle, OS.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0);
+//	int mask = OS.LVS_EX_ONECLICKACTIVATE | OS.LVS_EX_TRACKSELECT | OS.LVS_EX_TWOCLICKACTIVATE;
+//	if ((bits & mask) != 0) return result;
+//	return LRESULT.ZERO;
+//}
+//
+//@Override
+//LRESULT WM_PAINT (long wParam, long lParam) {
+//	if ((state & DISPOSE_SENT) != 0) return LRESULT.ZERO;
+//
+//	_checkShrink();
+//	if (fixScrollWidth) setScrollWidth (null, true);
+//	return super.WM_PAINT (wParam, lParam);
+//}
+//
+//@Override
+//LRESULT WM_RBUTTONDBLCLK (long wParam, long lParam) {
+//	/*
+//	* Feature in Windows.  When the user selects outside of
+//	* a table item, Windows deselects all the items, even
+//	* when the table is multi-select.  While not strictly
+//	* wrong, this is unexpected.  The fix is to detect the
+//	* case and avoid calling the window proc.
+//	*/
+//	LVHITTESTINFO pinfo = new LVHITTESTINFO ();
+//	pinfo.x = OS.GET_X_LPARAM (lParam);
+//	pinfo.y = OS.GET_Y_LPARAM (lParam);
+//	OS.SendMessage (handle, OS.LVM_HITTEST, 0, pinfo);
+//	Display display = this.display;
+//	display.captureChanged = false;
+//	sendMouseEvent (SWT.MouseDown, 3, handle, lParam);
+//	if (sendMouseEvent (SWT.MouseDoubleClick, 3, handle, lParam)) {
+//		if (pinfo.iItem != -1) callWindowProc (handle, OS.WM_RBUTTONDBLCLK, wParam, lParam);
+//	}
+//	if (!display.captureChanged && !isDisposed ()) {
+//		if (OS.GetCapture () != handle) OS.SetCapture (handle);
+//	}
+//	return LRESULT.ZERO;
+//}
+//
+//@Override
+//LRESULT WM_RBUTTONDOWN (long wParam, long lParam) {
+//	/*
+//	* Feature in Windows.  For some reason, capturing
+//	* the mouse after processing the mouse event for the
+//	* widget interferes with the normal mouse processing
+//	* for the widget.  The fix is to avoid the automatic
+//	* mouse capture.
+//	*/
+//	return sendMouseDownEvent (SWT.MouseDown, 3, OS.WM_RBUTTONDOWN, wParam, lParam);
+//}
+//
+//@Override
+//LRESULT WM_SETFOCUS (long wParam, long lParam) {
+//	LRESULT result = super.WM_SETFOCUS (wParam, lParam);
+//	/*
+//	* Bug in Windows.  When focus is gained after the
+//	* selection has been changed using LVM_SETITEMSTATE,
+//	* Windows redraws the selected text but does not
+//	* redraw the image or the check box, leaving them
+//	* appearing unselected.  The fix is to redraw
+//	* the table.
+//	*/
+//	if (imageList != null || (style & SWT.CHECK) != 0) {
+//		OS.InvalidateRect (handle, null, false);
+//	}
+//
+//	/*
+//	* Bug in Windows.  For some reason, the table does
+//	* not set the default focus rectangle to be the first
+//	* item in the table when it gets focus and there is
+//	* no selected item.  The fix to make the first item
+//	* be the focus item.
+//	*/
+//	int count = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
+//	if (count == 0) return result;
+//	int index = (int)OS.SendMessage (handle, OS.LVM_GETNEXTITEM, -1, OS.LVNI_FOCUSED);
+//	if (index == -1) {
+//		LVITEM lvItem = new LVITEM ();
+//		lvItem.state = OS.LVIS_FOCUSED;
+//		lvItem.stateMask = OS.LVIS_FOCUSED;
+//		ignoreSelect = true;
+//		OS.SendMessage (handle, OS.LVM_SETITEMSTATE, 0, lvItem);
+//		ignoreSelect = false;
+//	}
+//	return result;
+//}
+//
+//@Override
+//LRESULT WM_SETFONT (long wParam, long lParam) {
+//	LRESULT result = super.WM_SETFONT (wParam, lParam);
+//	if (result != null) return result;
+//
+//	/*
+//	* Bug in Windows.  When a header has a sort indicator
+//	* triangle, Windows resizes the indicator based on the
+//	* size of the n-1th font.  The fix is to always make
+//	* the n-1th font be the default.  This makes the sort
+//	* indicator always be the default size.
+//	*
+//	* NOTE: The table window proc sets the actual font in
+//	* the header so that all that is necessary here is to
+//	* set the default first.
+//	*/
+//	OS.SendMessage (hwndHeader, OS.WM_SETFONT, 0, lParam);
+//
+//	if (headerToolTipHandle != 0) {
+//		OS.SendMessage (headerToolTipHandle, OS.WM_SETFONT, wParam, lParam);
+//	}
+//	return result;
+//}
+//
+//@Override
+//LRESULT WM_SETREDRAW (long wParam, long lParam) {
+//	LRESULT result = super.WM_SETREDRAW (wParam, lParam);
+//	if (result != null) return result;
+//	/*
+//	* Feature in Windows.  When LVM_SETBKCOLOR is used with CLR_NONE
+//	* to make the background of the table transparent, drawing becomes
+//	* slow.  The fix is to temporarily clear CLR_NONE when redraw is
+//	* turned off.
+//	*/
+//	if (wParam == 1) {
+//		if ((int)OS.SendMessage (handle, OS.LVM_GETBKCOLOR, 0, 0) != OS.CLR_NONE) {
+//			if (hooks (SWT.MeasureItem) || hooks (SWT.EraseItem) || hooks (SWT.PaintItem)) {
+//				OS.SendMessage (handle, OS.LVM_SETBKCOLOR, 0, OS.CLR_NONE);
+//			}
+//		}
+//	}
+//	/*
+//	* Bug in Windows.  When WM_SETREDRAW is used to turn off
+//	* redraw for a list, table or tree, the background of the
+//	* control is drawn.  The fix is to call DefWindowProc(),
+//	* which stops all graphics output to the control.
+//	*/
+//	OS.DefWindowProc (handle, OS.WM_SETREDRAW, wParam, lParam);
+//	long code = callWindowProc (handle, OS.WM_SETREDRAW, wParam, lParam);
+//	if (wParam == 0) {
+//		if ((int)OS.SendMessage (handle, OS.LVM_GETBKCOLOR, 0, 0) == OS.CLR_NONE) {
+//			OS.SendMessage (handle, OS.LVM_SETBKCOLOR, 0, 0xFFFFFF);
+//		}
+//	}
+//	return code == 0 ? LRESULT.ZERO : new LRESULT (code);
+//}
+//
+//@Override
+//LRESULT WM_SIZE (long wParam, long lParam) {
+//	if (ignoreResize) return null;
+//	if (hooks (SWT.EraseItem) || hooks (SWT.PaintItem)) {
+//		OS.InvalidateRect (handle, null, true);
+//	}
+//	if (resizeCount != 0) {
+//		wasResized = true;
+//		return null;
+//	}
+//	return super.WM_SIZE (wParam, lParam);
+//}
+//
+//@Override
+//LRESULT WM_SYSCOLORCHANGE (long wParam, long lParam) {
+//	LRESULT result = super.WM_SYSCOLORCHANGE (wParam, lParam);
+//	if (result != null) return result;
+//	if (findBackgroundControl () == null) {
+//		setBackgroundPixel (defaultBackground ());
+//	} else {
+//		int oldPixel = (int)OS.SendMessage (handle, OS.LVM_GETBKCOLOR, 0, 0);
+//		if (oldPixel != OS.CLR_NONE) {
+//			if (findImageControl () == null) {
+//				if ((style & SWT.CHECK) != 0) fixCheckboxImageListColor (true);
+//			}
+//		}
+//	}
+//	return result;
+//}
+//
+//@Override
+//LRESULT WM_HSCROLL (long wParam, long lParam) {
+//	/*
+//	* Bug in Windows.  When a table that is drawing grid lines
+//	* is slowly scrolled horizontally to the left, the table does
+//	* not redraw the newly exposed vertical grid lines.  The fix
+//	* is to save the old scroll position, call the window proc,
+//	* get the new scroll position and redraw the new area.
+//	*/
+//	int oldPos = 0;
+//	if (_getLinesVisible()) {
+//		SCROLLINFO info = new SCROLLINFO ();
+//		info.cbSize = SCROLLINFO.sizeof;
+//		info.fMask = OS.SIF_POS;
+//		OS.GetScrollInfo (handle, OS.SB_HORZ, info);
+//		oldPos = info.nPos;
+//	}
+//
+//	/*
+//	* Feature in Windows.  When there are many columns in a table,
+//	* scrolling performance can be improved by unsubclassing the
+//	* window proc so that internal messages are dispatched directly
+//	* to the table.  If the application expects to see a paint event
+//	* or has a child whose font, foreground or background color might
+//	* be needed, the window proc cannot be unsubclassed
+//	*
+//	* NOTE: The header tooltip can subclass the header proc so the
+//	* current proc must be restored or header tooltips stop working.
+//	*/
+//	long oldHeaderProc = 0, oldTableProc = 0;
+//	long hwndHeader = OS.SendMessage (handle, OS.LVM_GETHEADER, 0, 0);
+//	boolean fixSubclass = isOptimizedRedraw ();
+//	if (fixSubclass) {
+//		oldTableProc = OS.SetWindowLongPtr (handle, OS.GWLP_WNDPROC, TableProc);
+//		oldHeaderProc = OS.SetWindowLongPtr (hwndHeader, OS.GWLP_WNDPROC, HeaderProc);
+//	}
+//
+//	/*
+//	* Feature in Windows.  For some reason, when the table window
+//	* proc processes WM_HSCROLL or WM_VSCROLL when there are many
+//	* columns in the table, scrolling is slow and the table does
+//	* not keep up with the position of the scroll bar.  The fix
+//	* is to turn off redraw, scroll, turn redraw back on and redraw
+//	* the entire table.  Strangly, redrawing the entire table is
+//	* faster.
+//	*/
+//	boolean fixScroll = false;
+//	if (OS.LOWORD (wParam) != OS.SB_ENDSCROLL) {
+//		if (columnCount > H_SCROLL_LIMIT) {
+//			int rowCount = (int)OS.SendMessage (handle, OS.LVM_GETCOUNTPERPAGE, 0, 0);
+//			if (rowCount > V_SCROLL_LIMIT) fixScroll = getDrawing () && OS.IsWindowVisible (handle);
+//		}
+//	}
+//	if (fixScroll) OS.DefWindowProc (handle, OS.WM_SETREDRAW, 0, 0);
+//	LRESULT result = super.WM_HSCROLL (wParam, lParam);
+//	if (fixScroll) {
+//		OS.DefWindowProc (handle, OS.WM_SETREDRAW, 1, 0);
+//		int flags = OS.RDW_ERASE | OS.RDW_FRAME | OS.RDW_INVALIDATE | OS.RDW_ALLCHILDREN;
+//		OS.RedrawWindow (handle, null, 0, flags);
+//		/*
+//		* Feature in Windows.  On Vista only, it is faster to
+//		* compute and answer the data for the visible columns
+//		* of a table when scrolling, rather than just return
+//		* the data for each column when asked.
+//		*/
+//		RECT headerRect = new RECT (), rect = new RECT ();
+//		OS.GetClientRect (handle, rect);
+//		boolean [] visible = new boolean [columnCount];
+//		for (int i=0; i<columnCount; i++) {
+//			visible [i] = true;
+//			headerRect.top = i;
+//			headerRect.left = OS.LVIR_BOUNDS;
+//			if (OS.SendMessage (handle, OS.LVM_GETSUBITEMRECT, 0, headerRect) != 0) {
+//				headerRect.top = rect.top;
+//				headerRect.bottom = rect.bottom;
+//				visible [i] = OS.IntersectRect(headerRect, rect, headerRect);
+//			}
+//		}
+//		try {
+//			columnVisible = visible;
+//			OS.UpdateWindow (handle);
+//		} finally {
+//			columnVisible = null;
+//		}
+//	}
+//
+//	if (fixSubclass) {
+//		OS.SetWindowLongPtr (handle, OS.GWLP_WNDPROC, oldTableProc);
+//		OS.SetWindowLongPtr (hwndHeader, OS.GWLP_WNDPROC, oldHeaderProc);
+//	}
+//
+//	/*
+//	* Bug in Windows.  When a table that is drawing grid lines
+//	* is slowly scrolled horizontally to the left, the table does
+//	* not redraw the newly exposed vertical grid lines.  The fix
+//	* is to save the old scroll position, call the window proc,
+//	* get the new scroll position and redraw the new area.
+//	*/
+//	if (_getLinesVisible()) {
+//		SCROLLINFO info = new SCROLLINFO ();
+//		info.cbSize = SCROLLINFO.sizeof;
+//		info.fMask = OS.SIF_POS;
+//		OS.GetScrollInfo (handle, OS.SB_HORZ, info);
+//		int newPos = info.nPos;
+//		if (newPos < oldPos) {
+//			RECT rect = new RECT ();
+//			OS.GetClientRect (handle, rect);
+//			rect.right = oldPos - newPos + GRID_WIDTH;
+//			OS.InvalidateRect (handle, rect, true);
+//		}
+//	}
+//	return result;
+//}
+//
+//@Override
+//LRESULT WM_VSCROLL (long wParam, long lParam) {
+//	/*
+//	* When there are many columns in a table, scrolling performance
+//	* can be improved by temporarily unsubclassing the window proc
+//	* so that internal messages are dispatched directly to the table.
+//	* If the application expects to see a paint event or has a child
+//	* whose font, foreground or background color might be needed,
+//	* the window proc cannot be unsubclassed.
+//	*
+//	* NOTE: The header tooltip can subclass the header proc so the
+//	* current proc must be restored or header tooltips stop working.
+//	*/
+//	long oldHeaderProc = 0, oldTableProc = 0;
+//	long hwndHeader = OS.SendMessage (handle, OS.LVM_GETHEADER, 0, 0);
+//	boolean fixSubclass = isOptimizedRedraw ();
+//	if (fixSubclass) {
+//		oldTableProc = OS.SetWindowLongPtr (handle, OS.GWLP_WNDPROC, TableProc);
+//		oldHeaderProc = OS.SetWindowLongPtr (hwndHeader, OS.GWLP_WNDPROC, HeaderProc);
+//	}
+//
+//	/*
+//	* Feature in Windows.  For some reason, when the table window
+//	* proc processes WM_HSCROLL or WM_VSCROLL when there are many
+//	* columns in the table, scrolling is slow and the table does
+//	* not keep up with the position of the scroll bar.  The fix
+//	* is to turn off redraw, scroll, turn redraw back on and redraw
+//	* the entire table.  Strangly, redrawing the entire table is
+//	* faster.
+//	*/
+//	boolean fixScroll = false;
+//	if (OS.LOWORD (wParam) != OS.SB_ENDSCROLL) {
+//		if (columnCount > H_SCROLL_LIMIT) {
+//			int rowCount = (int)OS.SendMessage (handle, OS.LVM_GETCOUNTPERPAGE, 0, 0);
+//			if (rowCount > V_SCROLL_LIMIT) fixScroll = getDrawing () && OS.IsWindowVisible (handle);
+//		}
+//	}
+//	if (fixScroll) OS.DefWindowProc (handle, OS.WM_SETREDRAW, 0, 0);
+//	LRESULT result = super.WM_VSCROLL (wParam, lParam);
+//	if (fixScroll) {
+//		OS.DefWindowProc (handle, OS.WM_SETREDRAW, 1, 0);
+//		int flags = OS.RDW_ERASE | OS.RDW_FRAME | OS.RDW_INVALIDATE | OS.RDW_ALLCHILDREN;
+//		OS.RedrawWindow (handle, null, 0, flags);
+//		/*
+//		* Feature in Windows.  On Vista only, it is faster to
+//		* compute and answer the data for the visible columns
+//		* of a table when scrolling, rather than just return
+//		* the data for each column when asked.
+//		*/
+//		RECT headerRect = new RECT (), rect = new RECT ();
+//		OS.GetClientRect (handle, rect);
+//		boolean [] visible = new boolean [columnCount];
+//		for (int i=0; i<columnCount; i++) {
+//			visible [i] = true;
+//			headerRect.top = i;
+//			headerRect.left = OS.LVIR_BOUNDS;
+//			if (OS.SendMessage (handle, OS.LVM_GETSUBITEMRECT, 0, headerRect) != 0) {
+//				headerRect.top = rect.top;
+//				headerRect.bottom = rect.bottom;
+//				visible [i] = OS.IntersectRect(headerRect, rect, headerRect);
+//			}
+//		}
+//		try {
+//			columnVisible = visible;
+//			OS.UpdateWindow (handle);
+//		} finally {
+//			columnVisible = null;
+//		}
+//	}
+//
+//	if (fixSubclass) {
+//		OS.SetWindowLongPtr (handle, OS.GWLP_WNDPROC, oldTableProc);
+//		OS.SetWindowLongPtr (hwndHeader, OS.GWLP_WNDPROC, oldHeaderProc);
+//	}
+//
+//	/*
+//	* Bug in Windows.  When a table is drawing grid lines and the
+//	* user scrolls vertically up or down by a line or a page, the
+//	* table does not redraw the grid lines for newly exposed items.
+//	* The fix is to invalidate the items.
+//	*/
+//	if (_getLinesVisible()) {
+//		int code = OS.LOWORD (wParam);
+//		switch (code) {
+//			case OS.SB_ENDSCROLL:
+//			case OS.SB_THUMBPOSITION:
+//			case OS.SB_THUMBTRACK:
+//			case OS.SB_TOP:
+//			case OS.SB_BOTTOM:
+//				break;
+//			case OS.SB_LINEDOWN:
+//			case OS.SB_LINEUP:
+//				RECT rect = new RECT ();
+//				OS.GetWindowRect (hwndHeader, rect);
+//				int headerHeight = rect.bottom - rect.top;
+//				RECT clientRect = new RECT ();
+//				OS.GetClientRect (handle, clientRect);
+//				clientRect.top += headerHeight;
+//				long empty = OS.SendMessage (handle, OS.LVM_APPROXIMATEVIEWRECT, 0, 0);
+//				long oneItem = OS.SendMessage (handle, OS.LVM_APPROXIMATEVIEWRECT, 1, 0);
+//				int itemHeight = OS.HIWORD (oneItem) - OS.HIWORD (empty);
+//				if (code == OS.SB_LINEDOWN) {
+//					clientRect.top = clientRect.bottom - itemHeight - GRID_WIDTH;
+//				} else {
+//					clientRect.bottom = clientRect.top + itemHeight + GRID_WIDTH;
+//				}
+//				OS.InvalidateRect (handle, clientRect, true);
+//				break;
+//			case OS.SB_PAGEDOWN:
+//			case OS.SB_PAGEUP:
+//				OS.InvalidateRect (handle, null, true);
+//				break;
+//		}
+//	}
+//	return result;
+//}
+//
+//@Override
+//LRESULT wmMeasureChild (long wParam, long lParam) {
+//	MEASUREITEMSTRUCT struct = new MEASUREITEMSTRUCT ();
+//	OS.MoveMemory (struct, lParam, MEASUREITEMSTRUCT.sizeof);
+//	if (itemHeight == -1) {
+//		long empty = OS.SendMessage (handle, OS.LVM_APPROXIMATEVIEWRECT, 0, 0);
+//		long oneItem = OS.SendMessage (handle, OS.LVM_APPROXIMATEVIEWRECT, 1, 0);
+//		struct.itemHeight = OS.HIWORD (oneItem) - OS.HIWORD (empty);
+//	} else {
+//		struct.itemHeight = itemHeight;
+//	}
+//	OS.MoveMemory (lParam, struct, MEASUREITEMSTRUCT.sizeof);
+//	return null;
+//}
+//
+//@Override
+//LRESULT wmNotify (NMHDR hdr, long wParam, long lParam) {
+//	long hwndToolTip = OS.SendMessage (handle, OS.LVM_GETTOOLTIPS, 0, 0);
+//	if (hdr.hwndFrom == hwndToolTip) {
+//		if (hdr.hwndFrom != itemToolTipHandle) {
+//			maybeEnableDarkSystemTheme(hdr.hwndFrom);
+//			itemToolTipHandle = hdr.hwndFrom;
+//		}
+//		LRESULT result = wmNotifyToolTip (hdr, wParam, lParam);
+//		if (result != null) return result;
+//	}
+//	if (hdr.hwndFrom == hwndHeader) {
+//		LRESULT result = wmNotifyHeader (hdr, wParam, lParam);
+//		if (result != null) return result;
+//	}
+//	return super.wmNotify (hdr, wParam, lParam);
+//}
+//
+//@Override
+//LRESULT wmNotifyChild (NMHDR hdr, long wParam, long lParam) {
+//	switch (hdr.code) {
+//		case OS.LVN_ODFINDITEM: {
+//			if ((style & SWT.VIRTUAL) != 0) return new LRESULT (-1);
+//			break;
+//		}
+//		case OS.LVN_ODSTATECHANGED: {
+//			if ((style & SWT.VIRTUAL) != 0) {
+//				if (!ignoreSelect) {
+//					NMLVODSTATECHANGE lpStateChange  = new NMLVODSTATECHANGE ();
+//					OS.MoveMemory (lpStateChange, lParam, NMLVODSTATECHANGE.sizeof);
+//					boolean oldSelected = (lpStateChange.uOldState & OS.LVIS_SELECTED) != 0;
+//					boolean newSelected = (lpStateChange.uNewState & OS.LVIS_SELECTED) != 0;
+//					if (oldSelected != newSelected) wasSelected = true;
+//				}
+//			}
+//			break;
+//		}
+//		case OS.LVN_GETDISPINFO: {
+////			if (drawCount != 0 || !OS.IsWindowVisible (handle)) break;
+//			NMLVDISPINFO plvfi = new NMLVDISPINFO ();
+//			OS.MoveMemory (plvfi, lParam, NMLVDISPINFO.sizeof);
+//
+//			if (columnVisible != null && !columnVisible [plvfi.iSubItem]) {
+//				break;
+//			}
+//
+//			/*
+//			* Feature in Windows.  When a new table item is inserted
+//			* using LVM_INSERTITEM in a table that is transparent
+//			* (ie. LVM_SETBKCOLOR has been called with CLR_NONE),
+//			* TVM_INSERTITEM calls LVN_GETDISPINFO before the item
+//			* has been added to the array.  The fix is to check for
+//			* null.
+//			*
+//			* NOTE: Force the item to be created if it does not exist.
+//			*/
+//			TableItem item = _getItem (plvfi.iItem);
+//			if (item == null) break;
+//
+//			/*
+//			* Feature in Windows. On Vista, the list view expects the item array
+//			* to be up to date when a LVM_DELETEITEM message is being processed.
+//			*
+//			* Also, when the table is virtual, do not allow the application to
+//			* provide data for a new item that becomes visible until the item has
+//			* been removed from the items array.  Because arbitrary application
+//			* code can run during the callback, the items array might be accessed
+//			* in an inconsistent state.
+//			*
+//			* On both cases, Rather than answering the data right away, queue a
+//			* redraw for later.
+//			*/
+//			if (ignoreShrink) {
+//				/*
+//				* Feature in Windows Vista and newer. Using LVM_REDRAWITEMS causes LVN_GETDISPINFO
+//				* to be sent before the method returns. For this reason, LVM_REDRAWITEMS
+//				* can never be used from a LVN_GETDISPINFO handler. The fix is to
+//				* InvalidateRect() passing the bounds for the entire item.
+//				*/
+//				RECT rect = new RECT ();
+//				rect.left = OS.LVIR_BOUNDS;
+//				ignoreCustomDraw = true;
+//				long code = OS.SendMessage (handle, OS. LVM_GETITEMRECT, plvfi.iItem, rect);
+//				ignoreCustomDraw = false;
+//				if (code != 0) OS.InvalidateRect (handle, rect, true);
+//				break;
+//			}
+//
+//			/*
+//			* The cached flag is used by both virtual and non-virtual
+//			* tables to indicate that Windows has asked at least once
+//			* for a table item.
+//			*/
+//			if (!item.cached) {
+//				if ((style & SWT.VIRTUAL) != 0) {
+//					lastIndexOf = plvfi.iItem;
+//					if (!checkData (item, lastIndexOf, false)) break;
+//					TableItem newItem = fixScrollWidth ? null : item;
+//					if (setScrollWidth (newItem, true)) {
+//						OS.InvalidateRect (handle, null, true);
+//					}
+//				}
+//				item.cached = true;
+//			}
+//			if ((plvfi.mask & OS.LVIF_TEXT) != 0) {
+//				String string = null;
+//				if (plvfi.iSubItem == 0) {
+//					string = item.text;
+//				} else {
+//					String [] strings  = item.strings;
+//					if (strings != null && plvfi.iSubItem < strings.length) string = strings [plvfi.iSubItem];
+//				}
+//				if (string != null) {
+//					/*
+//					* Bug in Windows.  When pszText points to a zero length
+//					* NULL terminated string, Windows correctly draws the
+//					* empty string but the cache of the bounds for the item
+//					* is not reset.  This means that when the text for the
+//					* item is set and then reset to an empty string, the
+//					* selection draws using the bounds of the previous text.
+//					* The fix is to use a space rather than an empty string
+//					* when anything but a tool tip is requested (to avoid
+//					* a tool tip that is a single space).
+//					*
+//					* NOTE: This is only a problem for items in the first
+//					* column.  Assigning NULL to other columns stops Windows
+//					* from drawing the selection when LVS_EX_FULLROWSELECT
+//					* is set.
+//					*/
+//					int length = Math.min (string.length (), Math.max (0, plvfi.cchTextMax - 1));
+//					if (!tipRequested && plvfi.iSubItem == 0 && length == 0) {
+//						string = " "; //$NON-NLS-1$
+//						length = 1;
+//					}
+//					if (length > 1 && (state & HAS_AUTO_DIRECTION) != 0) {
+//						switch (BidiUtil.resolveTextDirection(string)) {
+//							case SWT.LEFT_TO_RIGHT:
+//								string = LRE + string;
+//								length++;
+//								break;
+//							case SWT.RIGHT_TO_LEFT:
+//								string = RLE + string;
+//								length++;
+//								break;
+//						}
+//					}
+//					char [] buffer = display.tableBuffer;
+//					if (buffer == null || plvfi.cchTextMax > buffer.length) {
+//						buffer = display.tableBuffer = new char [plvfi.cchTextMax];
+//					}
+//					string.getChars (0, length, buffer, 0);
+//					if (tipRequested) {
+//						/*
+//						 * Bug in Windows. The tooltip is only displayed up to
+//						 * the first line delimiter. The fix is to remove all
+//						 * line delimiter characters.
+//						 */
+//						int shift = 0;
+//						for (int i = 0; i < length; i++) {
+//							switch (buffer [i]) {
+//								case '\r':
+//								case '\n':
+//									shift++;
+//									break;
+//								default:
+//									if (shift != 0) buffer [i - shift] = buffer [i];
+//							}
+//						}
+//						length -= shift;
+//					}
+//					buffer [length++] = 0;
+//					OS.MoveMemory (plvfi.pszText, buffer, length * 2);
+//				}
+//			}
+//			boolean move = false;
+//			if ((plvfi.mask & OS.LVIF_IMAGE) != 0) {
+//				Image image = null;
+//				if (plvfi.iSubItem == 0) {
+//					image = item.image;
+//				} else {
+//					Image [] images = item.images;
+//					if (images != null && plvfi.iSubItem < images.length) image = images [plvfi.iSubItem];
+//				}
+//				if (image != null) {
+//					plvfi.iImage = imageIndex (image, plvfi.iSubItem);
+//					move = true;
+//				}
+//			}
+//			if ((plvfi.mask & OS.LVIF_STATE) != 0) {
+//				if (plvfi.iSubItem == 0) {
+//					int state = 1;
+//					if (item.checked) state++;
+//					if (item.grayed) state +=2;
+//					if (!OS.IsWindowEnabled (handle)) state += 4;
+//					plvfi.state = state << 12;
+//					plvfi.stateMask = OS.LVIS_STATEIMAGEMASK;
+//					move = true;
+//				}
+//			}
+//			if ((plvfi.mask & OS.LVIF_INDENT) != 0) {
+//				if (plvfi.iSubItem == 0) {
+//					plvfi.iIndent = item.imageIndent;
+//					move = true;
+//				}
+//			}
+//			if (move) OS.MoveMemory (lParam, plvfi, NMLVDISPINFO.sizeof);
+//			break;
+//		}
+//		case OS.NM_CUSTOMDRAW: {
+//			long hwndHeader = OS.SendMessage (handle, OS.LVM_GETHEADER, 0, 0);
+//			if (hdr.hwndFrom == hwndHeader) break;
+//			if (!customDraw && findImageControl () == null) {
+//				/*
+//				* Feature in Windows.  When the table is disabled, it draws
+//				* with a gray background but does not gray the text.  The fix
+//				* is to explicitly gray the text using Custom Draw.
+//				*/
+//				if (OS.IsWindowEnabled (handle)) {
+//					/*
+//					* Feature in Windows.  On Vista using the explorer theme,
+//					* Windows draws a vertical line to separate columns.  When
+//					* there is only a single column, the line looks strange.
+//					* The fix is to draw the background using custom draw.
+//					*/
+//					if (!explorerTheme || columnCount != 0) break;
+//				}
+//			}
+//			NMLVCUSTOMDRAW nmcd = new NMLVCUSTOMDRAW ();
+//			OS.MoveMemory (nmcd, lParam, NMLVCUSTOMDRAW.sizeof);
+//			switch (nmcd.dwDrawStage) {
+//				case OS.CDDS_PREPAINT: return CDDS_PREPAINT (nmcd, wParam, lParam);
+//				case OS.CDDS_ITEMPREPAINT: return CDDS_ITEMPREPAINT (nmcd, wParam, lParam);
+//				case OS.CDDS_ITEMPOSTPAINT: return CDDS_ITEMPOSTPAINT (nmcd, wParam, lParam);
+//				case OS.CDDS_SUBITEMPREPAINT: return CDDS_SUBITEMPREPAINT (nmcd, wParam, lParam);
+//				case OS.CDDS_SUBITEMPOSTPAINT: return CDDS_SUBITEMPOSTPAINT (nmcd, wParam, lParam);
+//				case OS.CDDS_POSTPAINT: return CDDS_POSTPAINT (nmcd, wParam, lParam);
+//			}
+//			break;
+//		}
+//		case OS.LVN_MARQUEEBEGIN: {
+//			if ((style & SWT.SINGLE) != 0) return LRESULT.ONE;
+//			if (hooks (SWT.MouseDown) || hooks (SWT.MouseUp)) {
+//				return LRESULT.ONE;
+//			}
+//			if ((style & SWT.RIGHT_TO_LEFT) != 0) {
+//				if (findImageControl () != null) return LRESULT.ONE;
+//			}
+//			break;
+//		}
+//		case OS.LVN_BEGINDRAG:
+//		case OS.LVN_BEGINRDRAG: {
+//			if (OS.GetKeyState (OS.VK_LBUTTON) >= 0) break;
+//			dragStarted = true;
+//			if (hdr.code == OS.LVN_BEGINDRAG) {
+//				int pos = OS.GetMessagePos ();
+//				POINT pt = new POINT ();
+//				OS.POINTSTOPOINT (pt, pos);
+//				OS.ScreenToClient (handle, pt);
+//				sendDragEvent (1, pt.x, pt.y);
+//			}
+//			break;
+//		}
+//		case OS.LVN_COLUMNCLICK: {
+//			NMLISTVIEW pnmlv = new NMLISTVIEW ();
+//			OS.MoveMemory(pnmlv, lParam, NMLISTVIEW.sizeof);
+//			TableColumn column = columns [pnmlv.iSubItem];
+//			if (column != null) {
+//				column.sendSelectionEvent (SWT.Selection);
+//			}
+//			break;
+//		}
+//		case OS.LVN_ITEMACTIVATE: {
+//			if (ignoreActivate) break;
+//			NMLISTVIEW pnmlv = new NMLISTVIEW ();
+//			OS.MoveMemory(pnmlv, lParam, NMLISTVIEW.sizeof);
+//			if (pnmlv.iItem != -1) {
+//				Event event = new Event ();
+//				event.item = _getItem (pnmlv.iItem);
+//				sendSelectionEvent (SWT.DefaultSelection, event, false);
+//			}
+//			break;
+//		}
+//		case OS.LVN_ITEMCHANGED: {
+//			if (fullRowSelect) {
+//				fullRowSelect = false;
+//				OS.DefWindowProc (handle, OS.WM_SETREDRAW, 1, 0);
+//				OS.SendMessage (handle, OS.LVM_SETEXTENDEDLISTVIEWSTYLE, OS.LVS_EX_FULLROWSELECT, 0);
+//			}
+//			if (!ignoreSelect) {
+//				NMLISTVIEW pnmlv = new NMLISTVIEW ();
+//				OS.MoveMemory (pnmlv, lParam, NMLISTVIEW.sizeof);
+//				if ((pnmlv.uChanged & OS.LVIF_STATE) != 0) {
+//					if (pnmlv.iItem == -1) {
+//						wasSelected = true;
+//					} else {
+//						boolean oldSelected = (pnmlv.uOldState & OS.LVIS_SELECTED) != 0;
+//						boolean newSelected = (pnmlv.uNewState & OS.LVIS_SELECTED) != 0;
+//						if (oldSelected != newSelected) wasSelected = true;
+//					}
+//				}
+//			}
+//			if (hooks (SWT.EraseItem) || hooks (SWT.PaintItem)) {
+//				long hwndHeader = OS.SendMessage (handle, OS.LVM_GETHEADER, 0, 0);
+//				int count = (int)OS.SendMessage (hwndHeader, OS.HDM_GETITEMCOUNT, 0, 0);
+//				if (count != 0) {
+//					forceResize ();
+//					RECT rect = new RECT ();
+//					OS.GetClientRect (handle, rect);
+//					NMLISTVIEW pnmlv = new NMLISTVIEW ();
+//					OS.MoveMemory (pnmlv, lParam, NMLISTVIEW.sizeof);
+//					if (pnmlv.iItem != -1) {
+//						RECT itemRect = new RECT ();
+//						itemRect.left = OS.LVIR_BOUNDS;
+//						ignoreCustomDraw = true;
+//						OS.SendMessage (handle, OS. LVM_GETITEMRECT, pnmlv.iItem, itemRect);
+//						ignoreCustomDraw = false;
+//						RECT headerRect = new RECT ();
+//						int index = (int)OS.SendMessage (hwndHeader, OS.HDM_ORDERTOINDEX, count - 1, 0);
+//						OS.SendMessage (hwndHeader, OS.HDM_GETITEMRECT, index, headerRect);
+//						OS.MapWindowPoints (hwndHeader, handle, headerRect, 2);
+//						rect.left = headerRect.right;
+//						rect.top = itemRect.top;
+//						rect.bottom = itemRect.bottom;
+//						OS.InvalidateRect (handle, rect, true);
+//					}
+//				}
+//			}
+//			break;
+//		}
+//	}
+//	return super.wmNotifyChild (hdr, wParam, lParam);
+//}
+//
+//LRESULT wmNotifyHeader (NMHDR hdr, long wParam, long lParam) {
+//	/*
+//	* Feature in Windows.  On NT, the automatically created
+//	* header control is created as a UNICODE window, not an
+//	* ANSI window despite the fact that the parent is created
+//	* as an ANSI window.  This means that it sends UNICODE
+//	* notification messages to the parent window on NT for
+//	* no good reason.  The data and size in the NMHEADER and
+//	* HDITEM structs is identical between the platforms so no
+//	* different message is actually necessary.  Despite this,
+//	* Windows sends different messages.  The fix is to look
+//	* for both messages, despite the platform.  This works
+//	* because only one will be sent on either platform, never
+//	* both.
+//	*/
+//	switch (hdr.code) {
+//		case OS.HDN_BEGINTRACK:
+//		case OS.HDN_DIVIDERDBLCLICK: {
+//			if (columnCount == 0) return LRESULT.ONE;
+//			NMHEADER phdn = new NMHEADER ();
+//			OS.MoveMemory (phdn, lParam, NMHEADER.sizeof);
+//			TableColumn column = columns [phdn.iItem];
+//			if (column != null && !column.getResizable ()) {
+//				return LRESULT.ONE;
+//			}
+//			ignoreColumnMove = true;
+//			if (hdr.code == OS.HDN_DIVIDERDBLCLICK) {
+//				if (column != null && hooks (SWT.MeasureItem)) {
+//					column.pack ();
+//					return LRESULT.ONE;
+//				}
+//			}
+//			break;
+//		}
+//		case OS.NM_CUSTOMDRAW: {
+//			NMCUSTOMDRAW nmcd = new NMCUSTOMDRAW();
+//			OS.MoveMemory(nmcd, lParam, NMCUSTOMDRAW.sizeof);
+//			switch (nmcd.dwDrawStage) {
+//				case OS.CDDS_PREPAINT: {
+//					/* Drawing here will be deleted by further drawing steps, even with OS.CDRF_SKIPDEFAULT.
+//					   Changing the TextColor and returning OS.CDRF_NEWFONT has no effect. */
+//					return new LRESULT (customHeaderDrawing() ? OS.CDRF_NOTIFYITEMDRAW | OS.CDRF_NOTIFYPOSTPAINT : OS.CDRF_DODEFAULT);
+//				}
+//				case OS.CDDS_ITEMPREPAINT: {
+//					// draw background
+//					RECT rect = new RECT();
+//					OS.SetRect(rect, nmcd.left, nmcd.top, nmcd.right, nmcd.bottom);
+//					int pixel = getHeaderBackgroundPixel();
+//					if ((nmcd.uItemState & OS.CDIS_SELECTED) != 0) {
+//						pixel = getDifferentColor(pixel);
+//					}
+//					/*
+//					 * Don't change the header background color for set selected column, similar to
+//					 * Windows 10 which itself does not use any different color for sort header. For
+//					 * more details refer bug 536020
+//					 */
+////					else if (columns[(int) nmcd.dwItemSpec] == sortColumn && sortDirection != SWT.NONE) {
+////						pixel = getSlightlyDifferentColor(pixel);
+////					}
+//					long brush = OS.CreateSolidBrush(pixel);
+//					OS.FillRect(nmcd.hdc, rect, brush);
+//					OS.DeleteObject(brush);
+//
+//					return new LRESULT(OS.CDRF_SKIPDEFAULT); // if we got here, we will paint everything ourself
+//				}
+//				case OS.CDDS_POSTPAINT: {
+//					// get the cursor position
+//					POINT cursorPos = new POINT();
+//					OS.GetCursorPos(cursorPos);
+//					OS.MapWindowPoints(0, hwndHeader, cursorPos, 1);
+//
+//					// drawing all cells
+//					int highlightedHeaderDividerX = -1;
+//					int lastColumnRight = -1;
+//					RECT [] rects = new RECT [columnCount];
+//					for (int i=0; i<columnCount; i++) {
+//						rects [i] = new RECT ();
+//						OS.SendMessage (hwndHeader, OS.HDM_GETITEMRECT, i, rects [i]);
+//						if (rects[i].right > lastColumnRight) {
+//							lastColumnRight = rects[i].right;
+//						}
+//
+//						if (columns[i] == sortColumn && sortDirection != SWT.NONE) {
+//							// the display.getSortImage looks terrible after scaling up.
+//							long pen = OS.CreatePen (OS.PS_SOLID, 1, getHeaderForegroundPixel());
+//							long oldPen = OS.SelectObject (nmcd.hdc, pen);
+//							int center = rects[i].left + (rects[i].right - rects[i].left) / 2;
+//							/*
+//							 * Sort indicator size needs to scale as per the Native Windows OS DPI level
+//							 * when header is custom drawn. For more details refer bug 537097.
+//							 */
+//							int leg = DPIUtil.scaleUp(3, nativeZoom);
+//							if (sortDirection == SWT.UP) {
+//								OS.Polyline(nmcd.hdc, new int[] {center-leg, 1+leg, center+1, 0}, 2);
+//								OS.Polyline(nmcd.hdc, new int[] {center+leg, 1+leg, center-1, 0}, 2);
+//							} else if (sortDirection == SWT.DOWN) {
+//								OS.Polyline(nmcd.hdc, new int[] {center-leg, 1, center+1, 1+leg+1}, 2);
+//								OS.Polyline(nmcd.hdc, new int[] {center+leg, 1, center-1, 1+leg+1}, 2);
+//							}
+//							OS.SelectObject (nmcd.hdc, oldPen);
+//							OS.DeleteObject (pen);
+//						}
+//
+//						int alignmentCorrection = _getLinesVisible () ? 0 : 1;
+//
+//						/* Windows 7 and 10 always draw a nearly invisible vertical line between the columns, even if lines are disabled.
+//						   This line uses no fixed color constant, but calculates it from the background color.
+//						   The method getSlightlyDifferentColor gives us a color, that is near enough to the windows algorithm.
+//
+//						   NOTE: This code has no effect since Bug 517003, because next OS.Polyline() draws over the same coords.
+//
+//						long pen = OS.CreatePen (OS.PS_SOLID, getGridLineWidthInPixels(), getSlightlyDifferentColor(getHeaderBackgroundPixel()));
+//						long oldPen = OS.SelectObject (nmcd.hdc, pen);
+//						OS.Polyline(nmcd.hdc, new int[] {rects[i].right-alignmentCorrection, rects[i].top, rects[i].right-alignmentCorrection, rects[i].bottom}, 2);
+//						OS.SelectObject (nmcd.hdc, oldPen);
+//						OS.DeleteObject (pen);
+//						*/
+//
+//						int lineColor = (display.tableHeaderLinePixel != -1) ? display.tableHeaderLinePixel : OS.GetSysColor(OS.COLOR_3DFACE);
+//						long pen = OS.CreatePen (OS.PS_SOLID, getGridLineWidthInPixels(), lineColor);
+//						long oldPen = OS.SelectObject (nmcd.hdc, pen);
+//						/* To differentiate headers, always draw header column separator. */
+//						OS.Polyline(nmcd.hdc, new int[] {rects[i].right - alignmentCorrection, rects[i].top, rects[i].right - alignmentCorrection, rects[i].bottom}, 2);
+//						/* To differentiate header & content area, always draw the line separator between header & first row. */
+//						if (i == 0) OS.Polyline(nmcd.hdc, new int[] {nmcd.left, nmcd.bottom-1, nmcd.right+1, nmcd.bottom-1}, 2);
+//						OS.SelectObject (nmcd.hdc, oldPen);
+//						OS.DeleteObject (pen);
+//
+//						if (headerItemDragging && highlightedHeaderDividerX == -1) {
+//							int distanceToLeftBorder = cursorPos.x - rects[i].left;
+//							int distanceToRightBorder = rects[i].right - cursorPos.x;
+//							if (distanceToLeftBorder >= 0 && distanceToRightBorder >= 0) {
+//								// the cursor is in the current rectangle
+//								highlightedHeaderDividerX = distanceToLeftBorder <= distanceToRightBorder ? rects[i].left-1 : rects[i].right;
+//							}
+//						}
+//
+//						int x = rects[i].left + INSET + 2;
+//						if (columns[i].image != null) {
+//							GCData data = new GCData();
+//							data.device = display;
+//							GC gc = createNewGC(nmcd.hdc, data);
+//							int y = Math.max (0, (nmcd.bottom - columns[i].image.getBoundsInPixels().height) / 2);
+//							int zoom = getZoom();
+//							gc.drawImage (columns[i].image, DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(y, zoom));
+//							x += columns[i].image.getBoundsInPixels().width + 12;
+//							gc.dispose ();
+//						}
+//
+//						if (columns[i].text != null) {
+//							int flags = OS.DT_NOPREFIX | OS.DT_SINGLELINE | OS.DT_VCENTER;
+//							if ((columns[i].style & SWT.CENTER) != 0) flags |= OS.DT_CENTER;
+//							if ((columns[i].style & SWT.RIGHT) != 0) flags |= OS.DT_RIGHT;
+//							char [] buffer = columns[i].text.toCharArray ();
+//							OS.SetBkMode(nmcd.hdc, OS.TRANSPARENT);
+//							OS.SetTextColor(nmcd.hdc, getHeaderForegroundPixel());
+//							RECT textRect = new RECT();
+//							textRect.left = x;
+//							textRect.top = rects[i].top;
+//							textRect.right = rects[i].right - (x - rects[i].left);
+//							textRect.bottom = rects[i].bottom;
+//							OS.DrawText (nmcd.hdc, buffer, buffer.length, textRect, flags);
+//						}
+//					}
+//
+//					if (lastColumnRight < nmcd.right) {
+//						// draw background of the 'no column' area
+//						RECT rect = new RECT();
+//						lastColumnRight += _getLinesVisible() ? 1 : 0;
+//						OS.SetRect(rect, lastColumnRight, nmcd.top, nmcd.right, nmcd.bottom-1);
+//						long brush = OS.CreateSolidBrush(getHeaderBackgroundPixel());
+//						OS.FillRect(nmcd.hdc, rect, brush);
+//						OS.DeleteObject(brush);
+//					}
+//
+//					// always draw the highlighted border at the end, to avoid overdrawing by other borders.
+//					if (highlightedHeaderDividerX != -1) {
+//						long pen = OS.CreatePen (OS.PS_SOLID, 4, OS.GetSysColor(OS.COLOR_HIGHLIGHT));
+//						long oldPen = OS.SelectObject (nmcd.hdc, pen);
+//						OS.Polyline(nmcd.hdc, new int[] {highlightedHeaderDividerX, nmcd.top, highlightedHeaderDividerX, nmcd.bottom}, 2);
+//						OS.SelectObject (nmcd.hdc, oldPen);
+//						OS.DeleteObject (pen);
+//					}
+//
+//					return new LRESULT(OS.CDRF_DODEFAULT);
+//				}
+//			}
+//			break;
+//		}
+//		case OS.NM_RELEASEDCAPTURE: {
+//			if (!ignoreColumnMove) {
+//				for (int i=0; i<columnCount; i++) {
+//					TableColumn column = columns [i];
+//					column.updateToolTip (i);
+//				}
+//			}
+//			ignoreColumnMove = false;
+//			break;
+//		}
+//		case OS.HDN_BEGINDRAG: {
+//			if (ignoreColumnMove) return LRESULT.ONE;
+//			int bits = (int)OS.SendMessage (handle, OS.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0);
+//			if ((bits & OS.LVS_EX_HEADERDRAGDROP) != 0) {
+//				if (columnCount == 0) return LRESULT.ONE;
+//				NMHEADER phdn = new NMHEADER ();
+//				OS.MoveMemory (phdn, lParam, NMHEADER.sizeof);
+//				if (phdn.iItem != -1) {
+//					TableColumn column = columns [phdn.iItem];
+//					if (column != null && !column.getMoveable ()) {
+//						ignoreColumnMove = true;
+//						return LRESULT.ONE;
+//					}
+//				}
+//				headerItemDragging = true;
+//			}
+//			break;
+//		}
+//		case OS.HDN_ENDDRAG: {
+//			headerItemDragging = false;
+//			int bits = (int)OS.SendMessage (handle, OS.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0);
+//			if ((bits & OS.LVS_EX_HEADERDRAGDROP) == 0) break;
+//			NMHEADER phdn = new NMHEADER ();
+//			OS.MoveMemory (phdn, lParam, NMHEADER.sizeof);
+//			if (phdn.iItem != -1 && phdn.pitem != 0) {
+//				HDITEM pitem = new HDITEM ();
+//				OS.MoveMemory (pitem, phdn.pitem, HDITEM.sizeof);
+//				if ((pitem.mask & OS.HDI_ORDER) != 0 && pitem.iOrder != -1) {
+//					if (columnCount == 0) break;
+//					int [] order = new int [columnCount];
+//					OS.SendMessage (handle, OS.LVM_GETCOLUMNORDERARRAY, columnCount, order);
+//					int index = 0;
+//					while (index < order.length) {
+//						if (order [index] == phdn.iItem) break;
+//						index++;
+//					}
+//					if (index == order.length) index = 0;
+//					if (index == pitem.iOrder) break;
+//					int start = Math.min (index, pitem.iOrder);
+//					int end = Math.max (index, pitem.iOrder);
+//					ignoreColumnMove = false;
+//					for (int i=start; i<=end; i++) {
+//						TableColumn column = columns [order [i]];
+//						if (!column.isDisposed ()) {
+//							column.postEvent (SWT.Move);
+//						}
+//					}
+//				}
+//			}
+//			break;
+//		}
+//		case OS.HDN_ITEMCHANGED: {
+//			/*
+//			* Bug in Windows.  When a table has the LVS_EX_GRIDLINES extended
+//			* style and the user drags any column over the first column in the
+//			* table, making the size become zero, when the user drags a column
+//			* such that the size of the first column becomes non-zero, the grid
+//			* lines are not redrawn.  The fix is to detect the case and force
+//			* a redraw of the first column.
+//			*/
+//			int width = (int)OS.SendMessage (handle, OS.LVM_GETCOLUMNWIDTH, 0, 0);
+//			if (lastWidth == 0 && width > 0) {
+//				if (_getLinesVisible()) {
+//					RECT rect = new RECT ();
+//					OS.GetClientRect (handle, rect);
+//					rect.right = rect.left + width;
+//					OS.InvalidateRect (handle, rect, true);
+//				}
+//			}
+//			lastWidth = width;
+//			if (!ignoreColumnResize) {
+//				NMHEADER phdn = new NMHEADER ();
+//				OS.MoveMemory (phdn, lParam, NMHEADER.sizeof);
+//				if (phdn.pitem != 0) {
+//					HDITEM pitem = new HDITEM ();
+//					OS.MoveMemory (pitem, phdn.pitem, HDITEM.sizeof);
+//					if ((pitem.mask & OS.HDI_WIDTH) != 0) {
+//						TableColumn column = columns [phdn.iItem];
+//						if (column != null) {
+//							column.updateToolTip (phdn.iItem);
+//							column.sendEvent (SWT.Resize);
+//							if (isDisposed ()) return LRESULT.ZERO;
+//							/*
+//							* It is possible (but unlikely), that application
+//							* code could have disposed the column in the move
+//							* event.  If this happens, process the move event
+//							* for those columns that have not been destroyed.
+//							*/
+//							TableColumn [] newColumns = new TableColumn [columnCount];
+//							System.arraycopy (columns, 0, newColumns, 0, columnCount);
+//							int [] order = new int [columnCount];
+//							OS.SendMessage (handle, OS.LVM_GETCOLUMNORDERARRAY, columnCount, order);
+//							boolean moved = false;
+//							for (int i=0; i<columnCount; i++) {
+//								TableColumn nextColumn = newColumns [order [i]];
+//								if (moved && !nextColumn.isDisposed ()) {
+//									nextColumn.updateToolTip (order [i]);
+//									nextColumn.sendEvent (SWT.Move);
 //								}
-								if (string != null) {
-									Shell shell = getShell ();
-									char [] chars = new char [string.length () + 1];
-									string.getChars (0, string.length (), chars, 0);
-									shell.setToolTipText (lpnmtdi, chars);
-									OS.MoveMemory (lParam, lpnmtdi, NMTTDISPINFO.sizeof);
-								}
-							}
-						}
-					}
-					if (hFont != -1) hFont = OS.SelectObject (hDC, hFont);
-					if (newFont != 0) OS.SelectObject (hDC, oldFont);
-					OS.ReleaseDC (handle, hDC);
-				}
-			}
-			return new LRESULT (code);
-		}
-	}
-	return null;
-}
-
-LRESULT wmNotifyToolTip (NMTTCUSTOMDRAW nmcd, long lParam) {
-	switch (nmcd.dwDrawStage) {
-		case OS.CDDS_PREPAINT: {
-			if (isCustomToolTip ()) {
-				//TEMPORARY CODE
-//				nmcd.uDrawFlags |= OS.DT_CALCRECT;
-//				OS.MoveMemory (lParam, nmcd, NMTTCUSTOMDRAW.sizeof);
-				return new LRESULT (OS.CDRF_NOTIFYPOSTPAINT | OS.CDRF_NEWFONT);
-			}
-			break;
-		}
-		case OS.CDDS_POSTPAINT: {
-			LVHITTESTINFO pinfo = new LVHITTESTINFO ();
-			int pos = OS.GetMessagePos ();
-			POINT pt = new POINT();
-			OS.POINTSTOPOINT (pt, pos);
-			OS.ScreenToClient (handle, pt);
-			pinfo.x = pt.x;
-			pinfo.y = pt.y;
-			/*
-			*  Bug in Windows.  When LVM_SUBITEMHITTEST is used to hittest
-			*  a point that is above the table, instead of returning -1 to
-			*  indicate that the hittest failed, a negative index is returned.
-			*  The fix is to consider any value that is negative a failure.
-			*/
-			if (OS.SendMessage (handle, OS.LVM_SUBITEMHITTEST, 0, pinfo) >= 0) {
-				TableItem item = _getItem (pinfo.iItem);
-				long hDC = OS.GetDC (handle);
-				long hFont = item.fontHandle (pinfo.iSubItem);
-				if (hFont == -1) hFont = OS.SendMessage (handle, OS.WM_GETFONT, 0, 0);
-				long oldFont = OS.SelectObject (hDC, hFont);
-				boolean drawForeground = true;
-				RECT cellRect = item.getBounds (pinfo.iItem, pinfo.iSubItem, true, true, false, false, hDC);
-				if (hooks (SWT.EraseItem)) {
-					Event event = sendEraseItemEvent (item, nmcd, pinfo.iSubItem, cellRect);
-					if (isDisposed () || item.isDisposed ()) break;
-					if (event.doit) {
-						drawForeground = (event.detail & SWT.FOREGROUND) != 0;
-					} else {
-						drawForeground = false;
-					}
-				}
-				if (drawForeground) {
-					int nSavedDC = OS.SaveDC (nmcd.hdc);
-					int gridWidth = getLinesVisible () ? Table.GRID_WIDTH : 0;
-					RECT insetRect = toolTipInset (cellRect);
-					OS.SetWindowOrgEx (nmcd.hdc, insetRect.left, insetRect.top, null);
-					GCData data = new GCData ();
-					data.device = display;
-					data.foreground = OS.GetTextColor (nmcd.hdc);
-					data.background = OS.GetBkColor (nmcd.hdc);
-					data.font = Font.win32_new (display, hFont);
-					GC gc = createNewGC(nmcd.hdc, data);
-					int x = cellRect.left;
-					if (pinfo.iSubItem != 0) x -= gridWidth;
-					Image image = item.getImage (pinfo.iSubItem);
-					if (image != null) {
-						Rectangle rect = image.getBoundsInPixels ();
-						RECT imageRect = item.getBounds (pinfo.iItem, pinfo.iSubItem, false, true, false, false, hDC);
-						Point size = imageList == null ? new Point (rect.width, rect.height) : imageList.getImageSize ();
-						int y = imageRect.top + Math.max (0, (imageRect.bottom - imageRect.top - size.y) / 2);
-						int zoom = getZoom();
-						rect = DPIUtil.scaleDown(rect, zoom);
-						gc.drawImage (image, rect.x, rect.y, rect.width, rect.height, DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(y, zoom), DPIUtil.scaleDown(size.x, zoom), DPIUtil.scaleDown(size.y, zoom));
-						x += size.x + INSET + (pinfo.iSubItem == 0 ? -2 : 4);
-					} else {
-						x += INSET + 2;
-					}
-					String string = item.getText (pinfo.iSubItem);
-					if (string != null) {
-						int flags = OS.DT_NOPREFIX | OS.DT_SINGLELINE | OS.DT_VCENTER;
-						TableColumn column = columns != null ? columns [pinfo.iSubItem] : null;
-						if (column != null) {
-							if ((column.style & SWT.CENTER) != 0) flags |= OS.DT_CENTER;
-							if ((column.style & SWT.RIGHT) != 0) flags |= OS.DT_RIGHT;
-						}
-						char [] buffer = string.toCharArray ();
-						RECT textRect = new RECT ();
-						OS.SetRect (textRect, x, cellRect.top, cellRect.right, cellRect.bottom);
-						OS.DrawText (nmcd.hdc, buffer, buffer.length, textRect, flags);
-					}
-					gc.dispose ();
-					OS.RestoreDC (nmcd.hdc, nSavedDC);
-				}
-				if (hooks (SWT.PaintItem)) {
-					RECT itemRect = item.getBounds (pinfo.iItem, pinfo.iSubItem, true, true, false, false, hDC);
-					sendPaintItemEvent (item, nmcd, pinfo.iSubItem, itemRect);
-				}
-				OS.SelectObject (hDC, oldFont);
-				OS.ReleaseDC (handle, hDC);
-			}
-		}
-	}
-	return null;
-}
+//								if (nextColumn == column) moved = true;
+//							}
+//						}
+//					}
+//				}
+//			}
+//			break;
+//		}
+//		case OS.HDN_ITEMDBLCLICK: {
+//			NMHEADER phdn = new NMHEADER ();
+//			OS.MoveMemory (phdn, lParam, NMHEADER.sizeof);
+//			TableColumn column = columns [phdn.iItem];
+//			if (column != null) {
+//				column.sendSelectionEvent (SWT.DefaultSelection);
+//			}
+//			break;
+//		}
+//	}
+//	return null;
+//}
+//
+//LRESULT wmNotifyToolTip (NMHDR hdr, long wParam, long lParam) {
+//	switch (hdr.code) {
+//		case OS.NM_CUSTOMDRAW: {
+//			if (toolTipText != null) break;
+//			if (isCustomToolTip ()) {
+//				NMTTCUSTOMDRAW nmcd = new NMTTCUSTOMDRAW ();
+//				OS.MoveMemory (nmcd, lParam, NMTTCUSTOMDRAW.sizeof);
+//				return wmNotifyToolTip (nmcd, lParam);
+//			}
+//			break;
+//		}
+//		case OS.TTN_GETDISPINFO:
+//		case OS.TTN_SHOW: {
+//			LRESULT result = super.wmNotify (hdr, wParam, lParam);
+//			if (result != null) return result;
+//			if (hdr.code != OS.TTN_SHOW) tipRequested = true;
+//			long code = callWindowProc (handle, OS.WM_NOTIFY, wParam, lParam);
+//			if (hdr.code != OS.TTN_SHOW) tipRequested = false;
+//			if (toolTipText != null) break;
+//			if (isCustomToolTip ()) {
+//				LVHITTESTINFO pinfo = new LVHITTESTINFO ();
+//				int pos = OS.GetMessagePos ();
+//				POINT pt = new POINT();
+//				OS.POINTSTOPOINT (pt, pos);
+//				OS.ScreenToClient (handle, pt);
+//				pinfo.x = pt.x;
+//				pinfo.y = pt.y;
+//				/*
+//				*  Bug in Windows.  When LVM_SUBITEMHITTEST is used to hittest
+//				*  a point that is above the table, instead of returning -1 to
+//				*  indicate that the hittest failed, a negative index is returned.
+//				*  The fix is to consider any value that is negative a failure.
+//				*/
+//				if (OS.SendMessage (handle, OS.LVM_SUBITEMHITTEST, 0, pinfo) >= 0) {
+//					TableItem item = _getItem (pinfo.iItem);
+//					long hDC = OS.GetDC (handle);
+//					long oldFont = 0, newFont = OS.SendMessage (handle, OS.WM_GETFONT, 0, 0);
+//					if (newFont != 0) oldFont = OS.SelectObject (hDC, newFont);
+//					long hFont = item.fontHandle (pinfo.iSubItem);
+//					if (hFont != -1) hFont = OS.SelectObject (hDC, hFont);
+//					Event event = sendMeasureItemEvent (item, pinfo.iItem, pinfo.iSubItem, hDC);
+//					if (!isDisposed () && !item.isDisposed ()) {
+//						RECT itemRect = new RECT ();
+//						Rectangle boundsInPixels = DPIUtil.scaleUp(event.getBounds(), getZoom());
+//						OS.SetRect (itemRect, boundsInPixels.x, boundsInPixels.y, boundsInPixels.x + boundsInPixels.width, boundsInPixels.y + boundsInPixels.height);
+//						if (hdr.code == OS.TTN_SHOW) {
+//							RECT toolRect = toolTipRect (itemRect);
+//							OS.MapWindowPoints (handle, 0, toolRect, 2);
+//							long hwndToolTip = OS.SendMessage (handle, OS.LVM_GETTOOLTIPS, 0, 0);
+//							int flags = OS.SWP_NOACTIVATE | OS.SWP_NOZORDER;
+//							int width = toolRect.right - toolRect.left, height = toolRect.bottom - toolRect.top;
+//							OS.SetWindowPos (hwndToolTip, 0, toolRect.left , toolRect.top, width, height, flags);
+//						} else {
+//							NMTTDISPINFO lpnmtdi = new NMTTDISPINFO ();
+//							OS.MoveMemory (lpnmtdi, lParam, NMTTDISPINFO.sizeof);
+//							if (lpnmtdi.lpszText != 0) {
+//								OS.MoveMemory (lpnmtdi.lpszText, new char [1], 2);
+//								OS.MoveMemory (lParam, lpnmtdi, NMTTDISPINFO.sizeof);
+//							}
+//							RECT cellRect = item.getBounds (pinfo.iItem, pinfo.iSubItem, true, true, true, true, hDC);
+//							RECT clientRect = new RECT ();
+//							OS.GetClientRect (handle, clientRect);
+//							if (itemRect.right > cellRect.right || itemRect.right > clientRect.right) {
+//								//TEMPORARY CODE
+//								String string = " ";
+////								String string = null;
+////								if (pinfo.iSubItem == 0) {
+////									string = item.text;
+////								} else {
+////									String [] strings  = item.strings;
+////									if (strings != null) string = strings [pinfo.iSubItem];
+////								}
+//								if (string != null) {
+//									Shell shell = getShell ();
+//									char [] chars = new char [string.length () + 1];
+//									string.getChars (0, string.length (), chars, 0);
+//									shell.setToolTipText (lpnmtdi, chars);
+//									OS.MoveMemory (lParam, lpnmtdi, NMTTDISPINFO.sizeof);
+//								}
+//							}
+//						}
+//					}
+//					if (hFont != -1) hFont = OS.SelectObject (hDC, hFont);
+//					if (newFont != 0) OS.SelectObject (hDC, oldFont);
+//					OS.ReleaseDC (handle, hDC);
+//				}
+//			}
+//			return new LRESULT (code);
+//		}
+//	}
+//	return null;
+//}
+//
+//LRESULT wmNotifyToolTip (NMTTCUSTOMDRAW nmcd, long lParam) {
+//	switch (nmcd.dwDrawStage) {
+//		case OS.CDDS_PREPAINT: {
+//			if (isCustomToolTip ()) {
+//				//TEMPORARY CODE
+////				nmcd.uDrawFlags |= OS.DT_CALCRECT;
+////				OS.MoveMemory (lParam, nmcd, NMTTCUSTOMDRAW.sizeof);
+//				return new LRESULT (OS.CDRF_NOTIFYPOSTPAINT | OS.CDRF_NEWFONT);
+//			}
+//			break;
+//		}
+//		case OS.CDDS_POSTPAINT: {
+//			LVHITTESTINFO pinfo = new LVHITTESTINFO ();
+//			int pos = OS.GetMessagePos ();
+//			POINT pt = new POINT();
+//			OS.POINTSTOPOINT (pt, pos);
+//			OS.ScreenToClient (handle, pt);
+//			pinfo.x = pt.x;
+//			pinfo.y = pt.y;
+//			/*
+//			*  Bug in Windows.  When LVM_SUBITEMHITTEST is used to hittest
+//			*  a point that is above the table, instead of returning -1 to
+//			*  indicate that the hittest failed, a negative index is returned.
+//			*  The fix is to consider any value that is negative a failure.
+//			*/
+//			if (OS.SendMessage (handle, OS.LVM_SUBITEMHITTEST, 0, pinfo) >= 0) {
+//				TableItem item = _getItem (pinfo.iItem);
+//				long hDC = OS.GetDC (handle);
+//				long hFont = item.fontHandle (pinfo.iSubItem);
+//				if (hFont == -1) hFont = OS.SendMessage (handle, OS.WM_GETFONT, 0, 0);
+//				long oldFont = OS.SelectObject (hDC, hFont);
+//				boolean drawForeground = true;
+//				RECT cellRect = item.getBounds (pinfo.iItem, pinfo.iSubItem, true, true, false, false, hDC);
+//				if (hooks (SWT.EraseItem)) {
+//					Event event = sendEraseItemEvent (item, nmcd, pinfo.iSubItem, cellRect);
+//					if (isDisposed () || item.isDisposed ()) break;
+//					if (event.doit) {
+//						drawForeground = (event.detail & SWT.FOREGROUND) != 0;
+//					} else {
+//						drawForeground = false;
+//					}
+//				}
+//				if (drawForeground) {
+//					int nSavedDC = OS.SaveDC (nmcd.hdc);
+//					int gridWidth = getLinesVisible () ? Table.GRID_WIDTH : 0;
+//					RECT insetRect = toolTipInset (cellRect);
+//					OS.SetWindowOrgEx (nmcd.hdc, insetRect.left, insetRect.top, null);
+//					GCData data = new GCData ();
+//					data.device = display;
+//					data.foreground = OS.GetTextColor (nmcd.hdc);
+//					data.background = OS.GetBkColor (nmcd.hdc);
+//					data.font = Font.win32_new (display, hFont);
+//					GC gc = createNewGC(nmcd.hdc, data);
+//					int x = cellRect.left;
+//					if (pinfo.iSubItem != 0) x -= gridWidth;
+//					Image image = item.getImage (pinfo.iSubItem);
+//					if (image != null) {
+//						Rectangle rect = image.getBoundsInPixels ();
+//						RECT imageRect = item.getBounds (pinfo.iItem, pinfo.iSubItem, false, true, false, false, hDC);
+//						Point size = imageList == null ? new Point (rect.width, rect.height) : imageList.getImageSize ();
+//						int y = imageRect.top + Math.max (0, (imageRect.bottom - imageRect.top - size.y) / 2);
+//						int zoom = getZoom();
+//						rect = DPIUtil.scaleDown(rect, zoom);
+//						gc.drawImage (image, rect.x, rect.y, rect.width, rect.height, DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(y, zoom), DPIUtil.scaleDown(size.x, zoom), DPIUtil.scaleDown(size.y, zoom));
+//						x += size.x + INSET + (pinfo.iSubItem == 0 ? -2 : 4);
+//					} else {
+//						x += INSET + 2;
+//					}
+//					String string = item.getText (pinfo.iSubItem);
+//					if (string != null) {
+//						int flags = OS.DT_NOPREFIX | OS.DT_SINGLELINE | OS.DT_VCENTER;
+//						TableColumn column = columns != null ? columns [pinfo.iSubItem] : null;
+//						if (column != null) {
+//							if ((column.style & SWT.CENTER) != 0) flags |= OS.DT_CENTER;
+//							if ((column.style & SWT.RIGHT) != 0) flags |= OS.DT_RIGHT;
+//						}
+//						char [] buffer = string.toCharArray ();
+//						RECT textRect = new RECT ();
+//						OS.SetRect (textRect, x, cellRect.top, cellRect.right, cellRect.bottom);
+//						OS.DrawText (nmcd.hdc, buffer, buffer.length, textRect, flags);
+//					}
+//					gc.dispose ();
+//					OS.RestoreDC (nmcd.hdc, nSavedDC);
+//				}
+//				if (hooks (SWT.PaintItem)) {
+//					RECT itemRect = item.getBounds (pinfo.iItem, pinfo.iSubItem, true, true, false, false, hDC);
+//					sendPaintItemEvent (item, nmcd, pinfo.iSubItem, itemRect);
+//				}
+//				OS.SelectObject (hDC, oldFont);
+//				OS.ReleaseDC (handle, hDC);
+//			}
+//		}
+//	}
+//	return null;
+//}
 
 private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
 	if (!(widget instanceof Table table)) {
@@ -7371,4 +7396,59 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 	 table.fixCheckboxImageListColor (true);
 	 table.settingItemHeight = false;
 }
+
+void onPaint(PaintEvent event) {
+
+
+	 tablePainter.onPaint( event );
+	 headerPainter.onPaint( event );
+	 bodyPainter.onPaint( event );
+	 cellPainter.onPaint( event );
+
+
+
+}
+/**
+ * Paint the Label's border.
+ */
+private void paintBorder(IGraphicsContext gc, Rectangle r) {
+	Display disp= getDisplay();
+
+	Color c1 = null;
+	Color c2 = null;
+
+	int style = getStyle();
+	if ((style & SWT.SHADOW_IN) != 0) {
+		c1 = disp.getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW);
+		c2 = disp.getSystemColor(SWT.COLOR_WIDGET_HIGHLIGHT_SHADOW);
+	}
+	if ((style & SWT.SHADOW_OUT) != 0) {
+		c1 = disp.getSystemColor(SWT.COLOR_WIDGET_LIGHT_SHADOW);
+		c2 = disp.getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW);
+	}
+
+	if (c1 != null && c2 != null) {
+		gc.setLineWidth(1);
+		drawBevelRect(gc, r.x, r.y, r.width-1, r.height-1, c1, c2);
+	}
+}
+
+/**
+ * Draw a rectangle in the given colors.
+ */
+private void drawBevelRect(IGraphicsContext gc, int x, int y, int w, int h, Color topleft, Color bottomright) {
+	gc.setForeground(bottomright);
+	gc.drawLine(x+w, y,   x+w, y+h);
+	gc.drawLine(x,   y+h, x+w, y+h);
+
+	gc.setForeground(topleft);
+	gc.drawLine(x, y, x+w-1, y);
+	gc.drawLine(x, y, x,     y+h-1);
+}
+void onDispose(Event event) {
+	/* make this handler run after other dispose listeners */
+
+}
+
+
 }
