@@ -14,6 +14,8 @@
 package org.eclipse.swt.widgets;
 
 
+import org.eclipse.swt.internal.cocoa.*;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 
@@ -35,7 +37,7 @@ import org.eclipse.swt.graphics.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class CCaret extends Widget {
+public class Caret extends Widget {
 	Canvas parent;
 	int x, y, width, height;
 	boolean isVisible, isShowing;
@@ -73,7 +75,7 @@ public class CCaret extends Widget {
  * @see Widget#checkSubclass
  * @see Widget#getStyle
  */
-public CCaret (Canvas parent, int style) {
+public Caret (Canvas parent, int style) {
 	super (parent, style);
 	this.parent = parent;
 	createWidget ();
@@ -92,7 +94,7 @@ void createWidget () {
 	blinkRate = display.getCaretBlinkTime ();
 	isVisible = true;
 	if (parent.getCaret () == null) {
-		parent.setCaret ((Caret) this);
+		parent.setCaret (this);
 	}
 }
 
@@ -101,14 +103,17 @@ boolean drawCaret () {
 	if (parent.isDisposed ()) return false;
 	int nWidth = width, nHeight = height;
 	if (nWidth <= 0) nWidth = DEFAULT_WIDTH;
-
-	GC gc = new GC(parent);
 	if (image != null) {
-		Rectangle imageBounds = image.getBounds();
-		gc.drawImage(image, 0, 0, imageBounds.width, imageBounds.height, x, y, nWidth, nHeight);
+		NSSize size = image.handle.size();
+		nWidth = (int)size.width;
+		nHeight = (int)size.height;
 	}
-	gc.fillRectangle(x, y, nWidth, nHeight);
-	parent.redraw();
+	NSRect rect = new NSRect();
+	rect.x = x;
+	rect.y = y;
+	rect.width = nWidth;
+	rect.height = nHeight;
+	parent.view.setNeedsDisplayInRect(rect);
 	return true;
 }
 
@@ -347,7 +352,7 @@ public void setBounds (Rectangle rect) {
 
 void setFocus () {
 	if (display.currentCaret == this) return;
-	display.setCurrentCaret ((Caret)this);
+	display.setCurrentCaret (this);
 	if (isVisible) showCaret ();
 }
 
