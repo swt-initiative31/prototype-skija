@@ -315,11 +315,8 @@ public int getWidth () {
 int getWidthInPixels () {
 	int index = parent.indexOf (this);
 	if (index == -1) return 0;
-
-	System.out.println("WARN: Not implemented yet: "
-			+ new Throwable().getStackTrace()[0]);
-
-	return 20;
+	long hwnd = parent.handle;
+	return (int)OS.SendMessage (hwnd, OS.LVM_GETCOLUMNWIDTH, index, 0);
 }
 
 /**
@@ -770,45 +767,42 @@ void setSortDirection (int direction) {
 
 @Override
 public void setText (String string) {
+	checkWidget ();
+	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
+	if (string.equals (text)) return;
+	int index = parent.indexOf (this);
+	if (index == -1) return;
+	super.setText (string);
 
-	this.text = text;
+	/*
+	* Bug in Windows.  For some reason, when the title
+	* of a column is changed after the column has been
+	* created, the alignment must also be reset or the
+	* text does not draw.  The fix is to query and then
+	* set the alignment.
+	*/
+	long hwnd = parent.handle;
+	LVCOLUMN lvColumn = new LVCOLUMN ();
+	lvColumn.mask = OS.LVCF_FMT;
+	OS.SendMessage (hwnd, OS.LVM_GETCOLUMN, index, lvColumn);
 
-//	checkWidget ();
-//	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
-//	if (string.equals (text)) return;
-//	int index = parent.indexOf (this);
-//	if (index == -1) return;
-//	super.setText (string);
-//
-//	/*
-//	* Bug in Windows.  For some reason, when the title
-//	* of a column is changed after the column has been
-//	* created, the alignment must also be reset or the
-//	* text does not draw.  The fix is to query and then
-//	* set the alignment.
-//	*/
-//	long hwnd = parent.handle;
-//	LVCOLUMN lvColumn = new LVCOLUMN ();
-//	lvColumn.mask = OS.LVCF_FMT;
-//	OS.SendMessage (hwnd, OS.LVM_GETCOLUMN, index, lvColumn);
-//
-//	/*
-//	* Bug in Windows.  When a column header contains a
-//	* mnemonic character, Windows does not measure the
-//	* text properly.  This causes '...' to always appear
-//	* at the end of the text.  The fix is to remove
-//	* mnemonic characters.
-//	*/
-//	long hHeap = OS.GetProcessHeap ();
-//	char [] buffer = fixMnemonic (string);
-//	int byteCount = buffer.length * TCHAR.sizeof;
-//	long pszText = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
-//	OS.MoveMemory (pszText, buffer, byteCount);
-//	lvColumn.mask |= OS.LVCF_TEXT;
-//	lvColumn.pszText = pszText;
-//	long result = OS.SendMessage (hwnd, OS.LVM_SETCOLUMN, index, lvColumn);
-//	if (pszText != 0) OS.HeapFree (hHeap, 0, pszText);
-//	if (result == 0) error (SWT.ERROR_CANNOT_SET_TEXT);
+	/*
+	* Bug in Windows.  When a column header contains a
+	* mnemonic character, Windows does not measure the
+	* text properly.  This causes '...' to always appear
+	* at the end of the text.  The fix is to remove
+	* mnemonic characters.
+	*/
+	long hHeap = OS.GetProcessHeap ();
+	char [] buffer = fixMnemonic (string);
+	int byteCount = buffer.length * TCHAR.sizeof;
+	long pszText = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
+	OS.MoveMemory (pszText, buffer, byteCount);
+	lvColumn.mask |= OS.LVCF_TEXT;
+	lvColumn.pszText = pszText;
+	long result = OS.SendMessage (hwnd, OS.LVM_SETCOLUMN, index, lvColumn);
+	if (pszText != 0) OS.HeapFree (hHeap, 0, pszText);
+	if (result == 0) error (SWT.ERROR_CANNOT_SET_TEXT);
 }
 
 /**
