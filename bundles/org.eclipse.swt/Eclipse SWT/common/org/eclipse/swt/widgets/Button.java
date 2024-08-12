@@ -328,12 +328,12 @@ public class Button extends Canvas {
 
 			toRight = 8;
 
-			gc.drawOval(4, 8, 14, 14);
 			if (getSelection()) {
 				gc.setBackground(getForeground());
 				gc.fillOval(4, 8, 15, 15);
 				gc.setBackground(getBackground());
 			}
+			gc.drawOval(4, 8, 14, 14);
 
 		} else {
 
