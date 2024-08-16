@@ -683,6 +683,7 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 		return super.getBorderWidth();
 	}
 
+
 	public int getLineHeight() {
 		checkWidget();
 		GC gc = new GC(this);
