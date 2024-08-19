@@ -2675,4 +2675,10 @@ int getSystemMetrics(int nIndex) {
 }
 
 
+void copyToClipboard(char[] buffer) {
+	// maybe with AWT this can be done for every OS.
+	System.out.println(
+			"WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
+}
+
 }
