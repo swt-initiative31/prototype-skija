@@ -105,7 +105,7 @@ public class ControlExample {
 		skijaToggle.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
-				SWT.USE_SKIJA = skijaToggle.getSelection();
+//				SWT.USE_SKIJA = skijaToggle.getSelection();
 				parent.layout();
 				parent.redraw(0, 0, parent.getBounds().width, parent.getBounds().height, true);
 			}
