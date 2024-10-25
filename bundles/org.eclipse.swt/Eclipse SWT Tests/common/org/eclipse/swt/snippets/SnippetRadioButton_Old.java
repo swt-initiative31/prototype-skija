@@ -12,7 +12,7 @@ public class SnippetRadioButton_Old {
 		// Display und Shell initialisieren
 		Display display = new Display();
 		Shell shell = new Shell(display);
-		shell.setText("Radio Buttons Example");
+		shell.setText("Radio Buttons Example Old");
 		shell.setSize(300, 200);
 		shell.setLayout(new GridLayout(1, false));
 
@@ -50,6 +50,17 @@ public class SnippetRadioButton_Old {
 		radio1.addSelectionListener(selectionAdapter);
 		radio2.addSelectionListener(selectionAdapter);
 		radio3.addSelectionListener(selectionAdapter);
+
+		push.addSelectionListener(new SelectionAdapter() {
+
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				Button_Old selectedButton = (Button_Old) e.widget;
+				System.out.println("Selected: " + selectedButton.getText());
+				System.out.println(selectedButton.getSelection());
+			}
+
+		});
 
 		// Shell öffnen
 		shell.open();
