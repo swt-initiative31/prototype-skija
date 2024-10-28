@@ -62,6 +62,7 @@ public class SnippetRadioButton_Old {
 
 		});
 
+
 		// Shell öffnen
 		shell.open();
 		while (!shell.isDisposed()) {
