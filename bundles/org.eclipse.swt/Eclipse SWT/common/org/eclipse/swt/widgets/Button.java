@@ -21,7 +21,6 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.custom.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.win32.*;
 
 /**
  * Instances of this class represent a selectable user interface object that
