@@ -153,7 +153,7 @@ public class Display extends Device implements Executor {
 	}
 
 	/* XP Themes */
-	long hButtonTheme, hButtonThemeDark, hEditTheme, hExplorerBarTheme, hScrollBarTheme, hScrollBarThemeDark, hTabTheme;
+	private Map<Integer, ThemeData> themeDataMap = new HashMap<>();
 	static final char [] EXPLORER = new char [] {'E', 'X', 'P', 'L', 'O', 'R', 'E', 'R', 0};
 	static final char [] TREEVIEW = new char [] {'T', 'R', 'E', 'E', 'V', 'I', 'E', 'W', 0};
 	/* Emergency switch to be used in case of regressions. Not supposed to be changed when app is running. */
@@ -270,6 +270,17 @@ public class Display extends Device implements Executor {
 	 */
 	static final String USE_DARKTHEME_TEXT_ICONS = "org.eclipse.swt.internal.win32.Text.useDarkThemeIcons"; //$NON-NLS-1$
 	boolean textUseDarkthemeIcons = false;
+	/**
+	 * Use dark prefered color scheme in Edge browser.
+	 * Note:<br>
+	 * <ul>
+	 *   <li>When setting this property on the display, it is first AND'ed with !disableCustomThemeTweaks.
+	 *   <li>The data is then read from withing Edge.
+	 *   <li>This is to avoid adding public methods/members.
+	 * </ul>
+	 * Expects a <code>boolean</code> value.
+	 */
+	static final String EDGE_USE_DARK_PREFERED_COLOR_SCHEME = "org.eclipse.swt.internal.win32.Edge.useDarkPreferedColorScheme"; //$NON-NLS-1$
 
 	/* Custom icons */
 	private HashMap<Integer, Long> sizeToSearchIconHandle = new HashMap<>();
@@ -583,9 +594,6 @@ public Display () {
  */
 public Display (DeviceData data) {
 	super (data);
-	if (DPIUtil.isAutoScaleOnRuntimeActive()) {
-		setRescalingAtRuntime(true);
-	}
 }
 
 Control _getFocusControl () {
@@ -873,7 +881,9 @@ static void checkDisplay (Thread thread, boolean multiple) {
 		for (Display display : Displays) {
 			if (display != null) {
 				if (!multiple) SWT.error (SWT.ERROR_NOT_IMPLEMENTED, null, " [multiple displays]"); //$NON-NLS-1$
-				if (display.thread == thread) SWT.error (SWT.ERROR_THREAD_INVALID_ACCESS);
+				if (display.thread == thread)
+					SWT.error(SWT.ERROR_THREAD_INVALID_ACCESS, null,
+							" Another Display is already associated by this thread: " + thread);
 			}
 		}
 	}
@@ -937,6 +947,9 @@ public void close () {
 protected void create (DeviceData data) {
 	checkSubclass ();
 	checkDisplay (thread = Thread.currentThread (), true);
+	if (DPIUtil.isAutoScaleOnRuntimeActive()) {
+		setRescalingAtRuntime(true);
+	}
 	createDisplay (data);
 	register (this);
 	if (Default == null) Default = this;
@@ -1673,7 +1686,11 @@ public Control getCursorControl () {
  */
 public Point getCursorLocation () {
 	checkDevice ();
-	return DPIUtil.autoScaleDown(getCursorLocationInPixels());
+	Point cursorLocationInPixels = getCursorLocationInPixels();
+	if (isRescalingAtRuntime()) {
+		return translateLocationInPointInDisplayCoordinateSystem(cursorLocationInPixels.x, cursorLocationInPixels.y);
+	}
+	return DPIUtil.autoScaleDown(cursorLocationInPixels);
 }
 
 Point getCursorLocationInPixels () {
@@ -2152,14 +2169,21 @@ Monitor getMonitor (long hmonitor) {
 	OS.GetMonitorInfo (hmonitor, lpmi);
 	Monitor monitor = new Monitor ();
 	monitor.handle = hmonitor;
-	Rectangle boundsInPixels = new Rectangle (lpmi.rcMonitor_left, lpmi.rcMonitor_top, lpmi.rcMonitor_right - lpmi.rcMonitor_left,lpmi.rcMonitor_bottom - lpmi.rcMonitor_top);
-	monitor.setBounds (DPIUtil.autoScaleDown (boundsInPixels));
-	Rectangle clientAreaInPixels = new Rectangle (lpmi.rcWork_left, lpmi.rcWork_top, lpmi.rcWork_right - lpmi.rcWork_left, lpmi.rcWork_bottom - lpmi.rcWork_top);
-	monitor.setClientArea (DPIUtil.autoScaleDown (clientAreaInPixels));
+	Rectangle boundsInPixels = new Rectangle(lpmi.rcMonitor_left, lpmi.rcMonitor_top, lpmi.rcMonitor_right - lpmi.rcMonitor_left,lpmi.rcMonitor_bottom - lpmi.rcMonitor_top);
+	Rectangle clientAreaInPixels = new Rectangle(lpmi.rcWork_left, lpmi.rcWork_top, lpmi.rcWork_right - lpmi.rcWork_left, lpmi.rcWork_bottom - lpmi.rcWork_top);
 	int [] dpiX = new int[1];
 	int [] dpiY = new int[1];
 	int result = OS.GetDpiForMonitor (monitor.handle, OS.MDT_EFFECTIVE_DPI, dpiX, dpiY);
 	result = (result == OS.S_OK) ? DPIUtil.mapDPIToZoom (dpiX[0]) : 100;
+
+	if (DPIUtil.isAutoScaleOnRuntimeActive()) {
+		int autoscaleZoom = DPIUtil.getZoomForAutoscaleProperty(result);
+		monitor.setBounds(getMonitorBoundsInPointsInDisplayCoordinateSystem(boundsInPixels, autoscaleZoom));
+		monitor.setClientArea(getMonitorBoundsInPointsInDisplayCoordinateSystem(clientAreaInPixels, autoscaleZoom));
+	} else {
+		monitor.setBounds(DPIUtil.autoScaleDown(boundsInPixels));
+		monitor.setClientArea(DPIUtil.autoScaleDown(clientAreaInPixels));
+	}
 	if (result == 0) {
 		System.err.println("***WARNING: GetDpiForMonitor: SWT could not get valid monitor scaling factor.");
 		result = 100;
@@ -2170,6 +2194,13 @@ Monitor getMonitor (long hmonitor) {
 	 */
 	monitor.zoom = result;
 	return monitor;
+}
+
+private Rectangle getMonitorBoundsInPointsInDisplayCoordinateSystem(Rectangle boundsInPixels, int zoom) {
+	Rectangle bounds = DPIUtil.scaleDown(boundsInPixels, zoom);
+	bounds.x = boundsInPixels.x;
+	bounds.y = boundsInPixels.y;
+	return bounds;
 }
 
 /**
@@ -2632,93 +2663,55 @@ public boolean getTouchEnabled () {
 	return (value & (OS.NID_READY | OS.NID_MULTI_INPUT)) == (OS.NID_READY | OS.NID_MULTI_INPUT);
 }
 
-long hButtonTheme () {
-	if (hButtonTheme != 0) return hButtonTheme;
-	final char[] themeName = "BUTTON\0".toCharArray();
-	return hButtonTheme = OS.OpenThemeData (hwndMessage, themeName);
+long hButtonTheme (int dpi) {
+	return getOrCreateThemeData(dpi).hButtonTheme();
 }
 
-long hButtonThemeDark () {
-	if (hButtonThemeDark != 0) return hButtonThemeDark;
-	final char[] themeName = "Darkmode_Explorer::BUTTON\0".toCharArray();
-	return hButtonThemeDark = OS.OpenThemeData (hwndMessage, themeName);
+long hButtonThemeDark (int dpi) {
+	return getOrCreateThemeData(dpi).hButtonThemeDark();
 }
 
-long hButtonThemeAuto () {
+long hButtonThemeAuto (int dpi) {
 	if (useDarkModeExplorerTheme) {
-		return hButtonThemeDark ();
+		return hButtonThemeDark (dpi);
 	} else {
-		return hButtonTheme ();
+		return hButtonTheme (dpi);
 	}
 }
 
-long hEditTheme () {
-	if (hEditTheme != 0) return hEditTheme;
-	final char[] themeName = "EDIT\0".toCharArray();
-	return hEditTheme = OS.OpenThemeData (hwndMessage, themeName);
+long hEditTheme (int dpi) {
+	return getOrCreateThemeData(dpi).hEditTheme();
 }
 
-long hExplorerBarTheme () {
-	if (hExplorerBarTheme != 0) return hExplorerBarTheme;
-	final char[] themeName = "EXPLORERBAR\0".toCharArray();
-	return hExplorerBarTheme = OS.OpenThemeData (hwndMessage, themeName);
+long hExplorerBarTheme (int dpi) {
+	return getOrCreateThemeData(dpi).hExplorerBarTheme();
 }
 
-long hScrollBarTheme () {
-	if (hScrollBarTheme != 0) return hScrollBarTheme;
-	final char[] themeName = "SCROLLBAR\0".toCharArray();
-	return hScrollBarTheme = OS.OpenThemeData (hwndMessage, themeName);
+long hScrollBarTheme (int dpi) {
+	return getOrCreateThemeData(dpi).hScrollBarTheme();
 }
 
-long hScrollBarThemeDark () {
-	if (hScrollBarThemeDark != 0) return hScrollBarThemeDark;
-	final char[] themeName = "Darkmode_Explorer::SCROLLBAR\0".toCharArray();
-	return hScrollBarThemeDark = OS.OpenThemeData (hwndMessage, themeName);
+long hScrollBarThemeDark (int dpi) {
+	return getOrCreateThemeData(dpi).hScrollBarThemeDark();
 }
 
-long hScrollBarThemeAuto () {
+long hScrollBarThemeAuto (int dpi) {
 	if (useDarkModeExplorerTheme) {
-		return hScrollBarThemeDark ();
+		return hScrollBarThemeDark (dpi);
 	} else {
-		return hScrollBarTheme ();
+		return hScrollBarTheme (dpi);
 	}
 }
 
-long hTabTheme () {
-	if (hTabTheme != 0) return hTabTheme;
-	final char[] themeName = "TAB\0".toCharArray();
-	return hTabTheme = OS.OpenThemeData (hwndMessage, themeName);
+long hTabTheme (int dpi) {
+	return getOrCreateThemeData(dpi).hTabTheme();
 }
 
 void resetThemes() {
-	if (hButtonTheme != 0) {
-		OS.CloseThemeData (hButtonTheme);
-		hButtonTheme = 0;
+	for (ThemeData themeData : themeDataMap.values()) {
+		themeData.reset();
 	}
-	if (hButtonThemeDark != 0) {
-		OS.CloseThemeData (hButtonThemeDark);
-		hButtonThemeDark = 0;
-	}
-	if (hEditTheme != 0) {
-		OS.CloseThemeData (hEditTheme);
-		hEditTheme = 0;
-	}
-	if (hExplorerBarTheme != 0) {
-		OS.CloseThemeData (hExplorerBarTheme);
-		hExplorerBarTheme = 0;
-	}
-	if (hScrollBarTheme != 0) {
-		OS.CloseThemeData (hScrollBarTheme);
-		hScrollBarTheme = 0;
-	}
-	if (hScrollBarThemeDark != 0) {
-		OS.CloseThemeData (hScrollBarThemeDark);
-		hScrollBarThemeDark = 0;
-	}
-	if (hTabTheme != 0) {
-		OS.CloseThemeData (hTabTheme);
-		hTabTheme = 0;
-	}
+	themeDataMap.clear();
 }
 
 /**
@@ -2951,6 +2944,9 @@ boolean isValidThread () {
 public Point map (Control from, Control to, Point point) {
 	checkDevice ();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
+	if (isRescalingAtRuntime()) {
+		return map(from, to, point.x, point.y);
+	}
 	int zoom = getZoomLevelForMapping(from, to);
 	point = DPIUtil.scaleUp(point, zoom);
 	return DPIUtil.scaleDown(mapInPixels(from, to, point), zoom);
@@ -2998,6 +2994,20 @@ Point mapInPixels (Control from, Control to, Point point) {
  */
 public Point map (Control from, Control to, int x, int y) {
 	checkDevice ();
+	if (isRescalingAtRuntime()) {
+		Point mappedPointInPoints;
+		if (from == null) {
+			Point mappedPointInpixels = mapInPixels(from, to, getPixelsFromPoint(to.getShell().getMonitor(), x, y));
+			mappedPointInPoints = DPIUtil.scaleDown(mappedPointInpixels, to.getZoom());
+		} else if (to == null) {
+			Point mappedPointInpixels = mapInPixels(from, to, DPIUtil.scaleUp(new Point(x, y), from.getZoom()));
+			mappedPointInPoints = getPointFromPixels(from.getShell().getMonitor(), mappedPointInpixels.x, mappedPointInpixels.y);
+		} else {
+			Point mappedPointInpixels = mapInPixels(from, to, DPIUtil.scaleUp(new Point(x, y), from.getZoom()));
+			mappedPointInPoints = DPIUtil.scaleDown(mappedPointInpixels, to.getZoom());
+		}
+		return mappedPointInPoints;
+	}
 	int zoom = getZoomLevelForMapping(from, to);
 	x = DPIUtil.scaleUp(x, zoom);
 	y = DPIUtil.scaleUp(y, zoom);
@@ -3065,6 +3075,9 @@ private int getZoomLevelForMapping(Control from, Control to) {
 public Rectangle map (Control from, Control to, Rectangle rectangle) {
 	checkDevice ();
 	if (rectangle == null) error (SWT.ERROR_NULL_ARGUMENT);
+	if (isRescalingAtRuntime()) {
+		return map(from, to, rectangle.x, rectangle.y, rectangle.width, rectangle.height);
+	}
 	int zoom = getZoomLevelForMapping(from, to);
 	rectangle = DPIUtil.scaleUp(rectangle, zoom);
 	return DPIUtil.scaleDown(mapInPixels(from, to, rectangle), zoom);
@@ -3114,6 +3127,20 @@ Rectangle mapInPixels (Control from, Control to, Rectangle rectangle) {
  */
 public Rectangle map (Control from, Control to, int x, int y, int width, int height) {
 	checkDevice ();
+	if (isRescalingAtRuntime()) {
+		Rectangle mappedRectangleInPoints;
+		if (from == null) {
+			Rectangle mappedRectangleInPixels = mapInPixels(from, to, translateRectangleInPixelsInDisplayCoordinateSystem(x, y, width, height, to.getShell().getMonitor()));
+			mappedRectangleInPoints = DPIUtil.scaleDown(mappedRectangleInPixels, to.getZoom());
+		} else if (to == null) {
+			Rectangle mappedRectangleInPixels = mapInPixels(from, to, DPIUtil.scaleUp(new Rectangle(x, y, width, height), from.getZoom()));
+			mappedRectangleInPoints = translateRectangleInPointsInDisplayCoordinateSystem(mappedRectangleInPixels.x, mappedRectangleInPixels.y, mappedRectangleInPixels.width, mappedRectangleInPixels.height, from.getShell().getMonitor());
+		} else {
+			Rectangle mappedRectangleInPixels = mapInPixels(from, to, DPIUtil.scaleUp(new Rectangle(x, y, width, height), from.getZoom()));
+			mappedRectangleInPoints = DPIUtil.scaleDown(mappedRectangleInPixels, to.getZoom());
+		}
+		return mappedRectangleInPoints;
+	}
 	int zoom = getZoomLevelForMapping(from, to);
 	x = DPIUtil.scaleUp(x, zoom);
 	y = DPIUtil.scaleUp(y, zoom);
@@ -3135,6 +3162,57 @@ Rectangle mapInPixels (Control from, Control to, int x, int y, int width, int he
 	rect.bottom = y + height;
 	OS.MapWindowPoints (hwndFrom, hwndTo, rect, 2);
 	return new Rectangle (rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
+}
+
+Point translateLocationInPixelsInDisplayCoordinateSystem(int x, int y) {
+	Monitor monitor = getContainingMonitor(x, y);
+	return getPixelsFromPoint(monitor, x, y);
+}
+
+Point translateLocationInPointInDisplayCoordinateSystem(int x, int y) {
+	Monitor monitor = getContainingMonitorInPixelsCoordinate(x, y);
+	return getPointFromPixels(monitor, x, y);
+}
+
+Rectangle translateRectangleInPixelsInDisplayCoordinateSystemByContainment(int x, int y, int width, int height) {
+	Monitor monitorByLocation = getContainingMonitor(x, y);
+	Monitor monitorByContainment = getContainingMonitor(x, y, width, height);
+	return translateRectangleInPixelsInDisplayCoordinateSystem(x, y, width, height, monitorByLocation, monitorByContainment);
+}
+
+private Rectangle translateRectangleInPixelsInDisplayCoordinateSystem(int x, int y, int width, int height, Monitor monitor) {
+	return translateRectangleInPixelsInDisplayCoordinateSystem(x, y, width, height, monitor, monitor);
+}
+
+private Rectangle translateRectangleInPixelsInDisplayCoordinateSystem(int x, int y, int width, int height, Monitor monitorOfLocation, Monitor monitorOfArea) {
+	Point topLeft = getPixelsFromPoint(monitorOfLocation, x, y);
+	int zoom = getApplicableMonitorZoom(monitorOfArea);
+	int widthInPixels = DPIUtil.scaleUp(width, zoom);
+	int heightInPixels = DPIUtil.scaleUp(height, zoom);
+	return new Rectangle(topLeft.x, topLeft.y, widthInPixels, heightInPixels);
+}
+
+Rectangle translateRectangleInPointsInDisplayCoordinateSystemByContainment(int x, int y, int widthInPixels, int heightInPixels) {
+	Monitor monitorByLocation = getContainingMonitor(x, y);
+	Monitor monitorByContainment = getContainingMonitor(x, y, widthInPixels, heightInPixels);
+	return translateRectangleInPointsInDisplayCoordinateSystem(x, y, widthInPixels, heightInPixels, monitorByLocation, monitorByContainment);
+}
+
+private Rectangle translateRectangleInPointsInDisplayCoordinateSystem(int x, int y, int widthInPixels, int heightInPixels, Monitor monitor) {
+	return translateRectangleInPointsInDisplayCoordinateSystem(x, y, widthInPixels, heightInPixels, monitor, monitor);
+}
+
+
+private Rectangle translateRectangleInPointsInDisplayCoordinateSystem(int x, int y, int widthInPixels, int heightInPixels, Monitor monitorOfLocation, Monitor monitorOfArea) {
+	Point topLeft = getPointFromPixels(monitorOfLocation, x, y);
+	int zoom = getApplicableMonitorZoom(monitorOfArea);
+	int width = DPIUtil.scaleDown(widthInPixels, zoom);
+	int height = DPIUtil.scaleDown(heightInPixels, zoom);
+	return new Rectangle(topLeft.x, topLeft.y, width, height);
+}
+
+private int getApplicableMonitorZoom(Monitor monitor) {
+	return DPIUtil.getZoomForAutoscaleProperty(isRescalingAtRuntime() ? monitor.zoom : getDeviceZoom());
 }
 
 long messageProc (long hwnd, long msg, long wParam, long lParam) {
@@ -4362,7 +4440,12 @@ public void sendPostExternalEventDispatchEvent () {
  */
 public void setCursorLocation (int x, int y) {
 	checkDevice ();
-	setCursorLocationInPixels (DPIUtil.autoScaleUp (x), DPIUtil.autoScaleUp (y));
+	if (isRescalingAtRuntime()) {
+		Point cursorLocationInPixels = translateLocationInPixelsInDisplayCoordinateSystem(x, y);
+		setCursorLocationInPixels (cursorLocationInPixels.x, cursorLocationInPixels.y);
+	} else {
+		setCursorLocationInPixels (DPIUtil.autoScaleUp (x), DPIUtil.autoScaleUp (y));
+	}
 }
 
 void setCursorLocationInPixels (int x, int y) {
@@ -4524,6 +4607,9 @@ public void setData (String key, Object value) {
 			break;
 		case USE_DARKTHEME_TEXT_ICONS:
 			textUseDarkthemeIcons = !disableCustomThemeTweaks && _toBoolean(value);
+			break;
+		case EDGE_USE_DARK_PREFERED_COLOR_SCHEME:
+			value = !disableCustomThemeTweaks && _toBoolean(value);
 			break;
 	}
 
@@ -5231,6 +5317,108 @@ static boolean isActivateShellOnForceFocus() {
 	return "true".equals(System.getProperty("org.eclipse.swt.internal.activateShellOnForceFocus", "true")); //$NON-NLS-1$
 }
 
+private ThemeData getOrCreateThemeData(int dpi) {
+	if (themeDataMap.containsKey(dpi)) {
+		return themeDataMap.get(dpi);
+	}
+	ThemeData themeData = new ThemeData(dpi);
+	themeDataMap.put(dpi, themeData);
+	return themeData;
+}
+
+private class ThemeData {
+	private long hButtonTheme;
+	private long hButtonThemeDark;
+	private long hEditTheme;
+	private long hExplorerBarTheme;
+	private long hScrollBarTheme;
+	private long hScrollBarThemeDark;
+	private long hTabTheme;
+
+	private int dpi;
+
+	private ThemeData(int dpi) {
+		this.dpi = dpi;
+	}
+
+	long hButtonTheme () {
+		if (hButtonTheme != 0) return hButtonTheme;
+		final char[] themeName = "BUTTON\0".toCharArray();
+		return hButtonTheme = openThemeData(themeName);
+	}
+
+	long hButtonThemeDark () {
+		if (hButtonThemeDark != 0) return hButtonThemeDark;
+		final char[] themeName = "Darkmode_Explorer::BUTTON\0".toCharArray();
+		return hButtonThemeDark = openThemeData(themeName);
+	}
+
+	long hEditTheme () {
+		if (hEditTheme != 0) return hEditTheme;
+		final char[] themeName = "EDIT\0".toCharArray();
+		return hEditTheme = openThemeData(themeName);
+	}
+
+	long hExplorerBarTheme () {
+		if (hExplorerBarTheme != 0) return hExplorerBarTheme;
+		final char[] themeName = "EXPLORERBAR\0".toCharArray();
+		return hExplorerBarTheme = openThemeData(themeName);
+	}
+
+	long hScrollBarTheme () {
+		if (hScrollBarTheme != 0) return hScrollBarTheme;
+		final char[] themeName = "SCROLLBAR\0".toCharArray();
+		return hScrollBarTheme = openThemeData(themeName);
+	}
+
+	long hScrollBarThemeDark () {
+		if (hScrollBarThemeDark != 0) return hScrollBarThemeDark;
+		final char[] themeName = "Darkmode_Explorer::SCROLLBAR\0".toCharArray();
+		return hScrollBarThemeDark = openThemeData(themeName);
+	}
+
+	long hTabTheme () {
+		if (hTabTheme != 0) return hTabTheme;
+		final char[] themeName = "TAB\0".toCharArray();
+		return hTabTheme = openThemeData(themeName);
+	}
+
+
+	public void reset() {
+		if (hButtonTheme != 0) {
+			OS.CloseThemeData (hButtonTheme);
+			hButtonTheme = 0;
+		}
+		if (hButtonThemeDark != 0) {
+			OS.CloseThemeData (hButtonThemeDark);
+			hButtonThemeDark = 0;
+		}
+		if (hEditTheme != 0) {
+			OS.CloseThemeData (hEditTheme);
+			hEditTheme = 0;
+		}
+		if (hExplorerBarTheme != 0) {
+			OS.CloseThemeData (hExplorerBarTheme);
+			hExplorerBarTheme = 0;
+		}
+		if (hScrollBarTheme != 0) {
+			OS.CloseThemeData (hScrollBarTheme);
+			hScrollBarTheme = 0;
+		}
+		if (hScrollBarThemeDark != 0) {
+			OS.CloseThemeData (hScrollBarThemeDark);
+			hScrollBarThemeDark = 0;
+		}
+		if (hTabTheme != 0) {
+			OS.CloseThemeData (hTabTheme);
+			hTabTheme = 0;
+		}
+	}
+
+	private long openThemeData(final char[] themeName) {
+		return OS.OpenThemeData(hwndMessage, themeName, dpi);
+	}
+}
 /**
  * {@return whether rescaling of shells at runtime when the DPI scaling of a
  * shell's monitor changes is activated for this device}
@@ -5292,4 +5480,63 @@ private boolean setDPIAwareness(int desiredDpiAwareness) {
 	return true;
 }
 
+private Monitor getContainingMonitor(int x, int y) {
+	Monitor[] monitors = getMonitors();
+	for (Monitor currentMonitor : monitors) {
+		Rectangle clientArea = currentMonitor.getClientArea();
+		if (clientArea.contains(x, y)) {
+			return currentMonitor;
+		}
+	}
+	return getPrimaryMonitor();
+}
+
+private Monitor getContainingMonitor(int x, int y, int width, int height) {
+	Rectangle rectangle = new Rectangle(x, y, width, height);
+	Monitor[] monitors = getMonitors();
+	Monitor selectedMonitor = getPrimaryMonitor();
+	int highestArea = 0;
+	for (Monitor currentMonitor : monitors) {
+		Rectangle clientArea = currentMonitor.getClientArea();
+		Rectangle intersection = clientArea.intersection(rectangle);
+		int area = intersection.width * intersection.height;
+		if (area > highestArea) {
+			selectedMonitor = currentMonitor;
+			highestArea = area;
+		}
+	}
+	return selectedMonitor;
+}
+
+private Monitor getContainingMonitorInPixelsCoordinate(int xInPixels, int yInPixels) {
+	Monitor[] monitors = getMonitors();
+	for (Monitor current : monitors) {
+		Rectangle clientArea = getMonitorClientAreaInPixels(current);
+		if (clientArea.contains(xInPixels, yInPixels)) {
+			return current;
+		}
+	}
+	return getPrimaryMonitor();
+}
+
+private Rectangle getMonitorClientAreaInPixels(Monitor monitor) {
+	int zoom = getApplicableMonitorZoom(monitor);
+	int widthInPixels = DPIUtil.scaleUp(monitor.clientWidth, zoom);
+	int heightInPixels = DPIUtil.scaleUp(monitor.clientHeight, zoom);
+	return new Rectangle(monitor.clientX, monitor.clientY, widthInPixels, heightInPixels);
+}
+
+private Point getPixelsFromPoint(Monitor monitor, int x, int y) {
+	int zoom = getApplicableMonitorZoom(monitor);
+	int mappedX = DPIUtil.scaleUp(x - monitor.clientX, zoom) + monitor.clientX;
+	int mappedY = DPIUtil.scaleUp(y - monitor.clientY, zoom) + monitor.clientY;
+	return new Point(mappedX, mappedY);
+}
+
+private Point getPointFromPixels(Monitor monitor, int x, int y) {
+	int zoom = getApplicableMonitorZoom(monitor);
+	int mappedX = DPIUtil.scaleDown(x - monitor.clientX, zoom) + monitor.clientX;
+	int mappedY = DPIUtil.scaleDown(y - monitor.clientY, zoom) + monitor.clientY;
+	return new Point(mappedX, mappedY);
+}
 }

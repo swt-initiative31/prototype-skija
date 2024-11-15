@@ -39,15 +39,6 @@ import org.junit.rules.TestWatcher;
  */
 public class Test_org_eclipse_swt_custom_StyledText_multiCaretsSelections {
 
-	@Rule
-	public TestWatcher screenshotRule = new TestWatcher() {
-		@Override
-		protected void failed(Throwable e, org.junit.runner.Description description) {
-			super.failed(e, description);
-			Screenshots.takeScreenshot(description.getTestClass(), description.getMethodName());
-		}
-	};
-
 	Shell shell;
 	StyledText text;
 	GC gc;
@@ -59,10 +50,12 @@ public class Test_org_eclipse_swt_custom_StyledText_multiCaretsSelections {
 		gc = new GC(text);
 	}
 
+	@Rule
+	public TestWatcher screenshotRule = Screenshots.onFailure(() -> this.shell);
+
 	@After
 	public void tearDown() {
 		gc.dispose();
-		shell.dispose();
 	}
 	@Test
 	public void test_MultiSelectionEdit() {

@@ -15,37 +15,21 @@
  *     Hannes Wellmann - Streamline entire SWT build and replace ANT-scripts by Maven, Jenkins-Pipeline and single-source Java scripts
   *******************************************************************************/
 
-def nativeBuildAgent(String platform, Closure body) {
+def runOnNativeBuildAgent(String platform, Closure body) {
 	def final nativeBuildStageName = 'Build SWT-native binaries'
 	if (platform == 'gtk.linux.x86_64') {
-		return podTemplate(yaml: '''
-apiVersion: v1
-kind: Pod
-spec:
-  containers:
-  - name: "swtbuild"
-    image: "eclipse/platformreleng-centos-swt-build:8"
-    imagePullPolicy: "Always"
-    resources:
-      limits:
-        memory: "4096Mi"
-        cpu: "2000m"
-      requests:
-        memory: "512Mi"
-        cpu: "1000m"
-    command:
-    - cat
-    tty: true
-    volumeMounts:
-    - name: tools
-      mountPath: /opt/tools
-  volumes:
-  - name: tools
-    persistentVolumeClaim:
-      claimName: tools-claim-jiro-releng
-''') { node(POD_LABEL) { stage(nativeBuildStageName) { container('swtbuild') { body() } } } }
+		podTemplate(inheritFrom: 'centos-latest' /* inhert general configuration */, containers: [
+			containerTemplate(name: 'swtbuild', image: 'eclipse/platformreleng-centos-swt-build:8',
+				resourceRequestCpu:'1000m', resourceRequestMemory:'512Mi',
+				resourceLimitCpu:'2000m', resourceLimitMemory:'4096Mi',
+				alwaysPullImage: true, command: 'cat', ttyEnabled: true)
+		]) {
+			node(POD_LABEL) { stage(nativeBuildStageName) { container('swtbuild') { body() } } }
+		}
 	} else {
-		return node('swt.natives-' + platform) { stage(nativeBuildStageName) { body() } }
+		// See the Definition of the RelEng Jenkins instance in
+		// https://github.com/eclipse-cbi/jiro/tree/master/instances/eclipse.platform.releng
+		node('native.builder-' + platform) { stage(nativeBuildStageName) { body() } }
 	}
 }
 
@@ -62,6 +46,17 @@ def getNativeJdkUrl(String os, String arch){ // To update the used JDK version u
 			"""
 		}
 		return "file://${WORKSPACE}/repackage-win32.aarch64-jdk/jdk.tar.gz"
+	} else if ('linux'.equals(os) && 'riscv64'.equals(arch)) {
+		// Downloading jdk and renew it for riscv64 architecture on Linux
+		dir("${WORKSPACE}/repackage-linux.riscv64-jdk") {
+				sh """
+				curl -L 'https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.12%2B7/OpenJDK17U-jdk_riscv64_linux_hotspot_17.0.12_7.tar.gz' > jdk.tar.gz
+				tar -xzf jdk.tar.gz jdk-17.0.12+7/include/ jdk-17.0.12+7/lib/
+				cd jdk-17.0.12+7
+				tar -czf ../jdk.tar.gz include/ lib/
+				"""
+		}
+		return "file://${WORKSPACE}/repackage-linux.riscv64-jdk/jdk.tar.gz"
 	}
 	return "https://download.eclipse.org/justj/jres/17/downloads/20230428_1804/org.eclipse.justj.openjdk.hotspot.jre.minimal.stripped-17.0.7-${os}-${arch}.tar.gz"
 }
@@ -92,7 +87,7 @@ pipeline {
 		label 'centos-latest'
 	}
 	tools {
-		jdk 'openjdk-jdk17-latest'
+		jdk 'temurin-jdk17-latest'
 		maven 'apache-maven-latest'
 	}
 	environment {
@@ -197,7 +192,15 @@ pipeline {
 				axes {
 					axis {
 						name 'PLATFORM'
-						values 'cocoa.macosx.aarch64' , 'cocoa.macosx.x86_64', 'gtk.linux.aarch64', 'gtk.linux.ppc64le', 'gtk.linux.x86_64', 'win32.win32.aarch64', 'win32.win32.x86_64'
+						values \
+						'cocoa.macosx.aarch64',\
+						'cocoa.macosx.x86_64',\
+						'gtk.linux.aarch64',\
+						'gtk.linux.ppc64le',\
+						'gtk.linux.riscv64',\
+						'gtk.linux.x86_64',\
+						'win32.win32.aarch64',\
+						'win32.win32.x86_64'
 					}
 				}
 				stages {
@@ -214,7 +217,7 @@ pipeline {
 									stash name:"jdk.resources.${os}.${arch}", includes: "include/,lib/"
 									deleteDir()
 								}
-								nativeBuildAgent("${PLATFORM}") {
+								runOnNativeBuildAgent("${PLATFORM}") {
 									cleanWs() // Workspace is not cleaned up by default, so we do it explicitly
 									echo "OS: ${os}, ARCH: ${arch}"
 									unstash "swt.binaries.sources.${ws}"
@@ -238,6 +241,7 @@ pipeline {
 									dir('libs') {
 										stash "swt.binaries.${PLATFORM}"
 									}
+									cleanWs() // workspace not cleaned by default
 								}
 							}
 						}

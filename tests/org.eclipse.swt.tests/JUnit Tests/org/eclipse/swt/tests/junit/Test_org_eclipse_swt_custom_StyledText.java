@@ -76,12 +76,9 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.Widget;
-import org.eclipse.test.Screenshots;
 import org.junit.Assume;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestWatcher;
 
 /**
  * Automated Test Suite for class org.eclipse.swt.custom.StyledText
@@ -102,14 +99,6 @@ final static String PLATFORM_LINE_DELIMITER = System.lineSeparator();
 Map<RGB, Color> colors = new HashMap<>();
 private boolean listenerCalled;
 private boolean listener2Called;
-
-@Rule public TestWatcher screenshotRule = new TestWatcher() {
-	@Override
-	protected void failed(Throwable e, org.junit.runner.Description description) {
-		super.failed(e, description);
-		Screenshots.takeScreenshot(description.getTestClass(), description.getMethodName());
-	}
-};
 
 @Override
 @Before

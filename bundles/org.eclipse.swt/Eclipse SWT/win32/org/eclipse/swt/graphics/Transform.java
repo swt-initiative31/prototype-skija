@@ -145,6 +145,7 @@ public Transform (Device device, float m11, float m12, float m21, float m22, flo
 	if (handle == 0) SWT.error(SWT.ERROR_NO_HANDLES);
 	zoomLevelToHandle.put(initialZoom, handle);
 	init();
+	this.device.registerResourceWithZoomSupport(this);
 }
 
 static float[] checkTransform(float[] elements) {
@@ -155,8 +156,21 @@ static float[] checkTransform(float[] elements) {
 
 @Override
 void destroy() {
+	device.deregisterResourceWithZoomSupport(this);
 	zoomLevelToHandle.values().forEach(Gdip::Matrix_delete);
 	zoomLevelToHandle.clear();
+}
+
+@Override
+void destroyHandlesExcept(Set<Integer> zoomLevels) {
+	zoomLevelToHandle.entrySet().removeIf(entry -> {
+		final Integer zoom = entry.getKey();
+		if (!zoomLevels.contains(zoom) && zoom != initialZoom) {
+			Gdip.Matrix_delete(entry.getValue());
+			return true;
+		}
+		return false;
+	});
 }
 
 /**

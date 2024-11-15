@@ -22,6 +22,7 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.DPIUtil.*;
 import org.eclipse.swt.internal.gdip.*;
 import org.eclipse.swt.internal.win32.*;
+import org.eclipse.swt.widgets.*;
 
 /**
  * Instances of this class are graphics which have been prepared
@@ -164,6 +165,7 @@ public final class Image extends Resource implements Drawable {
 Image (Device device) {
 	super(device);
 	initialNativeZoom = DPIUtil.getNativeDeviceZoom();
+	this.device.registerResourceWithZoomSupport(this);
 }
 
 /**
@@ -209,6 +211,7 @@ public Image(Device device, int width, int height) {
 	height = DPIUtil.scaleUp (height, zoom);
 	init(width, height);
 	init();
+	this.device.registerResourceWithZoomSupport(this);
 }
 
 /**
@@ -311,6 +314,7 @@ public Image(Device device, Image srcImage, int flag) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 	}
 	init();
+	this.device.registerResourceWithZoomSupport(this);
 }
 
 /**
@@ -355,6 +359,7 @@ public Image(Device device, Rectangle bounds) {
 	bounds = DPIUtil.scaleUp (bounds, getZoom());
 	init(bounds.width, bounds.height);
 	init();
+	this.device.registerResourceWithZoomSupport(this);
 }
 
 /**
@@ -388,6 +393,7 @@ public Image(Device device, ImageData data) {
 	data = DPIUtil.autoScaleUp(device, this.dataAtBaseZoom);
 	init(data, getZoom());
 	init();
+	this.device.registerResourceWithZoomSupport(this);
 }
 
 /**
@@ -434,6 +440,7 @@ public Image(Device device, ImageData source, ImageData mask) {
 	mask = ImageData.convertMask(mask);
 	init(this.device, this, source, mask, getZoom());
 	init();
+	this.device.registerResourceWithZoomSupport(this);
 }
 
 /**
@@ -496,6 +503,7 @@ public Image (Device device, InputStream stream) {
 	ImageData data = DPIUtil.autoScaleUp(device, this.dataAtBaseZoom);
 	init(data, getZoom());
 	init();
+	this.device.registerResourceWithZoomSupport(this);
 }
 
 /**
@@ -538,6 +546,7 @@ public Image (Device device, String filename) {
 	ImageData data = DPIUtil.autoScaleUp(device, this.dataAtBaseZoom);
 	init(data, getZoom());
 	init();
+	this.device.registerResourceWithZoomSupport(this);
 }
 
 /**
@@ -586,6 +595,7 @@ public Image(Device device, ImageFileNameProvider imageFileNameProvider) {
 		init(resizedData, getZoom());
 	}
 	init();
+	this.device.registerResourceWithZoomSupport(this);
 }
 
 /**
@@ -625,6 +635,7 @@ public Image(Device device, ImageDataProvider imageDataProvider) {
 	ImageData resizedData = DPIUtil.scaleImageData(device, data.element(), getZoom(), data.zoom());
 	init (resizedData, getZoom());
 	init();
+	this.device.registerResourceWithZoomSupport(this);
 }
 
 private ImageData adaptImageDataIfDisabledOrGray(ImageData data) {
@@ -809,7 +820,10 @@ public static Long win32_getHandle (Image image, int zoom) {
 			image.init(newData, zoom);
 		}
 	} else if (image.imageDataProvider != null) {
-		ElementAtZoom<ImageData> imageCandidate = DPIUtil.validateAndGetImageDataAtZoom (image.imageDataProvider, zoom);
+		ElementAtZoom<ImageData> imageCandidate;
+		try (StaticZoomUpdater unused = image.new StaticZoomUpdater(zoom)) {
+			imageCandidate = DPIUtil.validateAndGetImageDataAtZoom (image.imageDataProvider, zoom);
+		}
 		ImageData resizedData = DPIUtil.scaleImageData (image.device, imageCandidate.element(), zoom, imageCandidate.zoom());
 		ImageData newData = image.adaptImageDataIfDisabledOrGray(resizedData);
 		image.init(newData, zoom);
@@ -1177,6 +1191,7 @@ long [] createGdipImage(Integer zoom) {
 
 @Override
 void destroy () {
+	device.deregisterResourceWithZoomSupport(this);
 	if (memGC != null) memGC.dispose();
 	destroyHandle();
 	memGC = null;
@@ -1186,14 +1201,30 @@ static int count = 0;
 
 private void destroyHandle () {
 	for (Long handle : zoomLevelToHandle.values()) {
-		if (type == SWT.ICON) {
-			OS.DestroyIcon (handle);
-		} else {
-			OS.DeleteObject (handle);
-		}
+		destroyHandle(handle);
 	}
 	zoomLevelToHandle.clear();
 	handle = 0;
+}
+
+@Override
+void destroyHandlesExcept(Set<Integer> zoomLevels) {
+	zoomLevelToHandle.entrySet().removeIf(entry -> {
+		final Integer zoom = entry.getKey();
+		if (!zoomLevels.contains(zoom) && zoom != DPIUtil.getZoomForAutoscaleProperty(initialNativeZoom)) {
+			destroyHandle(entry.getValue());
+			return true;
+		}
+		return false;
+	});
+}
+
+private void destroyHandle(long handle) {
+	if (type == SWT.ICON) {
+		OS.DestroyIcon (handle);
+	} else {
+		OS.DeleteObject (handle);
+	}
 }
 
 /**
@@ -1416,7 +1447,10 @@ public ImageData getImageData (int zoom) {
 	if (zoom == currentZoom) {
 		return getImageDataAtCurrentZoom();
 	} else if (imageDataProvider != null) {
-		ElementAtZoom<ImageData> data = DPIUtil.validateAndGetImageDataAtZoom (imageDataProvider, zoom);
+		ElementAtZoom<ImageData> data;
+		try (StaticZoomUpdater unused = new StaticZoomUpdater(zoom)) {
+			data = DPIUtil.validateAndGetImageDataAtZoom (imageDataProvider, zoom);
+		}
 		return DPIUtil.scaleImageData (device, data.element(), zoom, data.zoom());
 	} else if (imageFileNameProvider != null) {
 		ElementAtZoom<String> fileName = DPIUtil.validateAndGetImagePathAtZoom (imageFileNameProvider, zoom);
@@ -2369,5 +2403,26 @@ public static Image win32_new(Device device, int type, long handle) {
 	image.type = type;
 	image.setHandleForZoomLevel(handle, image.getZoom());
 	return image;
+}
+
+// This class is only used for a workaround and will be removed again
+private class StaticZoomUpdater implements AutoCloseable {
+	private final boolean updateStaticZoom;
+	private final int currentNativeDeviceZoom;
+
+	private StaticZoomUpdater(int targetZoom) {
+		this.currentNativeDeviceZoom = DPIUtil.getNativeDeviceZoom();
+		this.updateStaticZoom = this.currentNativeDeviceZoom != targetZoom && device instanceof Display display && display.isRescalingAtRuntime();
+		if (updateStaticZoom) {
+			DPIUtil.setDeviceZoom(targetZoom);
+		}
+	}
+
+	@Override
+	public void close() {
+		if (updateStaticZoom) {
+			DPIUtil.setDeviceZoom(currentNativeDeviceZoom);
+		}
+	}
 }
 }
