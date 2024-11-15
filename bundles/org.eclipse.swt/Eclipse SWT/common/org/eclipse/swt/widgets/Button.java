@@ -18,10 +18,8 @@ import java.util.*;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
-import org.eclipse.swt.custom.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.win32.*;
 
 /**
  * Instances of this class represent a selectable user interface object that
@@ -400,7 +398,7 @@ public class Button extends Control implements ICustomWidget {
 	private void handleSelection() {
 		if (isRadioButton()) {
 // here we have to force the focus, else the focus stays on another button in this group
-// TODO this must be improved. 
+// TODO this must be improved.
 			forceFocus();
 			selectRadio();
 		} else {
