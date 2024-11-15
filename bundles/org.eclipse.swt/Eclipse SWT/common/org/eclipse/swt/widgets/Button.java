@@ -807,11 +807,6 @@ public class Button extends Control implements ICustomWidget {
 		return computedSize;
 	}
 
-	private boolean hasBorder() {
-
-		return (style & SWT.BORDER) != 0;
-	}
-
 	@Override
 	public Point getSize() {
 		return new Point(width, height);
