@@ -804,6 +804,9 @@ void drawRect (long id, long sel, NSRect rect) {
 
 	display.isPainting.addObject(view);
 	NSGraphicsContext context = NSGraphicsContext.currentContext();
+	if (context == null) {
+		return;
+	}
 	context.saveGraphicsState();
 	setClipRegion(view);
 	drawBackground (id, context, rect);

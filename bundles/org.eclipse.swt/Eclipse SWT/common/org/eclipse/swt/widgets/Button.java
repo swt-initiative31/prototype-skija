@@ -20,6 +20,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.opengl.*;
 
 /**
  * Instances of this class represent a selectable user interface object that
@@ -54,7 +55,7 @@ import org.eclipse.swt.graphics.*;
  *      information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Button extends Control implements ICustomWidget {
+public class Button extends GLCanvas implements ICustomWidget {
 	String text = "", message = "";
 	Image image, disabledImage;
 	boolean ignoreMouse, grayed, useDarkModeExplorerTheme;
@@ -139,7 +140,7 @@ public class Button extends Control implements ICustomWidget {
 	 * @see Widget#getStyle
 	 */
 	public Button(Composite parent, int style) {
-		super(parent, checkStyle(style));
+		super(parent, checkStyle(style | SWT.NO_REDRAW_RESIZE), new GLData());
 
 		listener = event -> {
 			switch (event.type) {
@@ -443,7 +444,8 @@ public class Button extends Control implements ICustomWidget {
 		}
 
 		if (SWT.USE_SKIJA) {
-			gc = new SkijaGC(originalGC, background);
+			this.setCurrent();
+			gc = new SkijaGC(originalGC, this, background);
 		} else {
 			if (SWT.getPlatform().equals("win32")) {
 				// Use double buffering on windows

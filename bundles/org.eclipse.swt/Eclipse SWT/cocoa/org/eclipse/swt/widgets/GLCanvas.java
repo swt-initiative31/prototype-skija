@@ -11,11 +11,11 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
-package org.eclipse.swt.opengl;
+package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.widgets.*;
+import org.eclipse.swt.opengl.*;
 
 /**
  * GLCanvas is a widget capable of displaying OpenGL content.
