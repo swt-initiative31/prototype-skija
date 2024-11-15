@@ -457,7 +457,7 @@ public class Button extends Control implements ICustomWidget {
 		}
 
 		if (SWT.USE_SKIJA) {
-			gc = new SkijaGC((GC) gc);
+			gc = new SkijaGC((GC) gc, background);
 		}
 
 		boolean isRightAligned = (style & SWT.RIGHT) != 0;
