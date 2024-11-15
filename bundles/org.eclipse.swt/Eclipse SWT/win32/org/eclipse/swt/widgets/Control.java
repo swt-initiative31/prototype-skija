@@ -3991,6 +3991,11 @@ void subclass () {
 public Point toControl (int x, int y) {
 	checkWidget ();
 	int zoom = getZoom();
+	if (getDisplay().isRescalingAtRuntime()) {
+		Point displayPointInPixels = getDisplay().translateLocationInPixelsInDisplayCoordinateSystem(x, y);
+		final Point controlPointInPixels = toControlInPixels(displayPointInPixels.x, displayPointInPixels.y);
+		return DPIUtil.scaleDown(controlPointInPixels, zoom);
+	}
 	return DPIUtil.scaleDown(toControlInPixels(DPIUtil.scaleUp(x, zoom), DPIUtil.scaleUp(y, zoom)), zoom);
 }
 
@@ -4024,9 +4029,7 @@ Point toControlInPixels (int x, int y) {
 public Point toControl (Point point) {
 	checkWidget ();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
-	int zoom = getZoom();
-	point = DPIUtil.scaleUp(point, zoom);
-	return DPIUtil.scaleDown(toControlInPixels(point.x, point.y), zoom);
+	return toControl(point.x, point.y);
 }
 
 /**
@@ -4052,6 +4055,10 @@ public Point toControl (Point point) {
 public Point toDisplay (int x, int y) {
 	checkWidget ();
 	int zoom = getZoom();
+	if (getDisplay().isRescalingAtRuntime()) {
+		Point displayPointInPixels = toDisplayInPixels(DPIUtil.scaleUp(x, zoom), DPIUtil.scaleUp(y, zoom));
+		return getDisplay().translateLocationInPointInDisplayCoordinateSystem(displayPointInPixels.x, displayPointInPixels.y);
+	}
 	return DPIUtil.scaleDown(toDisplayInPixels(DPIUtil.scaleUp(x, zoom), DPIUtil.scaleUp(y, zoom)), zoom);
 }
 
@@ -4085,9 +4092,7 @@ Point toDisplayInPixels (int x, int y) {
 public Point toDisplay (Point point) {
 	checkWidget ();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
-	int zoom = getZoom();
-	point = DPIUtil.scaleUp(point, zoom);
-	return DPIUtil.scaleDown(toDisplayInPixels(point.x, point.y), zoom);
+	return toDisplay(point.x, point.y);
 }
 
 long topHandle () {
@@ -4943,6 +4948,7 @@ LRESULT WM_DPICHANGED (long wParam, long lParam) {
 	// Map DPI to Zoom and compare
 	int newNativeZoom = DPIUtil.mapDPIToZoom (OS.HIWORD (wParam));
 	if (getDisplay().isRescalingAtRuntime()) {
+		Device.win32_destroyUnusedHandles(getDisplay());
 		int oldNativeZoom = nativeZoom;
 		if (newNativeZoom != oldNativeZoom) {
 			DPIUtil.setDeviceZoom (newNativeZoom);
@@ -6104,7 +6110,7 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 	}
 	resizeFont(control, control.getShell().nativeZoom);
 
-	Image image = control.getBackgroundImage();
+	Image image = control.backgroundImage;
 	if (image != null) {
 		if (image.isDisposed()) {
 			control.setBackgroundImage(null);

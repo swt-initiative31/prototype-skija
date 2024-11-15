@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021, 2023 Syntevo and others.
+ * Copyright (c) 2021, 2024 Syntevo and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -174,23 +174,114 @@ public class GTK4 {
 	/** @param builder cast=(GdkContentFormatsBuilder *) */
 	public static final native long gdk_content_formats_builder_free_to_formats(long builder);
 
-	/* GtkFileChooser */
-	/** @param chooser cast=(GtkFileChooser *) */
-	public static final native long gtk_file_chooser_get_files(long chooser);
-	/** @param chooser cast=(GtkFileChooser *) */
-	public static final native long gtk_file_chooser_get_file(long chooser);
+	/* GtkFileDialog */
+	/** @method flags=dynamic **/
+	public static final native long gtk_file_dialog_new();
 	/**
-	 * @param chooser cast=(GtkFileChooser *)
-	 * @param file cast=(GFile *)
+	 * @method flags=dynamic
+	 * 
+	 * @param parent cast=(GtkWindow *)
+	 * @param cancellable cast=(GCancellable *)
+	 * @param callback cast=(GAsyncReadyCallback)
+	 * @param user_data cast=(gpointer)
+	 */
+	public static final native void gtk_file_dialog_select_folder(long self, long parent, long cancellable, long callback, long user_data);
+	/**
+	 * @method flags=dynamic
+	 * 
+	 * @param result cast=(GAsyncResult *)
 	 * @param error cast=(GError **)
 	 */
-	public static final native boolean gtk_file_chooser_set_current_folder(long chooser, long file, long error);
+	public static final native long gtk_file_dialog_select_folder_finish(long self, long result, long[] error);
 	/**
-	 * @param chooser cast=(GtkFileChooser *)
+	 * @method flags=dynamic
+	 * 
+	 * @param folder cast=(GFile *)
+	 */
+	public static final native void gtk_file_dialog_set_initial_folder(long self, long folder);
+	/**
+	 * @method flags=dynamic
+	 * 
+	 * @param title cast=(char *)
+	 */
+	public static final native void gtk_file_dialog_set_initial_name(long self, byte[] title);
+	/**
+	 * @method flags=dynamic
+	 * 
 	 * @param file cast=(GFile *)
+	 */
+	public static final native void gtk_file_dialog_set_initial_file(long self, long file);
+	/**
+	 * @method flags=dynamic
+	 * 
+	 * @param title cast=(char *)
+	 */
+	public static final native void gtk_file_dialog_set_title(long self, byte[] title);
+	/**
+	 * @method flags=dynamic
+	 * 
+	 * @param filter cast=(GtkFileFilter *)
+	 */
+	public static final native void gtk_file_dialog_set_default_filter(long self, long filter);
+	/**
+	 * @method flags=dynamic
+	 * 
+	 * @param filters cast=(GListModel *)
+	 */
+	public static final native void gtk_file_dialog_set_filters(long self, long filters);
+	/**
+	 * @method flags=dynamic
+	 * 
+	 */
+	public static final native long gtk_file_dialog_get_default_filter(long self);
+	/**
+	 * @method flags=dynamic
+	 * 
+	 * @param parent cast=(GtkWindow *)
+	 * @param cancellable cast=(GCancellable *)
+	 * @param callback cast=(GAsyncReadyCallback)
+	 * @param user_data cast=(gpointer)
+	 */
+	public static final native void gtk_file_dialog_open_multiple(long self, long parent, long cancellable, long callback, long user_data);
+	/**
+	 * @method flags=dynamic
+	 * 
+	 * @param result cast=(GAsyncResult *)
 	 * @param error cast=(GError **)
 	 */
-	public static final native boolean gtk_file_chooser_set_file(long chooser, long file, long error);
+	public static final native long gtk_file_dialog_open_multiple_finish(long self, long result, long[] error);
+	/**
+	 * 
+	 * @param parent cast=(GtkWindow *)
+	 * @param cancellable cast=(GCancellable *)
+	 * @param callback cast=(GAsyncReadyCallback)
+	 * @param user_data cast=(gpointer)
+	 * @method flags=dynamic
+	 */
+	public static final native void gtk_file_dialog_open(long self, long parent, long cancellable, long callback, long user_data);
+	/**
+	 * @method flags=dynamic
+	 * 
+	 * @param result cast=(GAsyncResult *)
+	 * @param error cast=(GError **)
+	 */
+	public static final native long gtk_file_dialog_open_finish(long self, long result, long[] error);
+	/**
+	 * @method flags=dynamic
+	 * 
+	 * @param parent cast=(GtkWindow *)
+	 * @param cancellable cast=(GCancellable *)
+	 * @param callback cast=(GAsyncReadyCallback)
+	 * @param user_data cast=(gpointer)
+	 */
+	public static final native void gtk_file_dialog_save(long self, long parent, long cancellable, long callback, long user_data);
+	/**
+	 * @method flags=dynamic
+	 * 
+	 * @param result cast=(GAsyncResult *)
+	 * @param error cast=(GError **)
+	 */
+	public static final native long gtk_file_dialog_save_finish(long self, long result, long[] error);
 
 	/* GtkScrolledWindow */
 	public static final native long gtk_scrolled_window_new();
@@ -609,11 +700,11 @@ public class GTK4 {
 	public static final native long gdk_content_provider_new_union(long[] providers, int n_providers);
 	/** @param formats cast=(GdkContentFormats *) */
 	public static final native long gdk_content_formats_to_string(long formats);
-	
+
 	public static final native long gtk_gesture_rotate_new();
 
 	public static final native long gtk_gesture_zoom_new();
-	
+
 	public static final native long gtk_gesture_drag_new();
 
 }

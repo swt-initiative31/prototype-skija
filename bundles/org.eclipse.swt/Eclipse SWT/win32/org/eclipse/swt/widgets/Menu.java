@@ -358,7 +358,7 @@ void createItem (MenuItem item, int index) {
 	info.fMask = OS.MIIM_ID | OS.MIIM_TYPE | OS.MIIM_DATA;
 	info.wID = item.id;
 	info.dwItemData = item.id;
-	info.fType = item.widgetStyle ();
+	info.fType = (style & SWT.BAR) != 0 && needsMenuCallback() ? OS.MFT_OWNERDRAW :  item.widgetStyle ();
 	info.dwTypeData = pszText;
 	boolean success = OS.InsertMenuItem (handle, index, true, info);
 	if (pszText != 0) OS.HeapFree (hHeap, 0, pszText);
@@ -1188,9 +1188,7 @@ public void setEnabled (boolean enabled) {
  * </ul>
  */
 public void setLocation (int x, int y) {
-	checkWidget ();
-	int zoom = getZoom();
-	setLocationInPixels(DPIUtil.scaleUp(x, zoom), DPIUtil.scaleUp(y, zoom));
+	setLocation(new Point(x, y));
 }
 
 void setLocationInPixels (int x, int y) {
@@ -1227,7 +1225,7 @@ void setLocationInPixels (int x, int y) {
 public void setLocation (Point location) {
 	checkWidget ();
 	if (location == null) error (SWT.ERROR_NULL_ARGUMENT);
-	location = DPIUtil.scaleUp(location, getZoom());
+	location = getDisplay().translateLocationInPixelsInDisplayCoordinateSystem(location.x, location.y);
 	setLocationInPixels(location.x, location.y);
 }
 
@@ -1351,7 +1349,7 @@ LRESULT wmTimer (long wParam, long lParam) {
 		OS.GetCursorPos (pt);
 		if (selectedMenuItem != null && selectedMenuItem.parent != null) {
 			RECT rect = new RECT ();
-			boolean success = OS.GetMenuItemRect (0, selectedMenuItem.parent.handle, selectedMenuItem.index, rect);
+			boolean success = OS.GetMenuItemRect (0, selectedMenuItem.parent.handle, indexOf(selectedMenuItem), rect);
 			if (!success) return null;
 			if (OS.PtInRect (rect, pt)) {
 				// Mouse cursor is within the bounds of menu item

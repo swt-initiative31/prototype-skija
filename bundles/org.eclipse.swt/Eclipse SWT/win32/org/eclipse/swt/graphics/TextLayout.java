@@ -842,10 +842,10 @@ void drawInPixels (GC gc, int x, int y, int selectionStart, int selectionEnd, Co
 		int drawY = y + DPIUtil.scaleUp(getDevice(), lineY[line], getZoom(gc));
 		StyleItem[] lineRuns = runs[line];
 		int lineHeight = DPIUtil.scaleUp(getDevice(), lineY[line+1] - lineY[line] - lineSpacingInPoints, getZoom(gc));
-
+		int lineHeightWithSpacing = DPIUtil.scaleUp(getDevice(), lineY[line+1] - lineY[line], getZoom(gc));
 		//Draw last line selection
+		boolean extents = false;
 		if ((flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0 && (hasSelection || (flags & SWT.LAST_LINE_SELECTION) != 0)) {
-			boolean extents = false;
 			if (line == runs.length - 1 && (flags & SWT.LAST_LINE_SELECTION) != 0) {
 				extents = true;
 			} else {
@@ -864,13 +864,13 @@ void drawInPixels (GC gc, int x, int y, int selectionStart, int selectionEnd, Co
 				if ((flags & SWT.FULL_SELECTION) != 0) {
 					width = 0x6FFFFFF;
 				} else {
-					width = lineHeight / 3;
+					width = lineHeightWithSpacing / 3;
 				}
 				if (gdip) {
-					Gdip.Graphics_FillRectangle(gdipGraphics, gdipSelBackground, drawX + lineWidthInPixels[line], drawY, width, lineHeight);
+					Gdip.Graphics_FillRectangle(gdipGraphics, gdipSelBackground, drawX + lineWidthInPixels[line], drawY, width, lineHeightWithSpacing);
 				} else {
 					OS.SelectObject(hdc, selBackground);
-					OS.PatBlt(hdc, drawX + lineWidthInPixels[line], drawY, width, lineHeight, OS.PATCOPY);
+					OS.PatBlt(hdc, drawX + lineWidthInPixels[line], drawY, width, lineHeightWithSpacing, OS.PATCOPY);
 				}
 			}
 		}
@@ -884,7 +884,11 @@ void drawInPixels (GC gc, int x, int y, int selectionStart, int selectionEnd, Co
 			if (drawX > clip.x + clip.width) break;
 			if (drawX + run.width >= clip.x) {
 				if (!run.lineBreak || run.softBreak) {
-					OS.SetRect(rect, drawX, drawY, drawX + run.width, drawY + lineHeight);
+					if (extents) {
+						OS.SetRect(rect, drawX, drawY, drawX + run.width, drawY + lineHeightWithSpacing);
+					}else {
+						OS.SetRect(rect, drawX, drawY, drawX + run.width, drawY + lineHeight);
+					}
 					if (gdip) {
 						drawRunBackgroundGDIP(run, gdipGraphics, rect, selectionStart, selectionEnd, alpha, gdipSelBackground, hasSelection);
 					} else {
@@ -1792,7 +1796,7 @@ public Rectangle getBounds () {
 			width = Math.max(width, DPIUtil.scaleDown(lineWidthInPixels[line], getZoom()) + getLineIndent(line));
 		}
 	}
-	return new Rectangle (0, 0, width, lineY[lineY.length - 1] + getScaledVerticalIndent());
+	return new Rectangle (0, 0, width, lineY[lineY.length - 1] + getVerticalIndent());
 }
 
 /**
@@ -1857,7 +1861,7 @@ Rectangle getBoundsInPixels (int start, int end) {
 			int cx = 0;
 			if (run.style != null && run.style.metrics != null) {
 				GlyphMetrics metrics = run.style.metrics;
-				cx = DPIUtil.scaleUp(getDevice(), metrics.width, nativeZoom) * (start - run.start);
+				cx = DPIUtil.scaleUp(getDevice(), metrics.width, getZoom()) * (start - run.start);
 			} else if (!run.tab) {
 				int iX = ScriptCPtoX(start - run.start, false, run);
 				cx = isRTL ? run.width - iX : iX;
@@ -1872,7 +1876,7 @@ Rectangle getBoundsInPixels (int start, int end) {
 			int cx = run.width;
 			if (run.style != null && run.style.metrics != null) {
 				GlyphMetrics metrics = run.style.metrics;
-				cx = DPIUtil.scaleUp(getDevice(), metrics.width, nativeZoom) * (end - run.start + 1);
+				cx = DPIUtil.scaleUp(getDevice(), metrics.width, getZoom()) * (end - run.start + 1);
 			} else if (!run.tab) {
 				int iX = ScriptCPtoX(end - run.start, true, run);
 				cx = isRTL ? run.width - iX : iX;
@@ -2243,7 +2247,7 @@ Point getLocationInPixels (int offset, boolean trailing) {
 			int width;
 			if (run.style != null && run.style.metrics != null) {
 				GlyphMetrics metrics = run.style.metrics;
-				width = DPIUtil.scaleUp(getDevice(), metrics.width, nativeZoom) * (offset - run.start + (trailing ? 1 : 0));
+				width = DPIUtil.scaleUp(getDevice(), metrics.width, getZoom()) * (offset - run.start + (trailing ? 1 : 0));
 			} else if (run.tab) {
 				width = (trailing || (offset == length)) ? run.width : 0;
 			} else {
@@ -2465,7 +2469,7 @@ int getOffsetInPixels (int x, int y, int[] trailing) {
 			if (run.style != null && run.style.metrics != null) {
 				GlyphMetrics metrics = run.style.metrics;
 				if (metrics.width > 0) {
-					final int metricsWidthInPixels = DPIUtil.scaleUp(getDevice(), metrics.width, nativeZoom);
+					final int metricsWidthInPixels = DPIUtil.scaleUp(getDevice(), metrics.width, getZoom());
 					if (trailing != null) {
 						trailing[0] = (xRun % metricsWidthInPixels < metricsWidthInPixels / 2) ? 0 : 1;
 					}
@@ -3911,7 +3915,7 @@ void shape (GC  gc, final long hdc, final StyleItem run) {
 			 *  equals zero for FFFC (possibly other unicode code points), the fix
 			 *  is to make sure the glyph is at least one pixel wide.
 			 */
-			run.width = DPIUtil.scaleUp(getDevice(), metrics.width, nativeZoom) * Math.max (1, run.glyphCount);
+			run.width = DPIUtil.scaleUp(getDevice(), metrics.width, getZoom()) * Math.max (1, run.glyphCount);
 			run.ascentInPoints = metrics.ascent;
 			run.descentInPoints = metrics.descent;
 			run.leadingInPoints = 0;

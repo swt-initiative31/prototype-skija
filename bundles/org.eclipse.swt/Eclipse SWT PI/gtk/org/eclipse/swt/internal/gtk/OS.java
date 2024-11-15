@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2022 IBM Corporation and others. All rights reserved.
+ * Copyright (c) 2000, 2024 IBM Corporation and others. All rights reserved.
  * The contents of this file are made available under the terms
  * of the GNU Lesser General Public License (LGPL) Version 2.1 that
  * accompanies this distribution (lgpl-v21.txt).  The LGPL is also
@@ -87,14 +87,24 @@ public class OS extends C {
 				Library.loadLibrary("swt-pi4");
 			} catch (Throwable e) {
 				System.err.println("SWT OS.java Error: Failed to load swt-pi4, loading swt-pi3 as fallback.");
-				Library.loadLibrary("swt-pi3");
+				try {
+					Library.loadLibrary("swt-pi3");
+				} catch (Throwable fallback) {
+					e.addSuppressed(fallback);
+					throw e;
+				}
 			}
 		} else {
 			try {
 				Library.loadLibrary("swt-pi3");
 			} catch (Throwable e) {
 				System.err.println("SWT OS.java Error: Failed to load swt-pi3, loading swt-pi4 as fallback.");
-				Library.loadLibrary("swt-pi4");
+				try {
+					Library.loadLibrary("swt-pi4");
+				} catch (Throwable fallback) {
+					e.addSuppressed(fallback);
+					throw e;
+				}
 			}
 		}
 	}
@@ -677,10 +687,6 @@ public class OS extends C {
 
 		System.setProperty("org.eclipse.swt.internal.gtk.version",
 				(GTK.GTK_VERSION >>> 16) + "." + (GTK.GTK_VERSION >>> 8 & 0xFF) + "." + (GTK.GTK_VERSION & 0xFF));
-		// set GDK backend if we are on X11
-		if (isX11()) {
-			System.setProperty("org.eclipse.swt.internal.gdk.backend", "x11");
-		}
 	}
 
 protected static byte [] ascii (String name) {
@@ -1086,6 +1092,15 @@ public static final native long g_list_next(long list);
  */
 public static final native long g_list_nth_data(long list, int n);
 public static final native long g_list_previous(long list);
+/**
+ * @param item_type cast=(GType)
+ */
+public static final native long g_list_store_new(long item_type);
+/**
+ * @param store cast=(GListStore *)
+ * @param item cast=(GObject *)
+ */
+public static final native void g_list_store_append(long store, long item);
 /**
  * @param log_domain cast=(gchar *)
  * @param log_levels cast=(GLogLevelFlags)

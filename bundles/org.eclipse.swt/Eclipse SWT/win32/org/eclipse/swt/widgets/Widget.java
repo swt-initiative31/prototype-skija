@@ -202,7 +202,7 @@ void _removeListener (int eventType, Listener listener) {
  * be notified when an event of the given type occurs. When the
  * event does occur in the widget, the listener is notified by
  * sending it the <code>handleEvent()</code> message. The event
- * type is one of the event constants defined in class {@link SWTError}.
+ * type is one of the event constants defined in class {@link SWT}.
  *
  * @param eventType the type of event to listen for
  * @param listener the listener which should be notified when the event occurs
@@ -593,8 +593,7 @@ public Object getData () {
 public Object getData (String key) {
 	checkWidget();
 	if (key == null) error (SWT.ERROR_NULL_ARGUMENT);
-	if ((state & KEYED_DATA) != 0) {
-		Object [] table = (Object []) data;
+	if ((state & KEYED_DATA) != 0 && data instanceof Object [] table) {
 		for (int i=1; i<table.length; i+=2) {
 			if (key.equals (table [i])) return table [i+1];
 		}
@@ -1652,8 +1651,8 @@ boolean showMenu (int x, int y) {
 
 boolean showMenu (int x, int y, int detail) {
 	Event event = new Event ();
-	int zoom = getZoom();
-	event.setLocation(DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(y, zoom));
+	Point mappedLocation = getDisplay().translateLocationInPointInDisplayCoordinateSystem(x, y);
+	event.setLocation(mappedLocation.x, mappedLocation.y);
 	event.detail = detail;
 	if (event.detail == SWT.MENU_KEYBOARD) {
 		updateMenuLocation (event);
@@ -1664,7 +1663,7 @@ boolean showMenu (int x, int y, int detail) {
 	if (!event.doit) return true;
 	Menu menu = getMenu ();
 	if (menu != null && !menu.isDisposed ()) {
-		Point locInPixels = DPIUtil.scaleUp(event.getLocation(), zoom); // In Pixels
+		Point locInPixels = DPIUtil.scaleUp(event.getLocation(), getZoom()); // In Pixels
 		if (x != locInPixels.x || y != locInPixels.y) {
 			menu.setLocation (event.getLocation());
 		}
@@ -2350,7 +2349,7 @@ LRESULT wmPrint (long hwnd, long wParam, long lParam) {
 				rect.left = rect.top = 0;
 				int border = getSystemMetrics (OS.SM_CXEDGE);
 				OS.ExcludeClipRect (wParam, border, border, rect.right - border, rect.bottom - border);
-				OS.DrawThemeBackground (display.hEditTheme (), wParam, OS.EP_EDITTEXT, OS.ETS_NORMAL, rect, null);
+				OS.DrawThemeBackground(display.hEditTheme(nativeZoom), wParam, OS.EP_EDITTEXT, OS.ETS_NORMAL, rect, null);
 				return new LRESULT (code);
 			}
 		}
@@ -2669,7 +2668,7 @@ int getSystemMetrics(int nIndex) {
 	 * DPI dependent metrics were introduced after 2016 version of windows 10
 	 */
 	if (OS.WIN32_BUILD >= OS.WIN32_BUILD_WIN10_1607) {
-		return OS.GetSystemMetricsForDpi(nIndex, DPIUtil.mapZoomToDPI(getZoom()));
+		return OS.GetSystemMetricsForDpi(nIndex, DPIUtil.mapZoomToDPI(nativeZoom));
 	}
 	return OS.GetSystemMetrics(nIndex);
 }

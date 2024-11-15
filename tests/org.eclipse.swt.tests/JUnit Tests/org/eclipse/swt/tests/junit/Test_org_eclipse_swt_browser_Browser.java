@@ -22,6 +22,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
@@ -40,6 +41,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -75,19 +77,22 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
+import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 /**
  * Automated Test Suite for class org.eclipse.swt.browser.Browser
  *
  * @see org.eclipse.swt.browser.Browser
  */
+@RunWith(Parameterized.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class Test_org_eclipse_swt_browser_Browser extends Test_org_eclipse_swt_widgets_Composite {
 
@@ -132,6 +137,24 @@ public class Test_org_eclipse_swt_browser_Browser extends Test_org_eclipse_swt_w
 	boolean ignoreNonDisposedShells;
 	static List<String> descriptors = new ArrayList<>();
 
+	private final int swtBrowserSettings;
+
+@Parameters(name = "browser flags: {0}")
+public static Collection<Object[]> browserFlagsToTest() {
+	List<Object[]> browserFlags = new ArrayList<>();
+	if (SwtTestUtil.isWindows) {
+		// NOTE: This is currently disabled due to test issues in the CI
+		// Execute Edge tests first, because IE starts some OS timer that conflicts with Edge event handling
+		// browserFlags.add(0, new Object[] {SWT.EDGE});
+	}
+	browserFlags.add(new Object[] {SWT.NONE});
+	return browserFlags;
+}
+
+public Test_org_eclipse_swt_browser_Browser(int swtBrowserSettings) {
+	this.swtBrowserSettings = swtBrowserSettings;
+}
+
 @Override
 @Before
 public void setUp() {
@@ -147,7 +170,7 @@ public void setUp() {
 	System.out.println("Running Test_org_eclipse_swt_browser_Browser#" + name.getMethodName());
 
 	shell.setLayout(new FillLayout());
-	browser = createBrowser(shell, SWT.NONE);
+	browser = createBrowser(shell, swtBrowserSettings);
 
 	isEdge = browser.getBrowserType().equals("edge");
 
@@ -173,9 +196,9 @@ public void setUp() {
 }
 
 @Override
-@After
-public void tearDown() {
-	super.tearDown();
+protected void afterDispose(Display display) {
+	super.afterDispose(display);
+
 	Shell[] shells = Display.getDefault().getShells();
 	int disposedShells = 0;
 	for (Shell shell : shells) {
@@ -249,8 +272,12 @@ private int reportOpenedDescriptors() {
 }
 
 private Browser createBrowser(Shell s, int flags) {
+	long maximumBrowserCreationMilliseconds = 10_000;
+	long createStartTime = System.currentTimeMillis();
 	Browser b = new Browser(s, flags);
 	createdBroswers.add(b);
+	long createDuration = System.currentTimeMillis() - createStartTime;
+	assertTrue("creating browser took too long: " + createDuration + "ms", createDuration < maximumBrowserCreationMilliseconds);
 	return b;
 }
 
@@ -258,14 +285,13 @@ private Browser createBrowser(Shell s, int flags) {
  * Test that if Browser is constructed with the parent being "null", Browser throws an exception.
  */
 @Override
-@Test(expected = IllegalArgumentException.class)
 public void test_ConstructorLorg_eclipse_swt_widgets_CompositeI() {
-	Browser browser = createBrowser(shell, SWT.NONE);
+	Browser browser = createBrowser(shell, swtBrowserSettings);
 	browser.dispose();
-	browser = createBrowser(shell, SWT.BORDER);
+	browser = createBrowser(shell, SWT.BORDER | swtBrowserSettings);
 	// System.out.println("Test_org_eclipse_swt_browser_Browser#test_Constructor*#getBrowserType(): " + browser.getBrowserType());
 	browser.dispose();
-	browser = createBrowser(null, SWT.NONE); // Should throw.
+	assertThrows(IllegalArgumentException.class, () -> createBrowser(null, swtBrowserSettings));
 }
 
 /**
@@ -276,7 +302,7 @@ public void test_Constructor_asyncParentDisposal() {
 	Display.getCurrent().asyncExec(() -> {
 		shell.dispose();
 	});
-	Browser browser = createBrowser(shell, SWT.EDGE);
+	Browser browser = createBrowser(shell, swtBrowserSettings);
 	assertFalse(browser.isDisposed());
 }
 
@@ -449,7 +475,7 @@ public void test_getChildren() {
 public void test_CloseWindowListener_closeShell() {
 	Display display = Display.getCurrent();
 	Shell shell = new Shell(display);
-	Browser browser = createBrowser(shell, SWT.NONE);
+	Browser browser = createBrowser(shell, swtBrowserSettings);
 	browser.addCloseWindowListener(event -> {}); // shouldn't throw
 	shell.close();
 }
@@ -488,7 +514,7 @@ public void test_CloseWindowListener_close () {
 public void test_LocationListener_adapter_closeShell() {
 	Display display = Display.getCurrent();
 	Shell shell = new Shell(display);
-	Browser browser = createBrowser(shell, SWT.NONE);
+	Browser browser = createBrowser(shell, swtBrowserSettings);
 	LocationAdapter adapter = new LocationAdapter() {};
 	browser.addLocationListener(adapter); // shouldn't throw
 	shell.close();
@@ -527,6 +553,7 @@ public void test_LocationListener_changing() {
 	boolean passed = waitForPassCondition(changingFired::get);
 	assertTrue("LocationListener.changing() event was never fired", passed);
 }
+
 @Test
 public void test_LocationListener_changed() {
 	AtomicBoolean changedFired = new AtomicBoolean(false);
@@ -536,6 +563,19 @@ public void test_LocationListener_changed() {
 	boolean passed = waitForPassCondition(changedFired::get);
 	assertTrue("LocationListener.changed() event was never fired", passed);
 }
+@Test
+public void test_LocationListener_changed_twoSetTextCycles() {
+	AtomicInteger changedCount = new AtomicInteger();
+	browser.addLocationListener(changedAdapter(e -> changedCount.incrementAndGet()));
+	shell.open();
+	browser.setText("Hello world");
+	boolean passed = waitForPassCondition(() -> changedCount.get() == 1);
+	assertTrue("LocationListener.changed() event was never fired", passed);
+	browser.setText("2nd text");
+	passed = waitForPassCondition(() -> changedCount.get() == 2);
+	assertTrue("LocationListener.changed() event was not fired for the 2nd text change", passed);
+}
+
 @Test
 public void test_LocationListener_changingAndOnlyThenChanged() {
 	// Test proper order of events.
@@ -670,6 +710,29 @@ public void test_LocationListener_ProgressListener_cancledLoad () {
 	 */
 }
 
+@Test
+public void test_LocationListener_LocationListener_ordered_changing () {
+	List<String> locations = new ArrayList<>();
+	browser.addLocationListener(changingAdapter(event -> locations.add(event.location)));
+	shell.open();
+	browser.setText("You should not see this message.");
+	String url = getValidUrl();
+	browser.setUrl(url);
+	waitForPassCondition(() -> locations.size() == 2);
+	assertTrue("Change of locations do not fire in order.", locations.get(0).equals("about:blank") && locations.get(1).contains("testWebsiteWithTitle.html"));
+}
+
+private String getValidUrl() {
+	String pluginPath = System.getProperty("PLUGIN_PATH");
+	testLogAppend("PLUGIN_PATH: " + pluginPath);
+	// When test is run via Ant, URL needs to be acquired differently. In that case the PLUGIN_PATH property is set and used.
+	if (pluginPath != null) {
+		return pluginPath + "/data/testWebsiteWithTitle.html";
+	} else {
+		// used when ran from Eclipse gui.
+		return Test_org_eclipse_swt_browser_Browser.class.getClassLoader().getResource("testWebsiteWithTitle.html").toString();
+	}
+}
 
 @Test
 /** Ensue that only one changed and one completed event are fired for url changes */
@@ -701,7 +764,7 @@ public void test_LocationListener_ProgressListener_noExtraEvents() {
 public void test_OpenWindowListener_closeShell() {
 	Display display = Display.getCurrent();
 	Shell shell = new Shell(display);
-	Browser browser = createBrowser(shell, SWT.NONE);
+	Browser browser = createBrowser(shell, swtBrowserSettings);
 	browser.addOpenWindowListener(event -> {});
 	shell.close();
 }
@@ -726,7 +789,7 @@ public void test_OpenWindowListener_addAndRemove() {
 @Test
 public void test_OpenWindowListener_openHasValidEventDetails() {
 	AtomicBoolean openFiredCorrectly = new AtomicBoolean(false);
-	final Browser browserChild = createBrowser(shell, SWT.None);
+	final Browser browserChild = createBrowser(shell, swtBrowserSettings);
 	browser.addOpenWindowListener(event -> {
 		assertSame("Expected Browser1 instance, but have another instance", browser, event.widget);
 		assertNull("Expected event.browser to be null", event.browser);
@@ -750,7 +813,7 @@ public void test_OpenWindowListener_open_ChildPopup() {
 	Shell childShell = new Shell(shell, SWT.None);
 	childShell.setText("Child shell");
 	childShell.setLayout(new FillLayout());
-	final Browser browserChild = createBrowser(childShell, SWT.NONE);
+	final Browser browserChild = createBrowser(childShell, swtBrowserSettings);
 
 	browser.addOpenWindowListener(event -> {
 		event.browser = browserChild;
@@ -787,7 +850,7 @@ public void test_OpenWindow_Progress_Listener_ValidateEventOrder() {
 	Shell childShell = new Shell(shell, SWT.None);
 	childShell.setText("Child shell");
 	childShell.setLayout(new FillLayout());
-	final Browser browserChild = createBrowser(childShell, SWT.NONE);
+	final Browser browserChild = createBrowser(childShell, swtBrowserSettings);
 
 	browser.addOpenWindowListener(event -> {
 		event.browser = browserChild;
@@ -837,7 +900,7 @@ public void test_ProgressListener_newProgressAdapter() {
 public void test_ProgressListener_newProgressAdapter_closeShell() {
 	Display display = Display.getCurrent();
 	Shell shell = new Shell(display);
-	Browser browser = createBrowser(shell, SWT.NONE);
+	Browser browser = createBrowser(shell, swtBrowserSettings);
 	browser.addProgressListener(new ProgressAdapter() {});
 	shell.close();
 }
@@ -846,7 +909,7 @@ public void test_ProgressListener_newProgressAdapter_closeShell() {
 public void test_ProgressListener_newListener_closeShell() {
 	Display display = Display.getCurrent();
 	Shell shell = new Shell(display);
-	Browser browser = createBrowser(shell, SWT.NONE);
+	Browser browser = createBrowser(shell, swtBrowserSettings);
 	browser.addProgressListener(new ProgressListener() {
 		@Override
 		public void changed(ProgressEvent event) {
@@ -943,13 +1006,13 @@ public void test_StatusTextListener_addAndRemove() {
  */
 @Test
 public void test_StatusTextListener_hoverMouseOverLink() {
-	assumeFalse(isEdge); // no API in Edge for this
+	assumeFalse("no API in Edge for this", isEdge);
 
 	AtomicBoolean statusChanged = new AtomicBoolean(false);
 	int size = 500;
 
 	// 1) Create a page that has a hyper link (covering the whole page)
-	Browser browser = createBrowser(shell, SWT.NONE);
+	Browser browser = createBrowser(shell, swtBrowserSettings);
 	StringBuilder longhtml = new StringBuilder();
 	for (int i = 0; i < 200; i++) {
 		longhtml.append("text text text text text text text text text text text text text text text text text text text text text text text text<br>");
@@ -989,7 +1052,7 @@ public void test_StatusTextListener_hoverMouseOverLink() {
 public void test_TitleListener_addListener_closeShell() {
 	Display display = Display.getCurrent();
 	Shell shell = new Shell(display);
-	Browser browser = createBrowser(shell, SWT.NONE);
+	Browser browser = createBrowser(shell, swtBrowserSettings);
 	browser.addTitleListener(event -> {
 	});
 	shell.close();
@@ -1023,7 +1086,6 @@ public void test_TitleListener_event() {
 	assertTrue(errMsg, passed);
 }
 
-
 @Test
 public void test_setText() {
 	String expectedTitle = "Website Title";
@@ -1035,26 +1097,51 @@ public void test_setText() {
 	validateTitleChanged(expectedTitle, browserSetFunc);
 }
 
+/**
+ * Corner-case, probably only relevant on Edge, see
+ * https://github.com/eclipse-platform/eclipse.platform.swt/pull/1463
+ */
+@Test
+public void test_setTextContainingScript_applicationLayerProgressListenerMustSeeUpToDateDom() {
+	AtomicBoolean completed = new AtomicBoolean();
+	browser.addProgressListener(ProgressListener.completedAdapter(event -> {
+		String script = """
+				var h1s = document.getElementsByTagName("h1");
+				// extract the information from the DOM via the document's title
+				// since getText() afterwards does not necessarily return the updated DOM (platform-dependent)
+				document.title = "ProgressListener: Found " + h1s.length + " h1 tag(s)";
+				""";
+		browser.execute(script);
+		completed.set(true);
+	}));
+	AtomicReference<String> title = new AtomicReference<>();
+	browser.addTitleListener(event -> {
+		if (event.title.startsWith("ProgressListener: ")) {
+			title.set(event.title);
+		}
+	});
+	browser.setText("""
+			<html>
+				<head>
+					<script src=\"file:///does/not/really/needs/to/exist.js\"></script>
+				</head>
+				<body>
+					<h1>Hello, World!</h1>
+				</body>
+			</html>
+			""");
+	waitForPassCondition(completed::get);
+	waitForPassCondition(() -> title.get() != null);
+	assertEquals("ProgressListener: Found 1 h1 tag(s)", title.get());
+}
+
 @Test
 public void test_setUrl_local() {
 	assumeFalse("Test fails on Mac, see https://github.com/eclipse-platform/eclipse.platform.swt/issues/722", SwtTestUtil.isCocoa);
 	String expectedTitle = "Website Title";
 	Runnable browserSetFunc = () -> {
-
-		String pluginPath = System.getProperty("PLUGIN_PATH");
-		testLogAppend("PLUGIN_PATH: " + pluginPath);
-
-		String url;
-		// Depending on how the jUnit test is ran, (gui/maven/ant), url for local file needs to be acquired differently.
-		if (pluginPath != null) {
-			url = pluginPath + "/data/testWebsiteWithTitle.html";
-		} else {
-			// used when ran from Eclipse gui.
-			url = Test_org_eclipse_swt_browser_Browser.class.getClassLoader().getResource("testWebsiteWithTitle.html").toString();
-		}
-
+		String url = getValidUrl();
 		testLogAppend("URL: " + url);
-
 		boolean opSuccess = browser.setUrl(url);
 		assertTrue("Expecting setUrl() to return true" + testLog.toString(), opSuccess);
 	};
@@ -1130,18 +1217,9 @@ private void validateTitleChanged(String expectedTitle, Runnable browserSetFunc)
 	browserSetFunc.run();
 	shell.open();
 
-	boolean hasFinished = waitForPassCondition(() -> actualTitle.get().length() != 0
-			&& !actualTitle.get().contains("about:blank")); // Windows sometimes does 2 loads, one "about:blank", and one actual load.
-	boolean passed = hasFinished && actualTitle.get().equals(expectedTitle);
-	String errMsg = "";
-	if (!hasFinished)
-		errMsg = "Test timed out. TitleListener not fired";
-	else if (!actualTitle.get().equals(expectedTitle)) {
-		errMsg = "\nExpected title and actual title do not match."
-				+ "\nExpected: " + expectedTitle
-				+ "\nActual: " + actualTitle;
-	}
-	assertTrue(errMsg + testLog.toString(), passed);
+	waitForPassCondition(() -> actualTitle.get().equals(expectedTitle));
+	assertTrue("Test timed out. TitleListener not fired", actualTitle.get().length() != 0);
+	assertEquals(testLog.toString(), expectedTitle, actualTitle.get());
 }
 
 @Test
@@ -1153,7 +1231,7 @@ public void test_VisibilityWindowListener_newAdapter() {
 public void test_VisibilityWindowListener_newAdapter_closeShell() {
 	Display display = Display.getCurrent();
 	Shell shell = new Shell(display);
-	Browser browser = createBrowser(shell, SWT.NONE);
+	Browser browser = createBrowser(shell, swtBrowserSettings);
 	browser.addVisibilityWindowListener(new VisibilityWindowAdapter(){});
 	shell.close();
 }
@@ -1162,7 +1240,7 @@ public void test_VisibilityWindowListener_newAdapter_closeShell() {
 public void test_VisibilityWindowListener_newListener_closeShell() {
 	Display display = Display.getCurrent();
 	Shell shell = new Shell(display);
-	Browser browser = createBrowser(shell, SWT.NONE);
+	Browser browser = createBrowser(shell, swtBrowserSettings);
 	browser.addVisibilityWindowListener(new VisibilityWindowListener() {
 		@Override
 		public void hide(WindowEvent event) {
@@ -1208,7 +1286,7 @@ public void test_VisibilityWindowListener_multiple_shells() {
 			Shell childShell = new Shell(shell);
 			childShell.setText("Child shell " + childCount.get());
 			childShell.setLayout(new FillLayout());
-			Browser browserChild = createBrowser(childShell, SWT.NONE);
+			Browser browserChild = createBrowser(childShell, swtBrowserSettings);
 			event.browser = browserChild;
 			browserChild.setText("Child window");
 			browserChild.addVisibilityWindowListener(new VisibilityWindowAdapter() {
@@ -1267,7 +1345,7 @@ public void test_VisibilityWindowListener_eventSize() {
 	childShell.setSize(250, 350);
 	childShell.setText("Child shell");
 	childShell.setLayout(new FillLayout());
-	final Browser browserChild = createBrowser(childShell, SWT.NONE);
+	final Browser browserChild = createBrowser(childShell, swtBrowserSettings);
 
 	browser.addOpenWindowListener(event -> {
 		event.browser = browserChild;
@@ -1387,7 +1465,7 @@ public void test_setJavascriptEnabled_multipleInstances() {
 	AtomicBoolean instanceTwoFinishedCorrectly = new AtomicBoolean(false);
 
 
-	Browser browserSecondInsance = createBrowser(shell, SWT.None);
+	Browser browserSecondInsance = createBrowser(shell, swtBrowserSettings);
 
 	browser.addProgressListener(completedAdapter(event -> {
 		if (pageLoadCount.get() == 1) {
@@ -1448,6 +1526,8 @@ public void test_setJavascriptEnabled_multipleInstances() {
 */
 @Test
 public void test_LocationListener_evaluateInCallback() {
+	assumeFalse("behavior is not (yet) supported by Edge browser", isEdge);
+
 	AtomicBoolean changingFinished = new AtomicBoolean(false);
 	AtomicBoolean changedFinished = new AtomicBoolean(false);
 	browser.addLocationListener(new LocationListener() {
@@ -1496,6 +1576,8 @@ public void test_LocationListener_evaluateInCallback() {
 /** Verify that evaluation works inside an OpenWindowListener */
 @Test
 public void test_OpenWindowListener_evaluateInCallback() {
+	assumeFalse("behavior is not (yet) supported by Edge browser", isEdge);
+
 	AtomicBoolean eventFired = new AtomicBoolean(false);
 	browser.addOpenWindowListener(event -> {
 		browser.evaluate("SWTopenListener = true");
@@ -2455,8 +2537,8 @@ public void test_BrowserFunction_callback_afterPageReload() {
 @Test
 public void test_BrowserFunction_multiprocess() {
 	// Test that BrowserFunctions work in multiple Browser instances simultaneously.
-	Browser browser1 = createBrowser(shell, SWT.NONE);
-	Browser browser2 = createBrowser(shell, SWT.NONE);
+	Browser browser1 = createBrowser(shell, swtBrowserSettings);
+	Browser browser2 = createBrowser(shell, swtBrowserSettings);
 
 	class JavaFunc extends BrowserFunction {
 		JavaFunc(Browser browser) {

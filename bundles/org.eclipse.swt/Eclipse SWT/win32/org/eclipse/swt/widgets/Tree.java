@@ -90,7 +90,7 @@ public class Tree extends Composite {
 	int sortDirection;
 	boolean dragStarted, gestureCompleted, insertAfter, shrink, ignoreShrink;
 	boolean ignoreSelect, ignoreExpand, ignoreDeselect, ignoreResize;
-	boolean lockSelection, oldSelected, newSelected, ignoreColumnMove;
+	boolean lockSelection, oldSelected, newSelected, ignoreColumnMove, ignoreColumnResize;
 	boolean linesVisible, customDraw, painted, ignoreItemHeight;
 	boolean ignoreCustomDraw, ignoreDrawForeground, ignoreDrawBackground, ignoreDrawFocus;
 	boolean ignoreDrawSelection, ignoreDrawHot, ignoreFullSelection, explorerTheme;
@@ -497,7 +497,7 @@ LRESULT CDDS_ITEMPOSTPAINT (NMTVCUSTOMDRAW nmcd, long wParam, long lParam) {
 							}
 						}
 						draw = false;
-						long hTheme = OS.OpenThemeData (handle, Display.TREEVIEW);
+						long hTheme = OS.OpenThemeData (handle, Display.TREEVIEW, getZoom());
 						int iStateId = selected ? OS.TREIS_SELECTED : OS.TREIS_HOT;
 						if (OS.GetFocus () != handle && selected && !hot) iStateId = OS.TREIS_SELECTEDNOTFOCUS;
 						OS.DrawThemeBackground (hTheme, hDC, OS.TVP_TREEITEM, iStateId, pRect, pClipRect);
@@ -710,7 +710,7 @@ LRESULT CDDS_ITEMPOSTPAINT (NMTVCUSTOMDRAW nmcd, long wParam, long lParam) {
 												backgroundRect = selectionRect;
 											}
 										}
-										long hTheme = OS.OpenThemeData (handle, Display.TREEVIEW);
+										long hTheme = OS.OpenThemeData(handle, Display.TREEVIEW, getZoom());
 										int iStateId = selected ? OS.TREIS_SELECTED : OS.TREIS_HOT;
 										if (OS.GetFocus () != handle && selected && !hot) iStateId = OS.TREIS_SELECTEDNOTFOCUS;
 										OS.DrawThemeBackground (hTheme, hDC, OS.TVP_TREEITEM, iStateId, pRect, backgroundRect);
@@ -1140,7 +1140,7 @@ LRESULT CDDS_ITEMPREPAINT (NMTVCUSTOMDRAW nmcd, long wParam, long lParam) {
 						}
 						pRect.left -= EXPLORER_EXTRA;
 						pClipRect.left -= EXPLORER_EXTRA;
-						long hTheme = OS.OpenThemeData (handle, Display.TREEVIEW);
+						long hTheme = OS.OpenThemeData (handle, Display.TREEVIEW, getZoom());
 						int iStateId = selected ? OS.TREIS_SELECTED : OS.TREIS_HOT;
 						if (OS.GetFocus () != handle && selected && !hot) iStateId = OS.TREIS_SELECTEDNOTFOCUS;
 						OS.DrawThemeBackground (hTheme, hDC, OS.TVP_TREEITEM, iStateId, pRect, pClipRect);
@@ -4781,14 +4781,14 @@ void setCheckboxImageList () {
 		 * artifacts, limit the rectangle to actual checkbox bitmap size.
 		 */
 		SIZE size = new SIZE();
-		OS.GetThemePartSize(display.hButtonTheme(), memDC, OS.BP_CHECKBOX, 0, null, OS.TS_TRUE, size);
+		OS.GetThemePartSize(display.hButtonTheme(nativeZoom), memDC, OS.BP_CHECKBOX, 0, null, OS.TS_TRUE, size);
 		itemWidth = Math.min (size.cx, itemWidth);
 		itemHeight = Math.min (size.cy, itemHeight);
 	}
 	int left = (width - itemWidth) / 2, top = (height - itemHeight) / 2 + 1;
 	OS.SetRect (rect, left + width, top, left + width + itemWidth, top + itemHeight);
 	if (OS.IsAppThemed ()) {
-		long hTheme = display.hButtonTheme ();
+		long hTheme = display.hButtonTheme(nativeZoom);
 		OS.DrawThemeBackground (hTheme, memDC, OS.BP_CHECKBOX, OS.CBS_UNCHECKEDNORMAL, rect, null);
 		rect.left += width;  rect.right += width;
 		OS.DrawThemeBackground (hTheme, memDC, OS.BP_CHECKBOX, OS.CBS_CHECKEDNORMAL, rect, null);
@@ -8090,22 +8090,24 @@ LRESULT wmNotifyHeader (NMHDR hdr, long wParam, long lParam) {
 						int flags = OS.RDW_UPDATENOW | OS.RDW_ALLCHILDREN;
 						OS.RedrawWindow (handle, null, 0, flags);
 					}
-					TreeColumn column = columns [phdn.iItem];
-					if (column != null) {
-						column.updateToolTip (phdn.iItem);
-						column.sendEvent (SWT.Resize);
-						if (isDisposed ()) return LRESULT.ZERO;
-						TreeColumn [] newColumns = new TreeColumn [columnCount];
-						System.arraycopy (columns, 0, newColumns, 0, columnCount);
-						int [] order = getColumnOrder();
-						boolean moved = false;
-						for (int i=0; i<columnCount; i++) {
-							TreeColumn nextColumn = newColumns [order [i]];
-							if (moved && !nextColumn.isDisposed ()) {
-								nextColumn.updateToolTip (order [i]);
-								nextColumn.sendEvent (SWT.Move);
+					if (!ignoreColumnResize) {
+						TreeColumn column = columns [phdn.iItem];
+						if (column != null) {
+							column.updateToolTip (phdn.iItem);
+							column.sendEvent (SWT.Resize);
+							if (isDisposed ()) return LRESULT.ZERO;
+							TreeColumn [] newColumns = new TreeColumn [columnCount];
+							System.arraycopy (columns, 0, newColumns, 0, columnCount);
+							int [] order = getColumnOrder();
+							boolean moved = false;
+							for (int i=0; i<columnCount; i++) {
+								TreeColumn nextColumn = newColumns [order [i]];
+								if (moved && !nextColumn.isDisposed ()) {
+									nextColumn.updateToolTip (order [i]);
+									nextColumn.sendEvent (SWT.Move);
+								}
+								if (nextColumn == column) moved = true;
 							}
-							if (nextColumn == column) moved = true;
 						}
 					}
 				}

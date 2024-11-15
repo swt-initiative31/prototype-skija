@@ -897,6 +897,7 @@ public class OS extends C {
 	public static final int MFS_CHECKED = 0x8;
 	public static final int MFS_DISABLED = 0x3;
 	public static final int MFS_GRAYED = 0x3;
+	public static final int MFT_OWNERDRAW = 0x100;
 	public static final int MFT_RADIOCHECK = 0x200;
 	public static final int MFT_RIGHTJUSTIFY = 0x4000;
 	public static final int MFT_RIGHTORDER = 0x2000;
@@ -1019,6 +1020,8 @@ public class OS extends C {
 	public static final int OBJ_PEN = 0x1;
 	public static final int OBM_CHECKBOXES = 0x7ff7;
 	public static final int ODS_SELECTED = 0x1;
+	public static final int ODS_NOACCEL = 0x0100;
+	public static final int ODS_INACTIVE = 0x80;
 	public static final int ODT_MENU = 0x1;
 	public static final int OIC_BANG = 0x7F03;
 	public static final int OIC_HAND = 0x7F01;
@@ -2285,6 +2288,7 @@ public static final void setTheme(boolean isDarkTheme) {
 	display.setData("org.eclipse.swt.internal.win32.Combo.useDarkTheme",       isDarkTheme);
 	display.setData("org.eclipse.swt.internal.win32.ProgressBar.useColors",    isDarkTheme);
 	display.setData("org.eclipse.swt.internal.win32.Text.useDarkThemeIcons",   isDarkTheme);
+	display.setData("org.eclipse.swt.internal.win32.Edge.useDarkPreferedColorScheme", isDarkTheme);
 }
 
 public static final boolean SetWindowText (long hWnd, TCHAR lpString) {
@@ -2986,6 +2990,7 @@ public static final native long GetSysColorBrush (int nIndex);
 /** @param hWnd cast=(HWND) */
 public static final native long GetSystemMenu (long hWnd, boolean bRevert);
 public static final native int GetSystemMetrics (int nIndex);
+/** @method flags=dynamic */
 public static final native int GetSystemMetricsForDpi (int nIndex, int dpi);
 /** @param hDC cast=(HDC) */
 public static final native int GetTextColor (long hDC);
@@ -3780,6 +3785,7 @@ public static final native boolean OpenClipboard (long hWndNewOwner);
  */
 public static final native long OpenThemeData (long hwnd, char[] pszClassList);
 /**
+ * @method flags=dynamic
  * @param hwnd cast=(HWND)
  * @param pszClassList cast=(LPCWSTR),flags=no_out
  */
@@ -4350,8 +4356,12 @@ public static final native int SetPixel (long hdc, int X, int Y, int crColor);
 /** @param hdc cast=(HDC) */
 public static final native int SetPolyFillMode (long hdc, int iPolyFillMode);
 public static final native boolean SetProcessDPIAware ();
-/** @param dpiContext cast=(DPI_AWARENESS_CONTEXT) */
+/**
+ * @method flags=dynamic
+ * @param dpiContext cast=(DPI_AWARENESS_CONTEXT)
+ */
 public static final native long SetThreadDpiAwarenessContext (long dpiContext);
+/** @method flags=dynamic */
 public static final native long GetThreadDpiAwarenessContext ();
 /** @method flags=no_gen */
 public static final native int SetPreferredAppMode(int mode);
@@ -4458,6 +4468,7 @@ public static final native boolean SystemParametersInfo (int uiAction, int uiPar
 public static final native boolean SystemParametersInfo (int uiAction, int uiParam, RECT pvParam, int fWinIni);
 public static final native boolean SystemParametersInfo (int uiAction, int uiParam, NONCLIENTMETRICS pvParam, int fWinIni);
 public static final native boolean SystemParametersInfo (int uiAction, int uiParam, int [] pvParam, int fWinIni);
+/** @method flags=dynamic */
 public static final native boolean SystemParametersInfoForDpi (int uiAction, int uiParam, NONCLIENTMETRICS pvParam, int fWinIni, int dpi);
 /**
  * @param lpKeyState cast=(PBYTE)
@@ -4581,4 +4592,12 @@ public static final native long GetCurrentProcess();
 public static final native boolean DuplicateHandle(long hSourceProcessHandle, long hSourceHandle, long hTargetProcessHandle,
 		long [] lpTargetHandle, int dwDesiredAccess, boolean b, int dwOptions);
 
+
+public static long OpenThemeData(long hwnd, char[] themeName, int dpi) {
+	if (OS.WIN32_BUILD >= OS.WIN32_BUILD_WIN10_1809) {
+		return OS.OpenThemeDataForDpi(hwnd, themeName, dpi);
+	} else {
+		return OS.OpenThemeData(hwnd, themeName);
+	}
+}
 }

@@ -33,11 +33,8 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.swt.widgets.TreeItem;
-import org.eclipse.test.Screenshots;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestName;
 
 /**
  * Automated Test Suite for class org.eclipse.swt.widgets.Tree
@@ -46,8 +43,7 @@ import org.junit.rules.TestName;
  */
 public class Test_org_eclipse_swt_widgets_Tree extends Test_org_eclipse_swt_widgets_Composite {
 
-@Rule
-public TestName testName = new TestName();
+private Tree tree;
 
 @Override
 @Before
@@ -749,9 +745,6 @@ public void test_showSelection() {
 	tree.showSelection();
 }
 
-/* custom */
-public Tree tree;
-
 /**
  * Clean up the environment for a new test.
  *
@@ -964,7 +957,6 @@ public void test_Virtual() {
 	}
 	// temp code to capture screenshot
 	if (SwtTestUtil.isCocoa) {
-		Screenshots.takeScreenshot(getClass(), testName.getMethodName());
 		// check if setData is called for root item
 		assertTrue("SetData not called for top item", top[0] != null);
 	}
