@@ -90,7 +90,7 @@ import org.eclipse.swt.internal.*;
 public class Table extends Composite implements ICustomWidget {
 	TableItem[] items;
 	java.util.List<TableItem> selectedTableItems = new ArrayList<>();
-	TableItem mouseHoverElement;
+	Item mouseHoverElement;
 	int[] keys;
 	TableColumn[] columns;
 	int columnCount, customCount, keyCount;
@@ -130,6 +130,8 @@ public class Table extends Composite implements ICustomWidget {
 	private AccessibleAdapter accAdapter;
 	private Point computedSize;
 	private int topIndex;
+	private boolean headerVisible = true;
+	private Rectangle headerBounds;
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style
@@ -239,24 +241,54 @@ public class Table extends Composite implements ICustomWidget {
 
 		addMouseMoveListener(event -> {
 
-			if (mouseHoverElement != null) {
-				if (mouseHoverElement.getBounds().contains(event.x, event.y))
-					return;
+			Point p = calculateUpShift(event.x, event.y);
 
-				var ti = mouseHoverElement;
+			System.out.println("Point on Screen: " + event.x + "/" + event.y);
+			System.out.println("Translated point for table: " + p);
+
+			if (mouseHoverElement instanceof TableItem tit) {
+
+				if (tit.getBounds().contains(p)) {
+					System.out.println("MouseHoverElementAlready: "
+							+ mouseHoverElement.getText());
+					return;
+				}
+
+				var ti = tit;
 				mouseHoverElement = null;
-				ti.redraw();
+				if (ti != null) {
+					ti.redraw();
+
+				}
 
 			}
 
+			if (mouseHoverElement instanceof TableColumn tit) {
+				if (tit.getBounds().contains(p)) {
+					System.out.println("MouseHoverElementAlready: "
+							+ mouseHoverElement.getText());
+					return;
+				}
 
+				var ti = tit;
+				mouseHoverElement = null;
+				if (ti != null) {
+					ti.redraw();
+
+				}
+			}
 
 			if (items != null)
 				for (TableItem it : items) {
 
-					if (it.getBounds().contains(event.x, event.y)) {
+					if (it.getBounds().contains(p)) {
 						mouseHoverElement = it;
-						mouseHoverElement.redraw();
+						System.out
+								.println("MouseHoverElementNew: "
+										+ it.getText());
+
+						it.redraw();
+
 						return;
 					}
 
@@ -291,6 +323,46 @@ public class Table extends Composite implements ICustomWidget {
 
 		initializeAccessible();
 
+	}
+
+	Point calculateUpShift(int x, int y) {
+
+		int upShift = 0;
+		int sideShift = 0;
+
+		int topIndex = getTopIndex();
+
+		if (topIndex > 0) {
+			TableItem topNotVisibleItem = getItem(topIndex - 1);
+			Rectangle bo = topNotVisibleItem.getBounds();
+
+			upShift = bo.y + bo.height + 1;
+
+		}
+
+		// TODO calculate sideShift...
+
+		return new Point(x + sideShift, y + upShift);
+	}
+
+	Point calculateDownShift(int x, int y) {
+
+		int downShift = 0;
+		int sideBackShift = 0;
+
+		int topIndex = getTopIndex();
+
+		if (topIndex > 0) {
+			TableItem topNotVisibleItem = getItem(topIndex - 1);
+			Rectangle bo = topNotVisibleItem.getBounds();
+
+			downShift = bo.y + bo.height + 1;
+
+		}
+
+		// TODO calculate sideShift...
+
+		return new Point(x - sideBackShift, y - downShift);
 	}
 
 	private void onScrollBar(Event event) {
@@ -381,11 +453,13 @@ public class Table extends Composite implements ICustomWidget {
 
 		System.out.println("onMouseDown: " + e.x + " " + e.y);
 
+		Point p = calculateUpShift(e.x, e.y);
+
 		for (TableItem it : items) {
 
 			Rectangle b = it.getBounds();
 
-			if (b.contains(e.x, e.y)) {
+			if (b.contains(p)) {
 
 				selectedTableItems.clear();
 
@@ -426,6 +500,8 @@ public class Table extends Composite implements ICustomWidget {
 		if (!isVisible()) {
 			return;
 		}
+
+		recalculatePositions();
 
 		GC gc = event.gc;
 		if (gc == null) {
@@ -482,6 +558,15 @@ public class Table extends Composite implements ICustomWidget {
 					vBar.setThumb((height / h) - 1);
 			}
 		}
+
+		boolean drawColumns = headerVisible
+				&& (columns != null && columns.length > 0);
+
+		if (drawColumns)
+			for (TableColumn c : columns)
+				if (c != null)
+					c.paint(e);
+
 
 		for (int i = getTopIndex(); i < items.length; i++) {
 
@@ -2029,9 +2114,11 @@ public class Table extends Composite implements ICustomWidget {
 
 			for (TableColumn c : columns) {
 				width += c.getWidth() + 1; // +1 for border width
+				height = Math.max(height, c.getHeight());
 			}
+			height++;
 
-		} else {
+		}
 
 			if (items != null) {
 
@@ -2047,7 +2134,6 @@ public class Table extends Composite implements ICustomWidget {
 
 			}
 
-		}
 		return new Point(width, height);
 
 	}
@@ -2182,6 +2268,31 @@ public class Table extends Composite implements ICustomWidget {
 
 		System.out.println("WARN: Not implemented yet: "
 				+ new Throwable().getStackTrace()[0]);
+
+		if (columns == null) {
+			columns = new TableColumn[index + 1];
+		}
+		if (columns.length <= index) {
+
+			TableColumn[] arr = new TableColumn[index + 1];
+
+			for (int i = 0; i < columns.length; i++) {
+				arr[i] = columns[i];
+			}
+
+			columns = arr;
+
+		}
+
+		columns[index] = column;
+		columnCount = columns.length;
+
+		calculateHeaderBounds();
+
+		recalculatePositions();
+
+
+		redraw();
 
 		// if (!(0 <= index && index <= columnCount)) error
 		// (SWT.ERROR_INVALID_RANGE);
@@ -2360,6 +2471,77 @@ public class Table extends Composite implements ICustomWidget {
 		// }
 	}
 
+	private void recalculatePositions() {
+
+		// Columns left to right
+
+		boolean drawColumns = headerVisible
+				&& (columns != null && columns.length > 0);
+
+		int tableColumnsHeight = 0;
+		int currentWidth = 1;
+		if (drawColumns) {
+
+			int columnCount = columns.length;
+
+			for (TableColumn c : columns) {
+
+				System.out.println(c.getWidth());
+				c.setLocation(new Point(currentWidth + 1, 1)); // +1 for one
+																// next to the
+																// current
+																// position...
+				currentWidth = c.getWidth() + 1; // +1 for the boundary
+
+				tableColumnsHeight = Math.max(c.getHeight(),
+						tableColumnsHeight);
+
+
+			}
+
+			// set items position
+		}
+
+			if(items != null ) {
+				int currentHeight = 1 + tableColumnsHeight + 1;
+				currentWidth = 1;
+				for (TableItem it : items) {
+
+					it.setLocation(new Point(currentWidth, currentHeight));
+					currentHeight += it.getBounds().height + 2;
+
+				}
+
+			}
+
+
+
+
+	}
+
+	private void calculateHeaderBounds() {
+
+		if (this.headerVisible == false || columns == null
+				|| columns.length == 0) {
+			headerBounds = new Rectangle(0, 0, 0, 0);
+			return;
+		}
+
+		int height = 0;
+		int width = 1;
+
+		for (TableColumn c : columns) {
+
+			width += c.getWidth() + 1;
+
+			height = Math.max(c.getHeight(), height);
+
+		}
+
+		headerBounds = new Rectangle(0, 0, width, height);
+
+	}
+
 	void createItem(TableItem item, int index) {
 
 		if (items == null)
@@ -2436,7 +2618,7 @@ public class Table extends Composite implements ICustomWidget {
 		super.createWidget();
 		itemHeight = hotIndex = -1;
 		_initItems();
-		columns = new TableColumn[4];
+		// columns = new TableColumn[4];
 	}
 
 	private boolean customHeaderDrawing() {
@@ -3185,9 +3367,7 @@ public class Table extends Composite implements ICustomWidget {
 	 */
 	public boolean getHeaderVisible() {
 		checkWidget();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
-		return true;
+		return this.headerVisible;
 	}
 
 	/**
@@ -5200,8 +5380,9 @@ public class Table extends Composite implements ICustomWidget {
 	public void setHeaderVisible(boolean show) {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		this.headerVisible = show;
+
+		redraw();
 
 		// int newBits = OS.GetWindowLong (handle, OS.GWL_STYLE);
 		// newBits &= ~OS.LVS_NOCOLUMNHEADER;
@@ -5883,6 +6064,14 @@ public class Table extends Composite implements ICustomWidget {
 		// if (sortColumn != null && sortDirection != SWT.NONE) {
 		// sortColumn.setSortDirection (sortDirection);
 		// }
+	}
+
+	@Override
+	public void pack() {
+
+		super.pack();
+		recalculatePositions();
+
 	}
 
 	/**

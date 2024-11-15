@@ -50,6 +50,7 @@ public class TableItem extends Item {
 
 	private Point location;
 	private Rectangle bounds;
+	private Point computedSize;
 
 	private static int DRAW_FLAGS = SWT.DRAW_MNEMONIC | SWT.DRAW_TAB
 			| SWT.DRAW_TRANSPARENT | SWT.DRAW_DELIMITER;
@@ -539,16 +540,10 @@ public class TableItem extends Item {
 
 		bounds = new Rectangle(location.x, location.y, p.x, p.y);
 
-
-
-
-
 		// RECT rect = getBounds(itemIndex, 0, true, false, false);
 		// int width = rect.right - rect.left, height = rect.bottom - rect.top;
 		return bounds;
 	}
-
-	private Point computedSize;
 
 	private Point computeSize(boolean changed) {
 
@@ -1201,11 +1196,13 @@ public class TableItem extends Item {
 
 	void redraw() {
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
 		Rectangle b = getBounds();
+		//
+		Point p = getParent().calculateDownShift(b.x, b.y);
 
-		getParent().redraw(b.x, b.y, b.width, b.height, true);
+		getParent().redraw(p.x, p.y, b.width, b.height, true);
+
+		// getParent().redraw();
 
 		// TableItemEvent e = new TableItemEvent(this);
 		//

@@ -45,6 +45,12 @@ public class TableColumn extends Item {
 	String toolTipText;
 	int id;
 
+	private Point location;
+	private Rectangle bounds;
+
+	int width = -1;
+	private int height = -1;
+
 	// static {
 	// DPIZoomChangeRegistry.registerHandler(TableColumn::handleDPIChange,
 	// TableColumn.class);
@@ -358,14 +364,39 @@ public class TableColumn extends Item {
 	}
 
 	int getWidthInPixels() {
-		int index = parent.indexOf(this);
+		int index = getParent().indexOf(this);
 		if (index == -1)
 			return 0;
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		if (width == -1) {
+			var p = computeSize();
+			width = p.x;
+			if (height == -1)
+				height = p.y;
+		}
 
-		return 100;
+		return width;
+	}
+
+	int getHeight() {
+		checkWidget();
+		return DPIUtil.scaleDown(getHeightInPixels(), getZoom());
+	}
+
+	int getHeightInPixels() {
+		int index = getParent().indexOf(this);
+		if (index == -1)
+			return 0;
+
+		if (height == -1) {
+			var p = computeSize();
+			height = p.y;
+			if (width == -1)
+				width = p.x;
+
+		}
+
+		return height;
 	}
 
 	/**
@@ -463,8 +494,11 @@ public class TableColumn extends Item {
 	public void pack() {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		Point p = computeSize();
+
+		this.setWidth(p.x);
+		this.setHeight(p.y);
+
 
 		// int index = parent.indexOf(this);
 		// if (index == -1)
@@ -590,6 +624,32 @@ public class TableColumn extends Item {
 		// moved = true;
 		// }
 		// }
+	}
+
+	private Point computeSize() {
+
+		GC gc = new GC(getParent());
+		int colIndex = getParent().indexOf(this);
+		Point fin = new Point(0, 0);
+		try {
+
+			if (getParent().getItems() != null)
+				for (TableItem i : getParent().getItems()) {
+
+					String t = i.getText(colIndex);
+					Point p = gc.textExtent(t);
+					width = Math.max(width, p.x);
+
+				}
+
+			Point headerExt = gc.textExtent(getText());
+			fin.x = Math.max(headerExt.x, width);
+			fin.y = Math.max(headerExt.y, 10);
+		} finally {
+			gc.dispose();
+		}
+
+		return fin;
 	}
 
 	@Override
@@ -892,6 +952,10 @@ public class TableColumn extends Item {
 	public void setText(String string) {
 		checkWidget();
 
+		super.setText(string);
+
+		pack();
+
 		System.out.println("WARN: Not implemented yet: "
 				+ new Throwable().getStackTrace()[0]);
 		// if (string == null)
@@ -974,7 +1038,7 @@ public class TableColumn extends Item {
 		if (hwndHeaderToolTip == 0) {
 			parent.createHeaderToolTips();
 			parent.updateHeaderToolTips();
-	}
+		}
 	}
 
 	/**
@@ -1003,14 +1067,25 @@ public class TableColumn extends Item {
 		if (index == -1)
 			return;
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		this.width = width;
+	}
 
-		// long hwnd = parent.handle;
-		// if (width != (int) OS.SendMessage(hwnd, OS.LVM_GETCOLUMNWIDTH, index,
-		// 0)) {
-		// OS.SendMessage(hwnd, OS.LVM_SETCOLUMNWIDTH, index, width);
-		// }
+	private void setHeight(int height) {
+
+		checkWidget();
+		setHeightInPixels(DPIUtil.scaleUp(width, getZoom()));
+
+	}
+
+	private void setHeightInPixels(int height) {
+
+		if (height < 0)
+			return;
+		int index = parent.indexOf(this);
+		if (index == -1)
+			return;
+
+		this.height = height;
 	}
 
 	void updateToolTip(int index) {
@@ -1050,4 +1125,66 @@ public class TableColumn extends Item {
 			tableColumn.setImage(image);
 		}
 	}
+
+	void setLocation(Point location) {
+		this.location = location;
+	}
+
+	Point getLocation() {
+		return this.location;
+	}
+
+	void paint(Event event) {
+
+		System.out.println("TableColumn.paint: " + getText());
+
+
+		GC gc = event.gc;
+		if (gc == null) {
+			gc = new GC(this.getParent());
+			event.gc = gc;
+		}
+
+		doPaint(event);
+	}
+
+	private void doPaint(Event event) {
+
+		Rectangle b = getBounds();
+
+		// TODO: if b and event positions do not fit do not draw
+		// TODO sideshift necessary for table column
+
+		GC gc = event.gc;
+		gc.setClipping(b);
+		Color bgBefore = gc.getBackground();
+
+		if (getParent().mouseHoverElement == this) {
+
+			gc.setBackground(
+					getParent().getDisplay().getSystemColor(SWT.COLOR_YELLOW));
+			gc.fillRectangle(b);
+
+		}
+
+		gc.drawText(getText(), b.x + 1, b.y + 1);
+
+		gc.setBackground(bgBefore);
+
+	}
+
+	Rectangle getBounds() {
+
+		Point l = getLocation();
+		int width = getWidth();
+		int height = getHeight();
+
+		return new Rectangle(l.x, l.y, width, height);
+	}
+
+	public void redraw() {
+		Rectangle b = getBounds();
+		getParent().redraw(b.x, b.y, b.width, b.height, true);
+	}
+
 }

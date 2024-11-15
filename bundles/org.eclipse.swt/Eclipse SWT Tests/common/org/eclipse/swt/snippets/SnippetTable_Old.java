@@ -21,10 +21,9 @@ public class SnippetTable_Old {
 						"TableItem.doPaint: event bounds:" + e.getBounds());
 
 				Rectangle bounds = table.getBounds();
-				System.out.println(
-						"TableItem.doPaint: table bounds:" + bounds);
+				System.out.println("TableItem.doPaint: table bounds:" + bounds);
 
-				System.out.println("Event x/y: " + e.x + "   " + e.y);
+				System.out.println("Event x/y: " + e.x + " " + e.y);
 
 				System.out.println("ClientArea: " + table.getClientArea());
 
@@ -33,13 +32,12 @@ public class SnippetTable_Old {
 
 		table.addListener(SWT.Paint, e -> {
 
-			System.out.println(
-					"Table.doPaint: event bounds:" + e.getBounds());
+			System.out.println("Table.doPaint: event bounds:" + e.getBounds());
 
 			Rectangle bounds = table.getBounds();
 			System.out.println("Table.doPaint: table bounds:" + bounds);
 
-			System.out.println("Event x/y: " + e.x + "   " + e.y);
+			System.out.println("Event x/y: " + e.x + " " + e.y);
 
 			System.out.println("ClientArea: " + table.getClientArea());
 
@@ -49,13 +47,14 @@ public class SnippetTable_Old {
 			int vmin = vBar.getMinimum();
 			int vmax = vBar.getMaximum();
 
-			System.out.println("sel: " + vmin + "  " + vs + "  " + vmax);
+			System.out.println("sel: " + vmin + " " + vs + " " + vmax);
 
 		});
 
 		Rectangle clientArea = shell.getClientArea();
 		table.setBounds(clientArea.x, clientArea.y, 300, 300);
 		shell.setSize(200, 200);
+		shell.pack(true);
 		shell.open();
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch())
