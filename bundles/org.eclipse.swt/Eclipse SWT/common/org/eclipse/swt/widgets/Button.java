@@ -140,7 +140,11 @@ public class Button extends GLCanvas implements ICustomWidget {
 	 * @see Widget#getStyle
 	 */
 	public Button(Composite parent, int style) {
-		super(parent, checkStyle(style | SWT.NO_REDRAW_RESIZE), new GLData());
+		super(parent, checkStyle(style | SWT.NO_REDRAW_RESIZE), new GLData() {
+			{
+				this.doubleBuffer = true;
+			}
+		});
 
 		listener = event -> {
 			switch (event.type) {
