@@ -1461,7 +1461,7 @@ public class Button_Old extends Control {
 		SIZE size = new SIZE();
 
 		if (OS.IsAppThemed()) {
-			OS.GetThemePartSize(display.hButtonTheme(), hdc, OS.BP_CHECKBOX,
+			OS.GetThemePartSize(display.hButtonTheme(nativeZoom), hdc, OS.BP_CHECKBOX,
 					OS.CBS_UNCHECKEDNORMAL, null, OS.TS_TRUE, size);
 			result += size.cx;
 		} else {
@@ -1752,7 +1752,7 @@ public class Button_Old extends Control {
 			boolean pressed = ((struct.itemState & OS.ODS_SELECTED) != 0);
 			boolean enabled = getEnabled();
 			int iStateId = getThemeStateId(style, pressed, enabled);
-			OS.DrawThemeBackground(display.hScrollBarThemeAuto(), struct.hDC,
+			OS.DrawThemeBackground(display.hScrollBarThemeAuto(nativeZoom), struct.hDC,
 					OS.SBP_ARROWBTN, iStateId, rect, null);
 		} else {
 			int uState = OS.DFCS_SCROLLLEFT;
