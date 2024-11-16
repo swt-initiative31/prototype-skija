@@ -1,4 +1,4 @@
-# SWT with Custom-Rendered Widgets on Ski(j)a
+# SWT on Custom-Rendered Widgets With Ski(j)a
 
 This repository is a fork of the original [SWT repository](https://github.com/eclipse-platform/eclipse.platform.swt) containing prototyping work on exchanging the adaptation of native, basic widgets with custom-drawn widgets based on the rendering engine Skia and its Java bindings [Skija](https://github.com/JetBrains/skija).
 
@@ -8,7 +8,7 @@ In the following, you find information about the current state of the prototype 
 
 To test the prototype, an Eclipse IDE has to be set up and the SWT projects from this repository have to be imported into it to start example applications.
 
-Note that current development does not target all platforms (Windows, MacOS, Linux). Development usually happens on Windows (and partly MacOS), so the experience will be best there. No implementation and testing for Linux has been performed so far.
+Note that the current development does not target all platforms (Windows, MacOS, Linux). Development usually happens on Windows (and partly MacOS), so the experience will be best there. No implementation and testing for Linux has been performed so far.
 
 ### Setup
 
