@@ -54,7 +54,7 @@ import org.eclipse.swt.graphics.*;
  *      information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Button extends Control implements ICustomWidget {
+public class Button extends Canvas implements ICustomWidget {
 	String text = "", message = "";
 	Image image, disabledImage;
 	boolean ignoreMouse, grayed, useDarkModeExplorerTheme;

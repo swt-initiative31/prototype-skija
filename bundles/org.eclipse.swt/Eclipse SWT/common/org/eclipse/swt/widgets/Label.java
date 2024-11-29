@@ -51,7 +51,7 @@ import org.eclipse.swt.graphics.*;
  *      information</a>
  * @see Label#shortenText(IGraphicsContext, String, int)
  */
-public class Label extends Control implements ICustomWidget {
+public class Label extends Canvas implements ICustomWidget {
 
 	/** Gap between icon and text */
 	private static final int GAP = 5;

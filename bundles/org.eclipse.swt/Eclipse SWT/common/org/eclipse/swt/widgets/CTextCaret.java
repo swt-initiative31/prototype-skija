@@ -338,12 +338,13 @@ public class CTextCaret extends Widget {
 	@Override
 	void releaseParent() {
 		super.releaseParent();
-		if (parent != null && this == parent.getCaret()) {
-			if (!parent.isDisposed())
-				parent.setCaret(null);
-			else
-				parent.setCaret(null);
-		}
+		// remove caret handling for the moment...
+		// if (parent != null && this == parent.getCaret()) {
+			// if (!parent.isDisposed())
+			// parent.setCaret(null);
+			// else
+			// parent.setCaret(null);
+		// }
 	}
 
 	@Override

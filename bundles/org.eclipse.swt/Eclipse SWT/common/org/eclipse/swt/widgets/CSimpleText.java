@@ -5,7 +5,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 
-public class CSimpleText extends Scrollable implements ICustomWidget {
+public class CSimpleText extends Canvas implements ICustomWidget {
 
 	private int tabs = 8;
 
@@ -950,8 +950,10 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 		this.tabs = tabs;
 	}
 
-	public CTextCaret getCaret() {
-		return caret;
+	@Override
+	public Caret getCaret() {
+		// remove Caret for the moment...
+		return null;
 	}
 
 	public void setCaret(CTextCaret caret) {
