@@ -159,6 +159,8 @@ public final class Image extends Resource implements Drawable {
 
 	private HashMap<Integer, Long> zoomLevelToHandle = new HashMap<>();
 
+	private boolean genericImage;
+
 /**
  * Prevents uninitialized instances from being created outside the package.
  */
@@ -1370,6 +1372,12 @@ public Rectangle getBoundsInPixels() {
 }
 
 private Rectangle getBoundsInPixelsFromNative() {
+
+	if (this.genericImage) {
+		var d = imageDataProvider.getImageData(100);
+		return new Rectangle(0, 0, d.width, d.height);
+	}
+
 	switch (type) {
 		case SWT.BITMAP:
 			BITMAP bm = new BITMAP();
@@ -1442,6 +1450,9 @@ public ImageData getImageData() {
  * @since 3.106
  */
 public ImageData getImageData (int zoom) {
+	if (this.genericImage)
+	    return imageDataProvider.getImageData(zoom);
+
 	if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	int currentZoom = getZoom();
 	if (zoom == currentZoom) {
@@ -1494,6 +1505,10 @@ public ImageData getImageData (int zoom) {
  */
 @Deprecated
 public ImageData getImageDataAtCurrentZoom() {
+
+	if (this.genericImage)
+		return imageDataProvider.getImageData(100);
+
 	if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	BITMAP bm;
 	int depth, width, height;
@@ -2300,6 +2315,10 @@ public void internal_dispose_GC (long hDC, GCData data) {
  */
 @Override
 public boolean isDisposed() {
+
+	if(this.genericImage)
+		return false;
+
 	return handle == 0;
 }
 
@@ -2424,5 +2443,24 @@ private class StaticZoomUpdater implements AutoCloseable {
 			DPIUtil.setDeviceZoom(currentNativeDeviceZoom);
 		}
 	}
+}
+
+void setImageDataProvider(ImageDataProvider imgDataProv) {
+    if (!this.isDisposed())
+	dispose();
+    this.genericImage = true;
+    this.imageDataProvider = imgDataProv;
+
+}
+
+/**
+ * constructor with imageData only in order to prevent conversion because of the
+ * device. This constructor is mainly for the usage with Skija. Don't use this
+ *
+ * @param res
+ */
+Image(ImageDataProvider imgDataProvider) {
+    this.genericImage = true;
+    this.imageDataProvider = imgDataProvider;
 }
 }
