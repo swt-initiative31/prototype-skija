@@ -7,6 +7,8 @@ import java.util.function.*;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
+import org.eclipse.swt.opengl.*;
+import org.eclipse.swt.widgets.*;
 
 import io.github.humbleui.skija.*;
 import io.github.humbleui.skija.Canvas;
@@ -22,17 +24,26 @@ public class SkijaGC implements IGraphicsContext {
 	private float baseSymbolHeight = 0; // Height of symbol with "usual" height, like "T", to be vertically centered
 	private int lineWidth;
 
+	private DirectContext context;
+	private GLCanvas canvas;
+	private BackendRenderTarget renderTarget;
+
 	public SkijaGC(Drawable drawable, int style) {
 		this(new GC(drawable, style));
 	}
 
-	public SkijaGC(GC gc) {
-		this(gc, extractBackgroundColor(gc));
+	public SkijaGC(GLCanvas canvas) {
+		this(new GC(canvas, SWT.NONE), canvas, null);
 	}
 
-	public SkijaGC(GC gc, Color backgroundColor) {
+	public SkijaGC(GC gc) {
+		this(gc, null, extractBackgroundColor(gc));
+	}
+
+	public SkijaGC(GC gc, GLCanvas canvas, Color background) {
+		this.canvas = canvas;
 		innerGC = gc;
-		surface = createSurface(backgroundColor);
+		surface = createSurface(background);
 		clipping = innerGC.getClipping();
 		initFont();
 	}
@@ -53,15 +64,25 @@ public class SkijaGC implements IGraphicsContext {
 	}
 
 	private Surface createSurface(Color backgroundColor) {
-		int width = 1;
-		int height = 1;
-		Rectangle originalGCArea = innerGC.getClipping();
-		if (!originalGCArea.isEmpty()) {
-			width = DPIUtil.autoScaleUp(originalGCArea.width);
-			height = DPIUtil.autoScaleUp(originalGCArea.height);
+		Surface surface;
+		if (canvas != null) {
+			Rectangle rect = canvas.getClientArea();
+			context = DirectContext.makeGL();
+			renderTarget = BackendRenderTarget.makeGL(rect.width, rect.height, /* samples */0,
+					/* stencil */8, /* fbid */0, FramebufferFormat.GR_GL_RGBA8);
+			surface = Surface.makeFromBackendRenderTarget(context, renderTarget, SurfaceOrigin.BOTTOM_LEFT,
+					SurfaceColorFormat.RGBA_8888, ColorSpace.getDisplayP3(), new SurfaceProps(PixelGeometry.RGB_H));
+		} else {
+			int width = 1;
+			int height = 1;
+			Rectangle originalGCArea = innerGC.getClipping();
+			if (!originalGCArea.isEmpty()) {
+				width = DPIUtil.autoScaleUp(originalGCArea.width);
+				height = DPIUtil.autoScaleUp(originalGCArea.height);
+			}
+			surface = Surface.makeRaster(ImageInfo.makeN32Premul(width, height), 0,
+					new SurfaceProps(PixelGeometry.RGB_H));
 		}
-		Surface surface = Surface.makeRaster(ImageInfo.makeN32Premul(width, height), 0,
-				new SurfaceProps(PixelGeometry.RGB_H));
 		if (backgroundColor != null) {
 			surface.getCanvas().clear(convertSWTColorToSkijaColor(backgroundColor));
 		}
@@ -140,6 +161,18 @@ public class SkijaGC implements IGraphicsContext {
 
 	@Override
 	public void commit() {
+		if (canvas != null) {
+			// We use a GLCanvas, so no copy necessary
+			context.flush();
+			context.submit(true);
+			if (canvas.getGLData().doubleBuffer) {
+				canvas.swapBuffers();
+			}
+			surface.close();
+			renderTarget.close();
+			return;
+		}
+
 		io.github.humbleui.skija.Image im = surface.makeImageSnapshot();
 		byte[] imageBytes = EncoderPNG.encode(im).getBytes();
 

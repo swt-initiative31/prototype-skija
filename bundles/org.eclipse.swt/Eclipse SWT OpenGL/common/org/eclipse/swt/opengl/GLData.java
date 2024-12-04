@@ -13,6 +13,8 @@
  *******************************************************************************/
 package org.eclipse.swt.opengl;
 
+import org.eclipse.swt.widgets.*;
+
 /**
  * The GLData class is a device-independent description
  * of the pixel format attributes of a GL drawable.
