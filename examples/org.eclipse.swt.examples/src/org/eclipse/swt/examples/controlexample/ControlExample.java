@@ -70,6 +70,15 @@ public class ControlExample {
 	public ControlExample(Composite parent) {
 		initResources();
 		parent.setLayout(new GridLayout(1, false));
+
+		createSkijaToggleButton(parent);
+		createControlTabs(parent);
+		applyMacWorkaround(parent);
+
+		startup = false;
+	}
+
+	private void createControlTabs(Composite parent) {
 		ScrolledComposite scrollComposite = new ScrolledComposite (parent, SWT.V_SCROLL | SWT.H_SCROLL);
 		tabFolder = new TabFolder (scrollComposite, SWT.NONE);
 		tabs = createTabs();
@@ -87,21 +96,12 @@ public class ControlExample {
 			Rectangle r = scrollComposite.getClientArea ();
 			scrollComposite.setMinSize(tabFolder.computeSize (r.width, SWT.DEFAULT));
 		}));
-		/* Workaround: if the tab folder is wider than the screen,
-		 * Mac platforms clip instead of somehow scrolling the tab items.
-		 * We try to recover some width by using shorter tab names. */
-		Point size = parent.computeSize(SWT.DEFAULT, SWT.DEFAULT);
-		Rectangle monitorArea = parent.getMonitor().getClientArea();
-		boolean isMac = SWT.getPlatform().equals("cocoa");
-		if (size.x > monitorArea.width && isMac) {
-			TabItem [] tabItems = tabFolder.getItems();
-			for (int i=0; i<tabItems.length; i++) {
-				tabItems[i].setText (tabs [i].getShortTabText ());
-			}
-		}
+	}
+
+	private void createSkijaToggleButton(Composite parent) {
 		Button skijaToggle = new Button(parent, SWT.TOGGLE);
 		skijaToggle.setText("Use Skija");
-		skijaToggle.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		skijaToggle.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
 		skijaToggle.setSelection(SWT.USE_SKIJA);
 		skijaToggle.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -111,8 +111,8 @@ public class ControlExample {
 				parent.redraw(0, 0, parent.getBounds().width, parent.getBounds().height, true);
 			}
 		});
-		startup = false;
 	}
+
 
 	/**
 	 * Answers the set of example Tabs
@@ -146,6 +146,21 @@ public class ControlExample {
 			new TreeTab (this),
 			new BrowserTab (this),
 		};
+	}
+
+	private void applyMacWorkaround(Composite parent) {
+		/* Workaround: if the tab folder is wider than the screen,
+		 * Mac platforms clip instead of somehow scrolling the tab items.
+		 * We try to recover some width by using shorter tab names. */
+		Point size = parent.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+		Rectangle monitorArea = parent.getMonitor().getClientArea();
+		boolean isMac = SWT.getPlatform().equals("cocoa");
+		if (size.x > monitorArea.width && isMac) {
+			TabItem [] tabItems = tabFolder.getItems();
+			for (int i=0; i<tabItems.length; i++) {
+				tabItems[i].setText (tabs [i].getShortTabText ());
+			}
+		}
 	}
 
 	/**
