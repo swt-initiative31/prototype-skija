@@ -20,6 +20,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.gtk.*;
 
 /**
  * Instances of this class represent a selectable user interface object that
@@ -430,14 +431,10 @@ public class Button extends Control implements ICustomWidget {
 		IGraphicsContext gc = originalGC;
 		Image doubleBufferingImage = null;
 
-		if (SWT.getPlatform().equals("win32")) {
+		if (SWT.getPlatform().equals("win32") | SWT.getPlatform().equals("gtk")) {
 			// Extract background color on first execution
 			if (background == null) {
-				Image backgroundColorImage = new Image(getDisplay(), r.width, r.height);
-				originalGC.copyArea(backgroundColorImage, 0, 0);
-				int pixel = backgroundColorImage.getImageData().getPixel(0, 0);
-				backgroundColorImage.dispose();
-				background = new Color((pixel & 0xFF000000) >>> 24, (pixel & 0xFF0000) >>> 16, (pixel & 0xFF00) >>> 8);
+				extractAndStoreBackgroundColor(r, originalGC);
 			}
 			style |= SWT.NO_BACKGROUND;
 		}
@@ -608,6 +605,18 @@ public class Button extends Control implements ICustomWidget {
 		originalGC.dispose();
 	}
 
+	private void extractAndStoreBackgroundColor(Rectangle r, GC originalGC) {
+		Image backgroundColorImage = new Image(getDisplay(), r.width, r.height);
+		originalGC.copyArea(backgroundColorImage, 0, 0);
+		int pixel = backgroundColorImage.getImageData().getPixel(0, 0);
+		backgroundColorImage.dispose();
+		if (SWT.getPlatform().equals("win32")) {
+			background = new Color((pixel & 0xFF000000) >>> 24, (pixel & 0xFF0000) >>> 16, (pixel & 0xFF00) >>> 8);
+		} else if (SWT.getPlatform().equals("gtk")) {
+			background = new Color((pixel & 0xFF0000) >>> 16, (pixel & 0xFF00) >>> 8, (pixel & 0xFF));
+		}
+	}
+
 	private boolean isArrowButton() {
 		return (style & SWT.ARROW) != 0;
 	}
@@ -765,7 +774,7 @@ public class Button extends Control implements ICustomWidget {
 		if (text != null && !text.isEmpty()) {
 			GC originalGC = new GC(this);
 			IGraphicsContext gc = SWT.USE_SKIJA
-					? new SkijaGC(originalGC)
+					? new SkijaGC(originalGC, null)
 					: originalGC;
 			gc.setFont(getFont());
 			Point textExtent = gc.textExtent(text, DRAW_FLAGS);
