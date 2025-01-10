@@ -20,7 +20,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.gtk.*;
 
 /**
  * Instances of this class represent a selectable user interface object that
