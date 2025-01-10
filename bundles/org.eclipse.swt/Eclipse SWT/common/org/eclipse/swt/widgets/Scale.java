@@ -185,6 +185,11 @@ public class Scale extends Control implements ICustomWidget {
 
 	}
 
+	@Override
+	protected boolean isScrolled() {
+		return false;
+	}
+
 	private static int checkStyle(int style) {
 		if ((style & SWT.HORIZONTAL) != 0) {
 			style &= ~SWT.VERTICAL;

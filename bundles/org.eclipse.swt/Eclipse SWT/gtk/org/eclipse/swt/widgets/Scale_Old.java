@@ -42,7 +42,7 @@ import org.eclipse.swt.internal.gtk3.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Scale extends Control {
+public class Scale_Old extends Control {
 
 /**
  * Constructs a new instance of this class given its parent
@@ -73,7 +73,7 @@ public class Scale extends Control {
  * @see Widget#checkSubclass
  * @see Widget#getStyle
  */
-public Scale (Composite parent, int style) {
+public Scale_Old (Composite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
