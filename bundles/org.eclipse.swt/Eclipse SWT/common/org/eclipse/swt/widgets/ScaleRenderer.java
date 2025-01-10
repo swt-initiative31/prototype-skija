@@ -23,15 +23,15 @@ class ScaleRenderer implements IScaleRenderer {
 	}
 
 	@Override
-	public void render(GC gc, Rectangle bounds) {
-		initBackground(gc, bounds);
+	public void render(GC nativeGc, Rectangle bounds) {
+		initBackground(nativeGc, bounds);
 
-		GcLifeCycle gcLifeCylce = createLifeCycle();
-		IGraphicsContext graphicalContext = gcLifeCylce.init(gc, bounds);
+		IGraphicsContext sgc = initSkijaGc(nativeGc, bounds);
 
-		renderScale(graphicalContext, 0, 0, bounds.width - 1, bounds.height - 1);
+		renderScale(sgc, 0, 0, bounds.width - 1, bounds.height - 1);
 
-		gcLifeCylce.commit();
+		sgc.commit();
+		sgc.dispose();
 	}
 
 	private void initBackground(GC originalGC, Rectangle bounds) {
@@ -47,6 +47,20 @@ class ScaleRenderer implements IScaleRenderer {
 			scale.style |= SWT.NO_BACKGROUND;
 		}
 	}
+
+	public IGraphicsContext initSkijaGc(GC originalGC, Rectangle bounds) {
+		IGraphicsContext gc = new SkijaGC(originalGC, background);
+
+		originalGC.setClipping(bounds.x, bounds.y, bounds.width, bounds.height);
+
+		originalGC.setForeground(scale.getForeground());
+		originalGC.setBackground(scale.getBackground());
+		originalGC.setClipping(new Rectangle(0, 0, bounds.width, bounds.height));
+		originalGC.setAntialias(SWT.ON);
+
+		return gc;
+	}
+
 
 	private void renderScale(IGraphicsContext gc, int x, int y, int w, int h) {
 		int fix = getGCCorrectionValue();
@@ -206,91 +220,6 @@ class ScaleRenderer implements IScaleRenderer {
 			return position.x > handleBounds.x + handleBounds.width;
 		} else {
 			return position.x < handleBounds.x;
-		}
-	}
-
-	private GcLifeCycle createLifeCycle() {
-		if (SWT.USE_SKIJA) {
-			return new SkijaLifeCycle();
-		} else {
-			return new NaticeLifeCycle();
-		}
-	}
-
-	/*
-	 * XXX: GcLifeCycle is used to abstract away IGraphicsContext implementation
-	 * specific stuff. As soon as we only have Skija, this would be removed.
-	 */
-	private interface GcLifeCycle {
-		IGraphicsContext init(GC originalGC, Rectangle bounds);
-
-		void commit();
-	}
-
-	private class SkijaLifeCycle implements GcLifeCycle {
-		IGraphicsContext gc;
-
-		@Override
-		public IGraphicsContext init(GC originalGC, Rectangle bounds) {
-			gc = new SkijaGC(originalGC, background);
-
-			originalGC.setClipping(bounds.x, bounds.y, bounds.width, bounds.height);
-
-			originalGC.setForeground(scale.getForeground());
-			originalGC.setBackground(scale.getBackground());
-			originalGC.setClipping(new Rectangle(0, 0, bounds.width, bounds.height));
-			originalGC.setAntialias(SWT.ON);
-
-			return gc;
-		}
-
-		@Override
-		public void commit() {
-			gc.commit();
-			gc.dispose();
-		}
-	}
-
-	private class NaticeLifeCycle implements GcLifeCycle {
-		private Image doubleBufferingImage;
-
-		private GC originalGC;
-		private GC bufferGC;
-
-		@Override
-		public IGraphicsContext init(GC originalGC, Rectangle bounds) {
-			if (SWT.getPlatform().equals("win32")) {
-				// Use double buffering on windows
-				this.originalGC = originalGC;
-				doubleBufferingImage = new Image(scale.getDisplay(), bounds.width, bounds.height);
-				originalGC.copyArea(doubleBufferingImage, 0, 0);
-				GC doubleBufferingGC = new GC(doubleBufferingImage);
-				doubleBufferingGC.setForeground(originalGC.getForeground());
-				doubleBufferingGC.setBackground(background);
-				doubleBufferingGC.setAntialias(SWT.ON);
-				doubleBufferingGC.fillRectangle(0, 0, bounds.width, bounds.height);
-				bufferGC = doubleBufferingGC;
-			}
-
-			originalGC.setClipping(bounds.x, bounds.y, bounds.width, bounds.height);
-
-			originalGC.setForeground(scale.getForeground());
-			originalGC.setBackground(scale.getBackground());
-			originalGC.setClipping(new Rectangle(0, 0, bounds.width, bounds.height));
-			originalGC.setAntialias(SWT.ON);
-
-			return bufferGC;
-		}
-
-		@Override
-		public void commit() {
-			bufferGC.commit();
-			bufferGC.dispose();
-			if (doubleBufferingImage != null) {
-				originalGC.drawImage(doubleBufferingImage, 0, 0);
-				doubleBufferingImage.dispose();
-			}
-			originalGC.dispose();
 		}
 	}
 }
