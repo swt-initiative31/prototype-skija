@@ -20,7 +20,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.gtk.*;
 
 /**
  * Instances of this class represent a selectable user interface object that
@@ -610,11 +609,7 @@ public class Button extends Control implements ICustomWidget {
 		originalGC.copyArea(backgroundColorImage, 0, 0);
 		int pixel = backgroundColorImage.getImageData().getPixel(0, 0);
 		backgroundColorImage.dispose();
-		if (SWT.getPlatform().equals("win32")) {
-			background = new Color((pixel & 0xFF000000) >>> 24, (pixel & 0xFF0000) >>> 16, (pixel & 0xFF00) >>> 8);
-		} else if (SWT.getPlatform().equals("gtk")) {
-			background = new Color((pixel & 0xFF0000) >>> 16, (pixel & 0xFF00) >>> 8, (pixel & 0xFF));
-		}
+		background = SWT.convertPixelToColor(pixel);
 	}
 
 	private boolean isArrowButton() {
