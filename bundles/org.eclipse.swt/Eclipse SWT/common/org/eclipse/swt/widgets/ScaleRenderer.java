@@ -35,17 +35,21 @@ class ScaleRenderer implements IScaleRenderer {
 	}
 
 	private void initBackground(GC originalGC, Rectangle bounds) {
-		if (SWT.getPlatform().equals("win32")) {
+		if (SWT.getPlatform().equals("win32") | SWT.getPlatform().equals("gtk")) {
 			// Extract background color on first execution
 			if (background == null) {
-				Image backgroundColorImage = new Image(scale.getDisplay(), bounds.width, bounds.height);
-				originalGC.copyArea(backgroundColorImage, 0, 0);
-				int pixel = backgroundColorImage.getImageData().getPixel(0, 0);
-				backgroundColorImage.dispose();
-				background = new Color((pixel & 0xFF000000) >>> 24, (pixel & 0xFF0000) >>> 16, (pixel & 0xFF00) >>> 8);
+				extractAndStoreBackgroundColor(bounds, originalGC);
 			}
 			scale.style |= SWT.NO_BACKGROUND;
 		}
+	}
+
+	private void extractAndStoreBackgroundColor(Rectangle r, GC originalGC) {
+		Image backgroundColorImage = new Image(scale.getDisplay(), r.width, r.height);
+		originalGC.copyArea(backgroundColorImage, 0, 0);
+		int pixel = backgroundColorImage.getImageData().getPixel(0, 0);
+		backgroundColorImage.dispose();
+		background = SWT.convertPixelToColor(pixel);
 	}
 
 	public IGraphicsContext initSkijaGc(GC originalGC, Rectangle bounds) {
