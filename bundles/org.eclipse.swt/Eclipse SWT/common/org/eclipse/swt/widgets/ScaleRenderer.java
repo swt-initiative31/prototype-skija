@@ -67,8 +67,6 @@ class ScaleRenderer implements IScaleRenderer {
 
 
 	private void renderScale(IGraphicsContext gc, int x, int y, int w, int h) {
-		int fix = getGCCorrectionValue();
-
 		int value = scale.getSelection();
 		int min = scale.getMinimum();
 		int max = scale.getMaximum();
@@ -78,18 +76,18 @@ class ScaleRenderer implements IScaleRenderer {
 		// draw background
 		if (background != null) {
 			gc.setBackground(background);
-			gc.fillRectangle(max, y, w - fix, h - fix);
+			gc.fillRectangle(max, y, w - 1, h - 1);
 		}
 
 		int firstNotch;
 		int lastNotch;
 
 		if (isVertical()) {
-			bar = new Rectangle(x + 19, y + 8, 4 - fix, h - (y + 8) - 7 - fix);
+			bar = new Rectangle(x + 19, y + 8, 3, h - (y + 8) - 8);
 			firstNotch = bar.y + 5;
 			lastNotch = bar.y + bar.height - 5;
 		} else {
-			bar = new Rectangle(x + 8, y + 19, w - (x + 8) - 7 - fix, 4 - fix);
+			bar = new Rectangle(x + 8, y + 19, w - (x + 8) - 8, 3);
 			firstNotch = bar.x + 5;
 			lastNotch = bar.x + bar.width - 5;
 		}
@@ -179,11 +177,6 @@ class ScaleRenderer implements IScaleRenderer {
 			gc.drawLine(pos, bar.y - 10 - size, pos, bar.y - 10);
 			gc.drawLine(pos, bar.y + 14, pos, bar.y + 14 + size);
 		}
-	}
-
-	// TODO move this into the GC itself
-	private int getGCCorrectionValue() {
-		return SWT.USE_SKIJA ? 0 : 1;
 	}
 
 	/*

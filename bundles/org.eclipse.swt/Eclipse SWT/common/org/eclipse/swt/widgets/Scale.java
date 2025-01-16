@@ -43,7 +43,6 @@ import org.eclipse.swt.graphics.*;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class Scale extends Control implements ICustomWidget {
-	private static Color background;
 	private static Point preferedSize = new Point(170, 42);
 
 
