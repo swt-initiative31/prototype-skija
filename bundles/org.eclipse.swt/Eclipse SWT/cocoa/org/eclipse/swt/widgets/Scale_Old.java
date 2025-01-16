@@ -41,7 +41,7 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Scale extends Control {
+public class Scale_Old extends Control {
 	int increment = 1;
 	int pageIncrement = 10;
 
@@ -74,7 +74,7 @@ public class Scale extends Control {
  * @see Widget#checkSubclass
  * @see Widget#getStyle
  */
-public Scale (Composite parent, int style) {
+public Scale_Old(Composite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
