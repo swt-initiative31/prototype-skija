@@ -66,7 +66,7 @@ public class Scale extends Control implements ICustomWidget {
 	private final IScaleRenderer renderer;
 
 	/** The state of the handle */
-	enum HandleState {
+	public enum HandleState {
 		IDLE, HOVER, DRAG
 	}
 

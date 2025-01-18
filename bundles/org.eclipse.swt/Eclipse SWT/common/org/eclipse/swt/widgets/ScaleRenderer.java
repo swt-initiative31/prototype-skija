@@ -13,6 +13,10 @@ class ScaleRenderer implements IScaleRenderer {
 
 	private final Scale scale;
 
+	/**
+	 * Pixel per Unit. Ratio of how many pixels are used to display one unit of the
+	 * scale.
+	 */
 	private double ppu;
 
 	private Rectangle handleBounds;
