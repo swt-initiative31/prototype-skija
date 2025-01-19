@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2012 IBM Corporation and others.
+ * Copyright (c) 2000, 2018 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -17,7 +17,8 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.cocoa.*;
+import org.eclipse.swt.internal.gtk.*;
+import org.eclipse.swt.internal.gtk3.*;
 
 /**
  * Instances of the receiver represent a selectable user
@@ -41,9 +42,7 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Scale extends Control {
-	int increment = 1;
-	int pageIncrement = 10;
+public class Scale_Old extends Control {
 
 /**
  * Constructs a new instance of this class given its parent
@@ -74,7 +73,7 @@ public class Scale extends Control {
  * @see Widget#checkSubclass
  * @see Widget#getStyle
  */
-public Scale (Composite parent, int style) {
+public Scale_Old (Composite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
@@ -101,7 +100,7 @@ public Scale (Composite parent, int style) {
  * @see SelectionListener
  * @see #removeSelectionListener
  */
-public void addSelectionListener(SelectionListener listener) {
+public void addSelectionListener (SelectionListener listener) {
 	addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 }
 
@@ -110,46 +109,49 @@ static int checkStyle (int style) {
 }
 
 @Override
-public Point computeSize (int wHint, int hHint, boolean changed) {
+Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
 	checkWidget();
-	NSSlider widget = (NSSlider)view;
-	double thickness = widget.knobThickness();
-	int width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT;
+	if (wHint != SWT.DEFAULT && wHint < 0) wHint = 0;
+	if (hHint != SWT.DEFAULT && hHint < 0) hHint = 0;
+	Point size = computeNativeSize(handle, wHint, hHint, changed);
 	if ((style & SWT.HORIZONTAL) != 0) {
-		height = (int)Math.ceil(thickness);
-		width = height * 10;
+		if (wHint == SWT.DEFAULT) size.x = 2 * size.x;
 	} else {
-		width = (int)Math.ceil(thickness);
-		height = width * 10;
+		if (hHint == SWT.DEFAULT) size.y = 2 * size.y;
 	}
-	if (wHint != SWT.DEFAULT) width = wHint;
-	if (hHint != SWT.DEFAULT) height = hHint;
-	return new Point (width, height);
+	return size;
 }
 
 @Override
-void createHandle () {
-	state |= THEME_BACKGROUND;
-	NSSlider widget = (NSSlider)new SWTSlider().alloc();
-	widget.init();
-	widget.setMaxValue(100);
-	widget.setTarget(widget);
-	widget.setAction(OS.sel_sendSelection);
-	if ((style & SWT.VERTICAL) != 0) widget.setBoundsRotation(-90);
-	view = widget;
+void createHandle (int index) {
+	state |= HANDLE | THEME_BACKGROUND;
+	fixedHandle = OS.g_object_new (display.gtk_fixed_get_type (), 0);
+	if (fixedHandle == 0) error (SWT.ERROR_NO_HANDLES);
+	long hAdjustment = GTK.gtk_adjustment_new (0, 0, 100, 1, 10, 0);
+	if (hAdjustment == 0) error (SWT.ERROR_NO_HANDLES);
+	if ((style & SWT.HORIZONTAL) != 0) {
+		handle = GTK.gtk_scale_new (GTK.GTK_ORIENTATION_HORIZONTAL, hAdjustment);
+	} else {
+		handle = GTK.gtk_scale_new (GTK.GTK_ORIENTATION_VERTICAL, hAdjustment);
+	}
+	if (handle == 0) error (SWT.ERROR_NO_HANDLES);
+
+	if (GTK.GTK4) {
+		OS.swt_fixed_add(fixedHandle, handle);
+	} else {
+		GTK3.gtk_widget_set_has_window(fixedHandle, true);
+		GTK3.gtk_container_add (fixedHandle, handle);
+	}
+
+	GTK.gtk_scale_set_digits (handle, 0);
+	GTK.gtk_scale_set_draw_value (handle, false);
 }
 
 @Override
-NSFont defaultNSFont () {
-	return display.sliderFont;
+void hookEvents () {
+	super.hookEvents ();
+	OS.g_signal_connect_closure (handle, OS.value_changed, display.getClosure (VALUE_CHANGED), false);
 }
-
-@Override
-void deregister() {
-	super.deregister();
-	display.removeWidget(((NSControl)view).cell());
-}
-
 
 /**
  * Returns the amount that the receiver's value will be
@@ -164,8 +166,9 @@ void deregister() {
  * </ul>
  */
 public int getIncrement () {
-	checkWidget();
-	return increment;
+	checkWidget ();
+	long hAdjustment = GTK.gtk_range_get_adjustment (handle);
+	return (int) GTK.gtk_adjustment_get_step_increment (hAdjustment);
 }
 
 /**
@@ -179,8 +182,9 @@ public int getIncrement () {
  * </ul>
  */
 public int getMaximum () {
-	checkWidget();
-	return (int)((NSSlider)view).maxValue();
+	checkWidget ();
+	long hAdjustment = GTK.gtk_range_get_adjustment (handle);
+	return (int) GTK.gtk_adjustment_get_upper (hAdjustment);
 }
 
 /**
@@ -194,8 +198,9 @@ public int getMaximum () {
  * </ul>
  */
 public int getMinimum () {
-	checkWidget();
-	return (int)((NSSlider)view).minValue();
+	checkWidget ();
+	long hAdjustment = GTK.gtk_range_get_adjustment (handle);
+	return (int) GTK.gtk_adjustment_get_lower (hAdjustment);
 }
 
 /**
@@ -211,8 +216,9 @@ public int getMinimum () {
  * </ul>
  */
 public int getPageIncrement () {
-	checkWidget();
-	return pageIncrement;
+	checkWidget ();
+	long hAdjustment = GTK.gtk_range_get_adjustment (handle);
+	return (int) GTK.gtk_adjustment_get_page_increment (hAdjustment);
 }
 
 /**
@@ -226,14 +232,15 @@ public int getPageIncrement () {
  * </ul>
  */
 public int getSelection () {
-	checkWidget();
-	return (int)((NSSlider)view).doubleValue();
+	checkWidget ();
+	long hAdjustment = GTK.gtk_range_get_adjustment (handle);
+	return (int) GTK.gtk_adjustment_get_value (hAdjustment);
 }
 
 @Override
-void register() {
-	super.register();
-	display.addWidget(((NSControl)view).cell(), this);
+long gtk_value_changed(long range) {
+	sendSelectionEvent(SWT.Selection);
+	return 0;
 }
 
 /**
@@ -253,20 +260,12 @@ void register() {
  * @see SelectionListener
  * @see #addSelectionListener
  */
-public void removeSelectionListener(SelectionListener listener) {
-	checkWidget();
+public void removeSelectionListener (SelectionListener listener) {
+	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (eventTable == null) return;
-	eventTable.unhook(SWT.Selection, listener);
-	eventTable.unhook(SWT.DefaultSelection,listener);
-}
-
-@Override
-void sendSelection () {
-	NSEvent currEvent = NSApplication.sharedApplication().currentEvent();
-
-	if (currEvent.type() != OS.NSLeftMouseUp)
-		sendSelectionEvent (SWT.Selection);
+	eventTable.unhook (SWT.Selection, listener);
+	eventTable.unhook (SWT.DefaultSelection,listener);
 }
 
 /**
@@ -283,9 +282,11 @@ void sendSelection () {
  * </ul>
  */
 public void setIncrement (int increment) {
-	checkWidget();
+	checkWidget ();
 	if (increment < 1) return;
-	this.increment = increment;
+	OS.g_signal_handlers_block_matched (handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, VALUE_CHANGED);
+	GTK.gtk_range_set_increments (handle, increment, getPageIncrement ());
+	OS.g_signal_handlers_unblock_matched (handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, VALUE_CHANGED);
 }
 
 /**
@@ -302,10 +303,12 @@ public void setIncrement (int increment) {
  * </ul>
  */
 public void setMaximum (int value) {
-	checkWidget();
-	int minimum = (int)((NSSlider)view).minValue();
+	checkWidget ();
+	int minimum = getMinimum();
 	if (value <= minimum) return;
-	((NSSlider)view).setMaxValue(value);
+	OS.g_signal_handlers_block_matched (handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, VALUE_CHANGED);
+	GTK.gtk_range_set_range (handle, minimum, value);
+	OS.g_signal_handlers_unblock_matched (handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, VALUE_CHANGED);
 }
 
 /**
@@ -322,10 +325,13 @@ public void setMaximum (int value) {
  * </ul>
  */
 public void setMinimum (int value) {
-	checkWidget();
-	int maximum = (int)((NSSlider)view).maxValue();
-	if (!(0 <= value && value < maximum)) return;
-	((NSSlider)view).setMinValue(value);
+	checkWidget ();
+	if (value < 0) return;
+	int maximum = getMaximum ();
+	if (value >= maximum) return;
+	OS.g_signal_handlers_block_matched (handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, VALUE_CHANGED);
+	GTK.gtk_range_set_range (handle, value, maximum);
+	OS.g_signal_handlers_unblock_matched (handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, VALUE_CHANGED);
 }
 
 /**
@@ -342,9 +348,11 @@ public void setMinimum (int value) {
  * </ul>
  */
 public void setPageIncrement (int pageIncrement) {
-	checkWidget();
+	checkWidget ();
 	if (pageIncrement < 1) return;
-	this.pageIncrement = pageIncrement;
+	OS.g_signal_handlers_block_matched (handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, VALUE_CHANGED);
+	GTK.gtk_range_set_increments (handle, getIncrement (), pageIncrement);
+	OS.g_signal_handlers_unblock_matched (handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, VALUE_CHANGED);
 }
 
 /**
@@ -359,8 +367,34 @@ public void setPageIncrement (int pageIncrement) {
  * </ul>
  */
 public void setSelection (int value) {
-	checkWidget();
-	((NSSlider)view).setDoubleValue(value);
+	checkWidget ();
+	OS.g_signal_handlers_block_matched (handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, VALUE_CHANGED);
+	GTK.gtk_range_set_value (handle, value);
+	OS.g_signal_handlers_unblock_matched (handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, VALUE_CHANGED);
 }
 
+@Override
+Point resizeCalculationsGTK3(long widget, int width, int height) {
+	Point size = super.resizeCalculationsGTK3(widget, width, height);
+	/*
+	 * Bug 534204: (GTK 3.22) Scale with GridLayout height hint has no line
+	 *
+	 * Specifying a too low height hint for a scale, or shrinking the scale too much
+	 * can result in a missing line for the scale. We specify a minimum height to avoid this.
+	 * Due to the parent SwtFixed, the scale widget can still be resized below this minimum size.
+	 * Instead of shrinking to comply with the too-small size, parts of it are hidden.
+	 */
+	if (widget == handle) {
+		GtkRequisition naturalSize = new GtkRequisition();
+		GtkRequisition minimumSize = new GtkRequisition();
+		GTK.gtk_widget_get_preferred_size(handle, minimumSize, naturalSize);
+		if ((style & SWT.VERTICAL) != 0) {
+			size.x = Math.max(size.x, minimumSize.width);
+		}
+		if ((style & SWT.HORIZONTAL) != 0) {
+			size.y = Math.max(size.y, minimumSize.height);
+		}
+	}
+	return size;
+}
 }
