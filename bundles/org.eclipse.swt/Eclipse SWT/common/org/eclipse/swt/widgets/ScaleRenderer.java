@@ -17,10 +17,13 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.Scale.*;
 
-class ScaleRenderer implements IScaleRenderer {
-	private static final Color IDLE_COLOR = new Color(Display.getDefault(), 0, 95, 184);
-	private static final Color HOVER_COLOR = new Color(Display.getDefault(), 0, 0, 0);
-	private static final Color DRAG_COLOR = new Color(Display.getDefault(), 204, 204, 204);
+public class ScaleRenderer implements IScaleRenderer {
+
+	public static final String KEY_HANDLE_IDLE = "scale.handle.background"; //$NON-NLS-1$
+	public static final String KEY_HANDLE_HOVER = "scale.handle.background.hover"; //$NON-NLS-1$
+	public static final String KEY_HANDLE_DRAG = "scale.handle.background.drag"; //$NON-NLS-1$
+	public static final String KEY_HANDLE_OUTLINE = "scale.handle.outline"; //$NON-NLS-1$
+	public static final String KEY_NOTCH = "scale.notch.foreground"; //$NON-NLS-1$
 
 	private static Color background;
 
@@ -110,11 +113,13 @@ class ScaleRenderer implements IScaleRenderer {
 		}
 
 		gc.fillRectangle(bar);
-		gc.setForeground(scale.getDisplay().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
+
+		final IColorProvider colorProvider = scale.getColorProvider();
+		gc.setForeground(colorProvider.getColor(KEY_HANDLE_OUTLINE));
 		gc.drawRectangle(bar);
 
 		// prepare for line drawing
-		gc.setForeground(scale.getDisplay().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
+		gc.setForeground(colorProvider.getColor(KEY_NOTCH));
 		gc.setLineWidth(1);
 		gc.setLineWidth(1);
 
@@ -146,12 +151,13 @@ class ScaleRenderer implements IScaleRenderer {
 	}
 
 	private void drawHandle(GC gc, int value) {
+		final IColorProvider colorProvider = scale.getColorProvider();
 		// draw handle
-		Color handleColor = switch (scale.getHandleState()) {
-		case IDLE -> IDLE_COLOR;
-		case HOVER -> HOVER_COLOR;
-		case DRAG -> DRAG_COLOR;
-		};
+		Color handleColor = colorProvider.getColor(switch (scale.getHandleState()) {
+		case IDLE -> KEY_HANDLE_IDLE;
+		case HOVER -> KEY_HANDLE_HOVER;
+		case DRAG -> KEY_HANDLE_DRAG;
+		});
 		gc.setBackground(handleColor);
 		handleBounds = calculateHandleBounds(value);
 		gc.fillRectangle(handleBounds);

@@ -556,6 +556,7 @@ public class Display extends Device implements Executor {
 		CommonWidgetsDPIChangeHandlers.registerCommonHandlers();
 	}
 
+	private IColorProvider colorProvider;
 
 /*
 * TEMPORARY CODE.
@@ -594,6 +595,8 @@ public Display () {
  */
 public Display (DeviceData data) {
 	super (data);
+
+	colorProvider = new DefaultColorProvider(this);
 }
 
 Control _getFocusControl () {
@@ -5538,5 +5541,21 @@ private Point getPointFromPixels(Monitor monitor, int x, int y) {
 	int mappedX = DPIUtil.scaleDown(x - monitor.clientX, zoom) + monitor.clientX;
 	int mappedY = DPIUtil.scaleDown(y - monitor.clientY, zoom) + monitor.clientY;
 	return new Point(mappedX, mappedY);
+}
+
+/**
+ * Returns the color provider used for custom-drawn controls.
+ * @return a non-null instance of the color provider
+ */
+public IColorProvider getColorProvider() {
+	return colorProvider;
+}
+
+/**
+ * Sets the color provider used for custom-drawn controls.
+ * @param colorProvider a non-null color provider
+ */
+public void setColorProvider(IColorProvider colorProvider) {
+	this.colorProvider = Objects.requireNonNull(colorProvider);
 }
 }

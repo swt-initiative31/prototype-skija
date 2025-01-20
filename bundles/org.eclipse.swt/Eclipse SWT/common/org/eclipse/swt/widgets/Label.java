@@ -53,13 +53,19 @@ import org.eclipse.swt.graphics.*;
  */
 public class Label extends Control implements ICustomWidget {
 
+	public static final String KEY_DISABLED = "label.disabled"; //$NON-NLS-1$
+	public static final String KEY_SHADOW_IN_LIGHT = "label.shadowIn.light"; //$NON-NLS-1$
+	public static final String KEY_SHADOW_IN_DARK = "label.shadowIn.dark"; //$NON-NLS-1$
+	public static final String KEY_SHADOW_OUT_LIGHT = "label.shadowOut.light"; //$NON-NLS-1$
+	public static final String KEY_SHADOW_OUT_DARK = "label.shadowOut.dark"; //$NON-NLS-1$
+
 	/** Gap between icon and text */
 	private static final int GAP = 5;
 	/** Left and right margins */
 	private static final int DEFAULT_MARGIN = 3;
 	/** a string inserted in the middle of text that has been shortened */
 	private static final String ELLIPSIS = "..."; //$NON-NLS-1$ // could use
-													// the ellipsis glyph on
+	// the ellipsis glyph on
 													// some platforms "\u2026"
 	/** the alignment. Either CENTER, RIGHT, LEFT. Default is LEFT */
 	private int align = SWT.LEFT;
@@ -724,8 +730,9 @@ public class Label extends Control implements ICustomWidget {
 			if (isEnabled()) {
 				gc.setForeground(getForeground());
 			} else {
-				gc.setForeground(getDisplay().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
+				gc.setForeground(getColorProvider().getColor(KEY_DISABLED));
 			}
+
 			for (String line : lines) {
 				int lineX = x;
 				if (lines.length > 1) {
@@ -763,14 +770,15 @@ public class Label extends Control implements ICustomWidget {
 		Color c1 = null;
 		Color c2 = null;
 
+		final IColorProvider colorProvider = getColorProvider();
 		int style = getStyle();
 		if ((style & SWT.SHADOW_IN) != 0) {
-			c1 = disp.getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW);
-			c2 = disp.getSystemColor(SWT.COLOR_WIDGET_HIGHLIGHT_SHADOW);
+			c1 = colorProvider.getColor(KEY_SHADOW_IN_DARK);
+			c2 = colorProvider.getColor(KEY_SHADOW_IN_LIGHT);
 		}
 		if ((style & SWT.SHADOW_OUT) != 0) {
-			c1 = disp.getSystemColor(SWT.COLOR_WIDGET_LIGHT_SHADOW);
-			c2 = disp.getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW);
+			c1 = colorProvider.getColor(KEY_SHADOW_OUT_LIGHT);
+			c2 = colorProvider.getColor(KEY_SHADOW_OUT_DARK);
 		}
 
 		if (c1 != null && c2 != null) {
