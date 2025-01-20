@@ -6149,5 +6149,12 @@ private static void resizeFont(Control control, int newZoom) {
 		control.setFont(Font.win32_new(font, newZoom));
 	}
 }
+
+/**
+ * Returns the color provider of the associated display.
+ */
+public IColorProvider getColorProvider() {
+	return getDisplay().getColorProvider();
+}
 }
 
