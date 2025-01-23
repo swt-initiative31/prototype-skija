@@ -78,6 +78,10 @@ public abstract class Control extends Widget implements Drawable {
 	Region region;
 	Font font;
 	int drawCount, foreground, background, backgroundAlpha = 255;
+	boolean visible = true;
+	boolean enabled = true;
+	Point location;
+	Point size;
 
 /**
  * Prevents uninitialized instances from being created outside the package.
@@ -118,7 +122,16 @@ Control () {
 public Control (Composite parent, int style) {
 	super (parent, style);
 	this.parent = parent;
-	createWidget ();
+	parent.addChildControl(this);
+
+	if (!isCustomDrawn(this)) {
+		if (isCustomDrawn(parent)) {
+			this.parent = parent.getShell();
+			createWidget();
+			this.parent = parent;
+		} else
+			createWidget();
+	}
 }
 
 /**
@@ -1218,6 +1231,18 @@ int getBorderWidthInPixels () {
  * </ul>
  */
 public Rectangle getBounds (){
+
+	if (isCustomDrawn(this)) {
+		Point l = location;
+		if (location == null)
+			l = new Point(0, 0);
+		Point s = size;
+		if (size == null)
+			s = computeSize(SWT.DEFAULT, SWT.DEFAULT);
+
+		return new Rectangle(l.x, l.y, s.x, s.y);
+	}
+
 	checkWidget ();
 	return DPIUtil.scaleDown(getBoundsInPixels (), getZoom());
 }
@@ -1316,6 +1341,10 @@ boolean getDrawing () {
  * @see #isEnabled
  */
 public boolean getEnabled () {
+
+	if (isCustomDrawn(this))
+		return enabled;
+
 	checkWidget ();
 	return OS.IsWindowEnabled (handle);
 }
@@ -1386,6 +1415,10 @@ public Object getLayoutData () {
  * </ul>
  */
 public Point getLocation () {
+
+	if (isCustomDrawn(this))
+		return location;
+
 	checkWidget ();
 	return DPIUtil.scaleDown(getLocationInPixels(), getZoom());
 }
@@ -1688,6 +1721,10 @@ public boolean getTouchEnabled () {
  * </ul>
  */
 public boolean getVisible () {
+
+	if (isCustomDrawn(this))
+		return visible;
+
 	checkWidget ();
 	if (!getDrawing()) return (state & HIDDEN) == 0;
 	int bits = OS.GetWindowLong (handle, OS.GWL_STYLE);
@@ -1867,6 +1904,10 @@ boolean isActive () {
  * @see #getEnabled
  */
 public boolean isEnabled () {
+
+	if (isCustomDrawn(this))
+		return getEnabled();
+
 	checkWidget ();
 	return getEnabled () && parent.isEnabled ();
 }
@@ -1983,6 +2024,10 @@ boolean isTabItem () {
  * @see #getVisible
  */
 public boolean isVisible () {
+
+	if (isCustomDrawn(this))
+		return getVisible();
+
 	checkWidget ();
 	if (OS.IsWindowVisible (handle)) return true;
 	return getVisible () && parent.isVisible ();
@@ -2414,6 +2459,10 @@ public void requestLayout () {
  * @see SWT#DOUBLE_BUFFERED
  */
 public void redraw () {
+
+	if (isCustomDrawn(this))
+		getShell().controlRedraw(this);
+
 	checkWidget ();
 	redrawInPixels (null,false);
 }
@@ -3192,6 +3241,12 @@ void setBackgroundPixel (int pixel) {
  * </ul>
  */
 public void setBounds(int x, int y, int width, int height) {
+
+	if (isCustomDrawn(this)) {
+		location = new Point(x, y);
+		size = new Point(width, height);
+	}
+
 	checkWidget ();
 	int zoom = getZoom();
 	x = DPIUtil.scaleUp(x, zoom);
@@ -3528,6 +3583,9 @@ public void setLayoutData (Object layoutData) {
  * </ul>
  */
 public void setLocation (int x, int y) {
+	if (isCustomDrawn(this)) {
+		this.location = new Point(x, y);
+	}
 	checkWidget ();
 	int zoom = getZoom();
 	x = DPIUtil.scaleUp(x, zoom);
@@ -6143,5 +6201,14 @@ private static void resizeFont(Control control, int newZoom) {
 		control.setFont(Font.win32_new(font, newZoom));
 	}
 }
+
+public void handleEvent(Event e) {
+
+}
+
+public static boolean isCustomDrawn(Control c) {
+	return (c instanceof ICustomWidget) && !(c instanceof IBaseWidget);
+}
+
 }
 

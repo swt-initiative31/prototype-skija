@@ -4,7 +4,7 @@ import java.util.*;
 
 import org.eclipse.swt.internal.*;
 
-public class SkijaFontMetrics implements IFontMetrics {
+public class SkijaFontMetrics extends FontMetrics implements IFontMetrics {
 
 	private io.github.humbleui.skija.FontMetrics metrics;
 

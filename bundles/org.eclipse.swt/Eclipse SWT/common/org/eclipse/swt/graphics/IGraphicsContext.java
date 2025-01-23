@@ -53,4 +53,7 @@ public interface IGraphicsContext {
 	int getLineWidth();
 	LineAttributes getLineAttributes();
 
+	default void setTranslate(int x, int y) {
+	};
+
 }

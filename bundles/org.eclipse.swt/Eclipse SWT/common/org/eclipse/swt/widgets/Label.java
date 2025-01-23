@@ -195,8 +195,9 @@ public class Label extends Control implements ICustomWidget {
 		int topMargin = this.topMargin;
 
 		if (text != null && !text.isEmpty()) {
-			GC originalGC = new GC(this);
-			IGraphicsContext gc = SWT.USE_SKIJA ? new SkijaGC(originalGC, null) : originalGC;
+//			GC originalGC = new GC(this);
+//			IGraphicsContext gc = SWT.USE_SKIJA ? new SkijaGC(originalGC, null) : originalGC;
+			IGraphicsContext gc = GCFactory.getGraphicsContext(this);
 			gc.setFont(getFont());
 			Point textExtent = gc.textExtent(text, DRAW_FLAGS);
 			gc.dispose();
@@ -535,7 +536,9 @@ public class Label extends Control implements ICustomWidget {
 		event.gc.setFont(font);
 		event.gc.setBackground(getBackground());
 		event.gc.setClipping(new Rectangle(0, 0, rect.width, rect.height));
-		IGraphicsContext gc = SWT.USE_SKIJA ? new SkijaGC(event.gc) : event.gc;
+//		IGraphicsContext gc = SWT.USE_SKIJA ? new SkijaGC(event.gc) : event.gc;
+
+		IGraphicsContext gc = event.gc;
 
 		boolean shortenText = false;
 		String t = text;

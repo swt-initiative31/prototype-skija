@@ -57,7 +57,8 @@ class ScaleRenderer implements IScaleRenderer {
 	}
 
 	public IGraphicsContext initSkijaGc(GC originalGC, Rectangle bounds) {
-		IGraphicsContext gc = new SkijaGC(originalGC, background);
+		// Probably unnecessary..
+//		IGraphicsContext gc = new SkijaGC(this, background);
 
 		originalGC.setClipping(bounds.x, bounds.y, bounds.width, bounds.height);
 
@@ -66,7 +67,7 @@ class ScaleRenderer implements IScaleRenderer {
 		originalGC.setClipping(new Rectangle(0, 0, bounds.width, bounds.height));
 		originalGC.setAntialias(SWT.ON);
 
-		return gc;
+		return originalGC;
 	}
 
 

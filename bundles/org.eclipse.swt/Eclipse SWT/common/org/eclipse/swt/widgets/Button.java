@@ -397,33 +397,33 @@ public class Button extends Control implements ICustomWidget {
 		e.gc.setClipping(new Rectangle(0, 0, r.width, r.height));
 		e.gc.setAntialias(SWT.ON);
 
-		GC originalGC = e.gc;
-		IGraphicsContext gc = originalGC;
+//		GC originalGC = e.gc;
+		IGraphicsContext gc = e.gc;
 		Image doubleBufferingImage = null;
 
-		if (SWT.getPlatform().equals("win32") | SWT.getPlatform().equals("gtk")) {
-			// Extract background color on first execution
-			if (background == null) {
-				extractAndStoreBackgroundColor(r, originalGC);
-			}
-			style |= SWT.NO_BACKGROUND;
-		}
+//		if (SWT.getPlatform().equals("win32") | SWT.getPlatform().equals("gtk")) {
+//			// Extract background color on first execution
+//			if (background == null) {
+//				extractAndStoreBackgroundColor(r, originalGC);
+//			}
+//			style |= SWT.NO_BACKGROUND;
+//		}
 
-		if (SWT.USE_SKIJA) {
-			gc = new SkijaGC(originalGC, background);
-		} else {
-			if (SWT.getPlatform().equals("win32")) {
-				// Use double buffering on windows
-				doubleBufferingImage = new Image(getDisplay(), r.width, r.height);
-				originalGC.copyArea(doubleBufferingImage, 0, 0);
-				GC doubleBufferingGC = new GC(doubleBufferingImage);
-				doubleBufferingGC.setForeground(originalGC.getForeground());
-				doubleBufferingGC.setBackground(background);
-				doubleBufferingGC.setAntialias(SWT.ON);
-				doubleBufferingGC.fillRectangle(0, 0, r.width, r.height);
-				gc = doubleBufferingGC;
-			}
-		}
+//		if (SWT.USE_SKIJA) {
+//			gc = new SkijaGC(originalGC, background);
+//		} else {
+//			if (SWT.getPlatform().equals("win32")) {
+//				// Use double buffering on windows
+//				doubleBufferingImage = new Image(getDisplay(), r.width, r.height);
+//				originalGC.copyArea(doubleBufferingImage, 0, 0);
+//				GC doubleBufferingGC = new GC(doubleBufferingImage);
+//				doubleBufferingGC.setForeground(originalGC.getForeground());
+//				doubleBufferingGC.setBackground(background);
+//				doubleBufferingGC.setAntialias(SWT.ON);
+//				doubleBufferingGC.fillRectangle(0, 0, r.width, r.height);
+//				gc = doubleBufferingGC;
+//			}
+//		}
 
 		boolean isRightAligned = (style & SWT.RIGHT) != 0;
 		boolean isCentered = (style & SWT.CENTER) != 0;
@@ -562,13 +562,13 @@ public class Button extends Control implements ICustomWidget {
 			gc.setBackground(bg2);
 		}
 
-		gc.commit();
+//		gc.commit();
 		gc.dispose();
-		if (doubleBufferingImage != null) {
-			originalGC.drawImage(doubleBufferingImage, 0, 0);
-			doubleBufferingImage.dispose();
-		}
-		originalGC.dispose();
+//		if (doubleBufferingImage != null) {
+//			originalGC.drawImage(doubleBufferingImage, 0, 0);
+//			doubleBufferingImage.dispose();
+//		}
+//		originalGC.dispose();
 	}
 
 	private void extractAndStoreBackgroundColor(Rectangle r, GC originalGC) {
@@ -724,10 +724,7 @@ public class Button extends Control implements ICustomWidget {
 			boxSpace = BOX_SIZE + SPACING;
 		}
 		if (text != null && !text.isEmpty()) {
-			GC originalGC = new GC(this);
-			IGraphicsContext gc = SWT.USE_SKIJA
-					? new SkijaGC(originalGC, null)
-					: originalGC;
+			IGraphicsContext gc = GCFactory.getGraphicsContext(this);
 			gc.setFont(getFont());
 			Point textExtent = gc.textExtent(text, DRAW_FLAGS);
 			textWidth = textExtent.x + 1;
@@ -1553,4 +1550,23 @@ public class Button extends Control implements ICustomWidget {
 		}
 		return polygon;
 	}
+
+	@Override
+	public void handleEvent(Event e) {
+
+		switch (e.type) {
+		case SWT.Paint:
+			onPaint(e);
+			break;
+		case SWT.MouseEnter:
+			onMouseEnter();
+			break;
+		case SWT.MouseExit:
+			onMouseExit();
+			break;
+
+		}
+
+	}
+
 }

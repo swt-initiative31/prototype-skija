@@ -12,7 +12,7 @@ public class SnippetButton {
 		Image image = display.getSystemImage(SWT.ICON_QUESTION);
 		Shell shell = new Shell(display);
 		shell.setText("SnippetButton");
-		shell.setLayout(new GridLayout());
+//		shell.setLayout(new GridLayout());
 		var button = new Button(shell, SWT.PUSH);
 
 		// button.addSelectionListener(widgetSelectedAdapter(e ->
@@ -29,7 +29,7 @@ public class SnippetButton {
 		button.setImage(image);
 		button.setText("Button hola");
 		button.setSize(133, 150);
-		button.setLocation(200, 200);
+		button.setLocation(100, 100);
 
 
 

@@ -191,4 +191,9 @@ public void swapBuffers () {
 	WGL.SwapBuffers (hDC);
 	OS.ReleaseDC (handle, hDC);
 }
+
+public long getContext() {
+	return context;
+}
+
 }

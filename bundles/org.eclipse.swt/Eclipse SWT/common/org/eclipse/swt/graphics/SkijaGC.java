@@ -2,60 +2,92 @@ package org.eclipse.swt.graphics;
 
 import java.io.*;
 import java.util.*;
-import java.util.List;
 import java.util.function.*;
 
 import org.eclipse.swt.*;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Path;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.internal.*;
+import org.eclipse.swt.widgets.*;
 
 import io.github.humbleui.skija.*;
 import io.github.humbleui.skija.Canvas;
 import io.github.humbleui.skija.Font;
 import io.github.humbleui.types.*;
 
-public class SkijaGC implements IGraphicsContext {
-	private final GC innerGC;
+public class SkijaGC extends GC implements IGraphicsContext {
+
 	private final Surface surface;
 	private Rectangle clipping;
 
 	private Font font;
 	private float baseSymbolHeight = 0; // Height of symbol with "usual" height, like "T", to be vertically centered
 	private int lineWidth;
+	private Color background;
+	private Color foreground;
+	private org.eclipse.swt.graphics.Font swtFont;
+	private int antialias;
+	private boolean advancedEnable;
+	private int lineStyle;
 
-	public SkijaGC(Drawable drawable, int style) {
-		this(new GC(drawable, style));
-	}
+	private Point translate = new Point(0, 0);
+	private Control control;
+	boolean disposed = false;
 
-	public SkijaGC(GC gc) {
-		this(gc, extractBackgroundColor(gc));
-	}
-
-	public SkijaGC(GC gc, Color backgroundColor) {
-		innerGC = gc;
-		surface = createSurface(backgroundColor);
-		clipping = innerGC.getClipping();
+	public SkijaGC(Surface surface, Control control) {
+		this.surface = surface;
+		this.control = control;
 		initFont();
 	}
 
-	private static Color extractBackgroundColor(GC gc) {
-		Rectangle originalGCArea = gc.getClipping();
-		// Do not fill when using dummy GC for text extent calculation or when on cocoa
-		// (as it does not have proper color)
-		if (originalGCArea.isEmpty() || SWT.getPlatform().equals("cocoa")) {
-			return null;
-		}
-		Image colorImage = new Image(gc.getDevice(), originalGCArea.width, originalGCArea.height);
-		gc.copyArea(colorImage, 0, 0);
-		int pixel = colorImage.getImageData().getPixel(0, 0);
-		Color originalColor = SWT.convertPixelToColor(pixel);
-		colorImage.dispose();
-		return originalColor;
+	public SkijaGC(Control control) {
+		this((Surface) null, control);
+	}
+
+	/**
+	 * Create a child SkijaGC for an existing SkijaGC
+	 *
+	 * TODO for child of child SkijaGCs additional arguments might be necessary...
+	 * @param control
+	 */
+	public SkijaGC(SkijaGC parentGc, Control control) {
+		this.control = control;
+
+		Point l = control.getLocation();
+		if (l == null)
+			l = new Point(0, 0);
+		setTranslate(l.x, l.y);
+		this.surface = parentGc.surface;
+
+		initFont();
+
+	}
+
+	public SkijaGC(Shell shell, int none) {
+		this(shell);
+	}
+
+	@Override
+	public boolean isDisposed() {
+		return disposed;
+	}
+
+	public static Image createImage(Surface surface, Control control) {
+
+		io.github.humbleui.skija.Image im = surface.makeImageSnapshot();
+		byte[] imageBytes = EncoderPNG.encode(im).getBytes();
+
+		Image transferImage = new Image(control.getDisplay(), new ByteArrayInputStream(imageBytes));
+		return transferImage;
+
 	}
 
 	private Surface createSurface(Color backgroundColor) {
 		int width = 1;
 		int height = 1;
-		Rectangle originalGCArea = innerGC.getClipping();
+		Rectangle originalGCArea = clipping;
 		if (!originalGCArea.isEmpty()) {
 			width = DPIUtil.autoScaleUp(originalGCArea.width);
 			height = DPIUtil.autoScaleUp(originalGCArea.height);
@@ -68,23 +100,20 @@ public class SkijaGC implements IGraphicsContext {
 		return surface;
 	}
 
+
 	private void initFont() {
-		org.eclipse.swt.graphics.Font originalFont = innerGC.getFont();
-		if (originalFont == null || originalFont.isDisposed()) {
-			originalFont = innerGC.getDevice().getSystemFont();
-		}
+		org.eclipse.swt.graphics.Font originalFont = Display.getDefault().getSystemFont();
 		setFont(originalFont);
 	}
 
 	@Override
 	public void dispose() {
-		this.innerGC.dispose();
-
+		disposed = true;
 	}
 
 	@Override
 	public Color getBackground() {
-		return innerGC.getBackground();
+		return background;
 	}
 
 	private void performDraw(Consumer<Paint> operations) {
@@ -138,33 +167,20 @@ public class SkijaGC implements IGraphicsContext {
 		return lines;
 	}
 
+
 	@Override
-	public void commit() {
-		io.github.humbleui.skija.Image im = surface.makeImageSnapshot();
-		byte[] imageBytes = EncoderPNG.encode(im).getBytes();
-
-		Image transferImage = new Image(innerGC.getDevice(), new ByteArrayInputStream(imageBytes));
-
-		Rectangle originalArea = innerGC.getClipping();
-		Rectangle scaledArea = DPIUtil.autoScaleUp(originalArea);
-		innerGC.drawImage(transferImage, 0, 0, scaledArea.width, scaledArea.height, //
-				0, 0, originalArea.width, originalArea.height);
-		transferImage.dispose();
-		surface.close();
-	}
-
 	public Point textExtent(String string) {
 		return textExtent(string, SWT.NONE);
 	}
 
 	@Override
 	public void setBackground(Color color) {
-		innerGC.setBackground(color);
+		this.background = color;
 	}
 
 	@Override
 	public void setForeground(Color color) {
-		innerGC.setForeground(color);
+		this.foreground = color;
 	}
 
 	@Override
@@ -174,17 +190,20 @@ public class SkijaGC implements IGraphicsContext {
 
 	@Override
 	public void drawImage(Image image, int x, int y) {
-		Canvas canvas = surface.getCanvas();
-		canvas.drawImage(convertSWTImageToSkijaImage(image), DPIUtil.autoScaleUp(x), DPIUtil.autoScaleUp(y));
+
+		surface.getCanvas().drawImage(convertSWTImageToSkijaImage(image), DPIUtil.autoScaleUp(translate.x + x),
+				DPIUtil.autoScaleUp(translate.y + y));
+
 	}
 
 	@Override
 	public void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY,
 			int destWidth, int destHeight) {
-		Canvas canvas = surface.getCanvas();
-		canvas.drawImageRect(convertSWTImageToSkijaImage(image),
-				createScaledRectangle(srcX, srcY, srcWidth, srcHeight),
-				createScaledRectangle(destX, destY, destWidth, destHeight));
+		surface.getCanvas().drawImageRect(convertSWTImageToSkijaImage(image),
+				new Rect(DPIUtil.autoScaleUp(srcX), DPIUtil.autoScaleUp(srcY), DPIUtil.autoScaleUp(srcX + srcWidth),
+						DPIUtil.autoScaleUp(srcY + srcHeight)),
+				new Rect(DPIUtil.autoScaleUp(destX), DPIUtil.autoScaleUp(destY), DPIUtil.autoScaleUp(destX + destWidth),
+						DPIUtil.autoScaleUp(destY + destHeight)));
 
 	}
 
@@ -324,7 +343,11 @@ public class SkijaGC implements IGraphicsContext {
 
 	@Override
 	public Color getForeground() {
-		return innerGC.getForeground();
+
+		if (foreground == null)
+			return Display.getDefault().getSystemColor(SWT.COLOR_LIST_SELECTION_TEXT);
+
+		return foreground;
 	}
 
 	@Override
@@ -352,8 +375,11 @@ public class SkijaGC implements IGraphicsContext {
 			int topLeftTextBoxYPosition = DPIUtil.autoScaleUp(y);
 			float heightOfTextBoxConsideredByClients = font.getMetrics().getHeight();
 			float heightOfSymbolToCenter = baseSymbolHeight;
-			surface.getCanvas().drawTextBlob(textBlob, (int) DPIUtil.autoScaleUp(x),
-					(int) (topLeftTextBoxYPosition + heightOfTextBoxConsideredByClients / 2 + heightOfSymbolToCenter / 2),
+
+			Point p = translate((int) DPIUtil.autoScaleUp(x), (int) (topLeftTextBoxYPosition
+					+ heightOfTextBoxConsideredByClients / 2 + heightOfSymbolToCenter / 2));
+
+			surface.getCanvas().drawTextBlob(textBlob, p.x, p.y,
 					paint);
 		});
 	}
@@ -390,26 +416,31 @@ public class SkijaGC implements IGraphicsContext {
 	@Override
 	public void drawFocus(int x, int y, int width, int height) {
 		performDrawLine(paint -> {
+			Rectangle r = translate(x, y, width, height);
 			paint.setPathEffect(PathEffect.makeDash(new float[] { 1.5f, 1.5f }, 0.0f));
 			surface.getCanvas().drawRect(offsetRectangle(createScaledRectangle(x, y, width, height)), paint);
 		});
 	}
 
+	@Override
 	void drawIcon(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth,
 			int destHeight, boolean simple) {
 		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
 
+	@Override
 	void drawBitmap(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY,
 			int destWidth, int destHeight, boolean simple) {
 		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
 
+	@Override
 	void drawBitmapAlpha(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY,
 			int destWidth, int destHeight, boolean simple) {
 		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
 
+	@Override
 	void drawBitmapTransparentByClipping(long srcHdc, long maskHdc, int srcX, int srcY, int srcWidth, int srcHeight,
 			int destX, int destY, int destWidth, int destHeight, boolean simple, int imgWidth, int imgHeight) {
 		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
@@ -422,6 +453,7 @@ public class SkijaGC implements IGraphicsContext {
 						paint));
 	}
 
+	@Override
 	public void drawPath(Path path) {
 		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
@@ -463,17 +495,25 @@ public class SkijaGC implements IGraphicsContext {
 
 	@Override
 	public void drawRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-		drawRectangle(x, y, width, height);
+		performDrawLine(paint -> {
+
+			Rectangle r = translate(x, y, width, height);
+			surface.getCanvas().drawRRect(
+					createScaledAndOffsetRoundRectangle(r.x, r.y, r.width, r.height, arcWidth, arcHeight), paint);
+		});
 	}
 
+	@Override
 	public void drawString(String string, int x, int y) {
 		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
 
+	@Override
 	public void drawString(String string, int x, int y, boolean isTransparent) {
 		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
 
+	@Override
 	public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
 		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
@@ -489,6 +529,7 @@ public class SkijaGC implements IGraphicsContext {
 				paint -> surface.getCanvas().drawOval(createScaledRectangle(x, y, width, height), paint));
 	}
 
+	@Override
 	public void fillPath(Path path) {
 		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
@@ -498,7 +539,7 @@ public class SkijaGC implements IGraphicsContext {
 
 		boolean isXCoord = true;
 		int xCoord = 0;
-		List<io.github.humbleui.types.Point> ps = new ArrayList<>();
+		java.util.List<io.github.humbleui.types.Point> ps = new ArrayList<>();
 
 		for (int i : pointArray) {
 
@@ -518,7 +559,24 @@ public class SkijaGC implements IGraphicsContext {
 	@Override
 	public void fillRectangle(int x, int y, int width, int height) {
 		performDrawFilled(
-				paint -> surface.getCanvas().drawRect(createScaledRectangle(x, y, width, height), paint));
+				paint -> {
+					Point t = translate(x, y);
+					surface.getCanvas().drawRect(createScaledRectangle(t.x, t.y, width, height), paint);
+				});
+
+	}
+
+	private Point translate(int x1, int y1) {
+
+		return new Point(translate.x + x1, translate.y + y1);
+
+	}
+
+	private Rectangle translate(int x, int y, int width, int height) {
+		return new Rectangle(translate.x + x, //
+				translate.y + y, //
+				width, //
+				height);
 	}
 
 	@Override
@@ -534,7 +592,11 @@ public class SkijaGC implements IGraphicsContext {
 
 	@Override
 	public void setFont(org.eclipse.swt.graphics.Font font) {
-		innerGC.setFont(font);
+
+		if (font == null)
+			font = control.getDisplay().getSystemFont();
+
+		this.swtFont = font;
 		FontData fontData = font.getFontData()[0];
 		FontStyle style = FontStyle.NORMAL;
 		boolean isBold = (fontData.getStyle() & SWT.BOLD) != 0;
@@ -549,7 +611,7 @@ public class SkijaGC implements IGraphicsContext {
 		this.font = new Font(Typeface.makeFromName(fontData.getName(), style));
 		int fontSize = DPIUtil.autoScaleUp(fontData.getHeight());
 		if (SWT.getPlatform().equals("win32")) {
-			fontSize *= this.font.getSize() / innerGC.getDevice().getSystemFont().getFontData()[0].getHeight();
+			fontSize *= this.font.getSize() / Display.getDefault().getSystemFont().getFontData()[0].getHeight();
 		}
 		this.font.setSize(fontSize);
 		this.font.setEdging(FontEdging.SUBPIXEL_ANTI_ALIAS);
@@ -559,12 +621,13 @@ public class SkijaGC implements IGraphicsContext {
 
 	@Override
 	public org.eclipse.swt.graphics.Font getFont() {
-		return innerGC.getFont();
+		return swtFont;
 	}
 
 	@Override
 	public void setClipping(int x, int y, int width, int height) {
-		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
+
+		setClipping(new Rectangle(x, y, width, height));
 
 	}
 
@@ -594,24 +657,24 @@ public class SkijaGC implements IGraphicsContext {
 	}
 
 	@Override
-	public IFontMetrics getFontMetrics() {
-		IFontMetrics fm = new SkijaFontMetrics(font.getMetrics());
+	public FontMetrics getFontMetrics() {
+		FontMetrics fm = new SkijaFontMetrics(font.getMetrics());
 		return fm;
 	}
 
 	@Override
 	public int getAntialias() {
-		return innerGC.getAntialias();
+		return this.antialias;
 	}
 
 	@Override
 	public void setAntialias(int antialias) {
-		innerGC.setAntialias(antialias);
+		this.antialias = antialias;
 	}
 
 	@Override
 	public void setAdvanced(boolean enable) {
-		innerGC.setAdvanced(enable);
+		this.advancedEnable = enable;
 	}
 
 	private Rect offsetRectangle(Rect rect) {
@@ -643,21 +706,27 @@ public class SkijaGC implements IGraphicsContext {
 		return 0f;
 	}
 
+	private RRect createScaledAndOffsetRoundRectangle(int x, int y, int width, int height, int arcwidth,
+			int archeight) {
+		return new RRect(DPIUtil.autoScaleUp(x + 0.5f), DPIUtil.autoScaleUp(y + 0.5f),
+				DPIUtil.autoScaleUp(x - 0.5f + width), DPIUtil.autoScaleUp(y - 0.5f + height),
+				new float[] { DPIUtil.autoScaleUp(arcwidth + 0.5f), DPIUtil.autoScaleUp(archeight + 0.5f) });
+	}
 
 	@Override
 	public void setLineStyle(int lineDot) {
-		innerGC.setLineStyle(lineDot);
+		this.lineStyle = lineDot;
 
 	}
 
 	@Override
 	public int getLineStyle() {
-		return innerGC.getLineStyle();
+		return this.lineStyle;
 	}
 
 	@Override
 	public int getLineWidth() {
-		return innerGC.getLineWidth();
+		return this.lineWidth;
 	}
 
 	@Override
@@ -670,13 +739,26 @@ public class SkijaGC implements IGraphicsContext {
 		return attributes;
 	}
 
+	@Override
 	LineAttributes getLineAttributesInPixels() {
 		return new LineAttributes(lineWidth, SWT.CAP_FLAT, SWT.JOIN_MITER, SWT.LINE_SOLID, null, 0, 10);
 	}
 
 	@Override
 	public Rectangle getClipping() {
-		return clipping;
+		return null;
+	}
+
+	@Override
+	public void setClipping(Rectangle rectangle) {
+		if (this.clipping != rectangle) {
+			clipping = rectangle;
+		}
+	}
+
+	@Override
+	public void setTranslate(int x, int y) {
+		translate = new Point(x, y);
 	}
 
 }

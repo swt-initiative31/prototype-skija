@@ -27,7 +27,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see GC#getFontMetrics
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public final class FontMetrics implements IFontMetrics{
+public class FontMetrics implements IFontMetrics {
 
 	/**
 	 * On Windows, handle is a Win32 TEXTMETRIC struct
