@@ -23,6 +23,8 @@ import org.eclipse.swt.internal.gdip.*;
 import org.eclipse.swt.internal.win32.*;
 import org.eclipse.swt.widgets.*;
 
+import org.eclipse.swt.*;
+
 /**
  * Class <code>GC</code> is where all of the drawing capabilities that are
  * supported by SWT are located. Instances are used to draw on either an
@@ -63,7 +65,9 @@ import org.eclipse.swt.widgets.*;
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Examples: GraphicsExample, PaintExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public class GC extends Resource implements IGraphicsContext {
+public class GC extends Resource {
+
+	public GCHandle innerGC;
 
 	/**
 	 * the handle to the OS device context
@@ -77,10 +81,6 @@ public class GC extends Resource implements IGraphicsContext {
 	 *
 	 * @noreference This field is not intended to be referenced by clients.
 	 */
-	public long handle;
-
-	Drawable drawable;
-	GCData data;
 
 	static final int FOREGROUND = 1 << 0;
 	static final int BACKGROUND = 1 << 1;
@@ -139,6 +139,11 @@ public GC(Drawable drawable) {
 	this(drawable, SWT.NONE);
 }
 
+@Override
+void initNonDisposeTracking() {
+	// do nothing. GC is a wrapper no longer a resource.
+}
+
 /**
  * Constructs a new instance of this class which has been
  * configured to draw on the specified drawable. Sets the
@@ -169,16 +174,7 @@ public GC(Drawable drawable) {
  * @since 2.1.2
  */
 public GC(Drawable drawable, int style) {
-	if (drawable == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	GCData data = new GCData ();
-	data.style = checkStyle(style);
-	long hDC = drawable.internal_new_GC(data);
-	Device device = data.device;
-	if (device == null) device = Device.getDevice();
-	if (device == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	this.device = data.device = device;
-	init (drawable, data, hDC);
-	init();
+	innerGC = new NativeGC(drawable, style);
 }
 
 static int checkStyle(int style) {
@@ -186,24 +182,11 @@ static int checkStyle(int style) {
 	return style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
 }
 
-private void validateGCState() {
-	if (drawable == null) {
-		return;
-	}
-	try {
-		GCData newData = new GCData();
-		long newHdc = drawable.internal_new_GC(newData);
-
-		if (data.nativeZoom != newData.nativeZoom) {
-			System.err.println("***WARNING: Zoom of the underlying Drawable of the GC has changed. This indicates a "
-					+ "long running GC that should be recreated.");
-		}
-		drawable.internal_dispose_GC(newHdc, newData);
-	} catch (Exception e) {
-		// ignore if recreation fails
-	}
+void checkGC(int mask) {
+	innerGC.checkGC(mask);
 }
 
+<<<<<<< HEAD
 void checkGC(int mask) {
 	if (Device.strictChecks) {
 		validateGCState();
@@ -461,6 +444,9 @@ void checkGC(int mask) {
 		long fontHandle = SWTFontProvider.getFontHandle(data.font, data.nativeZoom);
 		OS.SelectObject(handle, fontHandle);
 	}
+@Override
+public void dispose() {
+	innerGC.dispose();
 }
 
 /**
@@ -480,13 +466,11 @@ void checkGC(int mask) {
  * </ul>
  */
 public void copyArea (Image image, int x, int y) {
-	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-	copyAreaInPixels(image, x, y);
+	innerGC.copyArea(image, x, y);
 }
 
 void copyAreaInPixels(Image image, int x, int y) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (image == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	if (image.type != SWT.BITMAP || image.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -497,6 +481,9 @@ void copyAreaInPixels(Image image, int x, int y) {
 	OS.BitBlt(memHdc, 0, 0, rect.width, rect.height, handle, x, y, OS.SRCCOPY);
 	OS.SelectObject(memHdc, hOldBitmap);
 	OS.DeleteDC(memHdc);
+=======
+	innerGC.copyArea(image, x, y);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -515,7 +502,7 @@ void copyAreaInPixels(Image image, int x, int y) {
  * </ul>
  */
 public void copyArea (int srcX, int srcY, int width, int height, int destX, int destY) {
-	copyArea (srcX, srcY, width, height, destX, destY, true);
+	innerGC.copyArea(srcX, srcY, width, height, destX, destY);
 }
 
 /**
@@ -537,6 +524,7 @@ public void copyArea (int srcX, int srcY, int width, int height, int destX, int 
  * @since 3.1
  */
 public void copyArea (int srcX, int srcY, int width, int height, int destX, int destY, boolean paint) {
+<<<<<<< HEAD
 	int zoom = getZoom();
 	Rectangle sourceRect = DPIUtil.scaleUp(drawable, new Rectangle(srcX, srcY, width, height), zoom);
 	Rectangle destRect = DPIUtil.scaleUp(drawable, new Rectangle(destX, destY, width, height), zoom);
@@ -683,6 +671,7 @@ static void destroyGdipBrush(long brush) {
 	}
 }
 
+
 /**
  * Disposes of the operating system resources associated with
  * the graphics context. Applications must dispose of all GCs
@@ -694,61 +683,9 @@ static void destroyGdipBrush(long brush) {
  */
 @Override
 void destroy() {
-	boolean gdip = data.gdipGraphics != 0;
-	disposeGdip();
-	if (gdip && (data.style & SWT.MIRRORED) != 0) {
-		OS.SetLayout(handle, OS.GetLayout(handle) | OS.LAYOUT_RTL);
-	}
-
-	/* Select stock pen and brush objects and free resources */
-	if (data.hPen != 0) {
-		OS.SelectObject(handle, OS.GetStockObject(OS.NULL_PEN));
-		OS.DeleteObject(data.hPen);
-		data.hPen = 0;
-	}
-	if (data.hBrush != 0) {
-		OS.SelectObject(handle, OS.GetStockObject(OS.NULL_BRUSH));
-		OS.DeleteObject(data.hBrush);
-		data.hBrush = 0;
-	}
-
-	/*
-	* Put back the original bitmap into the device context.
-	* This will ensure that we have not left a bitmap
-	* selected in it when we delete the HDC.
-	*/
-	long hNullBitmap = data.hNullBitmap;
-	if (hNullBitmap != 0) {
-		OS.SelectObject(handle, hNullBitmap);
-		data.hNullBitmap = 0;
-	}
-	Image image = data.image;
-	if (image != null) image.memGC = null;
-
-	/*
-	* Dispose the HDC.
-	*/
-	if (drawable != null) drawable.internal_dispose_GC(handle, data);
-	drawable = null;
-	handle = 0;
-	data.image = null;
-	data.ps = null;
-	data = null;
+	innerGC.destroy();
 }
 
-void disposeGdip() {
-	if (data.gdipPen != 0) Gdip.Pen_delete(data.gdipPen);
-	if (data.gdipBgBrush != 0) destroyGdipBrush(data.gdipBgBrush);
-	if (data.gdipFgBrush != 0) destroyGdipBrush(data.gdipFgBrush);
-	if (data.gdipFont != 0) Gdip.Font_delete(data.gdipFont);
-	if (data.hGDIFont != 0) OS.DeleteObject(data.hGDIFont);
-	if (data.gdipGraphics != 0) Gdip.Graphics_delete(data.gdipGraphics);
-	if (data.gdipBgPatternBrushAlpha != 0) destroyGdipBrush(data.gdipBgPatternBrushAlpha);
-	if (data.gdipFgPatternBrushAlpha != 0) destroyGdipBrush(data.gdipFgPatternBrushAlpha);
-	data.gdipGraphics = data.gdipBrush = data.gdipBgBrush = data.gdipFgBrush =
-		data.gdipFont = data.gdipPen = data.hGDIFont = data.gdipBgPatternBrushAlpha =
-		data.gdipFgPatternBrushAlpha = 0;
-}
 
 /**
  * Draws the outline of a circular or elliptical arc
@@ -779,7 +716,6 @@ void disposeGdip() {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
-@Override
 public void drawArc (int x, int y, int width, int height, int startAngle, int arcAngle) {
 	Rectangle rect = DPIUtil.scaleUp(drawable, new Rectangle(x, y, width, height), getZoom());
 	drawArcInPixels(rect.x, rect.y, rect.width, rect.height, startAngle, arcAngle);
@@ -842,6 +778,9 @@ void drawArcInPixels (int x, int y, int width, int height, int startAngle, int a
 	}
 	OS.Arc(handle, x, y, x + width + 1, y + height + 1, x1, y1, x2, y2);
 }
+	innerGC.drawArc(x, y, width, height, startAngle, arcAngle);
+}
+
 
 /**
  * Draws a rectangle, based on the specified arguments, which has
@@ -861,6 +800,7 @@ void drawArcInPixels (int x, int y, int width, int height, int startAngle, int a
  * @see #drawRectangle(int, int, int, int)
  */
 public void drawFocus (int x, int y, int width, int height) {
+<<<<<<< HEAD
 	Rectangle rect = DPIUtil.scaleUp(drawable, new Rectangle(x, y, width, height), getZoom());
 	drawFocusInPixels(rect.x, rect.y, rect.width, rect.height);
 }
@@ -915,6 +855,11 @@ void drawFocusInPixels (int x, int y, int width, int height) {
 		data.state &= ~(BACKGROUND_TEXT | FOREGROUND_TEXT);
 	}
 }
+=======
+	innerGC.drawFocus(x, y, width, height);
+}
+
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 
 /**
  * Draws the given image in the receiver at the specified
@@ -935,20 +880,19 @@ void drawFocusInPixels (int x, int y, int width, int height) {
  *    <li>ERROR_NO_HANDLES - if no handles are available to perform the operation</li>
  * </ul>
  */
-@Override
 public void drawImage (Image image, int x, int y) {
-	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-	drawImageInPixels(image, x, y);
+	innerGC.drawImage(image, x, y);
 }
 
+<<<<<<< HEAD
 void drawImageInPixels(Image image, int x, int y) {
 	checkNonDisposed();
 	if (image == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	if (image.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 	drawImage(image, 0, 0, -1, -1, x, y, -1, -1, true);
 }
+=======
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 
 /**
  * Copies a rectangular area from the source image into a (potentially
@@ -982,8 +926,8 @@ void drawImageInPixels(Image image, int x, int y) {
  *    <li>ERROR_NO_HANDLES - if no handles are available to perform the operation</li>
  * </ul>
  */
-@Override
 public void drawImage (Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (srcWidth == 0 || srcHeight == 0 || destWidth == 0 || destHeight == 0) return;
 	if (srcX < 0 || srcY < 0 || srcWidth < 0 || srcHeight < 0 || destWidth < 0 || destHeight < 0) {
@@ -1686,6 +1630,14 @@ void drawBitmapColor(long imageHandle, int srcX, int srcY, int srcWidth, int src
 	OS.SelectObject(srcHdc, oldSrcBitmap);
 	OS.DeleteDC(srcHdc);
 }
+=======
+	innerGC.drawImage(image, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight);
+
+}
+
+
+
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 
 /**
  * Draws a line, using the foreground color, between the points
@@ -1700,16 +1652,11 @@ void drawBitmapColor(long imageHandle, int srcX, int srcY, int srcWidth, int src
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
-@Override
 public void drawLine (int x1, int y1, int x2, int y2) {
-	int deviceZoom = getZoom();
-	x1 = DPIUtil.scaleUp (drawable, x1, deviceZoom);
-	x2 = DPIUtil.scaleUp (drawable, x2, deviceZoom);
-	y1 = DPIUtil.scaleUp (drawable, y1, deviceZoom);
-	y2 = DPIUtil.scaleUp (drawable, y2, deviceZoom);
-	drawLineInPixels(x1, y1, x2, y2);
+	innerGC.drawLine(x1, y1, x2, y2);
 }
 
+<<<<<<< HEAD
 void drawLineInPixels (int x1, int y1, int x2, int y2) {
 	checkNonDisposed();
 	checkGC(DRAW);
@@ -1732,6 +1679,8 @@ void drawLineInPixels (int x1, int y1, int x2, int y2) {
 		OS.SetPixel (handle, x2, y2, data.foreground);
 	}
 }
+=======
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 
 /**
  * Draws the outline of an oval, using the foreground color,
@@ -1754,8 +1703,8 @@ void drawLineInPixels (int x1, int y1, int x2, int y2) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
-@Override
 public void drawOval (int x, int y, int width, int height) {
+<<<<<<< HEAD
 	Rectangle rect = DPIUtil.scaleUp(drawable, new Rectangle(x, y, width, height), getZoom());
 	drawOvalInPixels(rect.x, rect.y, rect.width, rect.height);
 }
@@ -1775,6 +1724,13 @@ void drawOvalInPixels (int x, int y, int width, int height) {
 	}
 	OS.Ellipse(handle, x, y, x + width + 1, y + height + 1);
 }
+=======
+
+	innerGC.drawOval(x, y, width, height);
+
+}
+
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 
 /**
  * Draws the path described by the parameter.
@@ -1800,6 +1756,7 @@ void drawOvalInPixels (int x, int y, int width, int height) {
  * @since 3.1
  */
 public void drawPath (Path path) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (path == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	long pathHandle = path.getHandle(getZoom());
@@ -1810,6 +1767,9 @@ public void drawPath (Path path) {
 	Gdip.Graphics_TranslateTransform(gdipGraphics, data.gdipXOffset, data.gdipYOffset, Gdip.MatrixOrderPrepend);
 	Gdip.Graphics_DrawPath(gdipGraphics, data.gdipPen, pathHandle);
 	Gdip.Graphics_TranslateTransform(gdipGraphics, -data.gdipXOffset, -data.gdipYOffset, Gdip.MatrixOrderPrepend);
+=======
+	innerGC.drawPath(path);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -1829,8 +1789,8 @@ public void drawPath (Path path) {
  *
  * @since 3.0
  */
-@Override
 public void drawPoint (int x, int y) {
+<<<<<<< HEAD
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp (drawable, x, deviceZoom);
 	y = DPIUtil.scaleUp (drawable, y, deviceZoom);
@@ -1845,6 +1805,9 @@ void drawPointInPixels (int x, int y) {
 		return;
 	}
 	OS.SetPixel (handle, x, y, data.foreground);
+=======
+	innerGC.drawPoint(x, y);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -1864,8 +1827,8 @@ void drawPointInPixels (int x, int y) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
-@Override
 public void drawPolygon (int[] pointArray) {
+<<<<<<< HEAD
 	if (pointArray == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	drawPolygonInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
 }
@@ -1895,6 +1858,9 @@ void drawPolygonInPixels(int[] pointArray) {
 			}
 		}
 	}
+=======
+	innerGC.drawPolygon(pointArray);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -1915,6 +1881,7 @@ void drawPolygonInPixels(int[] pointArray) {
  * </ul>
  */
 public void drawPolyline (int[] pointArray) {
+<<<<<<< HEAD
 	drawPolylineInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
 }
 
@@ -1950,6 +1917,9 @@ void drawPolylineInPixels(int[] pointArray) {
 			}
 		}
 	}
+=======
+	innerGC.drawPolyline(pointArray);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -1967,8 +1937,8 @@ void drawPolylineInPixels(int[] pointArray) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
-@Override
 public void drawRectangle (int x, int y, int width, int height) {
+<<<<<<< HEAD
 	drawRectangle(new Rectangle(x, y, width, height));
 }
 
@@ -2004,6 +1974,9 @@ void drawRectangleInPixels (int x, int y, int width, int height) {
 		}
 	}
 	OS.Rectangle (handle, x, y, x + width + 1, y + height + 1);
+=======
+	innerGC.drawRectangle(x, y, width, height);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -2022,11 +1995,8 @@ void drawRectangleInPixels (int x, int y, int width, int height) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
-@Override
 public void drawRectangle (Rectangle rect) {
-	if (rect == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	rect = DPIUtil.scaleUp(drawable, rect, getZoom());
-	drawRectangleInPixels(rect.x, rect.y, rect.width, rect.height);
+	innerGC.drawRectangle(rect);
 }
 
 /**
@@ -2050,8 +2020,8 @@ public void drawRectangle (Rectangle rect) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
-@Override
 public void drawRoundRectangle (int x, int y, int width, int height, int arcWidth, int arcHeight) {
+<<<<<<< HEAD
 	int zoom = getZoom();
 	Rectangle rect = DPIUtil.scaleUp(drawable, new Rectangle(x, y, width, height), zoom);
 	arcWidth = DPIUtil.scaleUp (drawable, arcWidth, zoom);
@@ -2123,6 +2093,11 @@ void drawRoundRectangleGdip (long gdipGraphics, long pen, int x, int y, int widt
 	}
 	Gdip.Graphics_TranslateTransform(gdipGraphics, -data.gdipXOffset, -data.gdipYOffset, Gdip.MatrixOrderPrepend);
 }
+=======
+	innerGC.drawRoundRectangle(x, y, width, height, arcWidth, arcHeight);
+}
+
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 
 /**
  * Draws the given string, using the receiver's current font and
@@ -2147,10 +2122,7 @@ void drawRoundRectangleGdip (long gdipGraphics, long pen, int x, int y, int widt
  * </ul>
  */
 public void drawString (String string, int x, int y) {
-	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-	drawStringInPixels(string, x, y, false);
+	innerGC.drawString(string, x, y);
 }
 
 /**
@@ -2181,6 +2153,7 @@ public void drawString (String string, int x, int y) {
  * </ul>
  */
 public void drawString (String string, int x, int y, boolean isTransparent) {
+<<<<<<< HEAD
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
 	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
@@ -2248,6 +2221,9 @@ void drawStringInPixels (String string, int x, int y, boolean isTransparent) {
 		}
 	}
 	OS.SetBkMode(handle, oldBkMode);
+=======
+	innerGC.drawString(string, x, y, isTransparent);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -2272,16 +2248,8 @@ void drawStringInPixels (String string, int x, int y, boolean isTransparent) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
-@Override
 public void drawText (String string, int x, int y) {
-	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-	drawTextInPixels(string, x, y);
-}
-
-void drawTextInPixels (String string, int x, int y) {
-	drawTextInPixels(string, x, y, SWT.DRAW_DELIMITER | SWT.DRAW_TAB);
+	innerGC.drawText(string, x, y);
 }
 
 /**
@@ -2308,18 +2276,8 @@ void drawTextInPixels (String string, int x, int y) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
-@Override
 public void drawText (String string, int x, int y, boolean isTransparent) {
-	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-	drawTextInPixels(string, x, y, isTransparent);
-}
-
-void drawTextInPixels (String string, int x, int y, boolean isTransparent) {
-	int flags = SWT.DRAW_DELIMITER | SWT.DRAW_TAB;
-	if (isTransparent) flags |= SWT.DRAW_TRANSPARENT;
-	drawTextInPixels(string, x, y, flags);
+	innerGC.drawText(string, x, y, isTransparent);
 }
 
 /**
@@ -2361,8 +2319,8 @@ void drawTextInPixels (String string, int x, int y, boolean isTransparent) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
-@Override
 public void drawText (String string, int x, int y, int flags) {
+<<<<<<< HEAD
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
 	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
@@ -2693,6 +2651,9 @@ void drawTextGDIP(long gdipGraphics, String string, int x, int y, int flags, boo
 		size.x = (int)Math.ceil(bounds.Width);
 		size.y = (int)Math.ceil(bounds.Height);
 	}
+=======
+	innerGC.drawText(string, x, y, flags);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -2707,7 +2668,7 @@ void drawTextGDIP(long gdipGraphics, String string, int x, int y, int flags, boo
  */
 @Override
 public boolean equals (Object object) {
-	return (object == this) || ((object instanceof GC) && (handle == ((GC)object).handle));
+	return (object == this) || ((object instanceof GC g) && Objects.equals(innerGC, g.innerGC));
 }
 
 /**
@@ -2743,6 +2704,7 @@ public boolean equals (Object object) {
  * @see #drawArc
  */
 public void fillArc (int x, int y, int width, int height, int startAngle, int arcAngle) {
+<<<<<<< HEAD
 	Rectangle rect = DPIUtil.scaleUp(drawable, new Rectangle(x, y, width, height), getZoom());
 	fillArcInPixels(rect.x, rect.y, rect.width, rect.height, startAngle, arcAngle);
 }
@@ -2796,6 +2758,9 @@ void fillArcInPixels (int x, int y, int width, int height, int startAngle, int a
 		y2 = -1 * sin(arcAngle, height) + y + height/2;
 	}
 	OS.Pie(handle, x, y, x + width + 1, y + height + 1, x1, y1, x2, y2);
+=======
+	innerGC.fillArc(x, y, width, height, startAngle, arcAngle);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -2818,8 +2783,8 @@ void fillArcInPixels (int x, int y, int width, int height, int startAngle, int a
  *
  * @see #drawRectangle(int, int, int, int)
  */
-@Override
 public void fillGradientRectangle (int x, int y, int width, int height, boolean vertical) {
+<<<<<<< HEAD
 	Rectangle rect = DPIUtil.scaleUp(drawable, new Rectangle(x, y, width, height), getZoom());
 	fillGradientRectangleInPixels(rect.x, rect.y, rect.width, rect.height, vertical);
 }
@@ -2916,6 +2881,9 @@ void fillGradientRectangleInPixels(int x, int y, int width, int height, boolean 
 	ImageData.fillGradientRectangle(this, data.device,
 		x, y, width, height, vertical, fromRGB, toRGB,
 		bitResolution, bitResolution, bitResolution);
+=======
+	innerGC.fillGradientRectangle(x, y, width, height, vertical);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -2934,8 +2902,8 @@ void fillGradientRectangleInPixels(int x, int y, int width, int height, boolean 
  *
  * @see #drawOval
  */
-@Override
 public void fillOval (int x, int y, int width, int height) {
+<<<<<<< HEAD
 	Rectangle rect = DPIUtil.scaleUp(drawable, new Rectangle(x, y, width, height), getZoom());
 	fillOvalInPixels(rect.x, rect.y, rect.width, rect.height);
 }
@@ -2949,6 +2917,9 @@ void fillOvalInPixels (int x, int y, int width, int height) {
 	}
 	if ((data.style & SWT.MIRRORED) != 0) x--;
 	OS.Ellipse(handle, x, y, x + width + 1, y + height + 1);
+=======
+	innerGC.fillOval(x, y, width, height);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -2975,6 +2946,7 @@ void fillOvalInPixels (int x, int y, int width, int height) {
  * @since 3.1
  */
 public void fillPath (Path path) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (path == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	final long pathHandle = path.getHandle(getZoom());
@@ -2984,6 +2956,9 @@ public void fillPath (Path path) {
 	int mode = OS.GetPolyFillMode(handle) == OS.WINDING ? Gdip.FillModeWinding : Gdip.FillModeAlternate;
 	Gdip.GraphicsPath_SetFillMode(pathHandle, mode);
 	Gdip.Graphics_FillPath(data.gdipGraphics, data.gdipBrush, pathHandle);
+=======
+	innerGC.fillPath(path);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3005,8 +2980,8 @@ public void fillPath (Path path) {
  *
  * @see #drawPolygon
  */
-@Override
 public void fillPolygon (int[] pointArray) {
+<<<<<<< HEAD
 	if (pointArray == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	fillPolygonInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
 }
@@ -3039,6 +3014,9 @@ void fillPolygonInPixels (int[] pointArray) {
 		}
 	}
 
+=======
+	innerGC.fillPolygon(pointArray);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3056,8 +3034,8 @@ void fillPolygonInPixels (int[] pointArray) {
  *
  * @see #drawRectangle(int, int, int, int)
  */
-@Override
 public void fillRectangle (int x, int y, int width, int height) {
+<<<<<<< HEAD
 	fillRectangle(new Rectangle(x, y, width, height));
 }
 
@@ -3078,6 +3056,9 @@ void fillRectangleInPixels (int x, int y, int width, int height) {
 	}
 	int dwRop = OS.GetROP2(handle) == OS.R2_XORPEN ? OS.PATINVERT : OS.PATCOPY;
 	OS.PatBlt(handle, x, y, width, height, dwRop);
+=======
+	innerGC.fillRectangle(x, y, width, height);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3095,11 +3076,8 @@ void fillRectangleInPixels (int x, int y, int width, int height) {
  *
  * @see #drawRectangle(int, int, int, int)
  */
-@Override
 public void fillRectangle (Rectangle rect) {
-	if (rect == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	rect = DPIUtil.scaleUp(drawable, rect, getZoom());
-	fillRectangleInPixels(rect.x, rect.y, rect.width, rect.height);
+	innerGC.fillRectangle(rect);
 }
 
 /**
@@ -3119,8 +3097,8 @@ public void fillRectangle (Rectangle rect) {
  *
  * @see #drawRoundRectangle
  */
-@Override
 public void fillRoundRectangle (int x, int y, int width, int height, int arcWidth, int arcHeight) {
+<<<<<<< HEAD
 	int zoom = getZoom();
 	Rectangle rect = DPIUtil.scaleUp(drawable, new Rectangle(x, y, width, height), zoom);
 	arcWidth = DPIUtil.scaleUp (drawable, arcWidth, zoom);
@@ -3201,6 +3179,11 @@ void flush () {
 		Gdip.Graphics_ReleaseHDC(data.gdipGraphics, hdc);
 	}
 }
+=======
+	innerGC.fillRoundRectangle(x, y, width, height, arcWidth, arcHeight);
+}
+
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 
 /**
  * Returns the <em>advance width</em> of the specified character in
@@ -3218,11 +3201,15 @@ void flush () {
  * </ul>
  */
 public int getAdvanceWidth(char ch) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	checkGC(FONT);
 	int[] width = new int[1];
 	OS.GetCharWidth(handle, ch, ch, width);
 	return width[0];
+=======
+	return innerGC.getAdvanceWidth(ch);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3251,8 +3238,12 @@ public int getAdvanceWidth(char ch) {
  * @since 3.1
  */
 public boolean getAdvanced() {
+<<<<<<< HEAD
 	checkNonDisposed();
 	return data.gdipGraphics != 0;
+=======
+	return innerGC.getAdvanced();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3267,10 +3258,13 @@ public boolean getAdvanced() {
  *
  * @since 3.1
  */
-@Override
 public int getAlpha() {
+<<<<<<< HEAD
 	checkNonDisposed();
 	return data.alpha;
+=======
+	return innerGC.getAlpha();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3290,6 +3284,7 @@ public int getAlpha() {
  * @since 3.1
  */
 public int getAntialias() {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (data.gdipGraphics == 0) return SWT.DEFAULT;
 	int mode = Gdip.Graphics_GetSmoothingMode(data.gdipGraphics);
@@ -3302,6 +3297,9 @@ public int getAntialias() {
 		case Gdip.SmoothingModeHighQuality: return SWT.ON;
 	}
 	return SWT.DEFAULT;
+=======
+	return innerGC.getAntialias();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3313,10 +3311,13 @@ public int getAntialias() {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
-@Override
 public Color getBackground() {
+<<<<<<< HEAD
 	checkNonDisposed();
 	return Color.win32_new(data.device, data.background);
+=======
+	return innerGC.getBackground();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3334,8 +3335,12 @@ public Color getBackground() {
  * @since 3.1
  */
 public Pattern getBackgroundPattern() {
+<<<<<<< HEAD
 	checkNonDisposed();
 	return data.backgroundPattern;
+=======
+	return innerGC.getBackgroundPattern();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3355,6 +3360,7 @@ public Pattern getBackgroundPattern() {
  * </ul>
  */
 public int getCharWidth(char ch) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	checkGC(FONT);
 
@@ -3370,6 +3376,9 @@ public int getCharWidth(char ch) {
 	SIZE size = new SIZE();
 	OS.GetTextExtentPoint32(handle, new char[]{ch}, 1, size);
 	return size.cx - lptm.tmOverhang;
+=======
+	return innerGC.getCharWidth(ch);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3385,6 +3394,7 @@ public int getCharWidth(char ch) {
  * </ul>
  */
 public Rectangle getClipping () {
+<<<<<<< HEAD
 	return DPIUtil.scaleDown(drawable, getClippingInPixels(), getZoom());
 }
 
@@ -3401,6 +3411,9 @@ Rectangle getClippingInPixels() {
 	RECT rect = new RECT();
 	OS.GetClipBox(handle, rect);
 	return new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
+=======
+	return innerGC.getClipping();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3418,6 +3431,7 @@ Rectangle getClippingInPixels() {
  * </ul>
  */
 public void getClipping (Region region) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (region == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	if (region.isDisposed()) SWT.error (SWT.ERROR_INVALID_ARGUMENT);
@@ -3483,11 +3497,11 @@ public void getClipping (Region region) {
 		}
 		OS.DeleteObject(sysRgn);
 	}
+=======
+	innerGC.getClipping(region);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
-long getFgBrush() {
-	return data.foregroundPattern != null ? data.foregroundPattern.getHandle(getZoom()) : data.gdipFgBrush;
-}
 
 /**
  * Returns the receiver's fill rule, which will be one of
@@ -3502,8 +3516,12 @@ long getFgBrush() {
  * @since 3.1
  */
 public int getFillRule() {
+<<<<<<< HEAD
 	checkNonDisposed();
 	return OS.GetPolyFillMode(handle) == OS.WINDING ? SWT.FILL_WINDING : SWT.FILL_EVEN_ODD;
+=======
+	return innerGC.getFillRule();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3516,10 +3534,13 @@ public int getFillRule() {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
-@Override
 public Font getFont () {
+<<<<<<< HEAD
 	checkNonDisposed();
 	return data.font;
+=======
+	return innerGC.getFont();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3533,13 +3554,16 @@ public Font getFont () {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
-@Override
 public FontMetrics getFontMetrics() {
+<<<<<<< HEAD
 	checkNonDisposed();
 	checkGC(FONT);
 	TEXTMETRIC lptm = new TEXTMETRIC();
 	OS.GetTextMetrics(handle, lptm);
 	return FontMetrics.win32_new(lptm, data.nativeZoom);
+=======
+	return innerGC.getFontMetrics();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3551,10 +3575,13 @@ public FontMetrics getFontMetrics() {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
-@Override
 public Color getForeground() {
+<<<<<<< HEAD
 	checkNonDisposed();
 	return Color.win32_new(data.device, data.foreground);
+=======
+	return innerGC.getForeground();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3572,8 +3599,12 @@ public Color getForeground() {
  * @since 3.1
  */
 public Pattern getForegroundPattern() {
+<<<<<<< HEAD
 	checkNonDisposed();
 	return data.foregroundPattern;
+=======
+	return innerGC.getForegroundPattern();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3599,8 +3630,12 @@ public Pattern getForegroundPattern() {
  * @since 3.2
  */
 public GCData getGCData() {
+<<<<<<< HEAD
 	checkNonDisposed();
 	return data;
+=======
+	return innerGC.getGCData();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3617,6 +3652,7 @@ public GCData getGCData() {
  * @since 3.1
  */
 public int getInterpolation() {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (data.gdipGraphics == 0) return SWT.DEFAULT;
 	int mode = Gdip.Graphics_GetInterpolationMode(data.gdipGraphics);
@@ -3631,6 +3667,9 @@ public int getInterpolation() {
 		case Gdip.InterpolationModeHighQuality: return SWT.HIGH;
 	}
 	return SWT.DEFAULT;
+=======
+	return innerGC.getInterpolation();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3645,6 +3684,7 @@ public int getInterpolation() {
  * @since 3.3
  */
 public LineAttributes getLineAttributes () {
+<<<<<<< HEAD
 	LineAttributes attributes = getLineAttributesInPixels();
 	int deviceZoom = getZoom();
 	attributes.width = DPIUtil.scaleDown(drawable, attributes.width, deviceZoom);
@@ -3662,6 +3702,9 @@ LineAttributes getLineAttributesInPixels () {
 		System.arraycopy(data.lineDashes, 0, dashes, 0, dashes.length);
 	}
 	return new LineAttributes(data.lineWidth, data.lineCap, data.lineJoin, data.lineStyle, dashes, data.lineDashesOffset, data.lineMiterLimit);
+=======
+	return innerGC.getLineAttributes();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3678,8 +3721,12 @@ LineAttributes getLineAttributesInPixels () {
  * @since 3.1
  */
 public int getLineCap() {
+<<<<<<< HEAD
 	checkNonDisposed();
 	return data.lineCap;
+=======
+	return innerGC.getLineCap();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3695,6 +3742,7 @@ public int getLineCap() {
  * @since 3.1
  */
 public int[] getLineDash() {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (data.lineDashes == null) return null;
 	int[] lineDashes = new int[data.lineDashes.length];
@@ -3703,6 +3751,9 @@ public int[] getLineDash() {
 		lineDashes[i] = DPIUtil.scaleDown(drawable, (int)data.lineDashes[i], deviceZoom);
 	}
 	return lineDashes;
+=======
+	return innerGC.getLineDash();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3719,8 +3770,12 @@ public int[] getLineDash() {
  * @since 3.1
  */
 public int getLineJoin() {
+<<<<<<< HEAD
 	checkNonDisposed();
 	return data.lineJoin;
+=======
+	return innerGC.getLineJoin();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3736,8 +3791,12 @@ public int getLineJoin() {
  * </ul>
  */
 public int getLineStyle() {
+<<<<<<< HEAD
 	checkNonDisposed();
 	return data.lineStyle;
+=======
+	return innerGC.getLineStyle();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3753,12 +3812,16 @@ public int getLineStyle() {
  * </ul>
  */
 public int getLineWidth () {
+<<<<<<< HEAD
 	return DPIUtil.scaleDown(drawable, getLineWidthInPixels(), getZoom());
 }
 
 int getLineWidthInPixels() {
 	checkNonDisposed();
 	return (int)data.lineWidth;
+=======
+	return innerGC.getLineWidth();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3780,8 +3843,12 @@ int getLineWidthInPixels() {
  * @since 2.1.2
  */
 public int getStyle () {
+<<<<<<< HEAD
 	checkNonDisposed();
 	return data.style;
+=======
+	return innerGC.getStyle();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3801,6 +3868,7 @@ public int getStyle () {
  * @since 3.1
  */
 public int getTextAntialias() {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (data.gdipGraphics == 0) return SWT.DEFAULT;
 	int mode = Gdip.Graphics_GetTextRenderingHint(data.gdipGraphics);
@@ -3813,6 +3881,9 @@ public int getTextAntialias() {
 		case Gdip.TextRenderingHintClearTypeGridFit: return SWT.ON;
 	}
 	return SWT.DEFAULT;
+=======
+	return innerGC.getTextAntialias();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3834,6 +3905,7 @@ public int getTextAntialias() {
  * @since 3.1
  */
 public void getTransform(Transform transform) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (transform == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	if (transform.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -3847,6 +3919,9 @@ public void getTransform(Transform transform) {
 	} else {
 		transform.setElements(1, 0, 0, 1, 0, 0);
 	}
+=======
+	innerGC.getTransform(transform);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -3864,6 +3939,7 @@ public void getTransform(Transform transform) {
  * </ul>
  */
 public boolean getXORMode() {
+<<<<<<< HEAD
 	checkNonDisposed();
 	return OS.GetROP2(handle) == OS.R2_XORPEN;
 }
@@ -4008,6 +4084,9 @@ private static int extractZoom(long hDC) {
 	int [] dpiY = new int[1];
 	int result = OS.GetDpiForMonitor (monitorParent, OS.MDT_EFFECTIVE_DPI, dpiX, dpiY);
 	return (result == OS.S_OK) ? DPIUtil.mapDPIToZoom (dpiX[0]) : DPIUtil.getNativeDeviceZoom();
+=======
+	return innerGC.getXORMode();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4026,7 +4105,7 @@ private static int extractZoom(long hDC) {
  */
 @Override
 public int hashCode () {
-	return (int)handle;
+	return innerGC.hashCode();
 }
 
 /**
@@ -4044,6 +4123,7 @@ public int hashCode () {
  * </ul>
  */
 public boolean isClipped() {
+<<<<<<< HEAD
 	checkNonDisposed();
 	long gdipGraphics = data.gdipGraphics;
 	if (gdipGraphics != 0) {
@@ -4057,6 +4137,9 @@ public boolean isClipped() {
 	int result = OS.GetClipRgn(handle, region);
 	OS.DeleteObject(region);
 	return result > 0;
+=======
+	return innerGC.isClipped();
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 private void checkNonDisposed() {
@@ -4077,14 +4160,12 @@ private void checkNonDisposed() {
  */
 @Override
 public boolean isDisposed() {
-	return handle == 0;
+	return innerGC.isDisposed();
 }
 
-float measureSpace(long font, long format) {
-	PointF pt = new PointF();
-	RectF bounds = new RectF();
-	Gdip.Graphics_MeasureString(data.gdipGraphics, new char[]{' '}, 1, font, pt, format, bounds);
-	return bounds.Width;
+@Override
+public Device getDevice() {
+	return innerGC.getDevice();
 }
 
 /**
@@ -4130,6 +4211,7 @@ float measureSpace(long font, long format) {
  * @since 3.1
  */
 public void setAdvanced(boolean advanced) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (advanced && data.gdipGraphics != 0) return;
 	if (advanced) {
@@ -4144,6 +4226,9 @@ public void setAdvanced(boolean advanced) {
 			OS.SetLayout(handle, OS.GetLayout(handle) | OS.LAYOUT_RTL);
 		}
 	}
+=======
+	innerGC.setAdvanced(advanced);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4175,6 +4260,7 @@ public void setAdvanced(boolean advanced) {
  * @since 3.1
  */
 public void setAntialias(int antialias) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (data.gdipGraphics == 0 && antialias == SWT.DEFAULT) return;
 	int mode = 0;
@@ -4193,6 +4279,9 @@ public void setAntialias(int antialias) {
 	}
 	initGdip();
 	Gdip.Graphics_SetSmoothingMode(data.gdipGraphics, mode);
+=======
+	innerGC.setAntialias(antialias);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4215,8 +4304,8 @@ public void setAntialias(int antialias) {
  *
  * @since 3.1
  */
-@Override
 public void setAlpha(int alpha) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (data.gdipGraphics == 0 && (alpha & 0xFF) == 0xFF) return;
 	initGdip();
@@ -4230,6 +4319,9 @@ public void setAlpha(int alpha) {
 		Gdip.TextureBrush_delete(data.gdipBgPatternBrushAlpha);
 		data.gdipBgPatternBrushAlpha = 0;
 	}
+=======
+	innerGC.setAlpha(alpha);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4247,8 +4339,8 @@ public void setAlpha(int alpha) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
-@Override
 public void setBackground (Color color) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (color == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	if (color.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -4256,6 +4348,9 @@ public void setBackground (Color color) {
 	data.backgroundPattern = null;
 	data.background = color.handle;
 	data.state &= ~(BACKGROUND | BACKGROUND_TEXT);
+=======
+	innerGC.setBackground(color);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4283,6 +4378,7 @@ public void setBackground (Color color) {
  * @since 3.1
  */
 public void setBackgroundPattern (Pattern pattern) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (pattern != null && pattern.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 	if (data.gdipGraphics == 0 && pattern == null) return;
@@ -4294,32 +4390,11 @@ public void setBackgroundPattern (Pattern pattern) {
 		Gdip.TextureBrush_delete(data.gdipBgPatternBrushAlpha);
 		data.gdipBgPatternBrushAlpha = 0;
 	}
+=======
+	innerGC.setBackgroundPattern(pattern);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
-void setClipping(long clipRgn) {
-	long hRgn = clipRgn;
-	long gdipGraphics = data.gdipGraphics;
-	if (gdipGraphics != 0) {
-		if (hRgn != 0) {
-			long region = Gdip.Region_new(hRgn);
-			Gdip.Graphics_SetClip(gdipGraphics, region, Gdip.CombineModeReplace);
-			Gdip.Region_delete(region);
-		} else {
-			Gdip.Graphics_ResetClip(gdipGraphics);
-		}
-	} else {
-		POINT pt = null;
-		if (hRgn != 0) {
-			pt = new POINT();
-			OS.GetWindowOrgEx(handle, pt);
-			OS.OffsetRgn(hRgn, -pt.x, -pt.y);
-		}
-		OS.SelectClipRgn(handle, hRgn);
-		if (hRgn != 0) {
-			OS.OffsetRgn(hRgn, pt.x, pt.y);
-		}
-	}
-}
 
 /**
  * Sets the area of the receiver which can be changed
@@ -4335,8 +4410,8 @@ void setClipping(long clipRgn) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
-@Override
 public void setClipping (int x, int y, int width, int height) {
+<<<<<<< HEAD
 	setClipping(new Rectangle(x, y, width, height));
 }
 
@@ -4345,6 +4420,9 @@ void setClippingInPixels (int x, int y, int width, int height) {
 	long hRgn = OS.CreateRectRgn(x, y, x + width, y + height);
 	setClipping(hRgn);
 	OS.DeleteObject(hRgn);
+=======
+	innerGC.setClipping(x, y, width, height);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4374,6 +4452,7 @@ void setClippingInPixels (int x, int y, int width, int height) {
  * @since 3.1
  */
 public void setClipping (Path path) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (path != null && path.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 	setClipping(0);
@@ -4384,6 +4463,9 @@ public void setClipping (Path path) {
 		Gdip.GraphicsPath_SetFillMode(pathHandle, mode);
 		Gdip.Graphics_SetClipPath(data.gdipGraphics, pathHandle);
 	}
+=======
+	innerGC.setClipping(path);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4400,6 +4482,7 @@ public void setClipping (Path path) {
  * </ul>
  */
 public void setClipping (Rectangle rect) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (rect == null) {
 		setClipping(0);
@@ -4408,6 +4491,9 @@ public void setClipping (Rectangle rect) {
 		rect = DPIUtil.scaleUp(drawable, rect, getZoom());
 		setClippingInPixels(rect.x, rect.y, rect.width, rect.height);
 	}
+=======
+	innerGC.setClipping(rect);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4427,9 +4513,13 @@ public void setClipping (Rectangle rect) {
  * </ul>
  */
 public void setClipping (Region region) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (region != null && region.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 	setClipping(region != null ? Region.win32_getHandle(region, getZoom()) : 0);
+=======
+	innerGC.setClipping(region);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4449,6 +4539,7 @@ public void setClipping (Region region) {
  * @since 3.1
  */
 public void setFillRule(int rule) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	int mode = OS.ALTERNATE;
 	switch (rule) {
@@ -4458,6 +4549,9 @@ public void setFillRule(int rule) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 	}
 	OS.SetPolyFillMode(handle, mode);
+=======
+	innerGC.setFillRule(rule);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4475,12 +4569,15 @@ public void setFillRule(int rule) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
-@Override
 public void setFont (Font font) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (font != null && font.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 	data.font = font != null ? SWTFontProvider.getFont(device, font.getFontData()[0], data.nativeZoom) : SWTFontProvider.getSystemFont(device, data.nativeZoom);
 	data.state &= ~FONT;
+=======
+	innerGC.setFont(font);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4497,8 +4594,8 @@ public void setFont (Font font) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
-@Override
 public void setForeground (Color color) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (color == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	if (color.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -4506,6 +4603,9 @@ public void setForeground (Color color) {
 	data.foregroundPattern = null;
 	data.foreground = color.handle;
 	data.state &= ~(FOREGROUND | FOREGROUND_TEXT);
+=======
+	innerGC.setForeground(color);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4532,6 +4632,7 @@ public void setForeground (Color color) {
  * @since 3.1
  */
 public void setForegroundPattern (Pattern pattern) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (pattern != null && pattern.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 	if (data.gdipGraphics == 0 && pattern == null) return;
@@ -4543,6 +4644,9 @@ public void setForegroundPattern (Pattern pattern) {
 		Gdip.TextureBrush_delete(data.gdipFgPatternBrushAlpha);
 		data.gdipFgPatternBrushAlpha = 0;
 	}
+=======
+	innerGC.setForegroundPattern(pattern);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4572,6 +4676,7 @@ public void setForegroundPattern (Pattern pattern) {
  * @since 3.1
  */
 public void setInterpolation(int interpolation) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (data.gdipGraphics == 0 && interpolation == SWT.DEFAULT) return;
 	int mode = 0;
@@ -4585,6 +4690,9 @@ public void setInterpolation(int interpolation) {
 	}
 	initGdip();
 	Gdip.Graphics_SetInterpolationMode(data.gdipGraphics, mode);
+=======
+	innerGC.setInterpolation(interpolation);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4612,6 +4720,7 @@ public void setInterpolation(int interpolation) {
  * @since 3.3
  */
 public void setLineAttributes (LineAttributes attributes) {
+<<<<<<< HEAD
 	if (attributes == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	attributes.width = DPIUtil.scaleUp(drawable, attributes.width, getZoom());
 	setLineAttributesInPixels(attributes);
@@ -4710,6 +4819,9 @@ void setLineAttributesInPixels (LineAttributes attributes) {
 	data.lineDashesOffset = dashOffset;
 	data.lineMiterLimit = miterLimit;
 	data.state &= ~mask;
+=======
+	innerGC.setLineAttributes(attributes);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4729,6 +4841,7 @@ void setLineAttributesInPixels (LineAttributes attributes) {
  * @since 3.1
  */
 public void setLineCap(int cap) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (data.lineCap == cap) return;
 	switch (cap) {
@@ -4741,6 +4854,9 @@ public void setLineCap(int cap) {
 	}
 	data.lineCap = cap;
 	data.state &= ~LINE_CAP;
+=======
+	innerGC.setLineCap(cap);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4761,6 +4877,7 @@ public void setLineCap(int cap) {
  * @since 3.1
  */
 public void setLineDash(int[] dashes) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	float[] lineDashes = data.lineDashes;
 	if (dashes != null && dashes.length > 0) {
@@ -4781,6 +4898,9 @@ public void setLineDash(int[] dashes) {
 		data.lineStyle = SWT.LINE_SOLID;
 	}
 	data.state &= ~LINE_STYLE;
+=======
+	innerGC.setLineDash(dashes);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4800,6 +4920,7 @@ public void setLineDash(int[] dashes) {
  * @since 3.1
  */
 public void setLineJoin(int join) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (data.lineJoin == join) return;
 	switch (join) {
@@ -4812,6 +4933,9 @@ public void setLineJoin(int join) {
 	}
 	data.lineJoin = join;
 	data.state &= ~LINE_JOIN;
+=======
+	innerGC.setLineJoin(join);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4830,6 +4954,7 @@ public void setLineJoin(int join) {
  * </ul>
  */
 public void setLineStyle(int lineStyle) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (data.lineStyle == lineStyle) return;
 	switch (lineStyle) {
@@ -4847,6 +4972,9 @@ public void setLineStyle(int lineStyle) {
 	}
 	data.lineStyle = lineStyle;
 	data.state &= ~LINE_STYLE;
+=======
+	innerGC.setLineStyle(lineStyle);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4869,8 +4997,8 @@ public void setLineStyle(int lineStyle) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
-@Override
 public void setLineWidth(int lineWidth) {
+<<<<<<< HEAD
 	lineWidth = DPIUtil.scaleUp (drawable, lineWidth, getZoom());
 	setLineWidthInPixels(lineWidth);
 }
@@ -4880,6 +5008,9 @@ void setLineWidthInPixels(int lineWidth) {
 	if (data.lineWidth == lineWidth) return;
 	data.lineWidth = lineWidth;
 	data.state &= ~(LINE_WIDTH | DRAW_OFFSET);
+=======
+	innerGC.setLineWidth(lineWidth);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4897,8 +5028,12 @@ void setLineWidthInPixels(int lineWidth) {
  * </ul>
  */
 public void setXORMode(boolean xor) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	OS.SetROP2(handle, xor ? OS.R2_XORPEN : OS.R2_COPYPEN);
+=======
+	innerGC.setXORMode(xor);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4930,6 +5065,7 @@ public void setXORMode(boolean xor) {
  * @since 3.1
  */
 public void setTextAntialias(int antialias) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (data.gdipGraphics == 0 && antialias == SWT.DEFAULT) return;
 	int textMode = 0;
@@ -4954,6 +5090,9 @@ public void setTextAntialias(int antialias) {
 	}
 	initGdip();
 	Gdip.Graphics_SetTextRenderingHint(data.gdipGraphics, textMode);
+=======
+	innerGC.setTextAntialias(antialias);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -4982,8 +5121,8 @@ public void setTextAntialias(int antialias) {
  *
  * @since 3.1
  */
-@Override
 public void setTransform(Transform transform) {
+<<<<<<< HEAD
 	checkNonDisposed();
 	if (transform != null && transform.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 	if (data.gdipGraphics == 0 && transform == null) return;
@@ -4995,6 +5134,9 @@ public void setTransform(Transform transform) {
 	Gdip.Graphics_SetTransform(data.gdipGraphics, identity);
 	Gdip.Matrix_delete(identity);
 	data.state &= ~DRAW_OFFSET;
+=======
+	innerGC.setTransform(transform);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -5017,10 +5159,10 @@ public void setTransform(Transform transform) {
  * </ul>
  */
 public Point stringExtent (String string) {
-	if (string == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
-	return DPIUtil.scaleDown(drawable, stringExtentInPixels(string), getZoom());
+	return innerGC.stringExtent(string);
 }
 
+<<<<<<< HEAD
 Point stringExtentInPixels (String string) {
 	checkNonDisposed();
 	checkGC(FONT);
@@ -5042,6 +5184,8 @@ Point stringExtentInPixels (String string) {
 		return new Point(size.cx, size.cy);
 	}
 }
+=======
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 
 /**
  * Returns the extent of the given string. Tab expansion and
@@ -5063,7 +5207,7 @@ Point stringExtentInPixels (String string) {
  * </ul>
  */
 public Point textExtent (String string) {
-	return DPIUtil.scaleDown(drawable, textExtentInPixels(string, SWT.DRAW_DELIMITER | SWT.DRAW_TAB), getZoom());
+	return innerGC.textExtent(string);
 }
 
 /**
@@ -5097,8 +5241,8 @@ public Point textExtent (String string) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
-@Override
 public Point textExtent (String string, int flags) {
+<<<<<<< HEAD
 	return DPIUtil.scaleDown(drawable, textExtentInPixels(string, flags), getZoom());
 }
 
@@ -5125,6 +5269,9 @@ Point textExtentInPixels(String string, int flags) {
 	if ((flags & SWT.DRAW_MNEMONIC) == 0) uFormat |= OS.DT_NOPREFIX;
 	OS.DrawText(handle, buffer, buffer.length, rect, uFormat);
 	return new Point(rect.right, rect.bottom);
+=======
+	return innerGC.textExtent(string, flags);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -5135,8 +5282,7 @@ Point textExtentInPixels(String string, int flags) {
  */
 @Override
 public String toString () {
-	if (isDisposed()) return "GC {*DISPOSED*}";
-	return "GC {" + handle + "}";
+	return "GC {" + innerGC.toString() + "}";
 }
 
 /**
@@ -5157,10 +5303,9 @@ public String toString () {
  * @noreference This method is not intended to be referenced by clients.
  */
 public static GC win32_new(Drawable drawable, GCData data) {
+	NativeGC ngc = NativeGC.win32_new(drawable, data);
 	GC gc = new GC();
-	long hDC = drawable.internal_new_GC(data);
-	gc.device = data.device;
-	gc.init(drawable, data, hDC);
+	gc.innerGC = ngc;
 	return gc;
 }
 
@@ -5182,45 +5327,16 @@ public static GC win32_new(Drawable drawable, GCData data) {
  * @noreference This method is not intended to be referenced by clients.
  */
 public static GC win32_new(long hDC, GCData data) {
+	NativeGC ngc = NativeGC.win32_new(hDC, data);
 	GC gc = new GC();
-	gc.device = data.device;
-	data.style |= SWT.LEFT_TO_RIGHT;
-	int flags = OS.GetLayout (hDC);
-	if ((flags & OS.LAYOUT_RTL) != 0) {
-		data.style |= SWT.RIGHT_TO_LEFT | SWT.MIRRORED;
-	}
-	gc.init(null, data, hDC);
+	gc.innerGC = ngc;
 	return gc;
 }
 
-/**
- * Answers the length of the side adjacent to the given angle
- * of a right triangle. In other words, it returns the integer
- * conversion of length * cos (angle).
- *
- * @param angle the angle in degrees
- * @param length the length of the triangle's hypotenuse
- * @return the integer conversion of length * cos (angle)
- */
-private static int cos(int angle, int length) {
-	return (int)(Math.cos(angle * (Math.PI/180)) * length);
-}
+public void commit() {
 
-/**
- * Answers the length of the side opposite to the given angle
- * of a right triangle. In other words, it returns the integer
- * conversion of length * sin (angle).
- *
- * @param angle the angle in degrees
- * @param length the length of the triangle's hypotenuse
- * @return the integer conversion of length * sin (angle)
- */
-private static int sin(int angle, int length) {
-	return (int)(Math.sin(angle * (Math.PI/180)) * length);
-}
+	innerGC.commit();
 
-private int getZoom() {
-	return DPIUtil.getZoomForAutoscaleProperty(data.nativeZoom);
 }
 
 }
