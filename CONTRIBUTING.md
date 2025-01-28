@@ -15,3 +15,6 @@ Still, we have a list of general tasks that we do currently or need to work on:
 - [Roadmap / Tasks](https://github.com/swt-initiative31/prototype-skija/issues/14)
 
 You can have a look into that list to find out which topics might be of interest for you. A good starting point to get familiar with the work is to pick any of the controls that are not custom-implemented so far and try to implement them on your own, i.e., without using the current native implementation of that widget. In case you have any questions on that, please comment to that issue, reach out to any of the current contributors to the project or join any of our [communication channels](https://github.com/swt-initiative31#contacts).
+
+## Creating PRs
+When creating PRs, keep in mind that **the main development branch is `skija`** (and **not** `master`).
