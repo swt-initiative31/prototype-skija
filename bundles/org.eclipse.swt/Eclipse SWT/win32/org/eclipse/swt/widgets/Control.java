@@ -82,6 +82,7 @@ public abstract class Control extends Widget implements Drawable {
 	boolean enabled = true;
 	Point location;
 	Point size;
+	private boolean focus = false;
 
 /**
  * Prevents uninitialized instances from being created outside the package.
@@ -1084,7 +1085,13 @@ public boolean forceFocus () {
 	* this time.
 	*/
 //	if (OS.GetFocus () != OS.SetFocus (handle)) return false;
-	OS.SetFocus (handle);
+
+	if (isCustomDrawn(this)) {
+		OS.SetFocus(getShell().handle);
+	} else {
+		OS.SetFocus(handle);
+	}
+
 	if (isDisposed ()) return false;
 	shell.setSavedFocus (this);
 	return isFocusControl ();
@@ -1752,6 +1759,11 @@ boolean hasBorder() {
 }
 
 boolean hasFocus () {
+
+	if (isCustomDrawn(this)) {
+		return focus;
+	}
+
 	/*
 	* If a non-SWT child of the control has focus,
 	* then this control is considered to have focus
@@ -3245,6 +3257,7 @@ public void setBounds(int x, int y, int width, int height) {
 	if (isCustomDrawn(this)) {
 		location = new Point(x, y);
 		size = new Point(width, height);
+		return;
 	}
 
 	checkWidget ();

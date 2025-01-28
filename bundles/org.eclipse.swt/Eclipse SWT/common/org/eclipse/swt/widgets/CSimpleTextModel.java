@@ -46,6 +46,8 @@ public class CSimpleTextModel {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 
+		if (start < 0)
+			return;
 		StringBuilder sb = new StringBuilder(text.substring(0, start));
 		sb.append(string);
 		sb.append(text.substring(end));

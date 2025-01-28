@@ -143,7 +143,7 @@ class EventHandler implements Listener {
 			onWidgetMouseEvent(e);
 			break;
 		case SWT.KeyDown:
-		case SWT.UP:
+		case SWT.KeyUp:
 			onWidgetKeyEvent(e);
 			break;
 		case SWT.Gesture:
@@ -161,12 +161,11 @@ class EventHandler implements Listener {
 
 	private void onPaint(Event e) {
 
+		for (var w : childControls) {
 
-			for (var w : childControls) {
-
-				Event ne = createPaintEvent(w, e);
-				w.handleEvent(ne);
-				ne.gc.dispose();
+			Event ne = createPaintEvent(w, e);
+			w.handleEvent(ne);
+			ne.gc.dispose();
 
 		}
 	}
@@ -175,18 +174,23 @@ class EventHandler implements Listener {
 
 		Event ne = new Event();
 
+		Rectangle b = w.getBounds();
+
 		ne.type = SWT.Paint;
 		ne.widget = w;
 		ne.gc = GCFactory.createChildGC(e.gc, w);
+		ne.x = 0;
+		ne.y = 0;
+		ne.height = b.height;
+		ne.width = b.width;
 
 		return ne;
 	}
 
-
 	private void onFocusOut(Event e) {
 
-		childControls.stream().forEach(c -> c.handleEvent(e));
-		focusWidget = null;
+//		childControls.stream().forEach(c -> c.handleEvent(e));
+//		focusWidget = null;
 
 	}
 
@@ -213,9 +217,44 @@ class EventHandler implements Listener {
 	}
 
 	private void onWidgetMouseEvent(Event e) {
+
+		if (e.type == SWT.MouseDown) {
+			if (focusWidget != mouseOverWidget) {
+				if (focusWidget != null) {
+					focusWidget.handleEvent(createFocusOutEvent(e, focusWidget));
+					focusWidget = null;
+				}
+
+				if (mouseOverWidget != null) {
+					mouseOverWidget.handleEvent(createFocusInEvent(e, mouseOverWidget));
+					focusWidget = mouseOverWidget;
+				}
+
+			}
+		}
+
 		if (mouseOverWidget != null)
 			mouseOverWidget.handleEvent(e);
 
+	}
+
+	private Event createFocusInEvent(Event e, Control c) {
+
+		var ne = new Event();
+		ne.type = SWT.FocusIn;
+		ne.widget = c;
+		ne.display = c.getDisplay();
+
+		return ne;
+	}
+
+	private Event createFocusOutEvent(Event e, Control c) {
+
+		var ne = new Event();
+		ne.type = SWT.FocusOut;
+		ne.widget = c;
+		ne.display = c.getDisplay();
+		return ne;
 	}
 
 	private void onDispose(Event e) {

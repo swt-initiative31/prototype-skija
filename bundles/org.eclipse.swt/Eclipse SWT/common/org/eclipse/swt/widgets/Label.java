@@ -139,8 +139,6 @@ public class Label extends Control implements ICustomWidget {
 			align = SWT.LEFT;
 		}
 
-		addPaintListener(this::onPaint);
-
 		addTraverseListener(event -> {
 			if (event.detail == SWT.TRAVERSE_MNEMONIC) {
 				onMnemonic(event);
@@ -524,7 +522,7 @@ public class Label extends Control implements ICustomWidget {
 		}
 	}
 
-	void onPaint(PaintEvent event) {
+	void onPaint(Event event) {
 		Rectangle rect = getBounds();
 		if (rect.width == 0 && rect.height == 0) {
 			return;
@@ -1305,4 +1303,17 @@ public class Label extends Control implements ICustomWidget {
 		} while (pos != -1);
 		return lines;
 	}
+
+	@Override
+	public void handleEvent(Event e) {
+
+		switch (e.type) {
+		case SWT.Paint:
+
+			onPaint(e);
+
+		}
+
+	}
+
 }

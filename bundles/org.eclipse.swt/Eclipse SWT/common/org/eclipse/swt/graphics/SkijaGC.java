@@ -109,6 +109,10 @@ public class SkijaGC extends GC implements IGraphicsContext {
 	@Override
 	public void dispose() {
 		disposed = true;
+
+		if (clipping != null)
+			surface.getCanvas().restore();
+
 	}
 
 	@Override
@@ -483,9 +487,10 @@ public class SkijaGC extends GC implements IGraphicsContext {
 
 	@Override
 	public void drawRectangle(int x, int y, int width, int height) {
+		var r = translate(x, y, width, height);
 		performDrawLine(
 				paint -> surface.getCanvas()
-						.drawRect(offsetRectangle(createScaledRectangle(x, y, width, height)), paint));
+						.drawRect(offsetRectangle(createScaledRectangle(r.x, r.y, r.width, r.height)), paint));
 	}
 
 	@Override
@@ -577,6 +582,13 @@ public class SkijaGC extends GC implements IGraphicsContext {
 				translate.y + y, //
 				width, //
 				height);
+	}
+
+	private Rectangle translate(Rectangle r) {
+		return new Rectangle(translate.x + r.x, //
+				translate.y + r.y, //
+				r.width, //
+				r.height);
 	}
 
 	@Override
@@ -751,8 +763,26 @@ public class SkijaGC extends GC implements IGraphicsContext {
 
 	@Override
 	public void setClipping(Rectangle rectangle) {
+
+		if (rectangle == null) {
+			surface.getCanvas().restore();
+		} else {
+			rectangle = translate(rectangle);
+		}
+
+
 		if (this.clipping != rectangle) {
+
+			if (clipping != null)
+				surface.getCanvas().restore();
+
 			clipping = rectangle;
+			if (rectangle != null) {
+				surface.getCanvas().save();
+				surface.getCanvas()
+						.clipRect(createScaledRectangle(rectangle.x, rectangle.y, rectangle.width, rectangle.height));
+			}
+
 		}
 	}
 

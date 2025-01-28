@@ -613,7 +613,7 @@ public class CTextCaret extends Widget {
 		return drawCaret();
 	}
 
-	public void paint(PaintEvent e) {
+	public void paint(Event e) {
 		if (isShowing) {
 			GC gc = e.gc;
 			Color oldBackground = gc.getBackground();

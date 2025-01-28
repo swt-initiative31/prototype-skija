@@ -91,6 +91,12 @@ public class ScrollBar extends Widget {
 	Scrollable parent;
 	int increment, pageIncrement;
 
+	private int maximum;
+	private int minimum;
+	private int thumb;
+	private int selection;
+	private boolean visible = true;
+
 /**
  * Constructs a new instance of this class given its parent
  * and a style value describing its behavior and appearance.
@@ -998,5 +1004,88 @@ LRESULT wmScrollChild (long wParam, long lParam) {
 	// the widget could be destroyed at this point
 	return null;
 }
+
+public void handleEvent(Event e) {
+
+	switch (e.type) {
+
+	case SWT.Paint:
+		onPaint(e);
+		break;
+
+	}
+
+}
+
+
+public void onPaint(Event e) {
+
+	Rectangle pb = getParent().getBounds();
+
+	IGraphicsContext gc = e.gc;
+
+	Color fg = gc.getForeground();
+	Color bg = gc.getBackground();
+
+	gc.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_BLACK));
+	gc.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_CYAN));
+
+	if ((getStyle() & SWT.H_SCROLL) != 0) {
+
+		gc.fillRectangle(new Rectangle(0, pb.height - 20, pb.width, 20));
+		gc.drawRectangle(new Rectangle(0, pb.height - 20, pb.width - 20, 20));
+
+		int pixelLength = pb.height - 20;
+
+		int min = minimum;
+		int max = maximum;
+
+		int scrollLength = max - min;
+
+		int scrollPosition = selection - minimum;
+
+		float factor = ((float) pixelLength) / ((float) scrollLength);
+
+		int pixelThumbStart = (int) (factor * scrollPosition);
+		int pixelThumbEnd = (int) (factor * (scrollPosition + thumb));
+
+		gc.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_RED));
+		gc.fillRectangle(new Rectangle(pixelThumbStart, pb.height - 20,
+				Math.min(pixelThumbEnd - pixelThumbStart, pb.width - pixelThumbStart), 20));
+		gc.drawRectangle(new Rectangle(pixelThumbStart, pb.height - 20,
+				Math.min(pixelThumbEnd - pixelThumbStart, pb.width - pixelThumbStart), 20));
+
+	} else {
+
+		gc.fillRectangle(new Rectangle(pb.width - 20, 0, 20, pb.height));
+		gc.drawRectangle(new Rectangle(pb.width - 20, 0, 20, pb.height - 20));
+
+		int pixelLength = pb.height - 20;
+
+		int min = minimum;
+		int max = maximum;
+
+		int scrollLength = max - min;
+
+		int scrollPosition = selection - minimum;
+
+		float factor = ((float) pixelLength) / ((float) scrollLength);
+
+		int pixelThumbStart = (int) (factor * scrollPosition);
+		int pixelThumbEnd = (int) (factor * (scrollPosition + thumb));
+
+		gc.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_RED));
+		gc.fillRectangle(new Rectangle(pb.width - 20, pixelThumbStart, 20,
+				Math.min(pixelThumbEnd - pixelThumbStart, pb.height - pixelThumbStart)));
+		gc.drawRectangle(new Rectangle(pb.width - 20, pixelThumbStart, 20,
+				Math.min(pixelThumbEnd - pixelThumbStart, pb.height - pixelThumbStart)));
+
+	}
+
+	gc.setForeground(fg);
+	gc.setBackground(bg);
+
+}
+
 
 }

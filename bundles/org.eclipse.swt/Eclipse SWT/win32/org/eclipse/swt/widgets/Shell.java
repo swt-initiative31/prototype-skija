@@ -112,7 +112,7 @@ import io.github.humbleui.skija.*;
  *      information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Shell extends Decorations {
+public class Shell extends Decorations implements IBaseWidget {
 
 	private Surface surface;
 

@@ -28,7 +28,7 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 	private boolean customBackground;
 
 	public CSimpleText(Composite parent, int style) {
-		super(parent, checkStyle(style) & ~SWT.BORDER);
+		super(parent, checkStyle(style));
 		this.style = style;
 		model = new CSimpleTextModel();
 		message = "";
@@ -79,14 +79,13 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 
 	private void addListeners() {
 		addDisposeListener(e -> CSimpleText.this.widgetDisposed(e));
-		addPaintListener(e -> CSimpleText.this.paintControl(e));
-		addKeyListener(new KeyAdapter() {
-			@Override
-			public void keyPressed(KeyEvent e) {
-				super.keyPressed(e);
-				CSimpleText.this.keyPressed(e);
-			}
-		});
+//		addKeyListener(new KeyAdapter() {
+//			@Override
+//			public void keyPressed(KeyEvent e) {
+//				super.keyPressed(e);
+//				CSimpleText.this.keyPressed(e);
+//			}
+//		});
 
 		ScrollBar horizontalBar = getHorizontalBar();
 		if (horizontalBar != null) {
@@ -110,44 +109,41 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 				}
 			});
 		}
-		addMouseListener(new MouseAdapter() {
+//		addMouseListener(new MouseAdapter() {
+//
+//			@Override
+//			public void mouseDown(MouseEvent e) {
+//				super.mouseDown(e);
+//				CSimpleText.this.onMouseDown(e);
+//			}
+//
+//			@Override
+//			public void mouseUp(MouseEvent e) {
+//				super.mouseUp(e);
+//				CSimpleText.this.onMouseUp(e);
+//			}
+//
+//		});
 
-			@Override
-			public void mouseDown(MouseEvent e) {
-				super.mouseDown(e);
-				CSimpleText.this.onMouseDown(e);
-			}
+//		addMouseMoveListener(e -> {
+//			CSimpleText.this.onMouseMove(e);
+//		});
 
-			@Override
-			public void mouseUp(MouseEvent e) {
-				super.mouseUp(e);
-				CSimpleText.this.onMouseUp(e);
-			}
-
-		});
-
-		addMouseMoveListener(e -> {
-			CSimpleText.this.onMouseMove(e);
-		});
-
-		addMouseWheelListener(e -> {
-			CSimpleText.this.onMouseWheel(e);
-		});
 
 		addGestureListener(e -> CSimpleText.this.onGesture(e));
 
 
-		addFocusListener(new FocusAdapter() {
-			@Override
-			public void focusGained(FocusEvent e) {
-				CSimpleText.this.focusGained(e);
-			}
-
-			@Override
-			public void focusLost(FocusEvent e) {
-				CSimpleText.this.focusLost(e);
-			}
-		});
+//		addFocusListener(new FocusAdapter() {
+//			@Override
+//			public void focusGained(FocusEvent e) {
+//				CSimpleText.this.focusGained(e);
+//			}
+//
+//			@Override
+//			public void focusLost(FocusEvent e) {
+//				CSimpleText.this.focusLost(e);
+//			}
+//		});
 
 		model.addModelChangedListner(new ITextModelChangedListener() {
 
@@ -192,7 +188,7 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 		}
 	}
 
-	private void onMouseWheel(MouseEvent e) {
+	private void onMouseWheel(Event e) {
 		verticalScroll(e.count);
 		redraw();
 	}
@@ -297,39 +293,42 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 		gc.dispose();
 	}
 
-	protected void focusLost(FocusEvent e) {
+	protected void focusLost(Event e) {
 		caret.killFocus();
-
 	}
 
-	protected void focusGained(FocusEvent e) {
+	protected void focusGained(Event e) {
 		caret.setFocus();
 	}
 
-	private void onMouseDown(MouseEvent e) {
+	private void onMouseDown(Event e) {
 		setFocus();
 		TextLocation location = getTextLocation(e.x, e.y);
 		model.setSectionStart(location);
 		mouseDown = true;
 	}
 
-	private void onMouseMove(MouseEvent e) {
+	private void onMouseMove(Event e) {
 		if (mouseDown) {
 			updateSelectionEnd(e);
 		}
 	}
 
-	private void onMouseUp(MouseEvent e) {
+	private void onMouseUp(Event e) {
 		updateSelectionEnd(e);
 		mouseDown = false;
 	}
 
-	private void updateSelectionEnd(MouseEvent e) {
+	private void updateSelectionEnd(Event e) {
 		TextLocation location = getTextLocation(e.x, e.y);
 		model.setSelectionEnd(location);
 	}
 
-	private void keyPressed(KeyEvent e) {
+	private void keyPressed(Event e) {
+
+		if (e.type == SWT.KeyUp)
+			return;
+
 		boolean updateSelection = (e.stateMask & SWT.SHIFT) != 0;
 		if ((e.stateMask == 0 || (e.stateMask & SWT.SHIFT) != 0)) {
 
@@ -425,8 +424,11 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 		}
 	}
 
-	private void paintControl(PaintEvent e) {
+	private void paintControl(Event e) {
 		Rectangle visibleArea = getVisibleArea();
+
+		e.gc.setClipping(visibleArea);
+
 		e.gc.setFont(getFont());
 		e.gc.setForeground(getForeground());
 		e.gc.setBackground(getBackground());
@@ -446,6 +448,15 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 		drawText(e, visibleArea);
 		drawSelection(e, visibleArea);
 		drawCaret(e, visibleArea);
+
+		e.gc.setClipping((Rectangle) null);
+
+		if (hasBorder()) {
+			Rectangle b = visibleArea;
+			e.gc.drawRectangle(new Rectangle(0, 0, b.width - 2, b.height - 2));
+		}
+
+
 	}
 
 	@Override
@@ -454,7 +465,7 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 		redraw();
 	}
 
-	private void drawSelection(PaintEvent e, Rectangle visibleArea) {
+	private void drawSelection(Event e, Rectangle visibleArea) {
 		GC gc = e.gc;
 		int textLength = model.getText().length();
 		int start = Math.min(Math.max(model.getSelectionStart(), 0), textLength);
@@ -467,8 +478,8 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 
 			Color oldForeground = gc.getForeground();
 			Color oldBackground = gc.getBackground();
-			gc.setForeground(getDisplay().getSystemColor(SWT.COLOR_LIST_SELECTION_TEXT));
-			gc.setBackground(getDisplay().getSystemColor(SWT.COLOR_LIST_SELECTION));
+			gc.setForeground(getDisplay().getSystemColor(SWT.COLOR_GREEN));
+			gc.setBackground(getDisplay().getSystemColor(SWT.COLOR_DARK_GREEN));
 			for (int i = startLocation.line; i <= endLocation.line; i++) {
 				TextLocation location = new TextLocation(i, 0);
 				String text = textLines[i];
@@ -488,7 +499,7 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 		}
 	}
 
-	private void drawCaret(PaintEvent e, Rectangle visibleArea) {
+	private void drawCaret(Event e, Rectangle visibleArea) {
 		GC gc = e.gc;
 
 		int caretOffset = model.getCaretOffset();
@@ -503,7 +514,7 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 		caret.paint(e);
 	}
 
-	private void drawText(PaintEvent e, Rectangle visibleArea) {
+	private void drawText(Event e, Rectangle visibleArea) {
 		String[] lines = model.getLines();
 		for (int i = 0; i < lines.length; i++) {
 			String line = lines[i];
@@ -533,7 +544,7 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 		gc.drawText(text, _x, _y, true);
 	}
 
-	private void drawBackground(PaintEvent e) {
+	private void drawBackground(Event e) {
 		GC gc = e.gc;
 		gc.fillRectangle(e.x, e.y, e.width - 1, e.height - 1);
 		if ((style & SWT.BORDER) != 0 && getEditable() && isEnabled()) {
@@ -966,8 +977,51 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 
 	@Override
 	public boolean setFocus() {
+
+		if (hasFocus())
+			return true;
+
 		caret.setFocus();
 		return super.setFocus();
+	}
+
+	@Override
+	public void handleEvent(Event e) {
+
+		switch (e.type) {
+		case SWT.Paint:
+
+			paintControl(e);
+			super.handleEvent(e);
+
+			break;
+		case SWT.KeyDown:
+		case SWT.KeyUp:
+			keyPressed(e);
+			break;
+		case SWT.MouseDown:
+			onMouseDown(e);
+			break;
+		case SWT.MouseUp:
+			onMouseUp(e);
+			break;
+		case SWT.MouseMove:
+			onMouseMove(e);
+			break;
+		case SWT.MouseWheel:
+			onMouseWheel(e);
+			break;
+		case SWT.FocusIn:
+			System.out.println("FocusGained");
+			focusGained(e);
+			break;
+		case SWT.FocusOut:
+			System.out.println("FocusLost");
+			focusLost(e);
+			break;
+
+		}
+
 	}
 
 }
