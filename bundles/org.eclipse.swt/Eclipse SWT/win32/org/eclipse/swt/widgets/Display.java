@@ -1735,7 +1735,7 @@ public static Display getDefault () {
  * @since 3.108
  */
 @Override
-protected int getDeviceZoom() {
+public int getDeviceZoom() {
 	/*
 	 * Win8.1 and above we should pick zoom for the primary monitor which always
 	 * reflects the latest OS zoom value, for more details refer bug 537273.

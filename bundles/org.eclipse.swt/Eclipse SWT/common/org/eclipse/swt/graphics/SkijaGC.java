@@ -599,7 +599,17 @@ public class SkijaGC extends GC implements IGraphicsContext {
 	@Override
 	public Point textExtent(String string, int flags) {
 		Rect textExtent = this.font.measureText(replaceMnemonics(string));
-		return DPIUtil.autoScaleDown(new Point(Math.round(textExtent.getWidth()), getFontMetrics().getHeight()));
+		var p = DPIUtil.autoScaleDown(new Point(Math.round(textExtent.getWidth()), getFontMetrics().getHeight()));
+
+		double d = getZoomFactor();
+
+		return new Point((int) (p.x * d), (int) (p.y * d));
+
+	}
+
+	private double getZoomFactor() {
+
+		return ((float) control.getDisplay().getDeviceZoom()) / 100.0;
 	}
 
 	@Override
@@ -625,7 +635,10 @@ public class SkijaGC extends GC implements IGraphicsContext {
 		if (SWT.getPlatform().equals("win32")) {
 			fontSize *= this.font.getSize() / Display.getDefault().getSystemFont().getFontData()[0].getHeight();
 		}
-		this.font.setSize(fontSize);
+
+		float zoomF = (float) (control.getDisplay().getDeviceZoom()) / 100;
+
+		this.font.setSize(fontSize * zoomF);
 		this.font.setEdging(FontEdging.SUBPIXEL_ANTI_ALIAS);
 		this.font.setSubpixel(true);
 		this.baseSymbolHeight = this.font.measureText("T").getHeight();

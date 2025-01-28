@@ -34,6 +34,7 @@ public class SnippetButton {
 		label.setText("Label Text");
 		label.setImage(image);
 		label.setSize(100, 100);
+		label.setLocation(100, 100);
 
 		var text = new Text(shell, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
 
@@ -43,6 +44,12 @@ public class SnippetButton {
 		text.setSize(300, 300);
 
 		text.setLocation(400, 400);
+
+		var old = new Label_Old(shell, SWT.BORDER);
+
+		old.setText("Old_Label");
+
+		old.pack();
 
 		shell.setSize(300, 500);
 		shell.open();
