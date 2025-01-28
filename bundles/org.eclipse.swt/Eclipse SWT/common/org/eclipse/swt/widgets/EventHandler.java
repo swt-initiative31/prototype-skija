@@ -165,6 +165,8 @@ class EventHandler implements Listener {
 
 			Event ne = createPaintEvent(w, e);
 			w.handleEvent(ne);
+			var b = w.getBounds();
+			ne.gc.drawRectangle(new Rectangle(0, 0, b.width - 1, b.height - 1));
 			ne.gc.dispose();
 
 		}

@@ -3598,12 +3598,30 @@ public void setLayoutData (Object layoutData) {
 public void setLocation (int x, int y) {
 	if (isCustomDrawn(this)) {
 		this.location = new Point(x, y);
+		return;
 	}
+
+	Point p = translateForParent(this);
+
 	checkWidget ();
 	int zoom = getZoom();
 	x = DPIUtil.scaleUp(x, zoom);
 	y = DPIUtil.scaleUp(y, zoom);
 	setLocationInPixels(x, y);
+}
+
+private Point translateForParent(Control c) {
+
+	if (c == null)
+		return new Point(0, 0);
+
+	if (c.parent == c.getShell() || c.parent == null)
+		return new Point(0, 0);
+
+	var p = translateForParent(parent);
+
+	return new Point(p.x + parent.getLocation().x, p.y + parent.getLocation().y);
+
 }
 
 void setLocationInPixels (int x, int y) {

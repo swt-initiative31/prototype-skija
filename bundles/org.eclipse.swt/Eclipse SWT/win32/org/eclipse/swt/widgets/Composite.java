@@ -51,12 +51,13 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/snippets/#composite">Composite snippets</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public class Composite extends Scrollable {
+public class Composite extends Scrollable implements ICustomWidget {
 	Layout layout;
 	WINDOWPOS [] lpwp;
 	Control [] tabList;
 	int layoutCount, backgroundMode;
 	protected final java.util.List<Control> childControls = new ArrayList<>();
+	private EventHandler eventHandler;
 
 
 	static final int TOOLTIP_LIMIT = 4096;
@@ -105,6 +106,8 @@ Composite () {
  */
 public Composite (Composite parent, int style) {
 	super (parent, style);
+
+	eventHandler = new EventHandler(childControls);
 }
 
 Control [] _getChildren () {
@@ -1998,4 +2001,107 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 	}
 	composite.redrawInPixels (null, true);
 }
+
+Point computedSize = null;
+
+@Override
+public Point computeSize(int wHint, int hHint, boolean changed) {
+
+	if (!isCustomDrawn(this))
+		return super.computeSize(wHint, hHint, changed);
+
+	if (changed) {
+		computedSize = calculateSize();
+	}
+
+	if (wHint != SWT.DEFAULT) {
+		computedSize.x = wHint;
+	}
+	if (hHint != SWT.DEFAULT) {
+		computedSize.y = wHint;
+	}
+
+	return computedSize;
+
+}
+
+Point calculateSize() {
+	Point p = new Point(0, 0);
+
+	for (Control child : childControls) {
+
+		if (!child.isDisposed() && child.isVisible()) {
+
+			var cb = child.getBounds();
+
+			if (!isCustomDrawn(child)) {
+				var sb = getShell().getBounds();
+				cb.x -= sb.x;
+				cb.y -= sb.y;
+			}
+
+			int minW = cb.x + cb.width;
+			int minH = cb.y + cb.height;
+
+			if (minW > p.x || minH > p.y) {
+				p = new Point(Math.max(p.x, minW), Math.max(p.y, minH));
+			}
+
+		}
+
+	}
+
+	return p;
+
+}
+
+@Override
+public void handleEvent(Event e) {
+
+	switch (e.type) {
+	case SWT.Paint:
+		onPaint(e);
+		break;
+
+	default:
+		// TODO probably create a subevent with new translation...
+		eventHandler.handleEvent(e);
+	}
+
+}
+
+@Override
+void onPaint(Event e) {
+
+	if (hasBorder()) {
+		Rectangle b = getBounds();
+		e.gc.setForeground(getDisplay().getSystemColor(SWT.COLOR_GRAY));
+		e.gc.drawRectangle(new Rectangle(0, 0, b.width - 2, b.height - 2));
+	}
+
+	eventHandler.handleEvent(e);
+
+
+}
+
+private void onMouseUp(Event e) {
+	// TODO Auto-generated method stub
+
+}
+
+private void onMouseDown(Event e) {
+	// TODO Auto-generated method stub
+
+}
+
+private void onMouseExit() {
+	// TODO Auto-generated method stub
+
+}
+
+private void onMouseEnter() {
+	// TODO Auto-generated method stub
+
+}
+
 }

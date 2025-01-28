@@ -576,7 +576,7 @@ public abstract class Scrollable extends Control {
 
 	}
 
-	private void onPaint(Event e) {
+	void onPaint(Event e) {
 
 		if (verticalBar == null || horizontalBar == null) {
 			if ((style & SWT.H_SCROLL) != 0)

@@ -1564,6 +1564,12 @@ public class Button extends Control implements ICustomWidget {
 		case SWT.MouseExit:
 			onMouseExit();
 			break;
+		case SWT.MouseDown:
+			onMouseDown(e);
+			break;
+		case SWT.MouseUp:
+			onMouseUp(e);
+			break;
 
 		}
 

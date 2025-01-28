@@ -58,11 +58,20 @@ public class SkijaGC extends GC implements IGraphicsContext {
 		Point l = control.getLocation();
 		if (l == null)
 			l = new Point(0, 0);
-		setTranslate(l.x, l.y);
+
+		Point p = parentGc.getTranslate();
+		if (p == null)
+			p = new Point(0, 0);
+
+		setTranslate(l.x + p.x, l.y + p.x);
 		this.surface = parentGc.surface;
 
 		initFont();
 
+	}
+
+	private Point getTranslate() {
+		return translate;
 	}
 
 	public SkijaGC(Shell shell, int none) {
@@ -601,9 +610,7 @@ public class SkijaGC extends GC implements IGraphicsContext {
 		Rect textExtent = this.font.measureText(replaceMnemonics(string));
 		var p = DPIUtil.autoScaleDown(new Point(Math.round(textExtent.getWidth()), getFontMetrics().getHeight()));
 
-		double d = getZoomFactor();
-
-		return new Point((int) (p.x * d), (int) (p.y * d));
+		return p;
 
 	}
 
@@ -636,9 +643,7 @@ public class SkijaGC extends GC implements IGraphicsContext {
 			fontSize *= this.font.getSize() / Display.getDefault().getSystemFont().getFontData()[0].getHeight();
 		}
 
-		float zoomF = (float) (control.getDisplay().getDeviceZoom()) / 100;
-
-		this.font.setSize(fontSize * zoomF);
+		this.font.setSize((float) (fontSize * getZoomFactor()));
 		this.font.setEdging(FontEdging.SUBPIXEL_ANTI_ALIAS);
 		this.font.setSubpixel(true);
 		this.baseSymbolHeight = this.font.measureText("T").getHeight();
