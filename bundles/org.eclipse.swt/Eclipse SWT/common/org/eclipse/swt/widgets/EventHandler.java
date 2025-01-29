@@ -28,10 +28,10 @@ class EventHandler implements Listener {
 	public void mouseMove(Event e) {
 		if (mouseOverWidget != null) {
 			if (translatePosition(mouseOverWidget.getBounds()).contains(e.x, e.y)) {
-				mouseOverWidget.handleEvent(e);
+				mouseOverWidget.triggerEvent(e);
 				return;
 			} else {
-				mouseOverWidget.handleEvent(createMouseExitEvent(e));
+				mouseOverWidget.triggerEvent(createMouseExitEvent(e));
 				mouseOverWidget = null;
 			}
 		}
@@ -41,8 +41,8 @@ class EventHandler implements Listener {
 
 			if (translatePosition(w.getBounds()).contains(e.x, e.y)) {
 				mouseOverWidget = w;
-				w.handleEvent(createMouseEnterEvent(e));
-				w.handleEvent(e);
+				w.triggerEvent(createMouseEnterEvent(e));
+				w.triggerEvent(e);
 				return;
 			}
 		}
@@ -91,7 +91,7 @@ class EventHandler implements Listener {
 	public void mouseExit(Event e) {
 
 		if (mouseOverWidget != null) {
-			mouseOverWidget.handleEvent(createMouseExitEvent(e));
+			mouseOverWidget.triggerEvent(createMouseExitEvent(e));
 			mouseOverWidget.redraw();
 			mouseOverWidget = null;
 		}
@@ -103,10 +103,10 @@ class EventHandler implements Listener {
 		for (var w : childControls) {
 			if (translatePosition(w.getBounds()).contains(e.x, e.y)) {
 				if (mouseOverWidget != w) {
-					w.handleEvent(createMouseEnterEvent(e));
+					w.triggerEvent(createMouseEnterEvent(e));
 					w.redraw();
 					if (mouseOverWidget != null) {
-						mouseOverWidget.handleEvent(createMouseExitEvent(e));
+						mouseOverWidget.triggerEvent(createMouseExitEvent(e));
 						mouseOverWidget.redraw();
 					}
 					w = mouseOverWidget;
@@ -163,11 +163,24 @@ class EventHandler implements Listener {
 
 		for (var w : childControls) {
 
-			Event ne = createPaintEvent(w, e);
-			w.handleEvent(ne);
 			var b = w.getBounds();
-			ne.gc.drawRectangle(new Rectangle(0, 0, b.width - 1, b.height - 1));
-			ne.gc.dispose();
+
+			trigger(e, w);
+			if (Control.isCustomDrawn(w)) {
+
+				var bfg = e.gc.getForeground();
+				var bbg = e.gc.getBackground();
+				e.gc.setForeground(w.getDisplay().getSystemColor(SWT.COLOR_BLUE));
+				e.gc.setBackground(w.getDisplay().getSystemColor(SWT.COLOR_DARK_YELLOW));
+				e.gc.drawLine(0, 0, b.x, b.y);
+				e.gc.drawRectangle(b.x, b.y, b.width, b.height);
+//				if (w instanceof MockControl)
+//					e.gc.fillRectangle(b);
+
+				e.gc.setForeground(bfg);
+				e.gc.setBackground(bbg);
+
+			}
 
 		}
 	}
@@ -191,6 +204,7 @@ class EventHandler implements Listener {
 
 	private void onFocusOut(Event e) {
 
+
 //		childControls.stream().forEach(c -> c.handleEvent(e));
 //		focusWidget = null;
 
@@ -203,7 +217,7 @@ class EventHandler implements Listener {
 		}
 
 		if (focusWidget != null)
-			focusWidget.handleEvent(e);
+			focusWidget.triggerEvent(e);
 
 	}
 
@@ -213,9 +227,19 @@ class EventHandler implements Listener {
 
 	}
 
+	private void trigger(Event e, Control c) {
+
+		var ne = Control.translateEvent(e, c);
+		c.triggerEvent(ne);
+		disposeGC(ne.gc);
+
+	}
+
 	private void onWidgetKeyEvent(Event e) {
-		if (focusWidget != null)
-			focusWidget.handleEvent(e);
+		if (focusWidget != null) {
+
+		}
+			focusWidget.triggerEvent(e);
 	}
 
 	private void onWidgetMouseEvent(Event e) {
@@ -223,12 +247,16 @@ class EventHandler implements Listener {
 		if (e.type == SWT.MouseDown) {
 			if (focusWidget != mouseOverWidget) {
 				if (focusWidget != null) {
-					focusWidget.handleEvent(createFocusOutEvent(e, focusWidget));
+					var fe = createFocusOutEvent(e, focusWidget);
+					focusWidget.triggerEvent(fe);
+					disposeGC(fe.gc);
 					focusWidget = null;
 				}
 
 				if (mouseOverWidget != null) {
-					mouseOverWidget.handleEvent(createFocusInEvent(e, mouseOverWidget));
+					var fe = createFocusInEvent(e, mouseOverWidget);
+					mouseOverWidget.triggerEvent(fe);
+					disposeGC(fe.gc);
 					focusWidget = mouseOverWidget;
 				}
 
@@ -236,15 +264,19 @@ class EventHandler implements Listener {
 		}
 
 		if (mouseOverWidget != null)
-			mouseOverWidget.handleEvent(e);
+			mouseOverWidget.triggerEvent(e);
 
+	}
+
+	private void disposeGC(GC gc) {
+		if (gc != null && !gc.isDisposed())
+			gc.dispose();
 	}
 
 	private Event createFocusInEvent(Event e, Control c) {
 
-		var ne = new Event();
+		var ne = Control.translateEvent(e, c);
 		ne.type = SWT.FocusIn;
-		ne.widget = c;
 		ne.display = c.getDisplay();
 
 		return ne;
@@ -252,16 +284,19 @@ class EventHandler implements Listener {
 
 	private Event createFocusOutEvent(Event e, Control c) {
 
-		var ne = new Event();
+		var ne = Control.translateEvent(e, c);
 		ne.type = SWT.FocusOut;
-		ne.widget = c;
 		ne.display = c.getDisplay();
 		return ne;
 	}
 
 	private void onDispose(Event e) {
 
-		childControls.stream().forEach(c -> c.handleEvent(e));
+		childControls.stream().forEach(c -> {
+
+			trigger(e, c);
+
+		});
 
 	}
 

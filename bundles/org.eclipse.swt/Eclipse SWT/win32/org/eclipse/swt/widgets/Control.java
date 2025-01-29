@@ -80,9 +80,10 @@ public abstract class Control extends Widget implements Drawable {
 	int drawCount, foreground, background, backgroundAlpha = 255;
 	boolean visible = true;
 	boolean enabled = true;
-	Point location;
+	Point location = new Point(0, 0);
 	Point size;
 	private boolean focus = false;
+	private Color backgroundColor;
 
 /**
  * Prevents uninitialized instances from being created outside the package.
@@ -629,6 +630,23 @@ public Point computeSize (int wHint, int hHint) {
 public Point computeSize (int wHint, int hHint, boolean changed){
 	checkWidget ();
 	int zoom = getZoom();
+
+	if (isCustomDrawn(this)) {
+
+		wHint = (wHint != SWT.DEFAULT ? DPIUtil.scaleUp(wHint, zoom) : wHint);
+		hHint = (hHint != SWT.DEFAULT ? DPIUtil.scaleUp(hHint, zoom) : hHint);
+
+		int width = 40;
+		int height = 40;
+		if (wHint != SWT.DEFAULT)
+			width = wHint;
+		if (hHint != SWT.DEFAULT)
+			height = hHint;
+
+		return new Point(width, height);
+
+	}
+
 	wHint = (wHint != SWT.DEFAULT ? DPIUtil.scaleUp(wHint, zoom) : wHint);
 	hHint = (hHint != SWT.DEFAULT ? DPIUtil.scaleUp(hHint, zoom) : hHint);
 	return DPIUtil.scaleDown(computeSizeInPixels(wHint, hHint, changed), zoom);
@@ -1152,6 +1170,10 @@ public Accessible getAccessible () {
  * </ul>
  */
 public Color getBackground () {
+
+	if (isCustomDrawn(this))
+		return backgroundColor;
+
 	checkWidget ();
 	if (backgroundAlpha == 0) {
 		Color color =  Color.win32_new (display, background, 0);
@@ -1423,8 +1445,9 @@ public Object getLayoutData () {
  */
 public Point getLocation () {
 
-	if (isCustomDrawn(this))
+	if (isCustomDrawn(this)) {
 		return location;
+	}
 
 	checkWidget ();
 	return DPIUtil.scaleDown(getLocationInPixels(), getZoom());
@@ -1582,6 +1605,13 @@ public Shell getShell () {
  * </ul>
  */
 public Point getSize (){
+
+	if (isCustomDrawn(this)) {
+		if (size == null)
+			size = computeSize(SWT.DEFAULT, SWT.DEFAULT);
+		return size;
+	}
+
 	checkWidget ();
 	return DPIUtil.scaleDown(getSizeInPixels (), getZoom());
 }
@@ -3157,6 +3187,11 @@ void setBackground () {
  */
 public void setBackground (Color color) {
 	checkWidget ();
+
+	if (isCustomDrawn(this)) {
+		backgroundColor = color;
+	}
+
 	_setBackground (color);
 	if (color != null) {
 		this.updateBackgroundMode ();
@@ -3597,11 +3632,14 @@ public void setLayoutData (Object layoutData) {
  */
 public void setLocation (int x, int y) {
 	if (isCustomDrawn(this)) {
-		this.location = new Point(x, y);
+		setLocation(new Point(x, y));
 		return;
 	}
 
 	Point p = translateForParent(this);
+
+	x = x + p.x;
+	y = y + p.y;
 
 	checkWidget ();
 	int zoom = getZoom();
@@ -3612,15 +3650,15 @@ public void setLocation (int x, int y) {
 
 private Point translateForParent(Control c) {
 
-	if (c == null)
+	if (c == null || c.parent == null)
 		return new Point(0, 0);
 
-	if (c.parent == c.getShell() || c.parent == null)
-		return new Point(0, 0);
+	if (c.parent == c.getShell())
+		return c.getLocation();
 
 	var p = translateForParent(parent);
 
-	return new Point(p.x + parent.getLocation().x, p.y + parent.getLocation().y);
+	return p;
 
 }
 
@@ -3644,6 +3682,15 @@ void setLocationInPixels (int x, int y) {
  * </ul>
  */
 public void setLocation (Point location) {
+
+	if (isCustomDrawn(this)) {
+		if (!Objects.equals(this.location, location)) {
+			this.location = location;
+			redraw();
+		}
+		return;
+	}
+
 	checkWidget ();
 	if (location == null) error (SWT.ERROR_NULL_ARGUMENT);
 	location = DPIUtil.scaleUp(location, getZoom());
@@ -3834,6 +3881,13 @@ public void setRegion (Region region) {
  * </ul>
  */
 public void setSize (int width, int height) {
+
+	if (isCustomDrawn(this)) {
+		setSize(new Point(width, height));
+		return;
+
+	}
+
 	checkWidget ();
 	int zoom = getZoom();
 	width = DPIUtil.scaleUp(width, zoom);
@@ -3870,6 +3924,17 @@ void setSizeInPixels (int width, int height) {
  * </ul>
  */
 public void setSize (Point size) {
+
+	if (isCustomDrawn(this)) {
+		Point s = size;
+
+		if (!Objects.equals(this.size, s)) {
+			this.size = s;
+			redraw();
+		}
+
+	}
+
 	checkWidget ();
 	if (size == null) error (SWT.ERROR_NULL_ARGUMENT);
 	size = DPIUtil.scaleUp(size, getZoom());
@@ -6233,7 +6298,63 @@ private static void resizeFont(Control control, int newZoom) {
 	}
 }
 
-public void handleEvent(Event e) {
+public void triggerEvent(Event e) {
+
+	process(e);
+
+}
+
+/**
+ * We get the outer event, which will be converted here to a new event for this
+ * control.
+ *
+ * @param e
+ * @return e
+ */
+public static Event translateEvent(Event e, Control c) {
+
+	Event ne = new Event();
+
+	ne.type = e.type;
+	ne.button = e.button;
+	ne.character = e.character;
+	ne.count = e.count;
+	ne.data = e.data;
+	ne.detail = e.detail;
+	ne.display = e.display;
+	ne.doit = e.doit;
+	ne.end = e.end;
+	if(e.gc != null)
+		ne.gc = GCFactory.createChildGC(e.gc, c);
+	ne.height = e.height;
+	ne.index = e.index;
+
+	assert (((SkijaGC) (e.gc)).getControl().equals(c.parent));
+
+	ne.item = c;
+	ne.keyCode = e.keyCode;
+	ne.keyLocation = e.keyLocation;
+	ne.magnification = e.magnification;
+	ne.rotation = e.rotation;
+	ne.segments = e.segments;
+	ne.start = e.start;
+	ne.stateMask = e.stateMask;
+	ne.text = e.text;
+	ne.time = e.time;
+	ne.touches = e.touches;
+	ne.width = e.width;
+	ne.xDirection = e.xDirection;
+	ne.yDirection = e.yDirection;
+
+	var b = c.getBounds();
+
+	ne.y = e.y - b.y;
+	ne.x = e.x - b.x;
+	ne.widget = c;
+	return ne;
+}
+
+public void process(Event e) {
 
 }
 

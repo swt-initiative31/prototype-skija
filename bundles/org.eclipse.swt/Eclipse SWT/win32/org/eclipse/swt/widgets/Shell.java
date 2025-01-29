@@ -402,7 +402,10 @@ public class Shell extends Decorations implements IBaseWidget {
 
 	}
 
+	@Override
 	void onPaint(Event e) {
+
+		Rectangle ca = getClientArea();
 
 		if (SWT.USE_OPENGL) {
 
@@ -418,6 +421,10 @@ public class Shell extends Decorations implements IBaseWidget {
 			pe.type = SWT.Paint;
 			pe.gc = gr;
 			pe.widget = this;
+			pe.x = 0;
+			pe.y = 0;
+			pe.width = ca.width;
+			pe.height = ca.height;
 
 			eventListener.handleEvent(pe);
 

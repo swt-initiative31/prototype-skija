@@ -1305,7 +1305,7 @@ public class Label extends Control implements ICustomWidget {
 	}
 
 	@Override
-	public void handleEvent(Event e) {
+	public void process(Event e) {
 
 		switch (e.type) {
 		case SWT.Paint:

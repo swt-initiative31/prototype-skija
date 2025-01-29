@@ -2010,7 +2010,7 @@ public Point computeSize(int wHint, int hHint, boolean changed) {
 	if (!isCustomDrawn(this))
 		return super.computeSize(wHint, hHint, changed);
 
-	if (changed) {
+	if (changed || computedSize == null) {
 		computedSize = calculateSize();
 	}
 
@@ -2056,51 +2056,40 @@ Point calculateSize() {
 }
 
 @Override
-public void handleEvent(Event e) {
+public void process(Event e) {
 
-	switch (e.type) {
-	case SWT.Paint:
-		onPaint(e);
-		break;
-
-	default:
-		// TODO probably create a subevent with new translation...
-		eventHandler.handleEvent(e);
-	}
+	drawBorder(e);
+	eventHandler.handleEvent(e);
 
 }
 
-@Override
-void onPaint(Event e) {
+private Event createSubEvent(Event e) {
 
-	if (hasBorder()) {
+	var b = getBounds();
+
+	Event ne = new Event();
+
+	ne.type = e.type;
+	ne.x = e.x - b.x;
+	ne.y = e.y - b.y;
+
+	ne.widget = this;
+	ne.display = getDisplay();
+	ne.height = e.height;
+	ne.width = e.width;
+	if (e.gc != null)
+		ne.gc = GCFactory.createChildGC(e.gc, this);
+
+	return ne;
+}
+
+private void drawBorder(Event e) {
+
+	if (e.type == SWT.Paint && hasBorder()) {
 		Rectangle b = getBounds();
 		e.gc.setForeground(getDisplay().getSystemColor(SWT.COLOR_GRAY));
 		e.gc.drawRectangle(new Rectangle(0, 0, b.width - 2, b.height - 2));
 	}
-
-	eventHandler.handleEvent(e);
-
-
-}
-
-private void onMouseUp(Event e) {
-	// TODO Auto-generated method stub
-
-}
-
-private void onMouseDown(Event e) {
-	// TODO Auto-generated method stub
-
-}
-
-private void onMouseExit() {
-	// TODO Auto-generated method stub
-
-}
-
-private void onMouseEnter() {
-	// TODO Auto-generated method stub
 
 }
 

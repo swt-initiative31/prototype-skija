@@ -986,13 +986,13 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 	}
 
 	@Override
-	public void handleEvent(Event e) {
+	public void process(Event e) {
 
 		switch (e.type) {
 		case SWT.Paint:
 
 			paintControl(e);
-			super.handleEvent(e);
+			super.triggerEvent(e);
 
 			break;
 		case SWT.KeyDown:

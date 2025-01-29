@@ -42,6 +42,10 @@ public class SkijaGC extends GC implements IGraphicsContext {
 		initFont();
 	}
 
+	public Control getControl() {
+		return control;
+	}
+
 	public SkijaGC(Control control) {
 		this((Surface) null, control);
 	}
@@ -55,6 +59,8 @@ public class SkijaGC extends GC implements IGraphicsContext {
 	public SkijaGC(SkijaGC parentGc, Control control) {
 		this.control = control;
 
+		assert (parentGc.getControl().equals(control.getParent()));
+
 		Point l = control.getLocation();
 		if (l == null)
 			l = new Point(0, 0);
@@ -63,7 +69,8 @@ public class SkijaGC extends GC implements IGraphicsContext {
 		if (p == null)
 			p = new Point(0, 0);
 
-		setTranslate(l.x + p.x, l.y + p.x);
+		var t = new Point(l.x + p.x, l.y + p.y);
+		setTranslate(t.x,t.y);
 		this.surface = parentGc.surface;
 
 		initFont();
@@ -215,8 +222,9 @@ public class SkijaGC extends GC implements IGraphicsContext {
 		surface.getCanvas().drawImageRect(convertSWTImageToSkijaImage(image),
 				new Rect(DPIUtil.autoScaleUp(srcX), DPIUtil.autoScaleUp(srcY), DPIUtil.autoScaleUp(srcX + srcWidth),
 						DPIUtil.autoScaleUp(srcY + srcHeight)),
-				new Rect(DPIUtil.autoScaleUp(destX), DPIUtil.autoScaleUp(destY), DPIUtil.autoScaleUp(destX + destWidth),
-						DPIUtil.autoScaleUp(destY + destHeight)));
+				new Rect(DPIUtil.autoScaleUp(destX + translate.x), DPIUtil.autoScaleUp(destY + translate.y),
+						DPIUtil.autoScaleUp(destX + translate.x + destWidth),
+						DPIUtil.autoScaleUp(destY + translate.y + destHeight)));
 
 	}
 
@@ -349,9 +357,10 @@ public class SkijaGC extends GC implements IGraphicsContext {
 	@Override
 	public void drawLine(int x1, int y1, int x2, int y2) {
 		float scaledOffsetValue = getScaledOffsetValue();
-		performDrawLine(paint -> surface.getCanvas().drawLine(DPIUtil.autoScaleUp(x1) + scaledOffsetValue,
-				DPIUtil.autoScaleUp(y1) + scaledOffsetValue, DPIUtil.autoScaleUp(x2) + scaledOffsetValue,
-				DPIUtil.autoScaleUp(y2) + scaledOffsetValue, paint));
+		performDrawLine(paint -> surface.getCanvas().drawLine(DPIUtil.autoScaleUp(x1 + translate.x) + scaledOffsetValue,
+				DPIUtil.autoScaleUp(y1 + translate.y) + scaledOffsetValue,
+				DPIUtil.autoScaleUp(x2 + translate.x) + scaledOffsetValue,
+				DPIUtil.autoScaleUp(y2 + translate.y) + scaledOffsetValue, paint));
 	}
 
 	@Override
@@ -782,26 +791,26 @@ public class SkijaGC extends GC implements IGraphicsContext {
 	@Override
 	public void setClipping(Rectangle rectangle) {
 
-		if (rectangle == null) {
-			surface.getCanvas().restore();
-		} else {
-			rectangle = translate(rectangle);
-		}
-
-
-		if (this.clipping != rectangle) {
-
-			if (clipping != null)
-				surface.getCanvas().restore();
-
-			clipping = rectangle;
-			if (rectangle != null) {
-				surface.getCanvas().save();
-				surface.getCanvas()
-						.clipRect(createScaledRectangle(rectangle.x, rectangle.y, rectangle.width, rectangle.height));
-			}
-
-		}
+//		if (rectangle == null) {
+//			surface.getCanvas().restore();
+//		} else {
+//			rectangle = translate(rectangle);
+//		}
+//
+//
+//		if (this.clipping != rectangle) {
+//
+//			if (clipping != null)
+//				surface.getCanvas().restore();
+//
+//			clipping = rectangle;
+//			if (rectangle != null) {
+//				surface.getCanvas().save();
+//				surface.getCanvas()
+//						.clipRect(createScaledRectangle(rectangle.x, rectangle.y, rectangle.width, rectangle.height));
+//			}
+//
+//		}
 	}
 
 	@Override
