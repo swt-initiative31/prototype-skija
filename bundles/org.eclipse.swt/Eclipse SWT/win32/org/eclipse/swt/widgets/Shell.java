@@ -132,6 +132,10 @@ public class Shell extends Decorations implements IBaseWidget {
 	private BackendRenderTarget renderTarget;
 
 	private EventHandler eventListener;
+
+	private int outerStyle;
+
+	private DecorationsHandler decoListener;
 	static /* final */ long ToolTipProc;
 	static final long DialogProc;
 	static final TCHAR DialogClass = new TCHAR(0, "#32770", true);
@@ -159,6 +163,12 @@ public class Shell extends Decorations implements IBaseWidget {
 	 */
 	public Shell() {
 		this((Display) null);
+	}
+
+	@Override
+	public int getStyle() {
+		checkWidget();
+		return outerStyle;
 	}
 
 	/**
@@ -286,6 +296,8 @@ public class Shell extends Decorations implements IBaseWidget {
 	Shell(Display display, Shell parent, int style, long handle, boolean embedded) {
 		super();
 		checkSubclass();
+		outerStyle = style;
+		style = SWT.NO_MOVE | SWT.NO_TRIM;
 		if (display == null)
 			display = Display.getCurrent();
 		if (display == null)
@@ -340,6 +352,14 @@ public class Shell extends Decorations implements IBaseWidget {
 				break;
 			}
 		};
+
+		decoListener = new DecorationsHandler(this);
+
+		addListener(SWT.MouseMove, decoListener);
+		addListener(SWT.MouseDown, decoListener);
+		addListener(SWT.MouseUp, decoListener);
+		addListener(SWT.MouseEnter, decoListener);
+		addListener(SWT.MouseExit, decoListener);
 
 		eventListener = new EventHandler(childControls) {
 
@@ -415,6 +435,9 @@ public class Shell extends Decorations implements IBaseWidget {
 
 			canvas.clear(0xFFFFFFFF);
 			GC gr = new SkijaGC(surface, this);
+
+
+			decoListener.drawDecoration(gr);
 
 			Event pe = new Event();
 
