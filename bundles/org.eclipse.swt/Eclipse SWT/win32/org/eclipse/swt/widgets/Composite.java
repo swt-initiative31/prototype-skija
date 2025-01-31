@@ -57,7 +57,7 @@ public class Composite extends Scrollable implements ICustomWidget {
 	Control [] tabList;
 	int layoutCount, backgroundMode;
 	protected final java.util.List<Control> childControls = new ArrayList<>();
-	private EventHandler eventHandler;
+	private EventHandler eventHandler = new EventHandler(childControls);
 
 
 	static final int TOOLTIP_LIMIT = 4096;
@@ -106,8 +106,6 @@ Composite () {
  */
 public Composite (Composite parent, int style) {
 	super (parent, style);
-
-	eventHandler = new EventHandler(childControls);
 }
 
 Control [] _getChildren () {
@@ -2056,7 +2054,7 @@ Point calculateSize() {
 }
 
 @Override
-public void process(Event e) {
+public void triggerEvent(Event e) {
 
 	drawBorder(e);
 	eventHandler.handleEvent(e);

@@ -135,7 +135,6 @@ public class Shell extends Decorations implements IBaseWidget {
 
 	private int outerStyle;
 
-	private DecorationsHandler decoListener;
 	static /* final */ long ToolTipProc;
 	static final long DialogProc;
 	static final TCHAR DialogClass = new TCHAR(0, "#32770", true);
@@ -296,8 +295,8 @@ public class Shell extends Decorations implements IBaseWidget {
 	Shell(Display display, Shell parent, int style, long handle, boolean embedded) {
 		super();
 		checkSubclass();
-		outerStyle = style;
-		style = SWT.NO_MOVE | SWT.NO_TRIM;
+		// outerStyle = style;
+		// style = SWT.NO_MOVE | SWT.NO_TRIM;
 		if (display == null)
 			display = Display.getCurrent();
 		if (display == null)
@@ -340,44 +339,42 @@ public class Shell extends Decorations implements IBaseWidget {
 		childControls.remove(this);
 
 		Listener listener = event -> {
-			switch (event.type) {
-			case SWT.Paint:
-				onPaint(event);
-				break;
-			case SWT.Resize:
-				onResize(event);
-				break;
-			case SWT.Dispose:
-				onDispose();
-				break;
-			}
+			triggerEvent(event);
 		};
 
-		decoListener = new DecorationsHandler(this);
-
-		addListener(SWT.MouseMove, decoListener);
-		addListener(SWT.MouseDown, decoListener);
-		addListener(SWT.MouseUp, decoListener);
-		addListener(SWT.MouseEnter, decoListener);
-		addListener(SWT.MouseExit, decoListener);
-
-		eventListener = new EventHandler(childControls) {
-
-		};
 
 		addListener(SWT.Paint, listener);
 		addListener(SWT.Resize, listener);
 		addListener(SWT.Dispose, listener);
 
-		addListener(SWT.KeyDown, eventListener);
-		addListener(SWT.KeyUp, eventListener);
-		addListener(SWT.MouseDown, eventListener);
-		addListener(SWT.MouseUp, eventListener);
-		addListener(SWT.MouseMove, eventListener);
-		addListener(SWT.FocusIn, eventListener);
-		addListener(SWT.FocusOut, eventListener);
-		addListener(SWT.MouseEnter, eventListener);
-		addListener(SWT.MouseExit, eventListener);
+		addListener(SWT.KeyDown, listener);
+		addListener(SWT.KeyUp, listener);
+		addListener(SWT.MouseDown, listener);
+		addListener(SWT.MouseUp, listener);
+		addListener(SWT.MouseMove, listener);
+		addListener(SWT.FocusIn, listener);
+		addListener(SWT.FocusOut, listener);
+		addListener(SWT.MouseEnter, listener);
+		addListener(SWT.MouseExit, listener);
+
+	}
+
+	@Override
+	public void triggerEvent(Event event) {
+
+		switch (event.type) {
+			case SWT.Paint :
+				onPaint(event);
+				return;
+			case SWT.Resize :
+				onResize(event);
+				return;
+			case SWT.Dispose :
+				onDispose();
+				return;
+		}
+
+		super.triggerEvent(event);
 
 	}
 
@@ -437,8 +434,6 @@ public class Shell extends Decorations implements IBaseWidget {
 			GC gr = new SkijaGC(surface, this);
 
 
-			decoListener.drawDecoration(gr);
-
 			Event pe = new Event();
 
 			pe.type = SWT.Paint;
@@ -449,7 +444,7 @@ public class Shell extends Decorations implements IBaseWidget {
 			pe.width = ca.width;
 			pe.height = ca.height;
 
-			eventListener.handleEvent(pe);
+			super.triggerEvent(pe);
 
 
 			skijaContext.flush();

@@ -83,7 +83,7 @@ import org.eclipse.swt.internal.win32.*;
  *      information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Decorations extends Canvas {
+public class Decorations extends Canvas implements ICustomWidget {
 	Image image, smallImage, largeImage;
 	Image[] images;
 	Menu menuBar;
@@ -96,6 +96,8 @@ public class Decorations extends Canvas {
 	int oldX = OS.CW_USEDEFAULT, oldY = OS.CW_USEDEFAULT;
 	int oldWidth = OS.CW_USEDEFAULT, oldHeight = OS.CW_USEDEFAULT;
 	RECT maxRect = new RECT();
+
+	private DecorationsHandler decoListener;
 
 	static {
 		DPIZoomChangeRegistry.registerHandler(Decorations::handleDPIChange,
@@ -155,6 +157,7 @@ public class Decorations extends Canvas {
 	 */
 	public Decorations(Composite parent, int style) {
 		super(parent, checkStyle(style));
+
 	}
 
 	void _setMaximized(boolean maximized) {
@@ -1890,4 +1893,25 @@ public class Decorations extends Canvas {
 			}
 		}
 	}
+
+	@Override
+	public void triggerEvent(Event e) {
+
+		if (decoListener == null) {
+			decoListener = new DecorationsHandler(this);
+			addListener(SWT.MouseMove, decoListener);
+			addListener(SWT.MouseDown, decoListener);
+			addListener(SWT.MouseUp, decoListener);
+			addListener(SWT.MouseEnter, decoListener);
+			addListener(SWT.MouseExit, decoListener);
+		}
+
+
+		if (e.type == SWT.Paint)
+			decoListener.drawDecoration(e);
+
+		super.triggerEvent(e);
+
+	}
+
 }

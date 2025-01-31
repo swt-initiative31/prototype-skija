@@ -986,7 +986,7 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 	}
 
 	@Override
-	public void process(Event e) {
+	public void triggerEvent(Event e) {
 
 		switch (e.type) {
 		case SWT.Paint:

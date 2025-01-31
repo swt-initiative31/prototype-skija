@@ -3376,6 +3376,14 @@ void setBoundsInPixels (int x, int y, int width, int height, int flags, boolean 
  * </ul>
  */
 public void setBounds (Rectangle rect) {
+
+	if (isCustomDrawn(this)) {
+		if (rect == null)
+			error(SWT.ERROR_NULL_ARGUMENT);
+		setBounds(rect.x, rect.y, rect.width, rect.height);
+		return;
+	}
+
 	checkWidget ();
 	if (rect == null) error (SWT.ERROR_NULL_ARGUMENT);
 	setBoundsInPixels(DPIUtil.scaleUp(rect, getZoom()));
@@ -6300,7 +6308,6 @@ private static void resizeFont(Control control, int newZoom) {
 
 public void triggerEvent(Event e) {
 
-	process(e);
 
 }
 
@@ -6354,9 +6361,6 @@ public static Event translateEvent(Event e, Control c) {
 	return ne;
 }
 
-public void process(Event e) {
-
-}
 
 public static boolean isCustomDrawn(Control c) {
 	return (c instanceof ICustomWidget) && !(c instanceof IBaseWidget);

@@ -561,7 +561,7 @@ public abstract class Scrollable extends Control {
 	}
 
 	@Override
-	public void process(Event e) {
+	public void triggerEvent(Event e) {
 
 		if (!isCustomDrawn(this))
 			return;

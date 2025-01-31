@@ -5,7 +5,7 @@ import org.eclipse.swt.graphics.*;
 
 class DecorationsHandler implements Listener {
 
-	private Control c;
+	private Decorations c;
 	boolean mouseDownLeft = false;
 	boolean mouseDownRight = false;
 	boolean mouseDownBottom = false;
@@ -15,8 +15,10 @@ class DecorationsHandler implements Listener {
 	Rectangle minimize = null;
 	Rectangle maximize = null;
 	Rectangle close = null;
+	Rectangle header = null;
+	Rectangle menuBar = null;
 
-	public DecorationsHandler(Control c) {
+	public DecorationsHandler(Decorations c) {
 		this.c = c;
 	}
 
@@ -88,7 +90,22 @@ class DecorationsHandler implements Listener {
 				mouseDownTop = true;
 				lastTopPosition = new Point(e.x, e.y);
 			}
+		} else if (onMenu(e)) {
+
+			var mb = c.getMenuBar();
+
+			MenuItem[] items = mb.getItems();
+			if (items != null && items.length > 0) {
+
+				new MenuWindow(c, items, new Point(e.x, e.y)).open();
+
+			}
+
 		}
+	}
+
+	private boolean onMenu(Event e) {
+		return menuBar != null && menuBar.contains(new Point(e.x, e.y));
 	}
 
 	private boolean onTop(Event e) {
@@ -153,7 +170,9 @@ class DecorationsHandler implements Listener {
 
 	}
 
-	void drawDecoration(GC gr) {
+	void drawDecoration(Event e) {
+
+		GC gr = e.gc;
 
 		Rectangle b = c.getBounds();
 
@@ -164,7 +183,10 @@ class DecorationsHandler implements Listener {
 		var fg = c.getDisplay().getSystemColor(SWT.COLOR_BLACK);
 		gr.setBackground(bg);
 		gr.setForeground(fg);
-		gr.fillRectangle(new Rectangle(0, 0, b.width, 40));
+
+		header = new Rectangle(0, 0, b.width, 40);
+
+		gr.fillRectangle(header);
 		gr.fillRectangle(new Rectangle(0, 0, 2, b.height));
 		gr.fillRectangle(new Rectangle(0, b.height - 2, b.width, 2));
 		gr.fillRectangle(new Rectangle(b.width - 2, 0, 2, b.height));
@@ -172,10 +194,35 @@ class DecorationsHandler implements Listener {
 
 		drawIcons(b, gr);
 
+		drawMenu(b, gr);
+
 		gr.setBackground(bbg);
 		gr.setForeground(bfg);
 
-		gr.setTranslate(0, 40);
+		if (menuBar != null)
+			gr.setTranslate(0, 80);
+		else
+			gr.setTranslate(0, 40);
+
+	}
+
+	private void drawMenu(Rectangle b, GC gr) {
+
+		if (c.getMenuBar() != null) {
+
+			Menu mb = c.getMenuBar();
+
+			// System.out.println("MenuBar: " + mb);
+
+			var bg = c.getDisplay().getSystemColor(SWT.COLOR_GREEN);
+			gr.setBackground(bg);
+			menuBar = new Rectangle(0, 41, b.width, 40);
+			gr.fillRectangle(menuBar);
+			gr.drawText(mb.getNameText(), 5, 45);
+
+
+
+		}
 
 	}
 

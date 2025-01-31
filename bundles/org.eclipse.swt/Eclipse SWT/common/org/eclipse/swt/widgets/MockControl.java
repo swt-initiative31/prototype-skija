@@ -10,7 +10,7 @@ public class MockControl extends Control implements ICustomWidget {
 	}
 
 	@Override
-	public void process(Event e) {
+	public void triggerEvent(Event e) {
 
 		switch (e.type) {
 		case SWT.Paint:
