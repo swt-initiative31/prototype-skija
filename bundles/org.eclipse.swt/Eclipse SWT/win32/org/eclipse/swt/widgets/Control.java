@@ -2502,8 +2502,11 @@ public void requestLayout () {
  */
 public void redraw () {
 
-	if (isCustomDrawn(this))
+	if (isCustomDrawn(this)) {
 		getShell().controlRedraw(this);
+		return;
+	}
+
 
 	checkWidget ();
 	redrawInPixels (null,false);
@@ -3190,6 +3193,7 @@ public void setBackground (Color color) {
 
 	if (isCustomDrawn(this)) {
 		backgroundColor = color;
+		return;
 	}
 
 	_setBackground (color);
@@ -3942,7 +3946,7 @@ public void setSize (Point size) {
 			this.size = s;
 			redraw();
 		}
-
+		return;
 	}
 
 	checkWidget ();

@@ -14,9 +14,14 @@
 package org.eclipse.swt.widgets;
 
 
+import java.io.*;
+import java.util.*;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Region;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
@@ -123,7 +128,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Shell extends Decorations {
+public class Shell extends Decorations implements IBaseWidget {
 	long shellHandle, tooltipsHandle, tooltipWindow, group, modalGroup;
 	boolean mapped, moved, resized, opened, fullScreen, showWithParent, modified, center;
 	int oldX, oldY, oldWidth, oldHeight;
@@ -138,6 +143,12 @@ public class Shell extends Decorations {
 	static final int BORDER = 3;
 
 	static final double SHELL_TO_MONITOR_RATIO = 0.625; // Fractional: 5 / 8
+
+	private io.github.humbleui.skija.Surface surface;
+
+	private EventHandler eventListener;
+	private DecorationsHandler decoListener;
+	private int outerStyle;
 
 /**
  * Constructs a new instance of this class. This is equivalent
@@ -270,6 +281,8 @@ public Shell (Display display, int style) {
 Shell (Display display, Shell parent, int style, long handle, boolean embedded) {
 	super ();
 	checkSubclass ();
+	outerStyle = style;
+	style = SWT.NO_MOVE | SWT.NO_TRIM;
 	if (display == null) display = Display.getCurrent ();
 	if (display == null) display = Display.getDefault ();
 	if (!display.isValidThread ()) {
@@ -298,6 +311,70 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
 	}
 	reskinWidget();
 	createWidget (0);
+
+	initCustomDrawn();
+
+}
+
+@Override
+public int getStyle() {
+	checkWidget();
+	return outerStyle;
+}
+
+private void initCustomDrawn() {
+
+	childControls.remove(this);
+
+	Listener listener = event -> {
+		switch (event.type) {
+		case SWT.Paint:
+			System.out.println("Event: Paint");
+			// this is the only position where we have to call directly the onPaint-method
+			// (except the redraw(..))
+			// If we don't do this here, on resize it flickers.
+			// Instead of a direct redraw, we just redraw the cached Image in oder to keep
+			// the resizing fast.
+
+			// on linux, the redraw has to happen in this method.
+			// on windows this can also be done in a separate method
+			onPaint(event);
+
+			break;
+		case SWT.Resize:
+			System.out.println("Event: Resize");
+			onResize(event);
+			break;
+		case SWT.Dispose:
+			onDispose();
+			break;
+		}
+	};
+
+	eventListener = new EventHandler(childControls);
+	addListener(SWT.Paint, listener);
+	addListener(SWT.Resize, listener);
+	addListener(SWT.Dispose, listener);
+
+	addListener(SWT.KeyDown, eventListener);
+	addListener(SWT.KeyUp, eventListener);
+	addListener(SWT.MouseDown, eventListener);
+	addListener(SWT.MouseUp, eventListener);
+	addListener(SWT.MouseMove, eventListener);
+	addListener(SWT.FocusIn, eventListener);
+	addListener(SWT.FocusOut, eventListener);
+	addListener(SWT.MouseEnter, eventListener);
+	addListener(SWT.MouseExit, eventListener);
+	addListener(SWT.MouseWheel, eventListener);
+
+	decoListener = new DecorationsHandler(this);
+
+	addListener(SWT.MouseMove, decoListener);
+	addListener(SWT.MouseDown, decoListener);
+	addListener(SWT.MouseUp, decoListener);
+	addListener(SWT.MouseEnter, decoListener);
+	addListener(SWT.MouseExit, decoListener);
+
 }
 
 /**
@@ -324,6 +401,10 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
  */
 public Shell (Shell parent) {
 	this (parent, SWT.DIALOG_TRIM);
+}
+
+private void onDispose() {
+
 }
 
 /**
@@ -3475,6 +3556,144 @@ Point getSurfaceOrigin () {
 		return getLocationInPixels ();
 	}
 	return super.getSurfaceOrigin( );
+}
+
+void controlRedraw(Control c) {
+
+	redraw(true);
+
+}
+
+void redraw(Control c) {
+
+	redraw(true);
+
+	// this is the windows logic, there we can prevent flickering with this.
+//	getDisplay().asyncExec(() -> {
+//
+//		Event event = new Event();
+//		event.gc = GCFactory.getGraphicsContext(Shell.this);
+//		event.setBounds(getBounds());
+//		onPaint(event);
+//		event.gc.dispose();
+//
+//	});
+
+}
+
+private void onResize(Event e) {
+
+	// glCanvas.setSize(getSize());
+	// Rectangle rect = glCanvas.getClientArea();
+
+	Rectangle rect = getClientArea();
+
+	System.out.println("onResize...");
+
+	synchronized (this) {
+
+		if (surface != null && !surface.isClosed()) {
+
+			surface.close();
+			surface = null;
+		}
+
+		if (SWT.USE_SKIJA) {
+
+			surface = io.github.humbleui.skija.Surface
+					.makeRaster(io.github.humbleui.skija.ImageInfo.makeN32Premul(rect.width, rect.height));
+
+		}
+	}
+
+}
+
+void onPaint(Event e) {
+
+	Rectangle ca = getClientArea();
+
+	if (SWT.USE_SKIJA) {
+
+		if (surface == null)
+			return;
+		io.github.humbleui.skija.Canvas canvas = surface.getCanvas();
+
+		canvas.clear(0xFFFFFFFF);
+
+		GC gr = new SkijaGC(surface, this);
+
+		decoListener.drawDecoration(gr);
+
+		Event pe = new Event();
+
+		pe.type = SWT.Paint;
+		pe.gc = gr;
+		pe.widget = this;
+
+		eventListener.handleEvent(pe);
+
+		org.eclipse.swt.graphics.Image image = SkijaGC.createImage(surface, this);
+
+		GC gc = new GC(this);
+		gc.drawImage(image, 0, 0);
+		image.dispose();
+		gc.dispose();
+		gr.dispose();
+
+	} else {
+
+		GC gr = new GC(this);
+
+		Event pe = new Event();
+
+		pe.type = SWT.Paint;
+		pe.gc = gr;
+		pe.widget = this;
+
+		eventListener.handleEvent(pe);
+
+		gr.dispose();
+
+	}
+
+}
+
+//static int ind = 0;
+//
+//private void writeImage(Image img) {
+//
+//	ImageLoader saver = new ImageLoader();
+//	saver.data = new ImageData[] { img.getImageData() };
+//	saver.save("/home/linuxsub/out/outswt" + ind + ".png", SWT.IMAGE_PNG);
+//
+//
+//}
+//
+//private void makeSnapshot() {
+//
+//	try (var image = surface.makeImageSnapshot(); var encodeToData = image.encodeToData()) {
+//
+//		File f = new File("/home/linuxsub/out/out" + ind + ".png");
+//		ind++;
+//		if (f.exists())
+//			f.delete();
+//
+//		FileOutputStream fis = new FileOutputStream(f);
+//		fis.write(encodeToData.getBytes());
+//		fis.close();
+//	} catch (Exception e) {
+//		e.printStackTrace();
+//	}
+//
+//}
+
+private org.eclipse.swt.graphics.Image convertImage(io.github.humbleui.skija.Image im) {
+
+	byte[] imageBytes = io.github.humbleui.skija.EncoderPNG.encode(im).getBytes();
+	org.eclipse.swt.graphics.Image transferImage = new org.eclipse.swt.graphics.Image(getDisplay(),
+			new java.io.ByteArrayInputStream(imageBytes));
+	return transferImage;
+
 }
 
 }

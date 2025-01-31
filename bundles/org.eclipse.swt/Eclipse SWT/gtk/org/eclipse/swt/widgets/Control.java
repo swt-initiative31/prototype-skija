@@ -140,6 +140,13 @@ public abstract class Control extends Widget implements Drawable {
 	 */
 	boolean autoScale = true;
 
+	boolean visible = true;
+	boolean enabled = true;
+	Point location = new Point(0, 0);
+	Point size;
+	private boolean focus = false;
+	private Color backgroundColor;
+
 Control () {
 }
 
@@ -176,7 +183,17 @@ Control () {
 public Control (Composite parent, int style) {
 	super (parent, style);
 	this.parent = parent;
-	createWidget (0);
+	parent.addChildControl(this);
+
+	if (!isCustomDrawn(this)) {
+		if (isCustomDrawn(parent)) {
+			this.parent = parent.getShell();
+			createWidget(0);
+			this.parent = parent;
+		} else
+			createWidget(0);
+	}
+
 }
 
 Font defaultFont () {
@@ -984,6 +1001,14 @@ Rectangle getBoundsInPixels () {
  * </ul>
  */
 public void setBounds (Rectangle rect) {
+
+	if (isCustomDrawn(this)) {
+		if (rect == null)
+			error(SWT.ERROR_NULL_ARGUMENT);
+
+		return;
+	}
+
 	checkWidget ();
 	if (rect == null) error (SWT.ERROR_NULL_ARGUMENT);
 	rect = DPIUtil.autoScaleUp(rect);
@@ -1026,7 +1051,7 @@ void setBoundsInPixels (Rectangle rect) {
  */
 public void setBounds (int x, int y, int width, int height) {
 	checkWidget();
-	Rectangle rect = DPIUtil.autoScaleUp(new Rectangle (x, y, width, height));
+	Rectangle rect = DPIUtil.autoScaleUp(new Rectangle(x, y, width, height));
 	setBounds (rect.x, rect.y, Math.max (0, rect.width), Math.max (0, rect.height), true, true);
 }
 
@@ -1272,6 +1297,15 @@ Point getLocationInPixels () {
  * </ul>
  */
 public void setLocation (Point location) {
+
+	if (isCustomDrawn(this)) {
+		if (!Objects.equals(this.location, location)) {
+			this.location = location;
+			redraw();
+		}
+		return;
+	}
+
 	checkWidget ();
 	if (location == null) error (SWT.ERROR_NULL_ARGUMENT);
 	location = DPIUtil.autoScaleUp(location);
@@ -1300,6 +1334,12 @@ void setLocationInPixels (Point location) {
  * </ul>
  */
 public void setLocation(int x, int y) {
+
+	if (isCustomDrawn(this)) {
+		setLocation(new Point(x, y));
+		return;
+	}
+
 	checkWidget();
 	Point loc = DPIUtil.autoScaleUp(new Point (x, y));
 	setBounds (loc.x, loc.y, 0, 0, true, false);
@@ -1362,6 +1402,19 @@ Point getSizeInPixels () {
  * </ul>
  */
 public void setSize (Point size) {
+
+	if (isCustomDrawn(this)) {
+		Point s = size;
+
+		if (!Objects.equals(this.size, s)) {
+			this.size = s;
+			redraw();
+		}
+
+		return;
+
+	}
+
 	checkWidget ();
 	if (size == null) error (SWT.ERROR_NULL_ARGUMENT);
 	size = DPIUtil.autoScaleUp(size);
@@ -1482,6 +1535,13 @@ void setRelations () {
  * </ul>
  */
 public void setSize (int width, int height) {
+
+	if (isCustomDrawn(this)) {
+		setSize(new Point(width, height));
+		return;
+
+	}
+
 	checkWidget();
 	Point size = DPIUtil.autoScaleUp(new Point (width, height));
 	setBounds (0, 0, Math.max (0, size.x), Math.max (0, size.y), false, true);
@@ -4643,6 +4703,12 @@ public void requestLayout () {
  * @see SWT#DOUBLE_BUFFERED
  */
 public void redraw () {
+
+	if (isCustomDrawn(this)) {
+		getShell().controlRedraw(this);
+		return;
+	}
+
 	checkWidget();
 	redraw (false);
 }
@@ -5185,6 +5251,12 @@ void setBackground () {
  * </ul>
  */
 public void setBackground (Color color) {
+
+	if (isCustomDrawn(this)) {
+		backgroundColor = color;
+		return;
+	}
+
 	checkWidget ();
 	_setBackground (color);
 	if (color != null) {
@@ -7033,6 +7105,70 @@ void createCompositeHandle(int index, boolean fixed, boolean scrolled) {
 			GTK3.gtk_widget_set_double_buffered(handle, false);
 		}
 	}
+}
+
+public void triggerEvent(Event e) {
+
+	process(e);
+
+}
+
+/**
+ * We get the outer event, which will be converted here to a new event for this
+ * control.
+ *
+ * @param e
+ * @return e
+ */
+public static Event translateEvent(Event e, Control c) {
+
+	Event ne = new Event();
+
+	ne.type = e.type;
+	ne.button = e.button;
+	ne.character = e.character;
+	ne.count = e.count;
+	ne.data = e.data;
+	ne.detail = e.detail;
+	ne.display = e.display;
+	ne.doit = e.doit;
+	ne.end = e.end;
+	if (e.gc != null)
+		ne.gc = GCFactory.createChildGC(e.gc, c);
+	ne.height = e.height;
+	ne.index = e.index;
+
+	assert (((SkijaGC) (e.gc)).getControl().equals(c.parent));
+
+	ne.item = c;
+	ne.keyCode = e.keyCode;
+	ne.keyLocation = e.keyLocation;
+	ne.magnification = e.magnification;
+	ne.rotation = e.rotation;
+	ne.segments = e.segments;
+	ne.start = e.start;
+	ne.stateMask = e.stateMask;
+	ne.text = e.text;
+	ne.time = e.time;
+	ne.touches = e.touches;
+	ne.width = e.width;
+	ne.xDirection = e.xDirection;
+	ne.yDirection = e.yDirection;
+
+	var b = c.getBounds();
+
+	ne.y = e.y - b.y;
+	ne.x = e.x - b.x;
+	ne.widget = c;
+	return ne;
+}
+
+public void process(Event e) {
+
+}
+
+public static boolean isCustomDrawn(Control c) {
+	return (c instanceof ICustomWidget) && !(c instanceof IBaseWidget);
 }
 
 }

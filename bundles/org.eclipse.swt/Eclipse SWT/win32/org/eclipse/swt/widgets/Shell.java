@@ -295,7 +295,6 @@ public class Shell extends Decorations implements IBaseWidget {
 	Shell(Display display, Shell parent, int style, long handle, boolean embedded) {
 		super();
 		checkSubclass();
-
 		outerStyle = style;
 		if (!SWT.NATIVE_DECORATIONS) {
 			style = SWT.NO_MOVE | SWT.NO_TRIM;

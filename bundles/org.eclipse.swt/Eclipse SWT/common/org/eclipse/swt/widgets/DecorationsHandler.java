@@ -89,6 +89,8 @@ class DecorationsHandler implements Listener {
 			} else {
 				mouseDownTop = true;
 				lastTopPosition = new Point(e.x, e.y);
+
+				System.out.println("MouseDown: " + lastTopPosition);
 			}
 		} else if (onMenu(e)) {
 
@@ -134,9 +136,7 @@ class DecorationsHandler implements Listener {
 		if (mouseDownLeft) {
 
 			var b = c.getBounds();
-
-			c.setSize(b.width - e.x, b.height);
-			c.setLocation(b.x + e.x, b.y);
+			c.setBounds(b.x + e.x, b.y, b.width - e.x, b.height);
 
 		} else if (mouseDownRight) {
 			var b = c.getBounds();
@@ -147,10 +147,7 @@ class DecorationsHandler implements Listener {
 		} else if (mouseDownTop) {
 
 			var l = c.getLocation();
-			c.setLocation(l.x + e.xDirection, l.y + e.yDirection);
-
-			c.setLocation(l.x + e.x - lastTopPosition.x,
-					l.y + e.y - lastTopPosition.y);
+			c.setLocation(l.x + e.x - lastTopPosition.x, l.y + e.y - lastTopPosition.y);
 
 		}
 

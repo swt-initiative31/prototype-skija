@@ -45,11 +45,6 @@ public class SnippetButton {
 
 		text.setLocation(400, 400);
 
-		var old = new Label_Old(shell, SWT.BORDER);
-
-		old.setText("Old_Label");
-
-		old.pack();
 
 		shell.setSize(300, 500);
 		shell.open();

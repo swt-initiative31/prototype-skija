@@ -42,10 +42,14 @@ public class SnippetCompositeMock {
 		mock.setSize(30, 30);
 
 		shell.setSize(300, 500);
+
+		shell.setLocation(300, 100);
 		shell.open();
+		long currentTime = System.currentTimeMillis();
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch())
 				display.sleep();
+
 		}
 		display.dispose();
 	}

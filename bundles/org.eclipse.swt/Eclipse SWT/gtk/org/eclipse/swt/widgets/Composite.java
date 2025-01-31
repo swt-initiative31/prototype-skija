@@ -54,7 +54,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/snippets/#composite">Composite snippets</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public class Composite extends Scrollable {
+public class Composite extends Scrollable implements ICustomWidget {
 	/**
 	 * the handle to the OS resource
 	 * (Warning: This field is platform dependent)
@@ -72,6 +72,10 @@ public class Composite extends Scrollable {
 	Layout layout;
 	Control[] tabList;
 	int layoutCount, backgroundMode;
+
+	protected final java.util.List<Control> childControls = new ArrayList<>();
+	private EventHandler eventHandler = new EventHandler(childControls);
+
 	/**
 	 * When this field is set, it indicates that a child widget of this Composite
 	 * needs to have its clip set to its allocation. This is because on GTK3.20+
@@ -110,6 +114,10 @@ public class Composite extends Scrollable {
 
 Composite () {
 	/* Do nothing */
+}
+
+void addChildControl(Control cw) {
+	childControls.add(cw);
 }
 
 /**
@@ -1002,6 +1010,7 @@ long gtk_style_updated (long widget) {
 	return result;
 }
 
+@Override
 boolean hasBorder () {
 	return (style & SWT.BORDER) != 0;
 }
@@ -1888,6 +1897,24 @@ void updateLayout (boolean all) {
 @Override
 public String toString() {
 	return super.toString() + " [layout=" + layout + "]";
+}
+
+@Override
+public void process(Event e) {
+
+	drawBorder(e);
+	eventHandler.handleEvent(e);
+
+}
+
+private void drawBorder(Event e) {
+
+	if (e.type == SWT.Paint && hasBorder()) {
+		Rectangle b = getBounds();
+		e.gc.setForeground(getDisplay().getSystemColor(SWT.COLOR_GRAY));
+		e.gc.drawRectangle(new Rectangle(0, 0, b.width - 2, b.height - 2));
+	}
+
 }
 
 }

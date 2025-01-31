@@ -20,19 +20,19 @@ public class SnippetTextLayout {
 		Color yellow = display.getSystemColor(SWT.COLOR_YELLOW);
 		Color gray = display.getSystemColor(SWT.COLOR_GRAY);
 
-		final TextLayout_Old layout = new TextLayout_Old(display);
-		TextStyle style1 = new TextStyle(font1, yellow, blue);
-		TextStyle style2 = new TextStyle(font2, green, null);
-		TextStyle style3 = new TextStyle(font3, blue, gray);
+//		final TextLayout_Old layout = new TextLayout_Old(display);
+//		TextStyle style1 = new TextStyle(font1, yellow, blue);
+//		TextStyle style2 = new TextStyle(font2, green, null);
+//		TextStyle style3 = new TextStyle(font3, blue, gray);
 
-		layout.setText(
-				"English \u65E5\u672C\u8A9E  \u0627\u0644\u0639\u0631\u0628\u064A\u0651\u0629");
-		layout.setStyle(style1, 0, 6);
-		layout.setStyle(style2, 8, 10);
-		layout.setStyle(style3, 13, 21);
+//		layout.setText(
+//				"English \u65E5\u672C\u8A9E  \u0627\u0644\u0639\u0631\u0628\u064A\u0651\u0629");
+//		layout.setStyle(style1, 0, 6);
+//		layout.setStyle(style2, 8, 10);
+//		layout.setStyle(style3, 13, 21);
 
 		shell.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
-		shell.addListener(SWT.Paint, event -> layout.draw(event.gc, 10, 10));
+//		shell.addListener(SWT.Paint, event -> layout.draw(event.gc, 10, 10));
 		shell.open();
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch())
@@ -41,7 +41,7 @@ public class SnippetTextLayout {
 		font1.dispose();
 		font2.dispose();
 		font3.dispose();
-		layout.dispose();
+//		layout.dispose();
 		display.dispose();
 	}
 

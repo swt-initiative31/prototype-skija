@@ -54,6 +54,24 @@ public interface IGraphicsContext {
 	LineAttributes getLineAttributes();
 
 	default void setTranslate(int x, int y) {
-	};
+	}
+
+
+	default void drawIcon(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY,
+			int destWidth, int destHeight, boolean simple) {
+	}
+
+	default void drawBitmap(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY,
+			int destWidth, int destHeight, boolean simple) {
+	}
+
+	default void drawBitmapAlpha(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY,
+			int destWidth, int destHeight, boolean simple) {
+	}
+
+	default void drawBitmapTransparentByClipping(long srcHdc, long maskHdc, int srcX, int srcY, int srcWidth,
+			int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, int imgWidth,
+			int imgHeight) {
+	}
 
 }

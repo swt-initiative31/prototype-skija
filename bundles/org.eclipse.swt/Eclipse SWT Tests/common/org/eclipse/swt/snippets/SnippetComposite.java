@@ -49,23 +49,8 @@ public class SnippetComposite {
 		text.setSize(300, 300);
 		text.setLocation(400, 400);
 
-		var old = new Label_Old(c, SWT.BORDER);
 
-		old.setText("Old_Label");
-		old.setLocation(50, 50);
 
-		old.addListener(SWT.Paint, e -> {
-			e.gc.drawText("...", 0, 0);
-			System.out.println("Event:" + e);
-		});
-
-		old.addListener(SWT.MouseMove, e -> {
-			System.out.println("EventMouseMove:" + e);
-		}
-
-		);
-
-		old.pack();
 
 		shell.setSize(300, 500);
 		shell.open();

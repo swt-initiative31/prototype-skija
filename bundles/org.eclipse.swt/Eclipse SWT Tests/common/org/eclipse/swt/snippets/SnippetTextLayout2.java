@@ -11,27 +11,27 @@ public class SnippetTextLayout2 {
 		Display display = new Display();
 		final Shell shell = new Shell(display);
 		shell.setText("Snippet 197");
-		final TextLayout_Old layout = new TextLayout_Old(display);
-		layout.setText(longString);
-		Listener listener = event -> {
-			switch (event.type) {
-				case SWT.Paint :
-					layout.draw(event.gc, 10, 10);
-					break;
-				case SWT.Resize :
-					layout.setWidth(shell.getSize().x - 20);
-					break;
-			}
-		};
-		shell.addListener(SWT.Paint, listener);
-		shell.addListener(SWT.Resize, listener);
+//		final TextLayout_Old layout = new TextLayout_Old(display);
+//		layout.setText(longString);
+//		Listener listener = event -> {
+//			switch (event.type) {
+//				case SWT.Paint :
+//					layout.draw(event.gc, 10, 10);
+//					break;
+//				case SWT.Resize :
+//					layout.setWidth(shell.getSize().x - 20);
+//					break;
+//			}
+//		};
+//		shell.addListener(SWT.Paint, listener);
+//		shell.addListener(SWT.Resize, listener);
 		shell.setSize(300, 300);
 		shell.open();
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch())
 				display.sleep();
 		}
-		layout.dispose();
+//		layout.dispose();
 		display.dispose();
 	}
 
