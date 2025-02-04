@@ -309,13 +309,20 @@ public void addString(String string, float x, float y, Font font) {
 	if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (font == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	if (font.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+	x = DPIUtil.autoScaleUp(x);
+	y = DPIUtil.autoScaleUp(y);
 	// Scale up the font
 	FontData fd = font.getFontData()[0];
+	fd.setHeight(DPIUtil.autoScaleUp(fd.getHeight()));
 	Font scaledFont = new Font(font.getDevice(), fd);
-	moved = false;
-	GC.addCairoString(handle, string, x, y, scaledFont);
-	closed = true;
+	addStringInPixels(string, x, y, scaledFont);
 	scaledFont.dispose(); // Dispose the scaled up font
+}
+
+void addStringInPixels(String string, float x, float y, Font font) {
+	moved = false;
+	NativeGC.addCairoString(handle, string, x, y, font);
+	closed = true;
 }
 
 /**
@@ -365,7 +372,7 @@ public boolean contains(float x, float y, GC gc, boolean outline) {
 	gc.initCairo();
 	gc.checkGC(GC.LINE_CAP | GC.LINE_JOIN | GC.LINE_STYLE | GC.LINE_WIDTH);
 	boolean result = false;
-	long cairo = gc.data.cairo;
+	long cairo = gc.getGCData().cairo;
 	long copy = Cairo.cairo_copy_path(handle);
 	if (copy == 0) SWT.error(SWT.ERROR_NO_HANDLES);
 	Cairo.cairo_append_path(cairo, copy);
