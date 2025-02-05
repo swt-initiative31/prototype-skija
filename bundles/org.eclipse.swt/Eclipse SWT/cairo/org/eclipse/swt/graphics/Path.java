@@ -317,6 +317,7 @@ public void addString(String string, float x, float y, Font font) {
 	Font scaledFont = new Font(font.getDevice(), fd);
 	addStringInPixels(string, x, y, scaledFont);
 	scaledFont.dispose(); // Dispose the scaled up font
+
 }
 
 void addStringInPixels(String string, float x, float y, Font font) {
