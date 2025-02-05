@@ -227,7 +227,7 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 	}
 
 	private Point computeTextSize() {
-		GC gc = new GC(this);
+		GC gc = GCFactory.getGraphicsContext(this);
 		gc.setFont(getFont());
 		int width = 0, height = 0;
 		if ((style & SWT.SINGLE) != 0) {
@@ -263,7 +263,7 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 	}
 
 	private void keepCaretInVisibleArea() {
-		GC gc = new GC(this);
+		GC gc = GCFactory.getGraphicsContext(this);
 		Point caretLocation = getLocationByOffset(model.getCaretOffset(), gc);
 		Rectangle visibleArea = getVisibleArea();
 

@@ -20,8 +20,6 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Region;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
@@ -3610,19 +3608,52 @@ private void onResize(Event e) {
 
 void onPaint(Event e) {
 
+	var pe = prepareSurface(e);
+
+	if (pe == null)
+		return;
+
+	super.triggerEvent(pe);
+
+	finishDrawing(pe);
+
+}
+
+protected Event prepareSurface(Event e) {
+
 	Rectangle ca = getClientArea();
 
-	if (SWT.USE_SKIJA) {
+	if (SWT.USE_OPENGL) {
 
 		if (surface == null)
-			return;
+			return null;
+		io.github.humbleui.skija.Canvas canvas = surface.getCanvas();
+
+		canvas.clear(0xFFFFFFFF);
+		GC gr = new SkijaGC(surface, this);
+
+
+		Event pe = new Event();
+
+		pe.type = SWT.Paint;
+		pe.gc = gr;
+		pe.widget = this;
+		pe.x = 0;
+		pe.y = 0;
+		pe.width = ca.width;
+		pe.height = ca.height;
+
+		return pe;
+
+	} else if (SWT.USE_SKIJA) {
+
+		if (surface == null)
+			return null;
 		io.github.humbleui.skija.Canvas canvas = surface.getCanvas();
 
 		canvas.clear(0xFFFFFFFF);
 
 		GC gr = new SkijaGC(surface, this);
-
-		decoListener.drawDecoration(gr);
 
 		Event pe = new Event();
 
@@ -3630,15 +3661,7 @@ void onPaint(Event e) {
 		pe.gc = gr;
 		pe.widget = this;
 
-		eventListener.handleEvent(pe);
-
-		org.eclipse.swt.graphics.Image image = SkijaGC.createImage(surface, this);
-
-		GC gc = new GC(this);
-		gc.drawImage(image, 0, 0);
-		image.dispose();
-		gc.dispose();
-		gr.dispose();
+		return pe;
 
 	} else {
 
@@ -3650,12 +3673,39 @@ void onPaint(Event e) {
 		pe.gc = gr;
 		pe.widget = this;
 
-		eventListener.handleEvent(pe);
-
-		gr.dispose();
+		return pe;
 
 	}
+}
 
+public void setCurrent() {
+
+	assert (!SWT.USE_OPENGL);
+
+}
+
+protected void finishDrawing(Event pe) {
+	if (SWT.USE_OPENGL) {
+
+//		skijaContext.flush();
+//		swapBuffers();
+//		pe.gc.dispose();
+
+	} else if (SWT.USE_SKIJA) {
+
+		org.eclipse.swt.graphics.Image image = SkijaGC.createImage(surface, this);
+
+		GC gc = new GC(this);
+		gc.drawImage(image, 0, 0);
+		image.dispose();
+		gc.dispose();
+		pe.gc.dispose();
+
+	} else {
+
+		pe.gc.dispose();
+
+	}
 }
 
 //static int ind = 0;

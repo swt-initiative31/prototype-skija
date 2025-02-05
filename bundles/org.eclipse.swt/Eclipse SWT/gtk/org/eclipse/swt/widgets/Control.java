@@ -146,6 +146,7 @@ public abstract class Control extends Widget implements Drawable {
 	Point size;
 	private boolean focus = false;
 	private Color backgroundColor;
+	private Color foreground;
 
 Control () {
 }
@@ -3217,6 +3218,10 @@ long getFontDescription () {
  * </ul>
  */
 public Color getForeground () {
+
+	if (isCustomDrawn(this))
+		return foreground;
+
 	checkWidget();
 	Color color;
 	color = Color.gtk_new (display, getForegroundGdkRGBA ());
@@ -5614,6 +5619,12 @@ void setFontDescription (long font) {
  * </ul>
  */
 public void setForeground (Color color) {
+
+	if (isCustomDrawn(this)) {
+		this.foreground = color;
+		return;
+	}
+
 	checkWidget();
 	if (((state & FOREGROUND) == 0) && color == null) return;
 	if (color != null && color.isDisposed ()) {
