@@ -3658,6 +3658,8 @@ public void setLocation (int x, int y) {
 
 private Point translateForParent(Control c) {
 
+	if (c instanceof Shell)
+		return new Point(0, 0);
 	if (c == null || c.parent == null)
 		return new Point(0, 0);
 

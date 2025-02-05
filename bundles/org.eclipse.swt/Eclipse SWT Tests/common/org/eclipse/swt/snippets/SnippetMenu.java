@@ -38,10 +38,48 @@ public class SnippetMenu {
 		Menu submenu = new Menu(shell, SWT.DROP_DOWN);
 		editItem.setMenu(submenu);
 
+		{
 		MenuItem item = new MenuItem(submenu, SWT.PUSH);
 		item.addListener(SWT.Selection, e -> t.selectAll());
 		item.setText("Select &All\tCtrl+A");
 		item.setAccelerator(SWT.MOD1 + 'A');
+	}
+
+	{
+		MenuItem item = new MenuItem(submenu, SWT.PUSH);
+		item.addListener(SWT.Selection, e -> t.selectAll());
+		item.setText("Item 2");
+		item.setAccelerator(SWT.MOD1 + 'A');
+	}
+
+	{
+		MenuItem item = new MenuItem(submenu, SWT.PUSH);
+		item.addListener(SWT.Selection, e -> t.selectAll());
+		item.setText("Item 3");
+		item.setAccelerator(SWT.MOD1 + 'A');
+	}
+
+	{
+		MenuItem item2 = new MenuItem(submenu, SWT.CASCADE);
+		item2.setText("Cascade Item 1 ");
+		Menu ssubMenu = new Menu(submenu);
+		item2.setMenu(ssubMenu);
+		MenuItem subItem1 = new MenuItem(ssubMenu, SWT.PUSH);
+		subItem1.setText("Subitem 1");
+		MenuItem subItem2 = new MenuItem(ssubMenu, SWT.PUSH);
+		subItem2.setText("Subitem 2");
+	}
+
+	{
+		MenuItem item2 = new MenuItem(submenu, SWT.CASCADE);
+		item2.setText("Cascade Item 2 ");
+		Menu ssubMenu = new Menu(submenu);
+		item2.setMenu(ssubMenu);
+		MenuItem subItem1 = new MenuItem(ssubMenu, SWT.PUSH);
+		subItem1.setText("Subitem 1");
+		MenuItem subItem2 = new MenuItem(ssubMenu, SWT.PUSH);
+		subItem2.setText("Subitem 2");
+	}
 
 		// Note that as long as your application has not overridden
 		// the global accelerators for copy, paste, and cut

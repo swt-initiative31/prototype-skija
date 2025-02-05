@@ -53,6 +53,8 @@ public class SWT {
 	public static boolean USE_SKIJA = true;
 	public static boolean USE_OPENGL = true;
 
+	public static boolean NATIVE_DECORATIONS = true;
+
 	/* Widget Event Constants */
 
 	/**

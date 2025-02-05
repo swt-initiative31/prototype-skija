@@ -1158,9 +1158,14 @@ public class Decorations extends Canvas implements ICustomWidget {
 		if (menu != null)
 			display.removeBar(menu);
 		menuBar = menu;
-		long hMenu = menuBar != null ? menuBar.handle : 0;
-		OS.SetMenu(handle, hMenu);
-		destroyAccelerators();
+
+		if (SWT.NATIVE_DECORATIONS) {
+
+			long hMenu = menuBar != null ? menuBar.handle : 0;
+			OS.SetMenu(handle, hMenu);
+			destroyAccelerators();
+
+		}
 	}
 
 	/**

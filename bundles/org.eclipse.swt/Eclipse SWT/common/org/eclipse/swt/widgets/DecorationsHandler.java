@@ -97,7 +97,9 @@ class DecorationsHandler implements Listener {
 			MenuItem[] items = mb.getItems();
 			if (items != null && items.length > 0) {
 
-				new MenuWindow(c, items, new Point(e.x, e.y)).open();
+				new MenuWindow(c, items[0].getMenu().getItems(),
+						new Point(menuBar.x, menuBar.y + menuBar.height), e.gc)
+						.open();
 
 			}
 
@@ -190,7 +192,7 @@ class DecorationsHandler implements Listener {
 		gr.fillRectangle(new Rectangle(0, 0, 2, b.height));
 		gr.fillRectangle(new Rectangle(0, b.height - 2, b.width, 2));
 		gr.fillRectangle(new Rectangle(b.width - 2, 0, 2, b.height));
-		gr.drawText(c.getName(), 4, 8);
+		gr.drawText(c.getText(), 4, 8);
 
 		drawIcons(b, gr);
 

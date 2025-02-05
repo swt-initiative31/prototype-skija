@@ -295,8 +295,11 @@ public class Shell extends Decorations implements IBaseWidget {
 	Shell(Display display, Shell parent, int style, long handle, boolean embedded) {
 		super();
 		checkSubclass();
-		// outerStyle = style;
-		// style = SWT.NO_MOVE | SWT.NO_TRIM;
+
+		outerStyle = style;
+		if (!SWT.NATIVE_DECORATIONS) {
+			style = SWT.NO_MOVE | SWT.NO_TRIM;
+		}
 		if (display == null)
 			display = Display.getCurrent();
 		if (display == null)
@@ -372,9 +375,10 @@ public class Shell extends Decorations implements IBaseWidget {
 			case SWT.Dispose :
 				onDispose();
 				return;
-		}
 
-		super.triggerEvent(event);
+			default :
+				super.triggerEvent(event);
+		}
 
 	}
 
@@ -382,7 +386,7 @@ public class Shell extends Decorations implements IBaseWidget {
 
 	}
 
-	private void onResize(Event e) {
+	protected void onResize(Event e) {
 
 		// glCanvas.setSize(getSize());
 		// Rectangle rect = glCanvas.getClientArea();
@@ -419,15 +423,14 @@ public class Shell extends Decorations implements IBaseWidget {
 
 	}
 
-	@Override
-	void onPaint(Event e) {
+	protected Event prepareSurface(Event e) {
 
 		Rectangle ca = getClientArea();
 
 		if (SWT.USE_OPENGL) {
 
 			if (surface == null)
-				return;
+				return null;
 			io.github.humbleui.skija.Canvas canvas = surface.getCanvas();
 
 			canvas.clear(0xFFFFFFFF);
@@ -444,16 +447,12 @@ public class Shell extends Decorations implements IBaseWidget {
 			pe.width = ca.width;
 			pe.height = ca.height;
 
-			super.triggerEvent(pe);
+			return pe;
 
-
-			skijaContext.flush();
-			swapBuffers();
-			gr.dispose();
 		} else if (SWT.USE_SKIJA) {
 
 			if (surface == null)
-				return;
+				return null;
 			io.github.humbleui.skija.Canvas canvas = surface.getCanvas();
 
 			canvas.clear(0xFFFFFFFF);
@@ -466,18 +465,9 @@ public class Shell extends Decorations implements IBaseWidget {
 			pe.gc = gr;
 			pe.widget = this;
 
-			eventListener.handleEvent(pe);
-
-			org.eclipse.swt.graphics.Image image = SkijaGC.createImage(surface, this);
-
-			GC gc = new GC(this);
-			gc.drawImage(image, 0, 0);
-			image.dispose();
-			gc.dispose();
-			gr.dispose();
+			return pe;
 
 		} else {
-
 
 			GC gr = new GC(this);
 
@@ -487,11 +477,47 @@ public class Shell extends Decorations implements IBaseWidget {
 			pe.gc = gr;
 			pe.widget = this;
 
-			eventListener.handleEvent(pe);
-
-			gr.dispose();
+			return pe;
 
 		}
+	}
+
+	protected void finishDrawing(Event pe) {
+		if (SWT.USE_OPENGL) {
+
+			skijaContext.flush();
+			swapBuffers();
+			pe.gc.dispose();
+
+		} else if (SWT.USE_SKIJA) {
+
+			org.eclipse.swt.graphics.Image image = SkijaGC.createImage(surface,
+					this);
+
+			GC gc = new GC(this);
+			gc.drawImage(image, 0, 0);
+			image.dispose();
+			gc.dispose();
+			pe.gc.dispose();
+
+		} else {
+
+			pe.gc.dispose();
+
+		}
+	}
+
+	@Override
+	void onPaint(Event e) {
+
+		var pe = prepareSurface(e);
+
+		if (pe == null)
+			return;
+
+		super.triggerEvent(pe);
+
+		finishDrawing(pe);
 
 	}
 
