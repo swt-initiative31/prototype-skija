@@ -843,6 +843,7 @@ void drawArcInPixels (int x, int y, int width, int height, int startAngle, int a
  *
  * @see #drawRectangle(int, int, int, int)
  */
+@Override
 public void drawFocus (int x, int y, int width, int height) {
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp (drawable, x, deviceZoom);
@@ -1069,7 +1070,10 @@ void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, 
 	}
 }
 
-void drawIcon(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+@Override
+public void drawIcon(Image srcImage, int srcX, int srcY, int srcWidth,
+		int srcHeight, int destX, int destY, int destWidth, int destHeight,
+		boolean simple) {
 	int technology = OS.GetDeviceCaps(handle, OS.TECHNOLOGY);
 
 	boolean drawIcon = true;
@@ -1199,7 +1203,10 @@ void drawIcon(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, i
 	if (failed) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 }
 
-void drawBitmap(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+@Override
+public void drawBitmap(Image srcImage, int srcX, int srcY, int srcWidth,
+		int srcHeight, int destX, int destY, int destWidth, int destHeight,
+		boolean simple) {
 	BITMAP bm = new BITMAP();
 	OS.GetObject(Image.win32_getHandle(srcImage, getZoom()), BITMAP.sizeof, bm);
 	int imgWidth = bm.bmWidth;
@@ -1241,7 +1248,10 @@ void drawBitmap(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight,
 	}
 }
 
-void drawBitmapAlpha(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+@Override
+public void drawBitmapAlpha(Image srcImage, int srcX, int srcY, int srcWidth,
+		int srcHeight, int destX, int destY, int destWidth, int destHeight,
+		boolean simple) {
 	boolean alphaBlendSupport = true;
 	boolean isPrinter = OS.GetDeviceCaps(handle, OS.TECHNOLOGY) == OS.DT_RASPRINTER;
 	int sourceAlpha = -1;
@@ -1399,7 +1409,11 @@ void drawBitmapAlpha(Image srcImage, int srcX, int srcY, int srcWidth, int srcHe
 	OS.DeleteDC(srcHdc);
 }
 
-void drawBitmapTransparentByClipping(long srcHdc, long maskHdc, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, int imgWidth, int imgHeight) {
+@Override
+public void drawBitmapTransparentByClipping(long srcHdc, long maskHdc, int srcX,
+		int srcY, int srcWidth, int srcHeight, int destX, int destY,
+		int destWidth, int destHeight, boolean simple, int imgWidth,
+		int imgHeight) {
 	/* Create a clipping region from the mask */
 	long rgn = OS.CreateRectRgn(0, 0, 0, 0);
 	for (int y=0; y<imgHeight; y++) {
@@ -1863,6 +1877,7 @@ void drawPolygonInPixels(int[] pointArray) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void drawPolyline (int[] pointArray) {
 	drawPolylineInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
 }
@@ -3266,6 +3281,7 @@ public int getAlpha() {
  *
  * @since 3.1
  */
+@Override
 public int getAntialias() {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (data.gdipGraphics == 0) return SWT.DEFAULT;
@@ -3361,6 +3377,7 @@ public int getCharWidth(char ch) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public Rectangle getClipping () {
 	return DPIUtil.scaleDown(drawable, getClippingInPixels(), getZoom());
 }
@@ -3621,6 +3638,7 @@ public int getInterpolation() {
  *
  * @since 3.3
  */
+@Override
 public LineAttributes getLineAttributes () {
 	LineAttributes attributes = getLineAttributesInPixels();
 	int deviceZoom = getZoom();
@@ -3712,6 +3730,7 @@ public int getLineJoin() {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public int getLineStyle() {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	return data.lineStyle;
@@ -3729,6 +3748,7 @@ public int getLineStyle() {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public int getLineWidth () {
 	return DPIUtil.scaleDown(drawable, getLineWidthInPixels(), getZoom());
 }
@@ -4096,6 +4116,7 @@ float measureSpace(long font, long format) {
  *
  * @since 3.1
  */
+@Override
 public void setAdvanced(boolean advanced) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (advanced && data.gdipGraphics != 0) return;
@@ -4141,6 +4162,7 @@ public void setAdvanced(boolean advanced) {
  *
  * @since 3.1
  */
+@Override
 public void setAntialias(int antialias) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (data.gdipGraphics == 0 && antialias == SWT.DEFAULT) return;
@@ -4801,6 +4823,7 @@ public void setLineJoin(int join) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void setLineStyle(int lineStyle) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (data.lineStyle == lineStyle) return;
