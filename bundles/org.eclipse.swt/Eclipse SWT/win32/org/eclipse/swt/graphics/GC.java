@@ -102,6 +102,9 @@ public class GC extends Resource {
 	static final float[] LINE_DASHDOT_ZERO = new float[]{9, 6, 3, 6};
 	static final float[] LINE_DASHDOTDOT_ZERO = new float[]{9, 3, 3, 3, 3, 3};
 
+	private int xOffset;
+	private int yOffset;
+
 /**
  * Prevents uninitialized instances from being created outside the package.
  */
@@ -322,7 +325,7 @@ public void drawArc (int x, int y, int width, int height, int startAngle, int ar
  * @see #drawRectangle(int, int, int, int)
  */
 public void drawFocus (int x, int y, int width, int height) {
-	innerGC.drawFocus(x, y, width, height);
+	innerGC.drawFocus(x + xOffset, y + yOffset, width, height);
 }
 
 
@@ -431,7 +434,7 @@ public void drawLine (int x1, int y1, int x2, int y2) {
  */
 public void drawOval (int x, int y, int width, int height) {
 
-	innerGC.drawOval(x, y, width, height);
+	innerGC.drawOval(x + xOffset, y + yOffset, width, height);
 
 }
 
@@ -542,7 +545,7 @@ public void drawPolyline (int[] pointArray) {
  * </ul>
  */
 public void drawRectangle (int x, int y, int width, int height) {
-	innerGC.drawRectangle(x, y, width, height);
+	innerGC.drawRectangle(x + xOffset, y + yOffset, width, height);
 }
 
 /**
@@ -587,7 +590,7 @@ public void drawRectangle (Rectangle rect) {
  * </ul>
  */
 public void drawRoundRectangle (int x, int y, int width, int height, int arcWidth, int arcHeight) {
-	innerGC.drawRoundRectangle(x, y, width, height, arcWidth, arcHeight);
+	innerGC.drawRoundRectangle(x + xOffset, y + yOffset, width, height, arcWidth, arcHeight);
 }
 
 
@@ -742,7 +745,7 @@ public void drawText (String string, int x, int y, boolean isTransparent) {
  * </ul>
  */
 public void drawText (String string, int x, int y, int flags) {
-	innerGC.drawText(string, x, y, flags);
+	innerGC.drawText(string, x + xOffset, y + yOffset, flags);
 }
 
 /**
@@ -837,7 +840,7 @@ public void fillGradientRectangle (int x, int y, int width, int height, boolean 
  * @see #drawOval
  */
 public void fillOval (int x, int y, int width, int height) {
-	innerGC.fillOval(x, y, width, height);
+	innerGC.fillOval(x + xOffset, y + yOffset, width, height);
 }
 
 /**
@@ -946,7 +949,7 @@ public void fillRectangle (Rectangle rect) {
  * @see #drawRoundRectangle
  */
 public void fillRoundRectangle (int x, int y, int width, int height, int arcWidth, int arcHeight) {
-	innerGC.fillRoundRectangle(x, y, width, height, arcWidth, arcHeight);
+	innerGC.fillRoundRectangle(x + xOffset, y + yOffset, width, height, arcWidth, arcHeight);
 }
 
 
@@ -1640,7 +1643,7 @@ public void setBackgroundPattern (Pattern pattern) {
  * </ul>
  */
 public void setClipping (int x, int y, int width, int height) {
-	innerGC.setClipping(x, y, width, height);
+	innerGC.setClipping(x + xOffset, y + yOffset, width, height);
 }
 
 /**
@@ -2183,4 +2186,8 @@ public void commit() {
 
 }
 
+	public void transform(int x, int y) {
+		xOffset += x;
+		yOffset += y;
+	}
 }
