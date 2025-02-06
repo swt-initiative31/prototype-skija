@@ -14,42 +14,44 @@ public abstract class LWAbstractButton extends LWControl {
 	protected abstract void handleSelection();
 
 	public static final int EVENT_SELECTED = LWControl.EVENT_NEXT;
-	public static final int EVENT_HOVERED = EVENT_SELECTED + 1;
-	public static final int EVENT_STYLE = EVENT_HOVERED + 1;
-	public static final int EVENT_TEXT = EVENT_STYLE + 1;
+	public static final int EVENT_STYLE = EVENT_SELECTED + 1;
+	public static final int EVENT_HOVERED = EVENT_STYLE + 1;
+	public static final int EVENT_PRESSED = EVENT_HOVERED + 1;
+	public static final int EVENT_TEXT = EVENT_PRESSED + 1;
+	private static final int FLAG_SELECTED = 1;
+	private static final int FLAG_HOVERED = 2;
+	private static final int FLAG_PRESSED = 4;
 
 	protected int style;
 	private String text;
-	private boolean selected;
-	private boolean hovered;
+	private int flags;
 
 	protected LWAbstractButton(int style) {
 		this.style = style;
 	}
 
 	public boolean isSelected() {
-		return selected;
+		return isFlagSet(FLAG_SELECTED);
 	}
 
 	public void setSelected(boolean selected) {
-		if (selected == this.selected) {
-			return;
-		}
-
-		this.selected = selected;
-		notifyListeners(EVENT_SELECTED);
+		setFlag(FLAG_SELECTED, selected, EVENT_SELECTED);
 	}
 
 	public boolean isHovered() {
-		return hovered;
+		return isFlagSet(FLAG_HOVERED);
 	}
 
 	public void setHovered(boolean hovered) {
-		if (hovered == this.hovered) {
-			return;
-		}
-		this.hovered = hovered;
-		notifyListeners(EVENT_HOVERED);
+		setFlag(FLAG_HOVERED, hovered, EVENT_HOVERED);
+	}
+
+	public boolean isPressed() {
+		return isFlagSet(FLAG_PRESSED);
+	}
+
+	public void setPressed(boolean pressed) {
+		setFlag(FLAG_PRESSED, pressed, EVENT_PRESSED);
 	}
 
 	public String getText() {
@@ -67,8 +69,14 @@ public abstract class LWAbstractButton extends LWControl {
 
 	public void handleEvent(Event e) {
 		switch (e.type) {
+		case SWT.MouseDown -> {
+			if (e.button == 1) {
+				setPressed(true);
+			}
+		}
 		case SWT.MouseUp -> {
-			if ((e.stateMask & SWT.BUTTON1) != 0) {
+			if (e.button == 1) {
+				setPressed(false);
 				handleSelection();
 			}
 		}
@@ -84,5 +92,27 @@ public abstract class LWAbstractButton extends LWControl {
 		style |= alignment
 		         & (SWT.UP | SWT.DOWN | SWT.LEFT | SWT.CENTER | SWT.RIGHT);
 		notifyListeners(EVENT_STYLE);
+	}
+
+	private boolean isFlagSet(int mask) {
+		return (flags & mask) == mask;
+	}
+
+	private void setFlag(int mask, boolean set, int eventType) {
+		if (set) {
+			if ((flags & mask) == mask) {
+				return;
+			}
+
+			flags |= mask;
+		}
+		else {
+			if ((flags & mask) == 0) {
+				return;
+			}
+
+			flags &= ~mask;
+		}
+		notifyListeners(eventType);
 	}
 }

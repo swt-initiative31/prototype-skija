@@ -132,6 +132,11 @@ public class LWButtonUI extends LWAbstractButtonUI {
 			int imageTopOffset = (height - imageHeight) / 2;
 			int imageLeftOffset = contentArea.x;
 			if (button.isEnabled()) {
+				if (button.isPressed()) {
+					imageTopOffset++;
+					imageLeftOffset++;
+				}
+
 				gc.drawImage(image, imageLeftOffset, imageTopOffset);
 			}
 			else {
@@ -141,13 +146,18 @@ public class LWButtonUI extends LWAbstractButtonUI {
 
 		// Draw text
 		if (text != null && !text.isEmpty()) {
+			int textTopOffset = (height - 1 - textHeight) / 2;
+			int textLeftOffset = contentArea.x + imageSpace;
 			if (button.isEnabled()) {
 				gc.setForeground(colorProvider.getColor(KEY_TEXT));
+
+				if (button.isPressed()) {
+					textTopOffset++;
+					textLeftOffset++;
+				}
 			} else {
 				gc.setForeground(colorProvider.getColor(KEY_DISABLE));
 			}
-			int textTopOffset = (height - 1 - textHeight) / 2;
-			int textLeftOffset = contentArea.x + imageSpace;
 			gc.drawText(text, textLeftOffset, textTopOffset, DRAW_FLAGS);
 		}
 		if (button.hasFocus()) {
@@ -172,6 +182,11 @@ public class LWButtonUI extends LWAbstractButtonUI {
 				// border ruins center position...
 				centerHeight -= 2;
 				centerWidth -= 2;
+			}
+
+			if (button.isEnabled() && button.isPressed()) {
+				centerHeight++;
+				centerWidth++;
 			}
 
 			// TODO: in the next version use a bezier path
