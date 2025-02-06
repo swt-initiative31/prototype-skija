@@ -13,8 +13,6 @@
  *******************************************************************************/
 package org.eclipse.swt.widgets;
 
-import java.util.*;
-
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
@@ -43,6 +41,7 @@ import org.eclipse.swt.graphics.*;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class Scale extends Control implements ICustomWidget {
+	private final static boolean NO_BACKGROUND = SWT.getPlatform().equals("win32") | SWT.getPlatform().equals("gtk");
 	private static final int PREFERRED_WIDTH = 170;
 	private static final int PREFERRED_HEIGHT = 42;
 
@@ -349,21 +348,20 @@ public class Scale extends Control implements ICustomWidget {
 			return;
 		}
 
-		try {
-			event.gc = Objects.requireNonNullElseGet(event.gc, () -> new GC(this));
-			doPaint(event);
-		} finally {
-			event.gc.dispose();
-		}
-	}
-
-	private void doPaint(Event e) {
 		Rectangle bounds = getBounds();
 		if (bounds.width == 0 && bounds.height == 0) {
 			return;
 		}
 
-		renderer.render(e.gc, bounds);
+		if (NO_BACKGROUND) {
+			style |= SWT.NO_BACKGROUND;
+		}
+
+		try {
+			renderer.render(GCFactory.createGraphicsContext(event, this), bounds);
+		} finally {
+			event.gc.dispose();
+		}
 	}
 
 	@Override

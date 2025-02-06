@@ -22,8 +22,6 @@ class ScaleRenderer implements IScaleRenderer {
 	private static final Color HOVER_COLOR = new Color(Display.getDefault(), 0, 0, 0);
 	private static final Color DRAG_COLOR = new Color(Display.getDefault(), 204, 204, 204);
 
-	private static Color background;
-
 	private final Scale scale;
 
 	/**
@@ -40,48 +38,14 @@ class ScaleRenderer implements IScaleRenderer {
 	}
 
 	@Override
-	public void render(GC nativeGc, Rectangle bounds) {
-		initBackground(nativeGc, bounds);
-
-		GC sgc = initSkijaGc(nativeGc, bounds);
-
-		renderScale(sgc, 0, 0, bounds.width, bounds.height);
-
-		sgc.commit();
-		sgc.dispose();
-	}
-
-	private void initBackground(GC originalGC, Rectangle bounds) {
-		if (SWT.getPlatform().equals("win32") | SWT.getPlatform().equals("gtk")) {
-			// Extract background color on first execution
-			if (background == null) {
-				extractAndStoreBackgroundColor(bounds, originalGC);
-			}
-			scale.style |= SWT.NO_BACKGROUND;
+	public void render(GC gc, Rectangle bounds) {
+		try {
+			renderScale(gc, 0, 0, bounds.width, bounds.height);
+		} finally {
+			gc.commit();
+			gc.dispose();
 		}
 	}
-
-	private void extractAndStoreBackgroundColor(Rectangle r, GC originalGC) {
-		Image backgroundColorImage = new Image(scale.getDisplay(), r.width, r.height);
-		originalGC.copyArea(backgroundColorImage, 0, 0);
-		int pixel = backgroundColorImage.getImageData().getPixel(0, 0);
-		backgroundColorImage.dispose();
-		background = SWT.convertPixelToColor(pixel);
-	}
-
-	public GC initSkijaGc(GC originalGC, Rectangle bounds) {
-//		IGraphicsContext gc = new SkijaGC(originalGC, background);
-
-		originalGC.setClipping(bounds.x, bounds.y, bounds.width, bounds.height);
-
-		originalGC.setForeground(scale.getForeground());
-		originalGC.setBackground(scale.getBackground());
-		originalGC.setClipping(new Rectangle(0, 0, bounds.width, bounds.height));
-		originalGC.setAntialias(SWT.ON);
-
-		return originalGC;
-	}
-
 
 	private void renderScale(GC gc, int x, int y, int w, int h) {
 		int value = scale.getSelection();
@@ -89,12 +53,6 @@ class ScaleRenderer implements IScaleRenderer {
 		int max = scale.getMaximum();
 		int units = Math.max(1, max - min);
 		int effectiveValue = Math.min(max, Math.max(min, value));
-
-		// draw background
-		if (background != null) {
-			gc.setBackground(background);
-			gc.fillRectangle(x, y, w, h);
-		}
 
 		int firstNotch;
 		int lastNotch;

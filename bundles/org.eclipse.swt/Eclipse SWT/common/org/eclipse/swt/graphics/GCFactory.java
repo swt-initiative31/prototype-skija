@@ -44,4 +44,20 @@ public class GCFactory {
 		return gc;
 	}
 
+	/**
+	 * Creates a GC using the native GC from the given event or, if not available,
+	 * from the given control.
+	 *
+	 * @param event   The event with the native GC from which to create the GC.
+	 * @param control The control to use as a fallback to create the native GC.
+	 * @return The GC to be used.
+	 */
+	public static GC createGraphicsContext(Event event, Control control) {
+		GC nativeGC = event.gc;
+		if (nativeGC == null) {
+			nativeGC = new GC(control);
+			event.gc = nativeGC;
+		}
+		return createGraphicsContext(nativeGC);
+	}
 }
