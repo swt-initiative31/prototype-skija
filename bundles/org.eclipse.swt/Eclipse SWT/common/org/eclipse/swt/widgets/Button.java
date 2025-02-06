@@ -15,6 +15,7 @@
 package org.eclipse.swt.widgets;
 
 import java.util.*;
+import java.util.List;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
@@ -55,39 +56,14 @@ import org.eclipse.swt.graphics.*;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class Button extends Control implements ICustomWidget {
-	public static final String KEY_BUTTON = "button.background"; //$NON-NLS-1$
-	public static final String KEY_HOVER = "button.background.hover"; //$NON-NLS-1$
-	public static final String KEY_TOGGLE = "button.background.toggle"; //$NON-NLS-1$
-	public static final String KEY_SELECTION = "button.background.selection"; //$NON-NLS-1$
-	public static final String KEY_TRISTATE = "button.tristate"; //$NON-NLS-1$
-	public static final String KEY_OUTLINE = "button.outline"; //$NON-NLS-1$
-	public static final String KEY_TEXT = "button.text"; //$NON-NLS-1$
-	public static final String KEY_DISABLE = "button.disable"; //$NON-NLS-1$
-	public static final String KEY_ARROW = "button.arrow"; //$NON-NLS-1$
 
-	String text = "", message = "";
-	Image image, disabledImage;
-	boolean ignoreMouse, grayed, useDarkModeExplorerTheme;
-	static final int MARGIN = 4;
+	String message = "";
+	boolean ignoreMouse, useDarkModeExplorerTheme;
+	Image disabledImage;
 	static final int ICON_WIDTH = 128, ICON_HEIGHT = 128;
 	static /* final */ boolean COMMAND_LINK = false;
 	static final char[] STRING_WITH_ZERO_CHAR = new char[]{'0'};
-	private int width;
-	private int height;
-	private boolean checked;
-	private boolean hasMouseEntered;
-	private Point computedSize = null;
-
-	/** Left and right margins */
-	private static final int LEFT_MARGIN = 2;
-	private static final int RIGHT_MARGIN = 2;
-	private static final int TOP_MARGIN = 0;
-	private static final int BOTTOM_MARGIN = 0;
-	private static final int BOX_SIZE = 12;
-	private static final int SPACING = 4;
-
-	private static int DRAW_FLAGS = SWT.DRAW_MNEMONIC | SWT.DRAW_TAB
-			| SWT.DRAW_TRANSPARENT | SWT.DRAW_DELIMITER;
+	private Point computedSize;
 
 	private static Color background;
 
@@ -95,6 +71,10 @@ public class Button extends Control implements ICustomWidget {
 	private AccessibleAdapter accAdapter;
 	private boolean spaceDown;
 	private boolean defaultButton;
+
+	private final LWAbstractButton lwControl;
+
+	private boolean ignoreSelectionEvent;
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style
@@ -174,6 +154,43 @@ public class Button extends Control implements ICustomWidget {
 		addListener(SWT.MouseEnter, listener);
 		addListener(SWT.MouseExit, listener);
 
+		style = this.style;
+		if ((style & SWT.RADIO) != 0) {
+			lwControl = new LWRadioButton(style, new LWRadioButton.Group() {
+				@Override
+				public void add(LWRadioButton radioButton) {
+				}
+
+				@Override
+				public List<LWRadioButton> getRadioButtons() {
+					final List<LWRadioButton> radioButtons = new ArrayList<>();
+					final Control[] children = parent.getChildren();
+					for (Control child : children) {
+						if (child instanceof Button button
+						    && button.lwControl instanceof LWRadioButton radioButton) {
+							radioButtons.add(radioButton);
+						}
+					}
+					return radioButtons;
+				}
+			});
+		} else if ((style & SWT.CHECK) != 0) {
+			lwControl = new LWCheckbox(style);
+		} else {
+			lwControl = new LWButton(style);
+		}
+
+		lwControl.addListener(type -> {
+			switch (type) {
+			case LWAbstractButton.EVENT_SELECTED -> {
+				if (!ignoreSelectionEvent) {
+					sendSelectionEvent(SWT.Selection);
+				}
+			}
+			default -> redraw();
+			}
+		});
+
 		initializeAccessible();
 	}
 
@@ -191,13 +208,7 @@ public class Button extends Control implements ICustomWidget {
 		accAdapter = new AccessibleAdapter() {
 			@Override
 			public void getName(AccessibleEvent e) {
-				if (current.isRadioButton()) {
-					e.result = createRadioButtonText(current);
-				} else if (current.isPushButton()) {
-					e.result = createPushButtonText(current);
-				} else {
-					e.result = getText();
-				}
+				e.result = lwControl.getAccessibleText();
 			}
 
 			@Override
@@ -226,28 +237,6 @@ public class Button extends Control implements ICustomWidget {
 		return (style & SWT.PUSH) != 0;
 	}
 
-	private String createRadioButtonText(Button button) {
-		StringBuilder b = new StringBuilder();
-		Button[] radioGroup = getRadioGroup();
-
-		int index = Arrays.asList(radioGroup).indexOf(button) + 1;
-		int all = radioGroup.length;
-
-		b.append(button.getText());
-		b.append(" radio button checked.\r\n");
-		b.append(index);
-		b.append( " of ");
-		b.append( all );
-		b.append(".\r\n ");
-		b.append("To change the selection press Up or Down Arrow.");
-
-		return b.toString();
-	}
-
-	private String createPushButtonText(Button button) {
-		return button.getText() + " button.\r\n To activate press space bar.";
-	}
-
 	/*
 	 * Return the lowercase of the first non-'&' character following an '&'
 	 * character in the given string. If there are no '&' characters in the
@@ -273,26 +262,6 @@ public class Button extends Control implements ICustomWidget {
 			index++;
 		} while (index < length);
 		return '\0';
-	}
-
-	// TODO maybe this can be improved with a cache.
-	// But this cache must be handled somehow on the parent element.
-	private Button[] getRadioGroup() {
-		if ((style & SWT.RADIO) == 0) {
-			return null;
-		}
-
-		Control[] children = parent._getChildren();
-
-		ArrayList<Button> radioGroup = new ArrayList<>();
-		for (int k = 0; k < children.length; k++) {
-			if (children[k] instanceof Button b
-					&& (children[k].getStyle() & SWT.RADIO) != 0) {
-				radioGroup.add(b);
-			}
-		}
-
-		return radioGroup.toArray(new Button[0]);
 	}
 
 	@Override
@@ -325,12 +294,14 @@ public class Button extends Control implements ICustomWidget {
 	private void onKeyUp(Event event) {
 		if (event.character == SWT.SPACE) {
 			this.spaceDown = false;
-			handleSelection();
+			lwControl.handleSelection();
 			redraw();
 		}
 	}
 
 	private void onResize() {
+		final Point size = getSize();
+		lwControl.setSize(size.x, size.y);
 		redraw();
 	}
 
@@ -352,39 +323,19 @@ public class Button extends Control implements ICustomWidget {
 	}
 
 	private void onMouseDown(Event e) {
-		redraw();
-	}
-
-	private void handleSelection() {
-		if (isRadioButton()) {
-// here we have to force the focus, else the focus stays on another button in this group
-// TODO this must be improved.
-			forceFocus();
-			selectRadio();
-		} else {
-			setSelection(!checked);
-		}
-		sendSelectionEvent(SWT.Selection);
+		lwControl.handleEvent(e);
 	}
 
 	private void onMouseUp(Event e) {
-		if ((e.stateMask & SWT.BUTTON1) != 0) {
-			handleSelection();
-		} else {
-			redraw();
-		}
+		lwControl.handleEvent(e);
 	}
 
 	private void onMouseEnter() {
-		if (!hasMouseEntered) {
-			hasMouseEntered = true;
-			redraw();
-		}
+		lwControl.setHovered(true);
 	}
 
 	private void onMouseExit() {
-		hasMouseEntered = false;
-		redraw();
+		lwControl.setHovered(false);
 	}
 
 	private void doPaint(Event e) {
@@ -426,142 +377,7 @@ public class Button extends Control implements ICustomWidget {
 			}
 		}
 
-		boolean isRightAligned = (style & SWT.RIGHT) != 0;
-		boolean isCentered = (style & SWT.CENTER) != 0;
-		boolean isPushOrToggleButton = (style & (SWT.PUSH | SWT.TOGGLE)) != 0;
-		int initialAntiAlias = gc.getAntialias();
-
-		int boxSpace = 0;
-		// Draw check box / radio box / push button border
-		if (isPushOrToggleButton) {
-			drawPushButton(gc, 0, 0, r.width - 1, r.height - 1);
-		} else {
-			boxSpace = BOX_SIZE + SPACING;
-			int boxLeftOffset = LEFT_MARGIN;
-			int boxTopOffset = (r.height - 1 - BOX_SIZE) / 2;
-			if ((style & SWT.CHECK) == SWT.CHECK) {
-				drawCheckbox(gc, boxLeftOffset, boxTopOffset);
-			} else if ((style & SWT.RADIO) == SWT.RADIO) {
-				drawRadioButton(gc, boxLeftOffset, boxTopOffset);
-			}
-		}
-
-		gc.setAntialias(initialAntiAlias);
-		gc.setAdvanced(false);
-
-		// Calculate area for button content (image + text)
-		int horizontalSpaceForContent = r.width - RIGHT_MARGIN - LEFT_MARGIN
-				- boxSpace;
-		int textWidth = 0;
-		int textHeight = 0;
-		if (text != null && !text.isEmpty()) {
-			gc.setFont(getFont());
-			Point textExtent = gc.textExtent(text, DRAW_FLAGS);
-			textWidth = textExtent.x;
-			textHeight = textExtent.y;
-		}
-		int imageSpace = 0;
-		int imageWidth = 0;
-		int imageHeight = 0;
-		if (image != null) {
-			Rectangle imgB = image.getBounds();
-			imageWidth = imgB.width;
-			imageHeight = imgB.height;
-			imageSpace = imageWidth;
-			if (text != null && !text.isEmpty()) {
-				imageSpace += SPACING;
-			}
-		}
-		Rectangle contentArea = new Rectangle(LEFT_MARGIN + boxSpace,
-				TOP_MARGIN, imageSpace + textWidth,
-				r.height - TOP_MARGIN - BOTTOM_MARGIN);
-		if (isRightAligned) {
-			contentArea.x += horizontalSpaceForContent - contentArea.width;
-		} else if (isCentered) {
-			contentArea.x += (horizontalSpaceForContent - contentArea.width)
-					/ 2;
-		}
-
-		// Draw image
-		if (image != null) {
-			int imageTopOffset = (r.height - imageHeight) / 2;
-			int imageLeftOffset = contentArea.x;
-			if (!isEnabled()) {
-				if (disabledImage == null) {
-					disabledImage = new Image(getDisplay(), image,
-							SWT.IMAGE_GRAY);
-				}
-				gc.drawImage(disabledImage, imageLeftOffset, imageTopOffset);
-			} else {
-				gc.drawImage(image, imageLeftOffset, imageTopOffset);
-			}
-		}
-
-		final IColorProvider colorProvider = getColorProvider();
-
-		// Draw text
-		if (text != null && !text.isEmpty()) {
-			if (isEnabled()) {
-				gc.setForeground(colorProvider.getColor(KEY_TEXT));
-			} else {
-				gc.setForeground(colorProvider.getColor(KEY_DISABLE));
-			}
-			int textTopOffset = (r.height - 1 - textHeight) / 2;
-			int textLeftOffset = contentArea.x + imageSpace;
-			gc.drawText(text, textLeftOffset, textTopOffset, DRAW_FLAGS);
-		}
-		if (hasFocus()) {
-			if (((style & SWT.RADIO) | (style & SWT.CHECK)) != 0) {
-				int textTopOffset = (r.height - 1 - textHeight) / 2;
-				int textLeftOffset = contentArea.x + imageSpace;
-				gc.drawFocus(textLeftOffset - 2, textTopOffset, textWidth + 4,
-						textHeight);
-			} else {
-				gc.drawFocus(3, 3, r.width - 7, r.height - 7);
-			}
-		}
-
-		if (isArrowButton()) {
-			Color bg2 = gc.getBackground();
-
-			gc.setBackground(colorProvider.getColor(KEY_ARROW));
-
-			int centerHeight = r.height / 2;
-			int centerWidth = r.width / 2;
-			if (hasBorder()) {
-				// border ruins center position...
-				centerHeight -= 2;
-				centerWidth -= 2;
-			}
-
-			// TODO: in the next version use a bezier path
-
-			int[] curve = null;
-
-			if ((style & SWT.DOWN) != 0) {
-				curve = new int[]{centerWidth, centerHeight + 5,
-						centerWidth - 5, centerHeight - 5, centerWidth + 5,
-						centerHeight - 5};
-
-			} else if ((style & SWT.LEFT) != 0) {
-				curve = new int[]{centerWidth - 5, centerHeight,
-						centerWidth + 5, centerHeight + 5, centerWidth + 5,
-						centerHeight - 5};
-
-			} else if ((style & SWT.RIGHT) != 0) {
-				curve = new int[]{centerWidth + 5, centerHeight,
-						centerWidth - 5, centerHeight - 5, centerWidth - 5,
-						centerHeight + 5};
-
-			} else {
-				curve = new int[]{centerWidth, centerHeight - 5,
-						centerWidth - 5, centerHeight + 5, centerWidth + 5,
-						centerHeight + 5};
-			}
-
-			gc.fillPolygon(curve);
-			gc.setBackground(bg2);
-		}
+		lwControl.paint(gc, getColorProvider());
 
 		gc.commit();
 		gc.dispose();
@@ -580,111 +396,22 @@ public class Button extends Control implements ICustomWidget {
 		background = SWT.convertPixelToColor(pixel);
 	}
 
-	private boolean isArrowButton() {
-		return (style & SWT.ARROW) != 0;
-	}
-
-	private boolean isRadioButton() {
-		return (style & SWT.RADIO) != 0;
-	}
-
 	private boolean isCheckButton() {
 		return (style & SWT.CHECK) != 0;
-	}
-
-	private void drawPushButton(GC gc, int x, int y, int w,
-			int h) {
-		final IColorProvider colorProvider = getColorProvider();
-		if (isEnabled()) {
-			if ((style & SWT.TOGGLE) != 0 && isChecked()) {
-				gc.setBackground(colorProvider.getColor(KEY_TOGGLE));
-			} else if (hasMouseEntered || spaceDown) {
-				gc.setBackground(colorProvider.getColor(KEY_HOVER));
-			} else {
-				gc.setBackground(colorProvider.getColor(KEY_BUTTON));
-			}
-			gc.fillRoundRectangle(x, y, w, h, 6, 6);
-		}
-
-		if (isEnabled()) {
-			if ((style & SWT.TOGGLE) != 0 && isChecked() || hasMouseEntered) {
-				gc.setForeground(colorProvider.getColor(KEY_SELECTION));
-			} else {
-				gc.setForeground(colorProvider.getColor(KEY_OUTLINE));
-			}
-		} else {
-			gc.setForeground(colorProvider.getColor(KEY_DISABLE));
-		}
-
-		// if the button has focus, the border also changes the color
-		Color fg = gc.getForeground();
-		if (hasFocus()) {
-			gc.setForeground(colorProvider.getColor(KEY_SELECTION));
-		}
-		gc.drawRoundRectangle(x, y, w - 1, h - 1, 6, 6);
-		gc.setForeground(fg);
-	}
-
-	private void drawRadioButton(GC gc, int x, int y) {
-		final IColorProvider colorProvider = getColorProvider();
-		if (getSelection()) {
-			gc.setBackground(colorProvider.getColor(KEY_SELECTION));
-			int partialBoxBorder = 2;
-			gc.fillOval(x + partialBoxBorder, y + partialBoxBorder,
-					BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1);
-		}
-		if (hasMouseEntered) {
-			gc.setBackground(colorProvider.getColor(KEY_HOVER));
-			int partialBoxBorder = getSelection() ? 4 : 0;
-			gc.fillOval(x + partialBoxBorder, y + partialBoxBorder,
-					BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1);
-		}
-		if (!isEnabled()) {
-			gc.setForeground(colorProvider.getColor(KEY_DISABLE));
-		}
-		gc.drawOval(x, y, BOX_SIZE, BOX_SIZE);
-	}
-
-	private void drawCheckbox(GC gc, int x, int y) {
-		final IColorProvider colorProvider = getColorProvider();
-		if (getSelection()) {
-			if (grayed) {
-				gc.setBackground(colorProvider.getColor(KEY_TRISTATE));
-			} else {
-				gc.setBackground(colorProvider.getColor(KEY_SELECTION));
-			}
-			int partialBoxBorder = 2;
-			gc.fillRoundRectangle(x + partialBoxBorder, y + partialBoxBorder,
-					BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1,
-					BOX_SIZE / 4 - partialBoxBorder / 2,
-					BOX_SIZE / 4 - partialBoxBorder / 2);
-
-		}
-		if (hasMouseEntered) {
-			gc.setBackground(colorProvider.getColor(KEY_HOVER));
-			int partialBoxBorder = getSelection() ? 4 : 0;
-			gc.fillRoundRectangle(x + partialBoxBorder, y + partialBoxBorder,
-					BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1,
-					BOX_SIZE / 4 - partialBoxBorder / 2,
-					BOX_SIZE / 4 - partialBoxBorder / 2);
-		}
-		gc.drawRoundRectangle(x, y, BOX_SIZE, BOX_SIZE, 4, 4);
 	}
 
 	@Override
 	public void setSize(int width, int height) {
 		checkWidget();
-		this.width = width;
-		this.height = height;
-		super.setSize(this.width, this.height);
+		lwControl.setSize(width, height);
+		super.setSize(width, height);
 		redraw();
 	}
 
 	@Override
 	public void setBounds(int x, int y, int width, int height) {
-		this.width = width;
-		this.height = height;
-		super.setBounds(x, y, this.width, this.height);
+		lwControl.setSize(width, height);
+		super.setBounds(x, y, width, height);
 		redraw();
 	}
 
@@ -696,82 +423,26 @@ public class Button extends Control implements ICustomWidget {
 	@Override
 	public Point computeSize(int wHint, int hHint, boolean changed) {
 		checkWidget();
-		if (!changed) {
-			Point hintPoint = new Point(wHint, hHint);
-			if (hintPoint.equals(computedSize)) {
-				return computedSize;
-			}
+
+		if (computedSize == null || changed) {
+			final MeasureContext measureContext = new MeasureContext(this);
+			computedSize = lwControl.getPreferredSize(measureContext);
+			measureContext.dispose();
 		}
 
-		if (isArrowButton()) {
-			int borderWidth = hasBorder() ? 8 : 0;
-			int width = Math.max(wHint, 14 + borderWidth);
-			int height = Math.max(hHint, 14 + borderWidth);
-
-			computedSize = new Point(width, height);
-
-			if (wHint != SWT.DEFAULT) {
-				computedSize.x = wHint;
-			}
-			if (hHint != SWT.DEFAULT) {
-				computedSize.y = wHint;
-			}
-
-			return new Point(width, height);
-		}
-
-		int textWidth = 0;
-		int textHeight = 0;
-		int boxSpace = 0;
-		if ((style & (SWT.PUSH | SWT.TOGGLE)) == 0) {
-			boxSpace = BOX_SIZE + SPACING;
-		}
-		if (text != null && !text.isEmpty()) {
-			GC gc = GCFactory.createGraphicsContext(this);
-
-			gc.setFont(getFont());
-			Point textExtent = gc.textExtent(text, DRAW_FLAGS);
-			textWidth = textExtent.x + 1;
-			textHeight = textExtent.y;
-			gc.dispose();
-		}
-		int imageSpace = 0;
-		int imageHeight = 0;
-		if (image != null) {
-			Rectangle imgB = image.getBounds();
-			imageHeight = imgB.height;
-			imageSpace = imgB.width;
-			if (text != null && !text.isEmpty()) {
-				imageSpace += SPACING;
-			}
-		}
-
-		int width = LEFT_MARGIN + boxSpace + imageSpace + textWidth + 1
-				+ RIGHT_MARGIN;
-		int height = TOP_MARGIN
-				+ Math.max(boxSpace, Math.max(textHeight, imageHeight))
-				+ BOTTOM_MARGIN;
-
-		if ((style & (SWT.PUSH | SWT.TOGGLE)) != 0) {
-			width += 12;
-			height += 10;
-		}
-
-		computedSize = new Point(width, height);
-
+		final Point size = new Point(computedSize.x, computedSize.y);
 		if (wHint != SWT.DEFAULT) {
-			computedSize.x = wHint;
+			size.x = wHint;
 		}
 		if (hHint != SWT.DEFAULT) {
-			computedSize.y = wHint;
+			size.y = wHint;
 		}
-
-		return computedSize;
+		return size;
 	}
 
 	@Override
 	public Point getSize() {
-		return new Point(width, height);
+		return lwControl.getSize();
 	}
 
 	/**
@@ -832,7 +503,7 @@ public class Button extends Control implements ICustomWidget {
 	}
 
 	void click() {
-		handleSelection();
+		lwControl.handleSelection();
 	}
 
 	/**
@@ -908,10 +579,10 @@ public class Button extends Control implements ICustomWidget {
 	 */
 	public boolean getGrayed() {
 		checkWidget();
-		if (!isCheckButton()) {
-			return false;
+		if (lwControl instanceof LWCheckbox checkbox) {
+			return checkbox.isGrayed();
 		}
-		return grayed;
+		return false;
 	}
 
 	/**
@@ -929,7 +600,10 @@ public class Button extends Control implements ICustomWidget {
 	 */
 	public Image getImage() {
 		checkWidget();
-		return image;
+		if (lwControl instanceof LWButton button) {
+			return button.getImage();
+		}
+		return null;
 	}
 
 	/**
@@ -983,7 +657,7 @@ public class Button extends Control implements ICustomWidget {
 		if ((style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0) {
 			return false;
 		}
-		return isChecked();
+		return lwControl.isSelected();
 	}
 
 	/**
@@ -1005,7 +679,7 @@ public class Button extends Control implements ICustomWidget {
 		if ((style & SWT.ARROW) != 0) {
 			return "";
 		}
-		return text;
+		return lwControl.getText();
 	}
 
 	@Override
@@ -1051,7 +725,7 @@ public class Button extends Control implements ICustomWidget {
 	boolean traverseItem(boolean next) {
 		boolean b = super.traverseItem(next);
 		// if the next item is selected, a radio button loses the check.
-		if (b && isRadioButton()) {
+		if (b && lwControl instanceof LWRadioButton) {
 			setSelection(false);
 		}
 		redraw();
@@ -1092,8 +766,10 @@ public class Button extends Control implements ICustomWidget {
 			disabledImage.dispose();
 		}
 		disabledImage = null;
-		text = null;
-		image = null;
+		lwControl.setText(null);
+		if (lwControl instanceof LWButton button) {
+			button.setImage(null);
+		}
 	}
 
 	/**
@@ -1152,9 +828,7 @@ public class Button extends Control implements ICustomWidget {
 	public void setAlignment(int alignment) {
 		checkWidget();
 
-		style &= ~(SWT.UP | SWT.DOWN | SWT.LEFT | SWT.CENTER | SWT.RIGHT);
-		style |= alignment
-				& (SWT.UP | SWT.DOWN | SWT.LEFT | SWT.CENTER | SWT.RIGHT);
+		lwControl.setAlignment(alignment);
 
 		redraw();
 
@@ -1215,7 +889,7 @@ public class Button extends Control implements ICustomWidget {
 		 * button in WM_SETFOCUS. The fix is to not assign focus to an
 		 * unselected radio button.
 		 */
-		if (isRadioButton() && !isChecked()) {
+		if (lwControl instanceof LWRadioButton && !lwControl.isSelected()) {
 			return false;
 		}
 		boolean b = super.setFocus();
@@ -1225,10 +899,10 @@ public class Button extends Control implements ICustomWidget {
 	@Override
 	public boolean forceFocus() {
 		boolean b = super.forceFocus();
-		if (b && isRadioButton()) { // if a radio button gets focus, then all
+		if (b && lwControl instanceof LWRadioButton radioButton) { // if a radio button gets focus, then all
 									// other radio buttons of the group lose the
 									// selection
-			selectRadio(/* withFocus = */false);
+			radioButton.handleSelection();
 		}
 		return b;
 	}
@@ -1262,11 +936,16 @@ public class Button extends Control implements ICustomWidget {
 		if (image != null && image.isDisposed()) {
 			error(SWT.ERROR_INVALID_ARGUMENT);
 		}
-		if ((style & SWT.ARROW) != 0) {
-			return;
+		if (lwControl instanceof LWButton button) {
+			button.setImage(image);
+
+			if (disabledImage != null) {
+				disabledImage.dispose();
+			}
+			disabledImage = new Image(getDisplay(), image, SWT.IMAGE_GRAY);
+			button.setDisabledImage(disabledImage);
+			redraw();
 		}
-		this.image = image;
-		redraw();
 	}
 
 	/**
@@ -1288,10 +967,9 @@ public class Button extends Control implements ICustomWidget {
 	 */
 	public void setGrayed(boolean grayed) {
 		checkWidget();
-		if ((style & SWT.CHECK) == 0) {
-			return;
+		if (lwControl instanceof LWCheckbox checkbox) {
+			checkbox.setGrayed(grayed);
 		}
-		this.grayed = grayed;
 	}
 
 	/**
@@ -1355,48 +1033,22 @@ public class Button extends Control implements ICustomWidget {
 	 */
 	public void setSelection(boolean selected) {
 		checkWidget();
-		this.checked = selected;
-		redraw();
+		ignoreSelectionEvent = true;
+		try {
+			lwControl.setSelected(selected);
+		}
+		finally {
+			ignoreSelectionEvent = false;
+		}
 	}
 
 	@Override
 	boolean setRadioSelection(boolean value) {
-		if (!isRadioButton()) {
-			return false;
+		if (lwControl instanceof LWRadioButton radioButton) {
+			radioButton.setSelected(value);
+			return true;
 		}
-		if (getSelection() != value) {
-			setSelection(value);
-			sendSelectionEvent(SWT.Selection);
-		}
-		return true;
-	}
-
-	void selectRadio() {
-		for (Button b : getRadioGroup()) {
-			if (b != this) {
-				b.setSelection(false);
-				b.redraw();
-			}
-		}
-
-		setFocus();
-		setRadioSelection(true);
-		redraw();
-	}
-
-	void selectRadio(boolean withFocus) {
-		for (Button b : getRadioGroup()) {
-			if (b != this) {
-				b.setSelection(false);
-				b.redraw();
-			}
-		}
-
-		if (withFocus) {
-			setFocus();
-		}
-		setRadioSelection(true);
-		redraw();
+		return false;
 	}
 
 	/**
@@ -1447,12 +1099,8 @@ public class Button extends Control implements ICustomWidget {
 		if ((style & SWT.ARROW) != 0) {
 			return;
 		}
-		text = string;
+		lwControl.setText(string);
 		redraw();
-	}
-
-	private boolean isChecked() {
-		return checked;
 	}
 
 	static int getThemeStateId(int style, boolean pressed, boolean enabled) {
@@ -1526,6 +1174,7 @@ public class Button extends Control implements ICustomWidget {
 	@Override
 	public void setEnabled(boolean enabled) {
 		super.setEnabled(enabled);
+		lwControl.setEnabled(enabled);
 		redraw();
 	}
 

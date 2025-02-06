@@ -34,15 +34,15 @@ public class DefaultColorProvider implements IColorProvider {
 		map.put(Label.KEY_SHADOW_OUT_LIGHT, new Color(227, 227, 227));
 		map.put(Label.KEY_SHADOW_OUT_DARK, new Color(160, 160, 160));
 
-		map.put(Button.KEY_BUTTON, new Color(255, 255, 255));
-		map.put(Button.KEY_HOVER, new Color(224, 238, 254));
-		map.put(Button.KEY_TOGGLE, new Color(204, 228, 247));
-		map.put(Button.KEY_SELECTION, selection);
-		map.put(Button.KEY_TRISTATE, new Color(128, 128, 128));
-		map.put(Button.KEY_OUTLINE, new Color(160, 160, 160));
-		map.put(Button.KEY_TEXT, new Color(0, 0, 0));
-		map.put(Button.KEY_DISABLE, disabled);
-		map.put(Button.KEY_ARROW, new Color(128, 128, 128));
+		map.put(LWAbstractButtonUI.KEY_BUTTON, new Color(255, 255, 255));
+		map.put(LWAbstractButtonUI.KEY_HOVER, new Color(224, 238, 254));
+		map.put(LWAbstractButtonUI.KEY_TOGGLE, new Color(204, 228, 247));
+		map.put(LWAbstractButtonUI.KEY_SELECTION, selection);
+		map.put(LWAbstractButtonUI.KEY_TRISTATE, new Color(128, 128, 128));
+		map.put(LWAbstractButtonUI.KEY_OUTLINE, new Color(160, 160, 160));
+		map.put(LWAbstractButtonUI.KEY_TEXT, new Color(0, 0, 0));
+		map.put(LWAbstractButtonUI.KEY_DISABLE, disabled);
+		map.put(LWAbstractButtonUI.KEY_ARROW, new Color(128, 128, 128));
 
 		map.put(ScaleRenderer.KEY_HANDLE_IDLE, selection);
 		map.put(ScaleRenderer.KEY_HANDLE_HOVER, new Color(0, 0, 0));
