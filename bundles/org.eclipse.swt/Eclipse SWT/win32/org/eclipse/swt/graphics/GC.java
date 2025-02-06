@@ -13,13 +13,9 @@
  *******************************************************************************/
 package org.eclipse.swt.graphics;
 
-
 import java.util.*;
 
 import org.eclipse.swt.*;
-import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gdip.*;
-import org.eclipse.swt.internal.win32.*;
 
 /**
  * Class <code>GC</code> is where all of the drawing capabilities that are
@@ -64,19 +60,6 @@ import org.eclipse.swt.internal.win32.*;
 public class GC extends Resource {
 
 	public GCHandle innerGC;
-
-	/**
-	 * the handle to the OS device context
-	 * (Warning: This field is platform dependent)
-	 * <p>
-	 * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
-	 * public API. It is marked public only so that it can be shared
-	 * within the packages provided by SWT. It is not available on all
-	 * platforms and should never be accessed from application code.
-	 * </p>
-	 *
-	 * @noreference This field is not intended to be referenced by clients.
-	 */
 
 	static final int FOREGROUND = 1 << 0;
 	static final int BACKGROUND = 1 << 1;
@@ -2178,9 +2161,7 @@ public static GC win32_new(long hDC, GCData data) {
 }
 
 public void commit() {
-
 	innerGC.commit();
-
 }
 
 }
