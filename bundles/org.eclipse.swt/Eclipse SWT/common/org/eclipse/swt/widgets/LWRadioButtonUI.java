@@ -39,7 +39,7 @@ public class LWRadioButtonUI extends LWAbstractButtonUI {
 
 		int width = LEFT_MARGIN + boxSpace + imageSpace + textWidth + 1 + RIGHT_MARGIN;
 		int height = TOP_MARGIN
-		             + Math.max(boxSpace, Math.max(textHeight, imageHeight))
+		             + Math.max(boxSpace, Math.max(textHeight + 2, imageHeight))
 		             + BOTTOM_MARGIN;
 		return new Point(width, height);
 	}
@@ -89,8 +89,12 @@ public class LWRadioButtonUI extends LWAbstractButtonUI {
 		if (button.hasFocus()) {
 			int textTopOffset = (height - 1 - textHeight) / 2;
 			int textLeftOffset = contentArea.x + imageSpace;
+/*
 			gc.drawFocus(textLeftOffset - 2, textTopOffset,
-			             textWidth + 4, textHeight);
+			             textWidth + 4, textHeight - 1);
+*/
+			gc.drawRectangle(textLeftOffset - 2, textTopOffset,
+			             textWidth + 4, textHeight - 1);
 		}
 	}
 

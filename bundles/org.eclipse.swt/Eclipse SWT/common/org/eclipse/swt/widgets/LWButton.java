@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 
 /**
@@ -15,6 +16,12 @@ public class LWButton extends LWAbstractButton {
 
 	public LWButton(int style) {
 		super(style);
+		ui = new LWButtonUI(this);
+	}
+
+	public LWButton(String text, LWContainer parent) {
+		super(SWT.PUSH | SWT.CENTER, parent);
+		setText(text);
 		ui = new LWButtonUI(this);
 	}
 

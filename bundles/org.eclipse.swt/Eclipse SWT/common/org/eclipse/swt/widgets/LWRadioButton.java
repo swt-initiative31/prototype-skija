@@ -14,6 +14,15 @@ public class LWRadioButton extends LWAbstractButton {
 
 	private LWRadioButtonUI ui;
 
+	public LWRadioButton(String text, Group group, LWContainer container) {
+		super(0, container);
+		this.group = group;
+		group.add(this);
+		setText(text);
+
+		ui = new LWRadioButtonUI(this);
+	}
+
 	public LWRadioButton(int style, Group group) {
 		super(style);
 		this.group = Objects.requireNonNull(group);
@@ -39,14 +48,7 @@ public class LWRadioButton extends LWAbstractButton {
 
 	@Override
 	protected void handleSelection() {
-		final List<LWRadioButton> buttons = group.getRadioButtons();
-		for (LWRadioButton button : buttons) {
-			if (button != this) {
-				button.setSelected(false);
-			}
-		}
-
-		setSelected(true);
+		setSelected();
 	}
 
 	@Override
@@ -65,9 +67,38 @@ public class LWRadioButton extends LWAbstractButton {
 		return buffer.toString();
 	}
 
+	public void setSelected() {
+		final List<LWRadioButton> buttons = group.getRadioButtons();
+		for (LWRadioButton button : buttons) {
+			if (button != this) {
+				button.setSelected(false);
+			}
+		}
+
+		setSelected(true);
+	}
+
 	public interface Group {
 		void add(LWRadioButton radioButton);
 
 		List<LWRadioButton> getRadioButtons();
+	}
+
+	public static class DefaultGroup implements Group {
+		private final List<LWRadioButton> buttons = new ArrayList<>();
+
+		@Override
+		public void add(LWRadioButton button) {
+			if (buttons.contains(button)) {
+				throw new IllegalArgumentException("duplicate");
+			}
+
+			buttons.add(button);
+		}
+
+		@Override
+		public List<LWRadioButton> getRadioButtons() {
+			return Collections.unmodifiableList(buttons);
+		}
 	}
 }

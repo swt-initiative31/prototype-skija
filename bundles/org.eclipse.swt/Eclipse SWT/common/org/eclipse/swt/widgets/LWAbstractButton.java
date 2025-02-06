@@ -27,6 +27,12 @@ public abstract class LWAbstractButton extends LWControl {
 	private int flags;
 
 	protected LWAbstractButton(int style) {
+		super(null);
+		this.style = style;
+	}
+
+	protected LWAbstractButton(int style, LWContainer parent) {
+		super(parent);
 		this.style = style;
 	}
 
@@ -67,17 +73,41 @@ public abstract class LWAbstractButton extends LWControl {
 		notifyListeners(EVENT_TEXT);
 	}
 
+	@Override
+	protected void notifyListeners(int type) {
+		super.notifyListeners(type);
+		redraw();
+	}
+
+	@Override
 	public void handleEvent(Event e) {
 		switch (e.type) {
 		case SWT.MouseDown -> {
 			if (e.button == 1) {
 				setPressed(true);
+				redraw();
 			}
 		}
 		case SWT.MouseUp -> {
 			if (e.button == 1) {
 				setPressed(false);
 				handleSelection();
+				requestFocus();
+			}
+		}
+		case SWT.MouseEnter -> setHovered(true);
+		case SWT.MouseExit -> setHovered(false);
+		case SWT.KeyDown -> {
+			if (e.keyCode == SWT.SPACE) {
+				setPressed(true);
+				handleSelection();
+				e.doit = false;
+			}
+		}
+		case SWT.KeyUp -> {
+			if (e.keyCode == SWT.SPACE) {
+				setPressed(false);
+				e.doit = false;
 			}
 		}
 		}
