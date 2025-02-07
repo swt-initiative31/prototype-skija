@@ -280,7 +280,9 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
 	super ();
 	checkSubclass ();
 	outerStyle = style;
-	style = SWT.NO_MOVE | SWT.NO_TRIM;
+	if (!SWT.NATIVE_DECORATIONS) {
+		style = SWT.NO_MOVE | SWT.NO_TRIM;
+	}
 	if (display == null) display = Display.getCurrent ();
 	if (display == null) display = Display.getDefault ();
 	if (!display.isValidThread ()) {

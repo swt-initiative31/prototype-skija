@@ -110,8 +110,29 @@ public class Decorations extends Canvas {
 	Button defaultButton, saveDefault;
 	long accelGroup, vboxHandle;
 
+	private DecorationsHandler decoListener;
+
 Decorations () {
 	/* Do nothing */
+}
+
+@Override
+public void triggerEvent(Event e) {
+
+	if (decoListener == null) {
+		decoListener = new DecorationsHandler(this);
+		addListener(SWT.MouseMove, decoListener);
+		addListener(SWT.MouseDown, decoListener);
+		addListener(SWT.MouseUp, decoListener);
+		addListener(SWT.MouseEnter, decoListener);
+		addListener(SWT.MouseExit, decoListener);
+	}
+
+	if (e.type == SWT.Paint)
+		decoListener.drawDecoration(e);
+
+	super.triggerEvent(e);
+
 }
 
 /**
