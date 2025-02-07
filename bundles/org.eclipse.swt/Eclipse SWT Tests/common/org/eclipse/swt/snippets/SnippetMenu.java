@@ -65,9 +65,9 @@ public class SnippetMenu {
 		Menu ssubMenu = new Menu(submenu);
 		item2.setMenu(ssubMenu);
 		MenuItem subItem1 = new MenuItem(ssubMenu, SWT.PUSH);
-		subItem1.setText("Subitem 1");
+		subItem1.setText("Subitem 11");
 		MenuItem subItem2 = new MenuItem(ssubMenu, SWT.PUSH);
-		subItem2.setText("Subitem 2");
+		subItem2.setText("Subitem 12");
 	}
 
 	{
@@ -76,9 +76,9 @@ public class SnippetMenu {
 		Menu ssubMenu = new Menu(submenu);
 		item2.setMenu(ssubMenu);
 		MenuItem subItem1 = new MenuItem(ssubMenu, SWT.PUSH);
-		subItem1.setText("Subitem 1");
+		subItem1.setText("Subitem 21");
 		MenuItem subItem2 = new MenuItem(ssubMenu, SWT.PUSH);
-		subItem2.setText("Subitem 2");
+		subItem2.setText("Subitem 22");
 	}
 
 		// Note that as long as your application has not overridden

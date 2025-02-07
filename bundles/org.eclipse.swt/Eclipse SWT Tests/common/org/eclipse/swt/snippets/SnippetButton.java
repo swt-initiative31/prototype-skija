@@ -12,7 +12,7 @@ public class SnippetButton {
 		Image image = display.getSystemImage(SWT.ICON_QUESTION);
 		Shell shell = new Shell(display);
 		shell.setText("SnippetButton");
-//		shell.setLayout(new GridLayout());
+		shell.setLayout(new GridLayout());
 		var button = new Button(shell, SWT.PUSH);
 
 		// button.addSelectionListener(widgetSelectedAdapter(e ->
@@ -35,6 +35,9 @@ public class SnippetButton {
 		label.setImage(image);
 		label.setSize(100, 100);
 		label.setLocation(100, 100);
+
+		var old = new Label_Old(shell, SWT.BORDER);
+		old.setText("Old label widget");
 
 		var text = new Text(shell, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
 
