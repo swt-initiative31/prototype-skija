@@ -1,0 +1,175 @@
+/*******************************************************************************
+ * Copyright (c) 2000, 2016 IBM Corporation and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     IBM Corporation - initial API and implementation
+ *******************************************************************************/
+package org.eclipse.swt.snippets;
+
+import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
+
+/*
+ * Text example snippet: add a select all menu item to the control
+ *
+ * For a list of all SWT example snippets see
+ * http://www.eclipse.org/swt/snippets/
+ */
+import org.eclipse.swt.*;
+import org.eclipse.swt.dnd.*;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.layout.*;
+import org.eclipse.swt.widgets.*;
+
+public class SnippetMenu {
+	public static void main(String[] args) {
+
+	    SWT.NATIVE_MENUS = false;
+	    SWT.NATIVE_DECORATIONS = false;
+
+		Display display = new Display();
+		Shell shell = new Shell(display);
+		shell.setText("Snippet 117");
+		shell.setLayout(new FillLayout());
+		final Text t = new Text(shell, SWT.BORDER | SWT.MULTI);
+		t.setText("here is some text to be selected");
+
+
+		Menu bar = new Menu(shell, SWT.BAR);
+		shell.setMenuBar(bar);
+		MenuItem fileItem = new MenuItem(bar, SWT.CASCADE);
+		fileItem.setText("File");
+
+		{
+
+			Menu submenu = new Menu(shell, SWT.DROP_DOWN);
+			fileItem.setMenu(submenu);
+
+		}
+
+		MenuItem editItem = new MenuItem(bar, SWT.CASCADE);
+		editItem.setText("Edit");
+		Menu submenu = new Menu(shell, SWT.DROP_DOWN);
+		editItem.setMenu(submenu);
+
+		{
+			MenuItem item = new MenuItem(submenu, SWT.PUSH);
+			item.addListener(SWT.Selection, e -> t.selectAll());
+			item.setText("Select &All\tCtrl+A");
+			item.setAccelerator(SWT.MOD1 + 'A');
+		}
+
+		{
+		    MenuItem item = new MenuItem(submenu, SWT.SEPARATOR);
+		    item.addListener(SWT.Selection, e -> t.selectAll());
+		}
+
+		{
+			MenuItem item = new MenuItem(submenu, SWT.PUSH);
+			item.addListener(SWT.Selection, e -> t.selectAll());
+			item.setText("Item 2");
+			item.setAccelerator(SWT.MOD1 + 'A');
+		}
+
+		{
+
+			for (int i = 3; i < 25; i++) {
+			MenuItem item = new MenuItem(submenu, SWT.PUSH);
+			item.addListener(SWT.Selection, e -> t.selectAll());
+			item.setText("Item " + i);
+			item.setAccelerator(SWT.MOD1 + 'A');
+		}
+		}
+
+		{
+			MenuItem item2 = new MenuItem(submenu, SWT.CASCADE);
+			item2.setText("Cascade Item 1 ");
+			Menu ssubMenu = new Menu(submenu);
+			item2.setMenu(ssubMenu);
+			MenuItem subItem1 = new MenuItem(ssubMenu, SWT.PUSH);
+			subItem1.setText("Subitem 11");
+			MenuItem subItem2 = new MenuItem(ssubMenu, SWT.PUSH);
+			subItem2.setText("Subitem 12");
+		}
+
+		{
+			MenuItem item2 = new MenuItem(submenu, SWT.CASCADE);
+			item2.setText("Cascade Item 2 ");
+			Menu ssubMenu = new Menu(submenu);
+			item2.setMenu(ssubMenu);
+			MenuItem subItem1 = new MenuItem(ssubMenu, SWT.PUSH);
+			subItem1.setText("Subitem 21");
+			MenuItem subItem2 = new MenuItem(ssubMenu, SWT.PUSH);
+			subItem2.setText("Subitem 22");
+		}
+
+		// Note that as long as your application has not overridden
+		// the global accelerators for copy, paste, and cut
+		// (CTRL+C or CTRL+INSERT, CTRL+V or SHIFT+INSERT, and CTRL+X or
+		// SHIFT+DELETE)
+		// these behaviours are already available by default.
+		// If your application overrides these accelerators,
+		// you will need to call Text.copy(), Text.paste() and Text.cut()
+		// from the Selection callback for the accelerator when the
+		// text widget has focus.
+
+		createContextMenu(t);
+
+		shell.setSize(200, 200);
+		shell.open();
+		while (!shell.isDisposed()) {
+			if (!display.readAndDispatch())
+				display.sleep();
+		}
+		display.dispose();
+	}
+
+	private static void createContextMenu(Text text) {
+
+	    final Clipboard cb = new Clipboard(text.getDisplay());
+
+	    Menu menu = new Menu(text);
+	    final MenuItem copyItem = new MenuItem(menu, SWT.PUSH);
+	    copyItem.setText("Copy");
+	    copyItem.addSelectionListener(widgetSelectedAdapter(e -> {
+		String selection = text.getSelectionText();
+		if (selection.length() == 0) {
+		    return;
+		}
+		Object[] data = new Object[] { selection };
+		Transfer[] types = new Transfer[] { TextTransfer.getInstance() };
+		cb.setContents(data, types);
+	    }));
+
+	    final MenuItem pasteItem = new MenuItem(menu, SWT.PUSH);
+	    pasteItem.setText("Paste");
+	    pasteItem.addSelectionListener(widgetSelectedAdapter(e -> {
+		String string = (String) (cb.getContents(TextTransfer.getInstance()));
+		if (string != null) {
+		    text.insert(string);
+		}
+	    }));
+	    menu.addMenuListener(MenuListener.menuShownAdapter(e -> {
+		// is copy valid?
+		String selection = text.getSelectionText();
+		copyItem.setEnabled(selection.length() > 0);
+		// is paste valid?
+		boolean enabled = false;
+		for (TransferData transfer : cb.getAvailableTypes()) {
+		    if (TextTransfer.getInstance().isSupportedType(transfer)) {
+			enabled = true;
+			break;
+		    }
+		}
+		pasteItem.setEnabled(enabled);
+	    }));
+	    text.setMenu(menu);
+
+	}
+}

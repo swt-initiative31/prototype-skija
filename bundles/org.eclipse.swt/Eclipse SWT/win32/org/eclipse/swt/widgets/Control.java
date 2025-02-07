@@ -122,7 +122,22 @@ public Control (Composite parent, int style) {
 	super (parent, style);
 	this.parent = parent;
 	createWidget ();
-}
+	// if SWT uses new custom menus
+	if (!SWT.NATIVE_MENUS)
+	    addListener(SWT.MouseDown, e -> onMouseDown(e));
+
+    }
+
+    private void onMouseDown(Event e) {
+	if (e.button == 3 && getMenu() != null && !getMenu().isDisposed()) {
+
+
+		getMenu().sendEvent(SWT.Show);
+
+		new MenuWindow(this, getMenu().getItems(), new Point(e.x, e.y)).open();
+	}
+    }
+
 
 /**
  * Adds the listener to the collection of listeners who will
@@ -2454,6 +2469,11 @@ void redrawInPixels (RECT rect, boolean all) {
 	 * use it where it is indeed necessary.
 	 */
 	int flags = OS.RDW_ERASE | OS.RDW_INVALIDATE;
+
+	// in double buffering mode, the screen should never be erased
+	if((style & SWT.DOUBLE_BUFFERED) != 0)
+		flags = OS.RDW_INVALIDATE;
+
 	if (all) flags |= OS.RDW_ALLCHILDREN;
 	OS.RedrawWindow (handle, rect, 0, flags);
 }

@@ -112,6 +112,8 @@ public class Decorations extends Canvas {
 	int oldWidth = OS.CW_USEDEFAULT, oldHeight = OS.CW_USEDEFAULT;
 	RECT maxRect = new RECT();
 
+	protected DecorationsHandler decoListener;
+
 	static {
 		DPIZoomChangeRegistry.registerHandler(Decorations::handleDPIChange, Decorations.class);
 	}
@@ -121,6 +123,7 @@ public class Decorations extends Canvas {
  */
 Decorations () {
 }
+
 
 /**
  * Constructs a new instance of this class given its parent
@@ -445,6 +448,25 @@ void fixDecorations (Decorations newDecorations, Control control, Menu [] menus)
 }
 
 @Override Rectangle getClientAreaInPixels () {
+
+	if (!SWT.NATIVE_DECORATIONS) {
+
+		var b = getBounds();
+
+		boolean deco = decoListener.showsDecoration();
+		boolean menu = decoListener.showsMenuBar();
+
+		int decHeight = 0;
+
+		if (deco)
+			decHeight += 40;
+		if (menu)
+			decHeight += 40;
+
+		return new Rectangle(5, decHeight, b.width - 15, b.height - decHeight - 10);
+
+	}
+
 	checkWidget ();
 	if (OS.IsIconic (handle)) {
 		WINDOWPLACEMENT lpwndpl = new WINDOWPLACEMENT ();
@@ -1037,9 +1059,14 @@ public void setMenuBar (Menu menu) {
 	}
 	if (menu != null) display.removeBar (menu);
 	menuBar = menu;
-	long hMenu = menuBar != null ? menuBar.handle: 0;
-	OS.SetMenu (handle, hMenu);
-	destroyAccelerators ();
+
+	if (SWT.NATIVE_DECORATIONS) {
+		long hMenu = menuBar != null ? menuBar.handle : 0;
+		OS.SetMenu(handle, hMenu);
+		destroyAccelerators();
+	    } else {
+		decoListener.recalculateMenu();
+	}
 }
 
 /**

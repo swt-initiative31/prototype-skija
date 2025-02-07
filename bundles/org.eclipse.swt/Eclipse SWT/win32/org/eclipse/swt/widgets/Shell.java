@@ -131,6 +131,7 @@ public class Shell extends Decorations {
 	long toolIcon, balloonIcon;
 	long windowProc;
 	Control lastActive;
+	private int outerStyle;
 	static /*final*/ long ToolTipProc;
 	static final long DialogProc;
 	static final TCHAR DialogClass = new TCHAR (0, "#32770", true);
@@ -282,6 +283,16 @@ public Shell (Display display, int style) {
 
 Shell (Display display, Shell parent, int style, long handle, boolean embedded) {
 	super ();
+
+	outerStyle = style;
+	if (!SWT.NATIVE_DECORATIONS) {
+		style = SWT.NO_MOVE | SWT.NO_TRIM;
+
+		if (this instanceof MenuWindow)
+			style |= SWT.DOUBLE_BUFFERED;
+
+	}
+
 	checkSubclass ();
 	if (display == null) display = Display.getCurrent ();
 	if (display == null) display = Display.getDefault ();
@@ -311,6 +322,15 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
 
 	reskinWidget();
 	createWidget ();
+	if (!SWT.NATIVE_DECORATIONS) {
+		decoListener = new DecorationsHandler(this);
+	}
+}
+
+@Override
+public int getStyle() {
+	checkWidget();
+	return outerStyle;
 }
 
 /**
