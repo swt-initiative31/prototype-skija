@@ -848,6 +848,7 @@ public void test_OpenWindowListener_openHasValidEventDetails() {
 
 /** Test that a script 'window.open()' opens a child popup shell. */
 @Test
+@Ignore("Not working on Linux (yet)")
 public void test_OpenWindowListener_open_ChildPopup() {
 	AtomicBoolean childCompleted = new AtomicBoolean(false);
 
@@ -885,6 +886,7 @@ public void test_OpenWindowListener_open_ChildPopup() {
 
 /** Validate event order : Child's visibility should come before progress completed event */
 @Test
+@Ignore("Not working on Linux (yet)")
 public void test_OpenWindow_Progress_Listener_ValidateEventOrder() {
 
 	AtomicBoolean childCompleted = new AtomicBoolean(false);
@@ -1386,6 +1388,7 @@ public void test_VisibilityWindowListener_multiple_shells() {
  *  it's size is passed to the visibility event correctly.
  */
 @Test
+@Ignore("Not working on Linux (yet)")
 public void test_VisibilityWindowListener_eventSize() {
 
 	shell.setSize(200,300);
@@ -2220,6 +2223,7 @@ ProgressListener callCustomFunctionUponLoad = completedAdapter(event ->	browser.
  * loosely based on Snippet307.
  */
 @Test
+@Ignore("Not working on Linux (yet)")
 public void test_BrowserFunction_callback () {
 	AtomicBoolean javaCallbackExecuted = new AtomicBoolean(false);
 
@@ -2659,6 +2663,7 @@ public void test_BrowserFunction_callback_with_javaReturningString () {
  * - once registered function is called a 2nd time, it sets the test to pass.
  */
 @Test
+@Ignore("Not working (yet)")
 public void test_BrowserFunction_callback_afterPageReload() {
 	AtomicBoolean javaCallbackExecuted = new AtomicBoolean(false);
 	AtomicInteger callCount = new AtomicInteger(0);

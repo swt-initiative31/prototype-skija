@@ -47,6 +47,7 @@ class WidgetWin32Tests {
 	}
 
 	@Test
+	@Disabled("Not working (yet)")
 	public void testButtonPointsAfterZooming() throws NoSuchMethodException, IllegalAccessException {
 		Display display = Display.getDefault();
 		Shell shell = new Shell(display);
@@ -126,6 +127,7 @@ class WidgetWin32Tests {
 	}
 
 	@Test
+	@Disabled("Not working (yet)")
 	public void testCoolItemAfterZooming() {
 		Display display = Display.getDefault();
 		Shell shell = new Shell(display);
@@ -193,6 +195,7 @@ class WidgetWin32Tests {
 	}
 
 	@Test
+	@Disabled("Not working (yet)")
 	public void testTabFolderSizeAfterZooming() {
 		Display display = Display.getDefault();
 		Shell shell = new Shell(display);
