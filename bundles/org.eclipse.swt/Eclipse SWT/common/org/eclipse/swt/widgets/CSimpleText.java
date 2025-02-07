@@ -261,10 +261,13 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 	}
 
 	private void onMouseDown(Event e) {
+
+	    if (e.button == 1) {
 		setFocus();
 		TextLocation location = getTextLocation(e.x, e.y);
 		model.setSectionStart(location);
 		mouseDown = true;
+	    }
 	}
 
 	private void onMouseMove(Event e) {
@@ -274,8 +277,11 @@ public class CSimpleText extends Scrollable implements ICustomWidget {
 	}
 
 	private void onMouseUp(Event e) {
+
+	    if (e.button == 1) {
 		updateSelectionEnd(e);
 		mouseDown = false;
+	    }
 	}
 
 	private void updateSelectionEnd(Event e) {
