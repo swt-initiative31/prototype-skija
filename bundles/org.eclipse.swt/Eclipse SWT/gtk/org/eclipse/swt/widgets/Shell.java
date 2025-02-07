@@ -327,53 +327,43 @@ private void initCustomDrawn() {
 	childControls.remove(this);
 
 	Listener listener = event -> {
-		switch (event.type) {
-		case SWT.Paint:
-			System.out.println("Event: Paint");
-			// this is the only position where we have to call directly the onPaint-method
-			// (except the redraw(..))
-			// If we don't do this here, on resize it flickers.
-			// Instead of a direct redraw, we just redraw the cached Image in oder to keep
-			// the resizing fast.
-
-			// on linux, the redraw has to happen in this method.
-			// on windows this can also be done in a separate method
-			onPaint(event);
-
-			break;
-		case SWT.Resize:
-			System.out.println("Event: Resize");
-			onResize(event);
-			break;
-		case SWT.Dispose:
-			onDispose();
-			break;
-		}
+		triggerEvent(event);
 	};
 
-	eventListener = new EventHandler(childControls);
+
 	addListener(SWT.Paint, listener);
 	addListener(SWT.Resize, listener);
 	addListener(SWT.Dispose, listener);
 
-	addListener(SWT.KeyDown, eventListener);
-	addListener(SWT.KeyUp, eventListener);
-	addListener(SWT.MouseDown, eventListener);
-	addListener(SWT.MouseUp, eventListener);
-	addListener(SWT.MouseMove, eventListener);
-	addListener(SWT.FocusIn, eventListener);
-	addListener(SWT.FocusOut, eventListener);
-	addListener(SWT.MouseEnter, eventListener);
-	addListener(SWT.MouseExit, eventListener);
-	addListener(SWT.MouseWheel, eventListener);
+	addListener(SWT.KeyDown, listener);
+	addListener(SWT.KeyUp, listener);
+	addListener(SWT.MouseDown, listener);
+	addListener(SWT.MouseUp, listener);
+	addListener(SWT.MouseMove, listener);
+	addListener(SWT.FocusIn, listener);
+	addListener(SWT.FocusOut, listener);
+	addListener(SWT.MouseEnter, listener);
+	addListener(SWT.MouseExit, listener);
 
-	decoListener = new DecorationsHandler(this);
+}
 
-	addListener(SWT.MouseMove, decoListener);
-	addListener(SWT.MouseDown, decoListener);
-	addListener(SWT.MouseUp, decoListener);
-	addListener(SWT.MouseEnter, decoListener);
-	addListener(SWT.MouseExit, decoListener);
+@Override
+public void triggerEvent(Event event) {
+
+	switch (event.type) {
+	case SWT.Paint:
+		onPaint(event);
+		return;
+	case SWT.Resize:
+		onResize(event);
+		return;
+	case SWT.Dispose:
+		onDispose();
+		return;
+
+	default:
+		super.triggerEvent(event);
+	}
 
 }
 
