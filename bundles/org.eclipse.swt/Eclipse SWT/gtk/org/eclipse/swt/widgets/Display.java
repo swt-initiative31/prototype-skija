@@ -6300,4 +6300,61 @@ public boolean setRescalingAtRuntime(boolean activate) {
 	return false;
 }
 
+Point translateLocationInPixelsInDisplayCoordinateSystem(int x, int y) {
+	Monitor monitor = getContainingMonitor(x, y);
+	return getPixelsFromPoint(monitor, x, y);
+}
+
+Point translateLocationInPointInDisplayCoordinateSystem(int x, int y) {
+	Monitor monitor = getContainingMonitorInPixelsCoordinate(x, y);
+	return getPointFromPixels(monitor, x, y);
+}
+
+private Point getPointFromPixels(Monitor monitor, int x, int y) {
+	int zoom = getApplicableMonitorZoom(monitor);
+	int mappedX = DPIUtil.scaleDown(x - monitor.clientX, zoom) + monitor.clientX;
+	int mappedY = DPIUtil.scaleDown(y - monitor.clientY, zoom) + monitor.clientY;
+	return new Point(mappedX, mappedY);
+}
+
+private Monitor getContainingMonitorInPixelsCoordinate(int xInPixels, int yInPixels) {
+	Monitor[] monitors = getMonitors();
+	for (Monitor current : monitors) {
+		Rectangle clientArea = getMonitorClientAreaInPixels(current);
+		if (clientArea.contains(xInPixels, yInPixels)) {
+			return current;
+		}
+	}
+	return getPrimaryMonitor();
+}
+
+private Rectangle getMonitorClientAreaInPixels(Monitor monitor) {
+	int zoom = getApplicableMonitorZoom(monitor);
+	int widthInPixels = DPIUtil.scaleUp(monitor.clientWidth, zoom);
+	int heightInPixels = DPIUtil.scaleUp(monitor.clientHeight, zoom);
+	return new Rectangle(monitor.clientX, monitor.clientY, widthInPixels, heightInPixels);
+}
+
+private Point getPixelsFromPoint(Monitor monitor, int x, int y) {
+	int zoom = getApplicableMonitorZoom(monitor);
+	int mappedX = DPIUtil.scaleUp(x - monitor.clientX, zoom) + monitor.clientX;
+	int mappedY = DPIUtil.scaleUp(y - monitor.clientY, zoom) + monitor.clientY;
+	return new Point(mappedX, mappedY);
+}
+
+private int getApplicableMonitorZoom(Monitor monitor) {
+	return DPIUtil.getZoomForAutoscaleProperty(isRescalingAtRuntime() ? monitor.zoom : getDeviceZoom());
+}
+
+private Monitor getContainingMonitor(int x, int y) {
+	Monitor[] monitors = getMonitors();
+	for (Monitor currentMonitor : monitors) {
+		Rectangle clientArea = currentMonitor.getClientArea();
+		if (clientArea.contains(x, y)) {
+			return currentMonitor;
+		}
+	}
+	return getPrimaryMonitor();
+}
+
 }

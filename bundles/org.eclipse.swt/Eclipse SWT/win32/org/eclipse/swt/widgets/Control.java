@@ -1814,6 +1814,7 @@ public void internal_dispose_GC (long hDC, GCData data) {
 	}
 }
 
+@Override
 boolean isActive () {
 	Dialog dialog = display.getModalDialog ();
 	if (dialog != null) {
