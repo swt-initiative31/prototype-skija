@@ -4253,7 +4253,7 @@ boolean runSkin () {
 		skinCount = 0;
 		if (eventTable != null && eventTable.hooks(SWT.Skin)) {
 			for (int i = 0; i < count; i++) {
-				Widget widget = oldSkinWidgets[i];
+			    Widget widget = (Widget) oldSkinWidgets[i];
 				if (widget != null && !widget.isDisposed()) {
 					widget.state &= ~Widget.SKIN_NEEDED;
 					oldSkinWidgets[i] = null;

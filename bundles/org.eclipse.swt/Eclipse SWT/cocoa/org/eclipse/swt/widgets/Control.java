@@ -1983,6 +1983,7 @@ public abstract class Control extends Widget implements Drawable {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public Menu getMenu() {
 		checkWidget();
 		return menu;
@@ -3860,6 +3861,7 @@ public abstract class Control extends Widget implements Drawable {
 		super.rotateWithEvent(id, sel, event);
 	}
 
+	@Override
 	boolean sendDragEvent(int button, int stateMask, int x, int y) {
 		Event event = new Event();
 		event.button = button;
