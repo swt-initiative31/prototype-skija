@@ -162,9 +162,7 @@ static int checkStyle(int style) {
 }
 
 void checkGC(int mask) {
-
 	innerGC.checkGC(mask);
-
 }
 
 @Override
@@ -367,7 +365,6 @@ public void drawImage (Image image, int x, int y) {
  */
 public void drawImage (Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight) {
 	innerGC.drawImage(image, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight);
-
 }
 
 
@@ -413,9 +410,7 @@ public void drawLine (int x1, int y1, int x2, int y2) {
  * </ul>
  */
 public void drawOval (int x, int y, int width, int height) {
-
 	innerGC.drawOval(x, y, width, height);
-
 }
 
 
@@ -2163,5 +2158,4 @@ public static GC win32_new(long hDC, GCData data) {
 public void commit() {
 	innerGC.commit();
 }
-
 }
