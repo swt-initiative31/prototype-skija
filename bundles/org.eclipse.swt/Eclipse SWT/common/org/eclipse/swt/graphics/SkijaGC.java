@@ -78,7 +78,7 @@ public class SkijaGC extends GCHandle {
 		}
 		Surface surface = Surface.makeRaster(ImageInfo.makeN32Premul(width, height), 0,
 				new SurfaceProps(PixelGeometry.RGB_H));
-		if (backgroundColor != null) {
+		if (backgroundColor != null && backgroundColor.getAlpha() > 0) {
 			surface.getCanvas().clear(convertSWTColorToSkijaColor(backgroundColor));
 		}
 		return surface;

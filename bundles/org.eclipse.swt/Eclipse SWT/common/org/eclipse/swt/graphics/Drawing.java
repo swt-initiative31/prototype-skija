@@ -17,12 +17,18 @@ import org.eclipse.swt.widgets.*;
 
 public final class Drawing {
 
+	private static final Color DUMMY_COLOR = new Color(0, 0, 0, 0);
+
 	private static Color widgetBackground;
 
 	private Drawing() {
 	}
 
 	public static GC createGraphicsContext(GC originalGC) {
+		return createGraphicsContext(originalGC, true);
+	}
+
+	private static GC createGraphicsContext(GC originalGC, boolean extractColor) {
 		if (!SWT.USE_SKIJA) {
 			return originalGC;
 		}
@@ -32,7 +38,7 @@ public final class Drawing {
 		}
 
 		GC gc = new GC();
-		gc.innerGC = new SkijaGC(originalNativeGC, null);
+		gc.innerGC = new SkijaGC(originalNativeGC, extractColor ? null : DUMMY_COLOR);
 		return gc;
 	}
 
@@ -132,4 +138,15 @@ public final class Drawing {
 		}
 	}
 
+	public static Point getTextExtent(CustomControl control, String text, int drawFlags) {
+		GC originalGC = new GC(control);
+		GC gc = createGraphicsContext(originalGC, false);
+		try {
+			gc.setFont(control.getFont());
+			return gc.textExtent(text, drawFlags);
+		} finally {
+			gc.dispose();
+			originalGC.dispose();
+		}
+	}
 }
