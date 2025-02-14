@@ -60,6 +60,8 @@ import org.eclipse.swt.*;
 public class GC extends Resource {
 
 	public GCHandle innerGC;
+	private int offsetX;
+	private int offsetY;
 
 	static final int FOREGROUND = 1 << 0;
 	static final int BACKGROUND = 1 << 1;
@@ -187,6 +189,7 @@ public void dispose() {
  * </ul>
  */
 public void copyArea (Image image, int x, int y) {
+	// TODO offsetX, offsetY
 	innerGC.copyArea(image, x, y);
 }
 
@@ -210,6 +213,7 @@ void copyAreaInPixels(Image image, int x, int y) {
  * </ul>
  */
 public void copyArea (int srcX, int srcY, int width, int height, int destX, int destY) {
+	// TODO offsetX, offsetY
 	innerGC.copyArea(srcX, srcY, width, height, destX, destY);
 }
 
@@ -232,6 +236,7 @@ public void copyArea (int srcX, int srcY, int width, int height, int destX, int 
  * @since 3.1
  */
 public void copyArea (int srcX, int srcY, int width, int height, int destX, int destY, boolean paint) {
+	// TODO offsetX, offsetY
 	innerGC.copyArea(srcX, srcY, width, height, destX, destY, paint);
 }
 
@@ -281,7 +286,7 @@ void destroy() {
  * </ul>
  */
 public void drawArc (int x, int y, int width, int height, int startAngle, int arcAngle) {
-	innerGC.drawArc(x, y, width, height, startAngle, arcAngle);
+	innerGC.drawArc(x + offsetX, y + offsetY, width, height, startAngle, arcAngle);
 }
 
 
@@ -303,7 +308,7 @@ public void drawArc (int x, int y, int width, int height, int startAngle, int ar
  * @see #drawRectangle(int, int, int, int)
  */
 public void drawFocus (int x, int y, int width, int height) {
-	innerGC.drawFocus(x, y, width, height);
+	innerGC.drawFocus(x + offsetX, y + offsetY, width, height);
 }
 
 
@@ -327,7 +332,7 @@ public void drawFocus (int x, int y, int width, int height) {
  * </ul>
  */
 public void drawImage (Image image, int x, int y) {
-	innerGC.drawImage(image, x, y);
+	innerGC.drawImage(image, x + offsetX, y + offsetY);
 }
 
 
@@ -364,7 +369,7 @@ public void drawImage (Image image, int x, int y) {
  * </ul>
  */
 public void drawImage (Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight) {
-	innerGC.drawImage(image, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight);
+	innerGC.drawImage(image, srcX, srcY, srcWidth, srcHeight, destX + offsetX, destY + offsetY, destWidth, destHeight);
 }
 
 
@@ -384,7 +389,7 @@ public void drawImage (Image image, int srcX, int srcY, int srcWidth, int srcHei
  * </ul>
  */
 public void drawLine (int x1, int y1, int x2, int y2) {
-	innerGC.drawLine(x1, y1, x2, y2);
+	innerGC.drawLine(x1 + offsetX, y1 + offsetY, x2 + offsetX, y2 + offsetY);
 }
 
 
@@ -410,7 +415,7 @@ public void drawLine (int x1, int y1, int x2, int y2) {
  * </ul>
  */
 public void drawOval (int x, int y, int width, int height) {
-	innerGC.drawOval(x, y, width, height);
+	innerGC.drawOval(x + offsetX, y + offsetY, width, height);
 }
 
 
@@ -438,6 +443,7 @@ public void drawOval (int x, int y, int width, int height) {
  * @since 3.1
  */
 public void drawPath (Path path) {
+	// TODO offsetX, offsetY
 	innerGC.drawPath(path);
 }
 
@@ -459,7 +465,7 @@ public void drawPath (Path path) {
  * @since 3.0
  */
 public void drawPoint (int x, int y) {
-	innerGC.drawPoint(x, y);
+	innerGC.drawPoint(x + offsetX, y + offsetY);
 }
 
 /**
@@ -480,6 +486,7 @@ public void drawPoint (int x, int y) {
  * </ul>
  */
 public void drawPolygon (int[] pointArray) {
+	// TODO offsetX, offsetY
 	innerGC.drawPolygon(pointArray);
 }
 
@@ -501,6 +508,7 @@ public void drawPolygon (int[] pointArray) {
  * </ul>
  */
 public void drawPolyline (int[] pointArray) {
+	// TODO offsetX, offsetY
 	innerGC.drawPolyline(pointArray);
 }
 
@@ -520,7 +528,7 @@ public void drawPolyline (int[] pointArray) {
  * </ul>
  */
 public void drawRectangle (int x, int y, int width, int height) {
-	innerGC.drawRectangle(x, y, width, height);
+	innerGC.drawRectangle(x + offsetX, y + offsetY, width, height);
 }
 
 /**
@@ -540,6 +548,7 @@ public void drawRectangle (int x, int y, int width, int height) {
  * </ul>
  */
 public void drawRectangle (Rectangle rect) {
+	// TODO offsetX, offsetY
 	innerGC.drawRectangle(rect);
 }
 
@@ -565,7 +574,7 @@ public void drawRectangle (Rectangle rect) {
  * </ul>
  */
 public void drawRoundRectangle (int x, int y, int width, int height, int arcWidth, int arcHeight) {
-	innerGC.drawRoundRectangle(x, y, width, height, arcWidth, arcHeight);
+	innerGC.drawRoundRectangle(x + offsetX, y + offsetY, width, height, arcWidth, arcHeight);
 }
 
 
@@ -592,7 +601,7 @@ public void drawRoundRectangle (int x, int y, int width, int height, int arcWidt
  * </ul>
  */
 public void drawString (String string, int x, int y) {
-	innerGC.drawString(string, x, y);
+	innerGC.drawString(string, x + offsetX, y + offsetY);
 }
 
 /**
@@ -623,7 +632,7 @@ public void drawString (String string, int x, int y) {
  * </ul>
  */
 public void drawString (String string, int x, int y, boolean isTransparent) {
-	innerGC.drawString(string, x, y, isTransparent);
+	innerGC.drawString(string, x + offsetX, y + offsetY, isTransparent);
 }
 
 /**
@@ -649,7 +658,7 @@ public void drawString (String string, int x, int y, boolean isTransparent) {
  * </ul>
  */
 public void drawText (String string, int x, int y) {
-	innerGC.drawText(string, x, y);
+	innerGC.drawText(string, x + offsetX, y + offsetY);
 }
 
 /**
@@ -677,7 +686,7 @@ public void drawText (String string, int x, int y) {
  * </ul>
  */
 public void drawText (String string, int x, int y, boolean isTransparent) {
-	innerGC.drawText(string, x, y, isTransparent);
+	innerGC.drawText(string, x + offsetX, y + offsetY, isTransparent);
 }
 
 /**
@@ -720,7 +729,7 @@ public void drawText (String string, int x, int y, boolean isTransparent) {
  * </ul>
  */
 public void drawText (String string, int x, int y, int flags) {
-	innerGC.drawText(string, x, y, flags);
+	innerGC.drawText(string, x + offsetX, y + offsetY, flags);
 }
 
 /**
@@ -771,7 +780,7 @@ public boolean equals (Object object) {
  * @see #drawArc
  */
 public void fillArc (int x, int y, int width, int height, int startAngle, int arcAngle) {
-	innerGC.fillArc(x, y, width, height, startAngle, arcAngle);
+	innerGC.fillArc(x + offsetX, y + offsetY, width, height, startAngle, arcAngle);
 }
 
 /**
@@ -795,7 +804,7 @@ public void fillArc (int x, int y, int width, int height, int startAngle, int ar
  * @see #drawRectangle(int, int, int, int)
  */
 public void fillGradientRectangle (int x, int y, int width, int height, boolean vertical) {
-	innerGC.fillGradientRectangle(x, y, width, height, vertical);
+	innerGC.fillGradientRectangle(x + offsetX, y + offsetY, width, height, vertical);
 }
 
 /**
@@ -815,7 +824,7 @@ public void fillGradientRectangle (int x, int y, int width, int height, boolean 
  * @see #drawOval
  */
 public void fillOval (int x, int y, int width, int height) {
-	innerGC.fillOval(x, y, width, height);
+	innerGC.fillOval(x + offsetX, y + offsetY, width, height);
 }
 
 /**
@@ -842,6 +851,7 @@ public void fillOval (int x, int y, int width, int height) {
  * @since 3.1
  */
 public void fillPath (Path path) {
+	// TODO offsetX, offsetY
 	innerGC.fillPath(path);
 }
 
@@ -865,6 +875,19 @@ public void fillPath (Path path) {
  * @see #drawPolygon
  */
 public void fillPolygon (int[] pointArray) {
+	if (offsetX != 0 || offsetY != 0) {
+		final int[] copy = new int[pointArray.length];
+		System.arraycopy(pointArray, 0, copy, 0, pointArray.length);
+		for (int i = 0; i < copy.length; i++) {
+			if ((i & 1) == 0) {
+				copy[i] += offsetX;
+			}
+			else {
+				copy[i] += offsetY;
+			}
+		}
+		pointArray = copy;
+	}
 	innerGC.fillPolygon(pointArray);
 }
 
@@ -884,7 +907,7 @@ public void fillPolygon (int[] pointArray) {
  * @see #drawRectangle(int, int, int, int)
  */
 public void fillRectangle (int x, int y, int width, int height) {
-	innerGC.fillRectangle(x, y, width, height);
+	innerGC.fillRectangle(x + offsetX, y + offsetY, width, height);
 }
 
 /**
@@ -903,6 +926,7 @@ public void fillRectangle (int x, int y, int width, int height) {
  * @see #drawRectangle(int, int, int, int)
  */
 public void fillRectangle (Rectangle rect) {
+	// TODO offsetX, offsetY
 	innerGC.fillRectangle(rect);
 }
 
@@ -924,7 +948,7 @@ public void fillRectangle (Rectangle rect) {
  * @see #drawRoundRectangle
  */
 public void fillRoundRectangle (int x, int y, int width, int height, int arcWidth, int arcHeight) {
-	innerGC.fillRoundRectangle(x, y, width, height, arcWidth, arcHeight);
+	innerGC.fillRoundRectangle(x + offsetX, y + offsetY, width, height, arcWidth, arcHeight);
 }
 
 
@@ -1076,6 +1100,7 @@ public int getCharWidth(char ch) {
  * </ul>
  */
 public Rectangle getClipping () {
+	// TODO offsetX, offsetY
 	return innerGC.getClipping();
 }
 
@@ -1094,6 +1119,7 @@ public Rectangle getClipping () {
  * </ul>
  */
 public void getClipping (Region region) {
+	// TODO offsetX, offsetY
 	innerGC.getClipping(region);
 }
 
@@ -1375,6 +1401,7 @@ public int getTextAntialias() {
  * @since 3.1
  */
 public void getTransform(Transform transform) {
+	// TODO offsetX, offsetY
 	innerGC.getTransform(transform);
 }
 
@@ -1618,6 +1645,7 @@ public void setBackgroundPattern (Pattern pattern) {
  * </ul>
  */
 public void setClipping (int x, int y, int width, int height) {
+	// TODO offsetX, offsetY
 	innerGC.setClipping(x, y, width, height);
 }
 
@@ -1648,6 +1676,7 @@ public void setClipping (int x, int y, int width, int height) {
  * @since 3.1
  */
 public void setClipping (Path path) {
+	// TODO offsetX, offsetY
 	innerGC.setClipping(path);
 }
 
@@ -1665,6 +1694,10 @@ public void setClipping (Path path) {
  * </ul>
  */
 public void setClipping (Rectangle rect) {
+	if ((offsetX != 0 || offsetY != 0) && rect != null) {
+		rect = new Rectangle(rect.x + offsetX, rect.y + offsetY,
+		                     rect.width, rect.height);
+	}
 	innerGC.setClipping(rect);
 }
 
@@ -1685,6 +1718,7 @@ public void setClipping (Rectangle rect) {
  * </ul>
  */
 public void setClipping (Region region) {
+	// TODO offsetX, offsetY
 	innerGC.setClipping(region);
 }
 
@@ -2011,6 +2045,7 @@ public void setTextAntialias(int antialias) {
  * @since 3.1
  */
 public void setTransform(Transform transform) {
+	// TODO offsetX, offsetY
 	innerGC.setTransform(transform);
 }
 
@@ -2157,5 +2192,10 @@ public static GC win32_new(long hDC, GCData data) {
 
 public void commit() {
 	innerGC.commit();
+}
+
+public void translate(int x, int y) {
+	offsetX += x;
+	offsetY += y;
 }
 }
