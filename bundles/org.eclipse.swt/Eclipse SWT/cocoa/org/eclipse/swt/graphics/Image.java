@@ -1740,6 +1740,4 @@ Image(ImageDataProvider imgDataProv) {
     this.genericImage = true;
     this.imageDataProvider = imgDataProv;
 }
-
 }
-

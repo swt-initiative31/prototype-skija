@@ -1372,7 +1372,6 @@ public Rectangle getBoundsInPixels() {
 }
 
 private Rectangle getBoundsInPixelsFromNative() {
-
 	if (this.genericImage) {
 		var d = imageDataProvider.getImageData(100);
 		return new Rectangle(0, 0, d.width, d.height);
@@ -1505,7 +1504,6 @@ public ImageData getImageData (int zoom) {
  */
 @Deprecated
 public ImageData getImageDataAtCurrentZoom() {
-
 	if (this.genericImage)
 		return imageDataProvider.getImageData(100);
 
@@ -2315,7 +2313,6 @@ public void internal_dispose_GC (long hDC, GCData data) {
  */
 @Override
 public boolean isDisposed() {
-
 	if(this.genericImage)
 		return false;
 
@@ -2450,7 +2447,6 @@ void setImageDataProvider(ImageDataProvider imgDataProv) {
 	dispose();
     this.genericImage = true;
     this.imageDataProvider = imgDataProv;
-
 }
 
 /**
