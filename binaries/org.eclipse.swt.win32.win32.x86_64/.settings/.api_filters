@@ -695,4 +695,13 @@
             </message_arguments>
         </filter>
     </resource>
+    <resource path="Eclipse SWT/common/org/eclipse/swt/widgets/IWidget.java" type="org.eclipse.swt.widgets.IWidget">
+        <filter id="643846161">
+            <message_arguments>
+                <message_argument value="SWTEventListener"/>
+                <message_argument value="IWidget"/>
+                <message_argument value="removeListener(int, SWTEventListener)"/>
+            </message_arguments>
+        </filter>
+    </resource>
 </component>

@@ -48,7 +48,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class NativeButton extends NativeControl {
+public class NativeButton extends NativeControl implements IButton {
 	Button wrapperButton;
 
 	String text = "", message = "";
@@ -256,6 +256,7 @@ void _setText (String text) {
  * @see #removeSelectionListener
  * @see SelectionEvent
  */
+@Override
 public void addSelectionListener (SelectionListener listener) {
 	addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 }
@@ -543,6 +544,7 @@ void enableWidget (boolean enabled) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getAlignment () {
 	checkWidget ();
 	if ((style & SWT.ARROW) != 0) {
@@ -578,6 +580,7 @@ boolean getDefault () {
  *
  * @since 3.4
  */
+@Override
 public boolean getGrayed () {
 	checkWidget();
 	if ((style & SWT.CHECK) == 0) return false;
@@ -595,6 +598,7 @@ public boolean getGrayed () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Image getImage () {
 	checkWidget ();
 	return image;
@@ -640,6 +644,7 @@ String getNameText () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public boolean getSelection () {
 	checkWidget ();
 	if ((style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0) return false;
@@ -658,6 +663,7 @@ public boolean getSelection () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public String getText () {
 	checkWidget ();
 	if ((style & SWT.ARROW) != 0) return "";
@@ -726,6 +732,7 @@ void releaseWidget () {
  * @see SelectionListener
  * @see #addSelectionListener
  */
+@Override
 public void removeSelectionListener (SelectionListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -762,6 +769,7 @@ void selectRadio () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setAlignment (int alignment) {
 	checkWidget ();
 	if ((style & SWT.ARROW) != 0) {
@@ -869,6 +877,7 @@ public boolean setFocus () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setImage (Image image) {
 	checkWidget ();
 	if (image != null && image.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
@@ -891,6 +900,7 @@ public void setImage (Image image) {
  *
  * @since 3.4
  */
+@Override
 public void setGrayed (boolean grayed) {
 	checkWidget ();
 	if ((style & SWT.CHECK) == 0) return;
@@ -964,6 +974,7 @@ boolean setRadioSelection (boolean value) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setSelection (boolean selected) {
 	checkWidget ();
 	if ((style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0) return;
@@ -1008,6 +1019,7 @@ public void setSelection (boolean selected) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setText (String string) {
 	checkWidget ();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);

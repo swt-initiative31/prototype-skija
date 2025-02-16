@@ -14,10 +14,8 @@
 package org.eclipse.swt.widgets;
 
 
-import java.awt.*;
-
 import org.eclipse.swt.*;
-import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.*;
 
 /**
  * Instances of this class provide the appearance and
@@ -330,11 +328,13 @@ public boolean isReparentable () {
  * </ul>
  */
 public void setDefaultButton (Button button) {
-	getWrappedWidget().setDefaultButton(checkNative(button));
+	// TODO FACADE enable again
+//	getWrappedWidget().setDefaultButton(checkNative(button));
 }
 
 void setDefaultButton (Button button, boolean save) {
-	getWrappedWidget().setDefaultButton(checkNative(button), save);
+	// TODO FACADE enable again
+//	getWrappedWidget().setDefaultButton(checkNative(button), save);
 }
 
 /**

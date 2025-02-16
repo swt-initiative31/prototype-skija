@@ -210,7 +210,7 @@ static int checkStyle(int style) {
 }
 
 @Override
-protected void checkWidget () {
+public void checkWidget () {
 	super.checkWidget ();
 }
 
@@ -502,7 +502,7 @@ public boolean back () {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	String name = getClass ().getName ();
 	int index = name.lastIndexOf ('.');
 	if (!name.substring (0, index + 1).equals (PACKAGE_PREFIX)) {

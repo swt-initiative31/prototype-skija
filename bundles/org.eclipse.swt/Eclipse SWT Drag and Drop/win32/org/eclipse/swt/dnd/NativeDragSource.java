@@ -448,7 +448,7 @@ private void createCOMInterfaces() {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	String name = getClass().getName ();
 	String validName = NativeDragSource.class.getPackageName();
 	if (!name.startsWith(validName)) {

@@ -50,7 +50,7 @@ import org.eclipse.swt.internal.*;
 public abstract class Widget {
 
 	public static NativeWidget checkNative(Widget widget) {
-		return widget != null ? widget.getWrappedWidget() : null;
+		return widget != null ? (NativeWidget) widget.getWrappedWidget() : null;
 	}
 
 	static NativeToolTip checkNative(ToolTip toolTip) {
@@ -82,7 +82,7 @@ public abstract class Widget {
 	}
 
 	public static NativeControl checkNative(Control control) {
-		return control != null ? control.getWrappedWidget() : null;
+		return control != null ? (NativeControl) control.getWrappedWidget() : null;
 	}
 
 	static NativeControl[] checkNative(Control[] controls) {
@@ -90,7 +90,7 @@ public abstract class Widget {
 	}
 
 	static NativeButton checkNative(Button button) {
-		return button != null ? button.getWrappedWidget() : null;
+		return button != null ? (NativeButton) button.getWrappedWidget() : null;
 	}
 
 	static NativeIME checkNative(IME ime) {
@@ -849,7 +849,7 @@ public String toString () {
 	return getWrappedWidget().toString();
 }
 
-protected NativeWidget getWrappedWidget() {
+protected IWidget getWrappedWidget() {
 	if (wrappedWidget == null) {
 		SWT.error (SWT.ERROR_NULL_ARGUMENT, null, " subclass has to overwrite method for retrieving wrapped widget");
 	}

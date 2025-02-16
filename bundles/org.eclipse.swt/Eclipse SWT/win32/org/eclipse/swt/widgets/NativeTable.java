@@ -1167,7 +1167,7 @@ boolean checkData (NativeTableItem item, int index, boolean redraw) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 

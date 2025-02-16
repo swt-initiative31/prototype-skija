@@ -222,7 +222,7 @@ int AddRef() {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	String name = getClass().getName ();
 	String validName = NativeDropTarget.class.getPackageName();
 	if (!name.startsWith(validName)) {

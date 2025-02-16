@@ -501,7 +501,7 @@ long CBTProc (long nCode, long wParam, long lParam) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 

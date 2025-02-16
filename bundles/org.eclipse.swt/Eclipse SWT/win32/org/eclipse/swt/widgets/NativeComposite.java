@@ -191,7 +191,7 @@ void checkComposited () {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	/* Do nothing - Subclassing is allowed */
 }
 
