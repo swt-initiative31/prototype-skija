@@ -40,7 +40,7 @@ import org.eclipse.swt.internal.gtk3.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeProgressBar extends NativeControl {
+public abstract class NativeProgressBar extends NativeControl implements IProgressBar {
 	int timerId, minimum = 0, maximum = 100, selection = 0;
 	static final int DELAY = 100;
 
@@ -134,6 +134,7 @@ long eventHandle() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getMaximum() {
 	checkWidget();
 	return maximum;
@@ -149,6 +150,7 @@ public int getMaximum() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getMinimum() {
 	checkWidget();
 	return minimum;
@@ -164,6 +166,7 @@ public int getMinimum() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getSelection() {
 	checkWidget();
 	return selection;
@@ -186,6 +189,7 @@ public int getSelection() {
  *
  * @since 3.4
  */
+@Override
 public int getState() {
 	checkWidget();
 	return SWT.NORMAL;
@@ -247,6 +251,7 @@ void setParentBackground() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setMaximum(int value) {
 	checkWidget();
 	if (value <= minimum) return;
@@ -269,6 +274,7 @@ public void setMaximum(int value) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setMinimum(int value) {
 	checkWidget();
 	if (value < 0 || value >= maximum) return;
@@ -290,6 +296,7 @@ public void setMinimum(int value) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setSelection(int value) {
 	checkWidget();
 
@@ -318,6 +325,7 @@ public void setSelection(int value) {
  *
  * @since 3.4
  */
+@Override
 public void setState(int state) {
 	checkWidget();
 	//NOT SUPPORTED BY GTK

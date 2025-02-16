@@ -315,7 +315,7 @@ void resizeIME () {
 	if (!OS.GetCaretPos (ptCurrentPos)) return;
 	long hwnd = parent.handle;
 	long hIMC = OS.ImmGetContext (hwnd);
-	NativeIME ime = parent.getIME ();
+	NativeIME ime = Widget.checkNative(parent.getIME ());
 	if (ime != null && ime.isInlineEnabled ()) {
 		Point size = getSizeInPixels ();
 		CANDIDATEFORM lpCandidate = new CANDIDATEFORM ();
@@ -344,7 +344,7 @@ void resizeIME () {
 void releaseParent () {
 	super.releaseParent ();
 	if (parent != null && this == parent.caret) {
-		if (!parent.isDisposed()) parent.setCaret (null);
+		if (!parent.isDisposed()) parent.setCaret ((NativeCaret) null);
 		else parent.caret = null;
 	}
 }

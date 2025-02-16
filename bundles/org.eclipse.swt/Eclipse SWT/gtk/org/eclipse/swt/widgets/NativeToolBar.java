@@ -51,7 +51,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeToolBar extends NativeComposite {
+public abstract class NativeToolBar extends NativeComposite implements IToolBar {
 	NativeToolItem currentFocusItem;
 	NativeToolItem [] tabItemList;
 	ImageList imageList;
@@ -204,7 +204,7 @@ NativeWidget computeTabGroup () {
 		while (i < items.length && items [i].control == null) i++;
 		if (i == items.length) return super.computeTabGroup ();
 	}
-	int index = indexOf(currentFocusItem);
+	int index = indexOf(currentFocusItem != null ? currentFocusItem.getWrapper() : null);
 	if (index == -1) index = items.length - 1;
 	while (index >= 0) {
 		NativeToolItem item = items [index];
@@ -278,7 +278,8 @@ boolean forceFocus (long focusHandle) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public NativeToolItem getItem (int index) {
+@Override
+public ToolItem getItem (int index) {
 	checkWidget();
 	if (!(0 <= index && index < getItemCount())) error (SWT.ERROR_INVALID_RANGE);
 	return getItems()[index];
@@ -300,15 +301,17 @@ public NativeToolItem getItem (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public NativeToolItem getItem (Point point) {
+@Override
+public ToolItem getItem (Point point) {
 	checkWidget();
-	return getItemInPixels(DPIUtil.autoScaleUp(point));
+	NativeToolItem item = getItemInPixels(DPIUtil.autoScaleUp(point));
+	return item != null ? item.getWrapper() : null;
 }
 
 
 NativeToolItem getItemInPixels (Point point) {
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
-	NativeToolItem[] items = getItems();
+	NativeToolItem[] items = getNativeItems();
 	for (int i=0; i<items.length; i++) {
 		if (items[i].getBoundsInPixels().contains(point)) return items[i];
 	}
@@ -325,6 +328,7 @@ NativeToolItem getItemInPixels (Point point) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getItemCount () {
 	checkWidget();
 
@@ -359,7 +363,12 @@ public int getItemCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public NativeToolItem [] getItems () {
+@Override
+public ToolItem [] getItems () {
+	return Arrays.stream(getNativeItems()).map(NativeToolItem::getWrapper).toArray(ToolItem[]::new);
+}
+
+private NativeToolItem [] getNativeItems () {
 	checkWidget();
 	return _getItems ();
 }
@@ -411,6 +420,7 @@ NativeToolItem[] _getItems () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getRowCount () {
 	checkWidget();
 	/* On GTK, toolbars cannot wrap */
@@ -471,12 +481,13 @@ boolean hasFocus () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public int indexOf (NativeToolItem item) {
+@Override
+public int indexOf (ToolItem item) {
 	checkWidget();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
-	NativeToolItem [] items = getItems ();
+	NativeToolItem [] items = getNativeItems ();
 	for (int i=0; i<items.length; i++) {
-		if (item == items[i]) return i;
+		if (item == items[i].getWrapper()) return i;
 	}
 	return -1;
 }
@@ -485,7 +496,7 @@ static long MenuItemSelectedProc (long widget, long /*int*/	user_data) {
 	Display display = Display.getCurrent ();
 	NativeToolItem item = (NativeToolItem) display.getWidget (user_data);
 	if (item != null) {
-		return item.getParent ().menuItemSelected (widget, item);
+		return item.parent.menuItemSelected (widget, item);
 	}
 	return 0;
 }
@@ -521,7 +532,7 @@ long menuItemSelected (long widget, NativeToolItem item) {
 
 @Override
 boolean mnemonicHit (char key) {
-	NativeToolItem [] items = getItems ();
+	NativeToolItem [] items = getNativeItems ();
 	for (int i=0; i<items.length; i++) {
 		long labelHandle = items [i].labelHandle;
 		if (labelHandle != 0 && mnemonicHit (labelHandle, key)) return true;
@@ -531,7 +542,7 @@ boolean mnemonicHit (char key) {
 
 @Override
 boolean mnemonicMatch (char key) {
-	NativeToolItem [] items = getItems ();
+	NativeToolItem [] items = getNativeItems ();
 	for (int i=0; i<items.length; i++) {
 		long labelHandle = items [i].labelHandle;
 		if (labelHandle != 0 && mnemonicMatch (labelHandle, key)) return true;
@@ -540,7 +551,7 @@ boolean mnemonicMatch (char key) {
 }
 
 void relayout () {
-	NativeToolItem [] items = getItems ();
+	NativeToolItem [] items = getNativeItems ();
 	boolean hasText = false, hasImage = false;
 	for (int i=0; i<items.length; i++) {
 		NativeToolItem item = items [i];
@@ -573,7 +584,7 @@ void relayout () {
 
 @Override
 void releaseChildren (boolean destroy) {
-	NativeToolItem [] items = getItems ();
+	NativeToolItem [] items = getNativeItems ();
 	for (int i=0; i<items.length; i++) {
 		NativeToolItem item = items [i];
 		if (item != null && !item.isDisposed ()) {
@@ -593,7 +604,7 @@ void releaseWidget () {
 @Override
 void removeControl (NativeControl control) {
 	super.removeControl (control);
-	NativeToolItem [] items = getItems ();
+	NativeToolItem [] items = getNativeItems ();
 	for (int i=0; i<items.length; i++) {
 		NativeToolItem item = items [i];
 		if (item.control == control) item.setControl (null);
@@ -676,7 +687,7 @@ void setForegroundGdkRGBA (long handle, GdkRGBA rgba) {
 @Override
 void setFontDescription (long font) {
 	super.setFontDescription (font);
-	NativeToolItem [] items = getItems ();
+	NativeToolItem [] items = getNativeItems ();
 	for (int i = 0; i < items.length; i++) {
 		items[i].setFontDescription (font);
 	}
@@ -686,7 +697,7 @@ void setFontDescription (long font) {
 @Override
 void setForegroundGdkRGBA (GdkRGBA rgba) {
 	super.setForegroundGdkRGBA (rgba);
-	NativeToolItem [] items = getItems ();
+	NativeToolItem [] items = getNativeItems ();
 	for (int i = 0; i < items.length; i++) {
 		items[i].updateStyle ();
 	}
@@ -721,7 +732,7 @@ void setOrientation (boolean create) {
 public void setToolTipText(String string) {
 	checkWidget();
 	super.setToolTipText(string);
-	NativeToolItem[] items = getItems();
+	NativeToolItem[] items = getNativeItems();
 	for (int i = 0; i < items.length; i++) {
 		String newString = string != null ? null : items[i].toolTipText;
 		setToolTipText(items[i].handle, newString);

@@ -44,7 +44,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @since 3.1
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeLink extends NativeControl {
+public abstract class NativeLink extends NativeControl implements ILink {
 	String text;
 	TextLayout layout;
 	Color linkColor, disabledColor;
@@ -116,6 +116,7 @@ protected NativeLink (NativeComposite parent, int style) {
  * @see #removeSelectionListener
  * @see SelectionEvent
  */
+@Override
 public void addSelectionListener (SelectionListener listener) {
 	addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 }
@@ -282,6 +283,7 @@ void initAccessible () {
  * </ul>
  * @since 3.105
  */
+@Override
 public Color getLinkForeground () {
 	checkWidget ();
 	return linkColor != null ? linkColor : display.getSystemColor(SWT.COLOR_LINK_FOREGROUND);
@@ -332,6 +334,7 @@ Rectangle [] getRectanglesInPixels (int linkIndex) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public String getText () {
 	checkWidget ();
 	return text;
@@ -640,6 +643,7 @@ void releaseWidget () {
  * @see SelectionListener
  * @see #addSelectionListener
  */
+@Override
 public void removeSelectionListener (SelectionListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -840,6 +844,7 @@ void setFontDescription (long font) {
  * </ul>
  * @since 3.105
  */
+@Override
 public void setLinkForeground (Color color) {
 	checkWidget();
 	if (color != null) {
@@ -898,6 +903,7 @@ void setOrientation (boolean create) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setText (String string) {
 	checkWidget ();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);

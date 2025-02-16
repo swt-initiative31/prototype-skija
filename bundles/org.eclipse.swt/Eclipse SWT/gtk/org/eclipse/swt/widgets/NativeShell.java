@@ -915,7 +915,7 @@ NativeComposite findDeferredControl () {
  *
  * @since 3.7
  */
-public NativeToolBar getToolBar() {
+public ToolBar getToolBar() {
 	checkWidget ();
 	return null;
 }
@@ -2018,7 +2018,7 @@ long notifyState (long object, long arg0) {
  * @see NativeControl#setFocus
  * @see NativeControl#setVisible
  * @see Display#getActiveShell
- * @see NativeDecorations#setDefaultButton(NativeButton)
+ * @see NativeDecorations#setDefaultButton(Button)
  * @see NativeShell#setActive
  * @see NativeShell#forceActive
  */
@@ -2158,7 +2158,7 @@ void reskinChildren (int flags) {
  * @see NativeControl#setFocus
  * @see NativeControl#setVisible
  * @see Display#getActiveShell
- * @see NativeDecorations#setDefaultButton(NativeButton)
+ * @see NativeDecorations#setDefaultButton(Button)
  * @see NativeShell#open
  * @see NativeShell#setActive
  */
@@ -3348,7 +3348,7 @@ public void dispose () {
  * @see NativeControl#setFocus
  * @see NativeControl#setVisible
  * @see Display#getActiveShell
- * @see NativeDecorations#setDefaultButton(NativeButton)
+ * @see NativeDecorations#setDefaultButton(Button)
  * @see NativeShell#open
  * @see NativeShell#setActive
  */

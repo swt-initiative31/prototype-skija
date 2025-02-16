@@ -4871,11 +4871,12 @@ Runnable defaultButtonTimer = new Runnable() {
 		if (isDisposed ()) return;
 		NativeShell shell = getActiveNativeShell();
 		if (shell != null && !shell.isDisposed()) {
-			NativeButton defaultButton = shell.defaultButton;
-			if (defaultButton != null && !defaultButton.isDisposed()) {
-				NSView view = defaultButton.view;
-				view.display();
-			}
+			// TODO Facade readd
+//			Button defaultButton = shell.defaultButton;
+//			if (defaultButton != null && !defaultButton.isDisposed()) {
+//				NSView view = defaultButton.view;
+//				view.display();
+//			}
 		}
 		if (isDisposed ()) return;
 		if (hasDefaultButton()) timerExec(DEFAULT_BUTTON_INTERVAL, this);

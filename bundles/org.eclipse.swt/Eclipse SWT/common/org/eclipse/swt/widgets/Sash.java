@@ -40,7 +40,7 @@ import org.eclipse.swt.events.*;
  */
 public class Sash extends Control {
 
-	private final NativeSash wrappedSash;
+	private final ISash wrappedSash;
 
 /**
  * Constructs a new instance of this class given its parent
@@ -127,7 +127,7 @@ public void removeSelectionListener(SelectionListener listener) {
 }
 
 @Override
-protected NativeSash getWrappedWidget() {
+protected ISash getWrappedWidget() {
 	return wrappedSash;
 }
 

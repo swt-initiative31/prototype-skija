@@ -605,8 +605,7 @@ public Shell [] getShells () {
  * @since 3.7
  */
 public ToolBar getToolBar() {
-	NativeToolBar wrappedToolBar = wrappedShell.getToolBar();
-	return wrappedToolBar != null ? wrappedToolBar.getWrapper() : null;
+	return wrappedShell.getToolBar();
 }
 
 @Override

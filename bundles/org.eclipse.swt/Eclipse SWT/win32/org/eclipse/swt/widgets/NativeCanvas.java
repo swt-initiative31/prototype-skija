@@ -41,7 +41,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public abstract class NativeCanvas extends NativeComposite {
+public abstract class NativeCanvas extends NativeComposite implements ICanvas {
 	NativeCaret caret;
 	NativeIME ime;
 
@@ -102,6 +102,7 @@ protected NativeCanvas (NativeComposite parent, int style) {
  *
  * @since 3.2
  */
+@Override
 public void drawBackground (GC gc, int x, int y, int width, int height) {
 	int zoom = getZoom();
 	Rectangle rectangle = DPIUtil.scaleUp(new Rectangle(x, y, width, height), zoom);
@@ -126,9 +127,10 @@ public void drawBackground (GC gc, int x, int y, int width, int height) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public NativeCaret getCaret () {
+@Override
+public Caret getCaret () {
 	checkWidget ();
-	return caret;
+	return caret != null ? caret.getWrapper() : null;
 }
 
 /**
@@ -143,9 +145,10 @@ public NativeCaret getCaret () {
  *
  * @since 3.4
  */
-public NativeIME getIME () {
+@Override
+public IME getIME () {
 	checkWidget ();
-	return ime;
+	return ime != null ? ime.getWrapper() : null;
 }
 
 @Override
@@ -195,6 +198,7 @@ void reskinChildren (int flags) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void scroll (int destX, int destY, int x, int y, int width, int height, boolean all) {
 	checkWidget ();
 	int zoom = getZoom();
@@ -274,7 +278,12 @@ void scrollInPixels (int destX, int destY, int x, int y, int width, int height, 
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setCaret (NativeCaret caret) {
+@Override
+public void setCaret (Caret caret) {
+	setCaret(Widget.checkNative(caret));
+}
+
+void setCaret (NativeCaret caret) {
 	checkWidget ();
 	NativeCaret newCaret = caret;
 	NativeCaret oldCaret = this.caret;
@@ -310,7 +319,12 @@ public void setFont (Font font) {
  *
  * @since 3.4
  */
-public void setIME (NativeIME ime) {
+@Override
+public void setIME (IME ime) {
+	setIME(Widget.checkNative(ime));
+}
+
+void setIME (NativeIME ime) {
 	checkWidget ();
 	if (ime != null && ime.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
 	this.ime = ime;

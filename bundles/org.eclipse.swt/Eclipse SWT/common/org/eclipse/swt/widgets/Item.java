@@ -33,7 +33,7 @@ import org.eclipse.swt.graphics.*;
 
 public abstract class Item extends Widget {
 
-	private final NativeItem wrappedItem;
+	private final IItem wrappedItem;
 
 /**
  * Constructs a new instance of this class given its parent
@@ -173,7 +173,7 @@ public void setText (String string) {
 }
 
 @Override
-protected NativeItem getWrappedWidget() {
+protected IItem getWrappedWidget() {
 	if (wrappedItem == null) {
 		SWT.error (SWT.ERROR_NULL_ARGUMENT, null, " subclass has to overwrite method for retrieving wrapped widget");
 	}

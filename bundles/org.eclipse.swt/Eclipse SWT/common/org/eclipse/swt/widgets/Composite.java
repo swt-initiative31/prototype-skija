@@ -14,8 +14,6 @@
 package org.eclipse.swt.widgets;
 
 
-import java.util.*;
-
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 
@@ -51,7 +49,7 @@ import org.eclipse.swt.graphics.*;
  */
 public class Composite extends Scrollable {
 
-	private final NativeComposite wrappedComposite;
+	private final IComposite wrappedComposite;
 
 /**
  * Constructs a new instance of this class given its parent
@@ -113,7 +111,7 @@ protected Composite() {
  */
 @Deprecated
 public void changed (Control[] changed) {
-	getWrappedWidget().changed(checkNative(changed));
+	getWrappedWidget().changed(changed);
 }
 
 /**
@@ -191,7 +189,7 @@ public int getBackgroundMode () {
  * </ul>
  */
 public Control [] getChildren () {
-	return Arrays.stream(getWrappedWidget().getChildren()).map(NativeControl::getWrapper).toArray(Control[]::new);
+	return getWrappedWidget().getChildren();
 }
 
 /**
@@ -222,7 +220,7 @@ public Layout getLayout () {
  * @see #setTabList
  */
 public Control [] getTabList () {
-	return Arrays.stream(getWrappedWidget().getTabList()).map(NativeControl::getWrapper).toArray(Control[]::new);
+	return getWrappedWidget().getTabList();
 }
 
 /**
@@ -421,7 +419,7 @@ public void layout (boolean changed, boolean all) {
  * @since 3.1
  */
 public void layout (Control [] changed) {
-	getWrappedWidget().layout(checkNative(changed));
+	getWrappedWidget().layout(changed);
 }
 
 /**
@@ -483,7 +481,7 @@ public void layout (Control [] changed) {
  * @since 3.6
  */
 public void layout (Control [] changed, int flags) {
-	getWrappedWidget().layout(checkNative(changed), flags);
+	getWrappedWidget().layout(changed, flags);
 }
 
 /**
@@ -568,7 +566,7 @@ public void setLayoutDeferred (boolean defer) {
  * </ul>
  */
 public void setTabList (Control [] tabList) {
-	getWrappedWidget().setTabList(checkNative(tabList));
+	getWrappedWidget().setTabList(tabList);
 }
 
 @Override
@@ -577,7 +575,7 @@ public String toString() {
 }
 
 @Override
-protected NativeComposite getWrappedWidget() {
+protected IComposite getWrappedWidget() {
 	if (wrappedComposite == null) {
 		SWT.error (SWT.ERROR_NULL_ARGUMENT, null, " subclass has to overwrite method for retrieving wrapped widget");
 	}

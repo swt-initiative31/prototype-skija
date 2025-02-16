@@ -62,7 +62,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeText extends NativeScrollable {
+public abstract class NativeText extends NativeScrollable implements IText {
 	int tabs, oldStart, oldEnd;
 	boolean doubleClick, ignoreModify, ignoreVerify, ignoreCharacter, allowPasswordChar;
 	String message;
@@ -364,6 +364,7 @@ int applyThemeBackground () {
  * @see ModifyListener
  * @see #removeModifyListener
  */
+@Override
 public void addModifyListener (ModifyListener listener) {
 	addTypedListener(listener, SWT.Modify);
 }
@@ -402,6 +403,7 @@ public void addModifyListener (ModifyListener listener) {
  *
  * @since 3.8
  */
+@Override
 public void addSegmentListener (SegmentListener listener) {
 	addTypedListener (listener, SWT.Segments);
 	clearSegments (true);
@@ -436,6 +438,7 @@ public void addSegmentListener (SegmentListener listener) {
  * @see #removeSelectionListener
  * @see SelectionEvent
  */
+@Override
 public void addSelectionListener (SelectionListener listener) {
 	addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 }
@@ -459,6 +462,7 @@ public void addSelectionListener (SelectionListener listener) {
  * @see VerifyListener
  * @see #removeVerifyListener
  */
+@Override
 public void addVerifyListener (VerifyListener listener) {
 	addTypedListener(listener, SWT.Verify);
 }
@@ -480,6 +484,7 @@ public void addVerifyListener (VerifyListener listener) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void append (String string) {
 	checkWidget ();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -671,6 +676,7 @@ void clearSegments (boolean applyText) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void clearSelection () {
 	checkWidget ();
 	OS.SendMessage (handle, OS.EM_SETSEL, -1, 0);
@@ -768,6 +774,7 @@ public void clearSelection () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void copy () {
 	checkWidget ();
 	OS.SendMessage (handle, OS.WM_COPY, 0, 0);
@@ -799,6 +806,7 @@ void createWidget () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void cut () {
 	checkWidget ();
 	if ((style & SWT.READ_ONLY) != 0) return;
@@ -941,6 +949,7 @@ void fixAlignment () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getCaretLineNumber () {
 	checkWidget ();
 	return (int)OS.SendMessage (handle, OS.EM_LINEFROMCHAR, -1, 0);
@@ -957,6 +966,7 @@ public int getCaretLineNumber () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Point getCaretLocation () {
 	checkWidget ();
 	return DPIUtil.scaleDown(getCaretLocationInPixels(), getZoom());
@@ -1019,6 +1029,7 @@ Point getCaretLocationInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getCaretPosition () {
 	checkWidget ();
 	int [] start = new int [1], end = new int [1];
@@ -1076,6 +1087,7 @@ public int getCaretPosition () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getCharCount () {
 	checkWidget ();
 	int length = OS.GetWindowTextLength (handle);
@@ -1097,6 +1109,7 @@ public int getCharCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public boolean getDoubleClickEnabled () {
 	checkWidget ();
 	return doubleClick;
@@ -1119,6 +1132,7 @@ public boolean getDoubleClickEnabled () {
  *
  * @see #setEchoChar
  */
+@Override
 public char getEchoChar () {
 	checkWidget ();
 	return (char) OS.SendMessage (handle, OS.EM_GETPASSWORDCHAR, 0, 0);
@@ -1134,6 +1148,7 @@ public char getEchoChar () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public boolean getEditable () {
 	checkWidget ();
 	int bits = OS.GetWindowLong (handle, OS.GWL_STYLE);
@@ -1150,6 +1165,7 @@ public boolean getEditable () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getLineCount () {
 	checkWidget ();
 	return (int)OS.SendMessage (handle, OS.EM_GETLINECOUNT, 0, 0);
@@ -1165,6 +1181,7 @@ public int getLineCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public String getLineDelimiter () {
 	checkWidget ();
 	return Text.DELIMITER;
@@ -1180,6 +1197,7 @@ public String getLineDelimiter () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getLineHeight () {
 	checkWidget ();
 	return DPIUtil.scaleDown(getLineHeightInPixels (), getZoom());
@@ -1231,6 +1249,7 @@ public int getOrientation () {
  *
  * @since 3.3
  */
+@Override
 public String getMessage () {
 	checkWidget ();
 	return message;
@@ -1280,6 +1299,7 @@ public String getMessage () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Point getSelection () {
 	checkWidget ();
 	int [] start = new int [1], end = new int [1];
@@ -1297,6 +1317,7 @@ public Point getSelection () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getSelectionCount () {
 	checkWidget ();
 	Point selection = getSelection ();
@@ -1313,6 +1334,7 @@ public int getSelectionCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public String getSelectionText () {
 	checkWidget ();
 	int length = OS.GetWindowTextLength (handle);
@@ -1344,6 +1366,7 @@ public String getSelectionText () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getTabs () {
 	checkWidget ();
 	return tabs;
@@ -1376,6 +1399,7 @@ int getTabWidth (int tabs) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public String getText () {
 	checkWidget ();
 	int length = OS.GetWindowTextLength (handle);
@@ -1414,6 +1438,7 @@ public String getText () {
  *
  * @since 3.7
  */
+@Override
 public char[] getTextChars () {
 	checkWidget ();
 	int length = OS.GetWindowTextLength (handle);
@@ -1445,6 +1470,7 @@ public char[] getTextChars () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public String getText (int start, int end) {
 	checkWidget ();
 	if (!(start <= end && 0 <= end)) return "";
@@ -1474,6 +1500,7 @@ public String getText (int start, int end) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getTextLimit () {
 	checkWidget ();
 	int limit = (int)OS.SendMessage (handle, OS.EM_GETLIMITTEXT, 0, 0) & 0x7FFFFFFF;
@@ -1495,6 +1522,7 @@ public int getTextLimit () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getTopIndex () {
 	checkWidget ();
 	if ((style & SWT.SINGLE) != 0) return 0;
@@ -1521,6 +1549,7 @@ public int getTopIndex () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getTopPixel () {
 	checkWidget ();
 	return DPIUtil.scaleDown(getTopPixelInPixels(), getZoom());
@@ -1554,6 +1583,7 @@ int getTopPixelInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void insert (String string) {
 	checkWidget ();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1603,6 +1633,7 @@ boolean isUseWsBorder () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void paste () {
 	checkWidget ();
 	if ((style & SWT.READ_ONLY) != 0) return;
@@ -1632,6 +1663,7 @@ void releaseWidget () {
  * @see ModifyListener
  * @see #addModifyListener
  */
+@Override
 public void removeModifyListener (ModifyListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1659,6 +1691,7 @@ public void removeModifyListener (ModifyListener listener) {
  *
  * @since 3.8
  */
+@Override
 public void removeSegmentListener (SegmentListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1684,6 +1717,7 @@ public void removeSegmentListener (SegmentListener listener) {
  * @see SelectionListener
  * @see #addSelectionListener
  */
+@Override
 public void removeSelectionListener (SelectionListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1709,6 +1743,7 @@ public void removeSelectionListener (SelectionListener listener) {
  * @see VerifyListener
  * @see #addVerifyListener
  */
+@Override
 public void removeVerifyListener (VerifyListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1747,6 +1782,7 @@ int resolveTextDirection() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void selectAll () {
 	checkWidget ();
 	OS.SendMessage (handle, OS.EM_SETSEL, 0, -1);
@@ -1958,6 +1994,7 @@ void setDefaultFont () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setDoubleClickEnabled (boolean doubleClick) {
 	checkWidget ();
 	this.doubleClick = doubleClick;
@@ -1984,6 +2021,7 @@ public void setDoubleClickEnabled (boolean doubleClick) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setEchoChar (char echo) {
 	checkWidget ();
 	if ((style & SWT.MULTI) != 0) return;
@@ -2008,6 +2046,7 @@ public void setEchoChar (char echo) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setEditable (boolean editable) {
 	checkWidget ();
 	style &= ~SWT.READ_ONLY;
@@ -2063,6 +2102,7 @@ void setMargins () {
  *
  * @since 3.3
  */
+@Override
 public void setMessage (String message) {
 	checkWidget ();
 	if (message == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2121,6 +2161,7 @@ public void setOrientation (int orientation) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setSelection (int start) {
 	checkWidget ();
 	start = translateOffset (start);
@@ -2153,6 +2194,7 @@ public void setSelection (int start) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setSelection (int start, int end) {
 	checkWidget ();
 	start = translateOffset (start);
@@ -2212,6 +2254,7 @@ public void setRedraw (boolean redraw) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setSelection (Point selection) {
 	checkWidget ();
 	if (selection == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2233,6 +2276,7 @@ public void setSelection (Point selection) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setTabs (int tabs) {
 	checkWidget ();
 	if (tabs < 0) return;
@@ -2268,6 +2312,7 @@ void setTabStops (int tabs) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setText (String string) {
 	checkWidget ();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2326,6 +2371,7 @@ public void setText (String string) {
  *
  * @since 3.7
  */
+@Override
 public void setTextChars (char[] text) {
 	checkWidget ();
 	if (text == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2387,6 +2433,7 @@ public void setTextChars (char[] text) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setTextLimit (int limit) {
 	checkWidget ();
 	if (limit == 0) error (SWT.ERROR_CANNOT_BE_ZERO);
@@ -2409,6 +2456,7 @@ public void setTextLimit (int limit) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setTopIndex (int index) {
 	checkWidget ();
 	if ((style & SWT.SINGLE) != 0) return;
@@ -2431,6 +2479,7 @@ public void setTopIndex (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void showSelection () {
 	checkWidget ();
 	OS.SendMessage (handle, OS.EM_SCROLLCARET, 0, 0);

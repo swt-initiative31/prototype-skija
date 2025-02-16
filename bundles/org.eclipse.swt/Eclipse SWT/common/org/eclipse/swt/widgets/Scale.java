@@ -41,7 +41,7 @@ import org.eclipse.swt.events.*;
  */
 public class Scale extends Control {
 
-	private final NativeScale wrappedScale;
+	private final IScale wrappedScale;
 
 /**
  * Constructs a new instance of this class given its parent
@@ -282,7 +282,7 @@ public void setSelection (int value) {
 }
 
 @Override
-protected NativeScale getWrappedWidget() {
+protected IScale getWrappedWidget() {
 	return wrappedScale;
 }
 

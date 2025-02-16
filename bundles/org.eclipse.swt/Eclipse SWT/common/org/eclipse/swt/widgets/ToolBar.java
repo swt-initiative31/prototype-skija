@@ -14,8 +14,6 @@
 package org.eclipse.swt.widgets;
 
 
-import java.util.*;
-
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 
@@ -49,7 +47,7 @@ import org.eclipse.swt.graphics.*;
  */
 public class ToolBar extends Composite {
 
-	private final NativeToolBar wrappedToolBar;
+	private final IToolBar wrappedToolBar;
 
 /**
  * Constructs a new instance of this class given its parent
@@ -108,8 +106,7 @@ ToolBar (NativeToolBar nativeToolBar) {
  * </ul>
  */
 public ToolItem getItem (int index) {
-	NativeToolItem wrappedToolItem = wrappedToolBar.getItem(index);
-	return wrappedToolItem != null ? wrappedToolItem.getWrapper() : null;
+	return wrappedToolBar.getItem(index);
 }
 
 /**
@@ -129,8 +126,7 @@ public ToolItem getItem (int index) {
  * </ul>
  */
 public ToolItem getItem (Point point) {
-	NativeToolItem wrappedToolItem = wrappedToolBar.getItem(point);
-	return wrappedToolItem != null ? wrappedToolItem.getWrapper() : null;
+	return wrappedToolBar.getItem(point);
 }
 
 /**
@@ -164,7 +160,7 @@ public int getItemCount () {
  * </ul>
  */
 public ToolItem [] getItems () {
-	return Arrays.stream(wrappedToolBar.getItems()).map(NativeToolItem::getWrapper).toArray(ToolItem[]::new);
+	return wrappedToolBar.getItems();
 }
 
 /**
@@ -203,11 +199,11 @@ public int getRowCount () {
  * </ul>
  */
 public int indexOf (ToolItem item) {
-	return wrappedToolBar.indexOf(checkNative(item));
+	return wrappedToolBar.indexOf(item);
 }
 
 @Override
-protected NativeToolBar getWrappedWidget() {
+protected IToolBar getWrappedWidget() {
 	return wrappedToolBar;
 }
 

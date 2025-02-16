@@ -48,7 +48,7 @@ import org.eclipse.swt.graphics.*;
  */
 public class Button extends Control {
 
-	private final NativeButton wrappedButton;
+	private final IButton wrappedButton;
 
 /**
  * Constructs a new instance of this class given its parent
@@ -378,7 +378,7 @@ public void setText (String string) {
 }
 
 @Override
-protected NativeButton getWrappedWidget() {
+protected IButton getWrappedWidget() {
 	return wrappedButton;
 }
 

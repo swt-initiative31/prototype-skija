@@ -398,7 +398,7 @@ void resetStyles () {
 @Override
 void releaseParent () {
 	super.releaseParent ();
-	if (this == parent.getIME ()) parent.setIME (null);
+	if (this.getWrapper() == parent.getIME ()) parent.setIME ((NativeIME) null);
 }
 
 @Override

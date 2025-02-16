@@ -50,7 +50,7 @@ import org.eclipse.swt.internal.*;
 public abstract class Widget {
 
 	public static NativeWidget checkNative(Widget widget) {
-		return widget != null ? widget.getWrappedWidget() : null;
+		return widget != null ? (NativeWidget) widget.getWrappedWidget() : null;
 	}
 
 	static NativeToolTip checkNative(ToolTip toolTip) {
@@ -82,11 +82,11 @@ public abstract class Widget {
 	}
 
 	public static NativeControl checkNative(Control control) {
-		return control != null ? control.getWrappedWidget() : null;
+		return control != null ? (NativeControl) control.getWrappedWidget() : null;
 	}
 
 	static NativeLabel checkNative(Label label) {
-		return label != null ? label.getWrappedWidget() : null;
+		return label != null ? (NativeLabel) label.getWrappedWidget() : null;
 	}
 
 	static NativeControl[] checkNative(Control[] controls) {
@@ -94,7 +94,7 @@ public abstract class Widget {
 	}
 
 	static NativeButton checkNative(Button button) {
-		return button != null ? button.getWrappedWidget() : null;
+		return button != null ? (NativeButton) button.getWrappedWidget() : null;
 	}
 
 	static NativeIME checkNative(IME ime) {
@@ -106,27 +106,23 @@ public abstract class Widget {
 	}
 
 	static NativeScrollable checkNative(Scrollable scrollable) {
-		return scrollable != null ? scrollable.getWrappedWidget() : null;
+		return scrollable != null ? (NativeScrollable) scrollable.getWrappedWidget() : null;
 	}
 
 	public static NativeComposite checkNative(Composite composite) {
-		return composite != null ? composite.getWrappedWidget() : null;
+		return composite != null ? (NativeComposite) composite.getWrappedWidget() : null;
 	}
 
 	static NativeToolBar checkNative(ToolBar toolbar) {
-		return toolbar != null ? toolbar.getWrappedWidget() : null;
+		return toolbar != null ? (NativeToolBar) toolbar.getWrappedWidget() : null;
 	}
 
 	static NativeToolItem checkNative(ToolItem toolItem) {
-		return toolItem != null ? toolItem.getWrappedWidget() : null;
+		return toolItem != null ? (NativeToolItem) toolItem.getWrappedWidget() : null;
 	}
 
 	static NativeTaskBar checkNative(TaskBar taskBar) {
 		return taskBar != null ? taskBar.getWrappedWidget() : null;
-	}
-
-	static NativeTaskItem checkNative(TaskItem taskItem) {
-		return taskItem != null ? taskItem.getWrappedWidget() : null;
 	}
 
 	static NativeExpandBar checkNative(ExpandBar expandbar) {
@@ -147,10 +143,6 @@ public abstract class Widget {
 
 	static NativeTray checkNative(Tray tray) {
 		return tray != null ? tray.getWrappedWidget() : null;
-	}
-
-	static NativeTrayItem checkNative(TrayItem trayItem) {
-		return trayItem != null ? trayItem.getWrappedWidget() : null;
 	}
 
 	static NativeTree checkNative(Tree tree) {
@@ -186,7 +178,7 @@ public abstract class Widget {
 	}
 
 	static NativeCanvas checkNative(Canvas canvas) {
-		return canvas != null ? canvas.getWrappedWidget() : null;
+		return canvas != null ? (NativeCanvas) canvas.getWrappedWidget() : null;
 	}
 
 	static NativeDecorations checkNative(Decorations decorations) {
@@ -741,6 +733,37 @@ protected void removeListener (int eventType, SWTEventListener listener) {
  * @noreference This method is not intended to be referenced by clients.
  * @nooverride This method is not intended to be re-implemented or extended by clients.
  */
+protected void removeListener (int eventType, EventListener listener) {
+	getWrappedWidget().removeListener(eventType, listener);
+}
+
+/**
+ * Removes the listener from the collection of listeners who will
+ * be notified when an event of the given type occurs.
+ * <p>
+ * <b>IMPORTANT:</b> This method is <em>not</em> part of the SWT
+ * public API. It is marked public only so that it can be shared
+ * within the packages provided by SWT. It should never be
+ * referenced from application code.
+ * </p>
+ *
+ * @param eventType the type of event to listen for
+ * @param listener the listener which should no longer be notified
+ *
+ * @exception IllegalArgumentException <ul>
+ *    <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
+ * </ul>
+ * @exception SWTException <ul>
+ *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+ *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+ * </ul>
+ *
+ * @see Listener
+ * @see #addListener
+ *
+ * @noreference This method is not intended to be referenced by clients.
+ * @nooverride This method is not intended to be re-implemented or extended by clients.
+ */
 protected void removeTypedListener (int eventType, EventListener listener) {
 	getWrappedWidget().removeTypedListener(eventType, listener);
 }
@@ -863,7 +886,7 @@ public String toString () {
 	return getWrappedWidget().toString();
 }
 
-protected NativeWidget getWrappedWidget() {
+protected IWidget getWrappedWidget() {
 	if (wrappedWidget == null) {
 		SWT.error (SWT.ERROR_NULL_ARGUMENT, null, " subclass has to overwrite method for retrieving wrapped widget");
 	}

@@ -82,7 +82,7 @@ public abstract class NativeDateTime extends NativeComposite {
 
 	/* Emulated DATE and TIME fields */
 	Calendar calendar;
-	NativeButton down;
+	Button down;
 	FieldPosition currentField;
 	StringBuilder typeBuffer = new StringBuilder();
 	int typeBufferPos = -1;
@@ -329,7 +329,7 @@ Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
 			Point textSize = computeMaxTextSize (wHint, hHint, changed);
 			Rectangle trim = computeTrimInPixels (0,0, textSize.x,textSize.y);
 			if (isDateWithDropDownButton ()){
-				Point buttonSize = down.computeSizeInPixels (SWT.DEFAULT, SWT.DEFAULT, changed);
+				Point buttonSize = DPIUtil.autoScaleUp (down.computeSize(SWT.DEFAULT, SWT.DEFAULT, changed));
 				width = trim.width + buttonSize.x;
 				height = Math.max (trim.height, buttonSize.y);
 			} else if (isDate () || isTime ()) {
@@ -492,8 +492,9 @@ private void createHandleForDateTime() {
 }
 
 void createDropDownButton () {
-	down = Widget.checkNative(new Button (this.getWrapper(), SWT.ARROW  | SWT.DOWN));
-	GTK.gtk_widget_set_can_focus (down.handle, false);
+	down = new Button (this.getWrapper(), SWT.ARROW  | SWT.DOWN);
+	// TODO Facade readd
+//	GTK.gtk_widget_set_can_focus (down.handle, false);
 	down.addListener (SWT.Selection, event -> {
 		setFocus ();
 		dropDownCalendar (!isDropped ());
@@ -541,7 +542,7 @@ void createPopupShell (int year, int month, int day) {
 	mouseEventListener = event -> {
 		if (event.widget instanceof Control) {
 			Control c = (Control)event.widget;
-			if (c != down.getWrapper() && c.getShell () != popupShell.getWrapper())
+			if (c != down && c.getShell () != popupShell.getWrapper())
 				dropDownCalendar (false);
 		}
 	};
@@ -991,7 +992,8 @@ final private void hookEventsForDateTimeSpinner () {
 }
 
 final private void hookEventsForMenu () {
-	OS.g_signal_connect_closure (down.handle, OS.selection_done, display.getClosure (SELECTION_DONE), true);
+	// TODO Facade readd
+//	OS.g_signal_connect_closure (down.handle, OS.selection_done, display.getClosure (SELECTION_DONE), true);
 }
 
 void incrementField(int amount) {
@@ -1262,8 +1264,7 @@ void handleFocus (int type) {
 		}
 		case SWT.FocusOut: {
 			if (!hasFocus) return;
-			NativeControl focusControl = getDisplay ().getNativeFocusControl ();
-			if (focusControl == down || focusControl == popupCalendar ) return;
+			if (getDisplay ().getFocusControl () == down || getDisplay ().getNativeFocusControl () == popupCalendar ) return;
 			hasFocus = false;
 			NativeShell shell = getShell ();
 			shell.removeListener (SWT.Deactivate, popupListener);
@@ -1734,7 +1735,7 @@ void setBoundsInPixels (int x, int y, int width, int height) {
 		GTK.gtk_widget_get_preferred_size (sizingHandle, null, requisition);
 		int oldHeight = requisition.height; //Entry should not expand vertically. It is single liner.
 
-		int newWidth = width - (down.getSizeInPixels ().x + getGtkBorderPadding ().right);
+		int newWidth = width - (DPIUtil.autoScaleUp (down.getSize().x) + getGtkBorderPadding ().right);
 		GTK.gtk_widget_set_size_request (sizingHandle, (newWidth >= 0) ? newWidth : 0, oldHeight);
 	}
 
@@ -1748,7 +1749,7 @@ private void setDropDownButtonSize() {
 	Rectangle rect = getClientAreaInPixels();
 	int parentWidth = rect.width;
 	int parentHeight = rect.height;
-	Point buttonSize = down.computeSizeInPixels(SWT.DEFAULT, parentHeight);
+	Point buttonSize = DPIUtil.autoScaleUp (down.computeSize(SWT.DEFAULT, parentHeight));
 
 	int dateEntryHeight = computeNativeSize(GTK.GTK4 ? editableHandle : textEntryHandle, SWT.DEFAULT, SWT.DEFAULT, false).y;
 
@@ -1756,7 +1757,7 @@ private void setDropDownButtonSize() {
 	int newXpos = parentWidth - buttonSize.x - getGtkBorderPadding().left - getGtkBorderPadding().right;
 
 	int newYPos = parentHeight/2 - dateEntryHeight/2;
-	down.setBoundsInPixels (newXpos, newYPos, buttonSize.x, dateEntryHeight);
+	down.setBounds(DPIUtil.autoScaleUp (new Rectangle(newXpos, newYPos, buttonSize.x, dateEntryHeight)));
 }
 
 /**

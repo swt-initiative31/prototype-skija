@@ -866,7 +866,7 @@ void fixToolTip () {
  * @see NativeControl#setFocus
  * @see NativeControl#setVisible
  * @see Display#getActiveShell
- * @see NativeDecorations#setDefaultButton(NativeButton)
+ * @see NativeDecorations#setDefaultButton(Button)
  * @see NativeShell#open
  * @see NativeShell#setActive
  */
@@ -1196,7 +1196,7 @@ public NativeShell [] getShells () {
  *
  * @since 3.7
  */
-public NativeToolBar getToolBar() {
+public ToolBar getToolBar() {
 	checkWidget ();
 	return null;
 }
@@ -1258,7 +1258,7 @@ long menuItemToolTipHandle () {
  * @see NativeControl#setFocus
  * @see NativeControl#setVisible
  * @see Display#getActiveShell
- * @see NativeDecorations#setDefaultButton(NativeButton)
+ * @see NativeDecorations#setDefaultButton(Button)
  * @see NativeShell#setActive
  * @see NativeShell#forceActive
  */
@@ -1458,7 +1458,7 @@ boolean sendKeyEvent (int type, int msg, long wParam, long lParam, Event event) 
  * @see NativeControl#setFocus
  * @see NativeControl#setVisible
  * @see Display#getActiveShell
- * @see NativeDecorations#setDefaultButton(NativeButton)
+ * @see NativeDecorations#setDefaultButton(Button)
  * @see NativeShell#open
  * @see NativeShell#setActive
  */

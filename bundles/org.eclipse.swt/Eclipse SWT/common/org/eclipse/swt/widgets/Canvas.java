@@ -41,7 +41,7 @@ import org.eclipse.swt.graphics.*;
  */
 public class Canvas extends Composite {
 
-	private final NativeCanvas wrappedCanvas;
+	private final ICanvas wrappedCanvas;
 
 /**
  * Constructs a new instance of this class given its parent
@@ -121,8 +121,7 @@ public void drawBackground (GC gc, int x, int y, int width, int height) {
  * </ul>
  */
 public Caret getCaret () {
-	NativeCaret wrappedCaret = getWrappedWidget().getCaret();
-	return wrappedCaret != null ? wrappedCaret.getWrapper() : null;
+	return getWrappedWidget().getCaret();
 }
 
 /**
@@ -138,8 +137,7 @@ public Caret getCaret () {
  * @since 3.4
  */
 public IME getIME () {
-	NativeIME wrappedIME = getWrappedWidget().getIME();
-	return wrappedIME != null ? wrappedIME.getWrapper() : null;
+	return getWrappedWidget().getIME();
 }
 
 /**
@@ -189,7 +187,7 @@ public void scroll (int destX, int destY, int x, int y, int width, int height, b
  * </ul>
  */
 public void setCaret (Caret caret) {
-	getWrappedWidget().setCaret(checkNative(caret));
+	getWrappedWidget().setCaret(caret);
 }
 
 @Override
@@ -213,11 +211,11 @@ public void setFont (Font font) {
  * @since 3.4
  */
 public void setIME (IME ime) {
-	getWrappedWidget().setIME(checkNative(ime));
+	getWrappedWidget().setIME(ime);
 }
 
 @Override
-protected NativeCanvas getWrappedWidget() {
+protected ICanvas getWrappedWidget() {
 	if (wrappedCanvas == null) {
 		SWT.error (SWT.ERROR_NULL_ARGUMENT, null, " subclass has to overwrite method for retrieving wrapped widget");
 	}

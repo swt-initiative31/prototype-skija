@@ -37,7 +37,7 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeScrollable extends NativeControl {
+public abstract class NativeScrollable extends NativeControl implements IScrollable {
 	NSScrollView scrollView;
 	NativeScrollBar horizontalBar, verticalBar;
 
@@ -105,6 +105,7 @@ protected NativeScrollable (NativeComposite parent, int style) {
  *
  * @see #getClientArea
  */
+@Override
 public Rectangle computeTrim (int x, int y, int width, int height) {
 	checkWidget();
 	if (scrollView != null) {
@@ -198,6 +199,7 @@ void deregister () {
  *
  * @see #computeTrim
  */
+@Override
 public Rectangle getClientArea () {
 	checkWidget();
 	if (scrollView != null) {
@@ -222,9 +224,10 @@ public Rectangle getClientArea () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public NativeScrollBar getHorizontalBar () {
+@Override
+public ScrollBar getHorizontalBar () {
 	checkWidget();
-	return horizontalBar;
+	return horizontalBar != null ? horizontalBar.getWrapper() : null;
 }
 
 /**
@@ -250,6 +253,7 @@ public NativeScrollBar getHorizontalBar () {
  *
  * @since 3.8
  */
+@Override
 public int getScrollbarsMode () {
 	checkWidget();
 	int style = SWT.NONE;
@@ -282,6 +286,7 @@ public int getScrollbarsMode () {
  *
  * @since 3.126
  */
+@Override
 public void setScrollbarsMode (int mode) {
 	checkWidget();
 }
@@ -297,9 +302,10 @@ public void setScrollbarsMode (int mode) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public NativeScrollBar getVerticalBar () {
+@Override
+public ScrollBar getVerticalBar () {
 	checkWidget();
-	return verticalBar;
+	return verticalBar != null ? verticalBar.getWrapper() : null;
 }
 
 boolean hooksKeys () {

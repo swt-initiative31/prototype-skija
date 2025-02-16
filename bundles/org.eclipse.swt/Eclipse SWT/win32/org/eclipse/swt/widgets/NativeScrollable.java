@@ -38,7 +38,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeScrollable extends NativeControl {
+public abstract class NativeScrollable extends NativeControl implements IScrollable {
 	NativeScrollBar horizontalBar, verticalBar;
 
 	/**
@@ -120,6 +120,7 @@ long callWindowProc (long hwnd, int msg, long wParam, long lParam) {
  *
  * @see #getClientArea
  */
+@Override
 public Rectangle computeTrim (int x, int y, int width, int height) {
 	checkWidget ();
 	int zoom = getZoom();
@@ -218,6 +219,7 @@ void destroyScrollBar (int type) {
  *
  * @see #computeTrim
  */
+@Override
 public Rectangle getClientArea () {
 	checkWidget ();
 	return DPIUtil.scaleDown(getClientAreaInPixels(), getZoom());
@@ -251,9 +253,10 @@ Rectangle getClientAreaInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public NativeScrollBar getHorizontalBar () {
+@Override
+public ScrollBar getHorizontalBar () {
 	checkWidget ();
-	return horizontalBar;
+	return horizontalBar != null ? horizontalBar.getWrapper() : null;
 }
 
 /**
@@ -279,6 +282,7 @@ public NativeScrollBar getHorizontalBar () {
  *
  * @since 3.8
  */
+@Override
 public int getScrollbarsMode () {
 	checkWidget();
 	return SWT.NONE;
@@ -305,6 +309,7 @@ public int getScrollbarsMode () {
  *
  * @since 3.126
  */
+@Override
 public void setScrollbarsMode (int mode) {
 	checkWidget();
 }
@@ -320,9 +325,10 @@ public void setScrollbarsMode (int mode) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public NativeScrollBar getVerticalBar () {
+@Override
+public ScrollBar getVerticalBar () {
 	checkWidget ();
-	return verticalBar;
+	return verticalBar != null ? verticalBar.getWrapper() : null;
 }
 
 @Override
@@ -526,7 +532,6 @@ LRESULT wmScroll (NativeScrollBar bar, boolean update, long hwnd, int msg, long 
 }
 
 @Override
-public
-abstract Scrollable getWrapper();
+public abstract Scrollable getWrapper();
 
 }

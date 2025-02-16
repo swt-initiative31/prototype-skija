@@ -121,7 +121,7 @@ long callWindowProc (long hwnd, int msg, long wParam, long lParam) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 

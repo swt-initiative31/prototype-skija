@@ -44,7 +44,7 @@ import org.eclipse.swt.internal.win32.*;
  * @since 3.1
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeLink extends NativeControl {
+public abstract class NativeLink extends NativeControl implements ILink {
 	String text;
 	int linkForeground = -1;
 	String [] ids;
@@ -134,6 +134,7 @@ protected NativeLink (NativeComposite parent, int style) {
  * @see #removeSelectionListener
  * @see SelectionEvent
  */
+@Override
 public void addSelectionListener (SelectionListener listener) {
 	addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 }
@@ -250,6 +251,7 @@ int getFocusItem () {
  * </ul>
  * @since 3.105
  */
+@Override
 public Color getLinkForeground () {
 	checkWidget ();
 	if (linkForeground != -1) {
@@ -274,6 +276,7 @@ String getNameText () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public String getText () {
 	checkWidget ();
 	return text;
@@ -448,6 +451,7 @@ void releaseWidget () {
  * @see SelectionListener
  * @see #addSelectionListener
  */
+@Override
 public void removeSelectionListener (SelectionListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -508,6 +512,7 @@ boolean setFocusItem (int index) {
  * </ul>
  * @since 3.105
  */
+@Override
 public void setLinkForeground (Color color) {
 	checkWidget ();
 	int pixel = -1;
@@ -558,6 +563,7 @@ public void setLinkForeground (Color color) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setText (String string) {
 	checkWidget ();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);

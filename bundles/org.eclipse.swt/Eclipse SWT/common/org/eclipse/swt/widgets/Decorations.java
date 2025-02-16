@@ -165,8 +165,7 @@ public void dispose () {
  * @see #setDefaultButton(Button)
  */
 public Button getDefaultButton () {
-	NativeButton wrappedButton = getWrappedWidget().getDefaultButton();
-	return wrappedButton != null ? wrappedButton.getWrapper() : null;
+	return getWrappedWidget().getDefaultButton();
 }
 
 /**
@@ -323,7 +322,8 @@ public boolean isReparentable () {
  * </ul>
  */
 public void setDefaultButton (Button button) {
-	getWrappedWidget().setDefaultButton(checkNative(button));
+	// TODO FACADE enable again
+//	getWrappedWidget().setDefaultButton(checkNative(button));
 }
 
 /**

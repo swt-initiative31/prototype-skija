@@ -75,7 +75,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeSlider extends NativeControl {
+public abstract class NativeSlider extends NativeControl implements ISlider {
 	/**
 	 * Stores the GtkRange handle of the GtkScrollbar.
 	 * Used to hook events and access the GtkAdjustment.
@@ -148,6 +148,7 @@ protected NativeSlider (NativeComposite parent, int style) {
  * @see #removeSelectionListener
  * @see SelectionEvent
  */
+@Override
 public void addSelectionListener (SelectionListener listener) {
 	addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 }
@@ -316,6 +317,7 @@ Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getIncrement() {
 	checkWidget();
 	long adjustmentHandle = GTK.gtk_range_get_adjustment(rangeHandle);
@@ -332,6 +334,7 @@ public int getIncrement() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getMaximum() {
 	checkWidget();
 	long adjustmentHandle = GTK.gtk_range_get_adjustment(rangeHandle);
@@ -348,6 +351,7 @@ public int getMaximum() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getMinimum() {
 	checkWidget();
 	long adjustmentHandle = GTK.gtk_range_get_adjustment(rangeHandle);
@@ -366,6 +370,7 @@ public int getMinimum() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getPageIncrement() {
 	checkWidget();
 	long adjustmentHandle = GTK.gtk_range_get_adjustment(rangeHandle);
@@ -382,6 +387,7 @@ public int getPageIncrement() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getSelection() {
 	checkWidget();
 	return (int) GTK.gtk_range_get_value(rangeHandle);
@@ -397,6 +403,7 @@ public int getSelection() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getThumb() {
 	checkWidget();
 	long adjustmentHandle = GTK.gtk_range_get_adjustment(rangeHandle);
@@ -420,6 +427,7 @@ public int getThumb() {
  * @see SelectionListener
  * @see #addSelectionListener
  */
+@Override
 public void removeSelectionListener (SelectionListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -441,6 +449,7 @@ public void removeSelectionListener (SelectionListener listener) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setIncrement(int value) {
 	checkWidget();
 	if (value < 1) return;
@@ -463,6 +472,7 @@ public void setIncrement(int value) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setMaximum(int value) {
 	checkWidget();
 	long adjustmentHandle = GTK.gtk_range_get_adjustment(rangeHandle);
@@ -494,6 +504,7 @@ public void setMaximum(int value) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setMinimum(int value) {
 	checkWidget();
 	if (value < 0) return;
@@ -537,6 +548,7 @@ void setOrientation(boolean create) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setPageIncrement(int value) {
 	checkWidget();
 	if (value < 1) return;
@@ -558,6 +570,7 @@ public void setPageIncrement(int value) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setSelection(int value) {
 	checkWidget();
 
@@ -583,6 +596,7 @@ public void setSelection(int value) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setThumb(int value) {
 	checkWidget();
 	if (value < 1) return;
@@ -621,6 +635,7 @@ public void setThumb(int value) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setValues (int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement) {
 	checkWidget();
 	if (minimum < 0 || maximum < 0 || thumb < 1 || increment < 1 || pageIncrement < 1) return;

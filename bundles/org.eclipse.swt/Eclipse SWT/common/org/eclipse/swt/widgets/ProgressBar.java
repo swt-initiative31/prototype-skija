@@ -39,7 +39,7 @@ import org.eclipse.swt.*;
  */
 public class ProgressBar extends Control {
 
-	private final NativeProgressBar wrappedProgressBar;
+	private final IProgressBar wrappedProgressBar;
 
 /**
  * Constructs a new instance of this class given its parent
@@ -215,7 +215,7 @@ public void setState (int state) {
 }
 
 @Override
-protected NativeProgressBar getWrappedWidget() {
+protected IProgressBar getWrappedWidget() {
 	return wrappedProgressBar;
 }
 

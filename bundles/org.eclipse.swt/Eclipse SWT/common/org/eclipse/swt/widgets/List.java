@@ -40,7 +40,7 @@ import org.eclipse.swt.events.*;
  */
 public class List extends Scrollable {
 
-	private final NativeList wrappedList;
+	private final IList wrappedList;
 
 /**
  * Constructs a new instance of this class given its parent
@@ -813,7 +813,7 @@ public void showSelection () {
 }
 
 @Override
-protected NativeList getWrappedWidget() {
+protected IList getWrappedWidget() {
 	return wrappedList;
 }
 

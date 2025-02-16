@@ -52,7 +52,7 @@ import org.eclipse.swt.graphics.*;
  */
 public class Label extends Control {
 
-	private final NativeLabel wrappedLabel;
+	private final ILabel wrappedLabel;
 
 /**
  * Constructs a new instance of this class given its parent
@@ -215,7 +215,7 @@ public void setText (String string) {
 }
 
 @Override
-protected NativeLabel getWrappedWidget() {
+protected ILabel getWrappedWidget() {
 	return wrappedLabel;
 }
 

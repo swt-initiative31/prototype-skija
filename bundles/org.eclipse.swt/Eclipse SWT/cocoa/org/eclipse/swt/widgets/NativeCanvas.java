@@ -42,7 +42,7 @@ import org.eclipse.swt.internal.graphics.*;
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public abstract class NativeCanvas extends NativeComposite {
+public abstract class NativeCanvas extends NativeComposite implements ICanvas {
 	NativeCaret caret;
 	NativeIME ime;
 	NSOpenGLContext glcontext;
@@ -138,6 +138,7 @@ long characterIndexForPoint (long id, long sel, long point) {
  *
  * @since 3.2
  */
+@Override
 public void drawBackground (GC gc, int x, int y, int width, int height) {
 	drawBackground(gc, x, y, width, height, 0, 0);
 }
@@ -250,9 +251,10 @@ NSRect firstRectForCharacterRange (long id, long sel, long range) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public NativeCaret getCaret () {
+@Override
+public Caret getCaret () {
 	checkWidget();
-	return caret;
+	return caret != null ? caret.getWrapper() : null;
 }
 
 /**
@@ -267,9 +269,10 @@ public NativeCaret getCaret () {
  *
  * @since 3.4
  */
-public NativeIME getIME () {
+@Override
+public IME getIME () {
 	checkWidget();
-	return ime;
+	return ime != null ? ime.getWrapper() : null;
 }
 
 @Override
@@ -395,6 +398,7 @@ void resetVisibleRegion () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void scroll (int destX, int destY, int x, int y, int width, int height, boolean all) {
 	checkWidget();
 	if (width <= 0 || height <= 0) return;
@@ -542,6 +546,11 @@ boolean sendKeyEvent (NSEvent nsEvent, int type) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
+public void setCaret (Caret caret) {
+	setCaret(Widget.checkNative(caret));
+}
+
 public void setCaret (NativeCaret caret) {
 	checkWidget();
 	NativeCaret newCaret = caret;
@@ -590,6 +599,11 @@ void setOpenGLContext(Object value) {
  *
  * @since 3.4
  */
+@Override
+public void setIME (IME ime) {
+	setIME(Widget.checkNative(ime));
+}
+
 public void setIME (NativeIME ime) {
 	checkWidget ();
 	if (ime != null && ime.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);

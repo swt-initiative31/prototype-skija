@@ -134,7 +134,7 @@ public abstract class NativeShell extends NativeDecorations {
 	boolean keyInputHappened;
 	NSRect currentFrame;
 	NSRect fullScreenFrame;
-	NativeToolBar toolBar;
+	ToolBar toolBar;
 	Map<NSWindow, Integer> windowEmbedCounts;
 	NativeMenuItem escMenuItem;
 
@@ -599,7 +599,7 @@ void closeWidget (boolean force) {
 public Point computeSize (int wHint, int hHint, boolean changed) {
 	Point size = super.computeSize (wHint, hHint, changed);
 	if (toolBar != null) {
-		if (wHint == SWT.DEFAULT && toolBar.itemCount > 0) {
+		if (wHint == SWT.DEFAULT && toolBar.getItemCount() > 0) {
 			Point tbSize = toolBar.computeSize (SWT.DEFAULT, SWT.DEFAULT);
 			size.x = Math.max (tbSize.x, size.x);
 		}
@@ -869,7 +869,7 @@ void fixShell (NativeShell newShell, NativeControl control) {
  * @see NativeControl#setFocus
  * @see NativeControl#setVisible
  * @see Display#getActiveShell
- * @see NativeDecorations#setDefaultButton(NativeButton)
+ * @see NativeDecorations#setDefaultButton(Button)
  * @see NativeShell#open
  * @see NativeShell#setActive
  */
@@ -1210,18 +1210,11 @@ float getThemeAlpha () {
  *
  * @since 3.7
  */
-public NativeToolBar getToolBar() {
+public ToolBar getToolBar() {
 	checkWidget();
 	if ((style & SWT.NO_TRIM) == 0) {
 		if (toolBar == null) {
-			AtomicReference<ToolBar> wrapperBar = new AtomicReference<>();
-			NativeToolBar toolBar = new NativeToolBar (this, SWT.HORIZONTAL | SWT.SMOOTH, true) {
-				@Override
-				public ToolBar getWrapper() {
-					return wrapperBar.get();
-				}
-			};
-			wrapperBar.set(new ToolBar(toolBar));
+			toolBar = new ToolBar(this.getWrapper(), SWT.HORIZONTAL | SWT.SMOOTH);
 		}
 	}
 	return toolBar;
@@ -1252,7 +1245,8 @@ void helpRequested(long id, long sel, long theEvent) {
 @Override
 void invalidateVisibleRegion () {
 	resetVisibleRegion ();
-	if (toolBar != null) toolBar.resetVisibleRegion();
+	// TODO Facade readd
+//	if (toolBar != null) toolBar.resetVisibleRegion();
 	invalidateChildrenVisibleRegion ();
 }
 
@@ -1357,7 +1351,7 @@ void noResponderFor(long id, long sel, long selector) {
  * @see NativeControl#setFocus
  * @see NativeControl#setVisible
  * @see Display#getActiveShell
- * @see NativeDecorations#setDefaultButton(NativeButton)
+ * @see NativeDecorations#setDefaultButton(Button)
  * @see NativeShell#setActive
  * @see NativeShell#forceActive
  */
@@ -1561,7 +1555,7 @@ void sendToolTipEvent (boolean enter) {
  * @see NativeControl#setFocus
  * @see NativeControl#setVisible
  * @see Display#getActiveShell
- * @see NativeDecorations#setDefaultButton(NativeButton)
+ * @see NativeDecorations#setDefaultButton(Button)
  * @see NativeShell#open
  * @see NativeShell#setActive
  */
@@ -2201,7 +2195,8 @@ boolean traverseEscape () {
 @Override
 void updateCursorRects(boolean enabled) {
 	super.updateCursorRects(enabled);
-	if (toolBar != null) toolBar.updateCursorRects(enabled);
+	// TODO Facade readd
+//	if (toolBar != null) toolBar.updateCursorRects(enabled);
 };
 
 void updateModal () {

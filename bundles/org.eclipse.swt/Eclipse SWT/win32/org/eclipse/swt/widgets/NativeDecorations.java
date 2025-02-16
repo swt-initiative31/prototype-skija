@@ -104,7 +104,7 @@ public abstract class NativeDecorations extends NativeCanvas {
 	NativeMenu menuBar;
 	NativeMenu [] menus;
 	NativeControl savedFocus;
-	NativeButton defaultButton, saveDefault;
+	Button defaultButton, saveDefault;
 	int swFlags, nAccel;
 	long hAccel;
 	boolean moved, resized, opened;
@@ -258,7 +258,7 @@ void checkOpened () {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -407,8 +407,8 @@ NativeMenu findMenu (long hMenu) {
 void fixDecorations (NativeDecorations newDecorations, NativeControl control, NativeMenu [] menus) {
 	if (this == newDecorations) return;
 	if (control == savedFocus) savedFocus = null;
-	if (control == defaultButton) defaultButton = null;
-	if (control == saveDefault) saveDefault = null;
+	if (control.getWrapper() == defaultButton) defaultButton = null;
+	if (control.getWrapper() == saveDefault) saveDefault = null;
 	if (menus == null) return;
 	NativeMenu menu = control.menu;
 	if (menu != null) {
@@ -491,9 +491,9 @@ void fixDecorations (NativeDecorations newDecorations, NativeControl control, Na
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see #setDefaultButton(NativeButton)
+ * @see #setDefaultButton(Button)
  */
-public NativeButton getDefaultButton () {
+public Button getDefaultButton () {
 	checkWidget ();
 	if (defaultButton != null && defaultButton.isDisposed ()) return null;
 	return defaultButton;
@@ -825,35 +825,36 @@ void setBoundsInPixels (int x, int y, int width, int height, int flags, boolean 
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setDefaultButton (NativeButton button) {
+public void setDefaultButton (Button button) {
 	checkWidget ();
 	if (button != null) {
 		if (button.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
-		if (button.menuShell () != this) error(SWT.ERROR_INVALID_PARENT);
+		if (button.menuShell () != this.getWrapper()) error(SWT.ERROR_INVALID_PARENT);
 	}
 	setDefaultButton (button, true);
 }
 
-void setDefaultButton (NativeButton button, boolean save) {
+void setDefaultButton (Button button, boolean save) {
 	if (button == null) {
 		if (defaultButton == saveDefault) {
 			if (save) saveDefault = null;
 			return;
 		}
 	} else {
-		if ((button.style & SWT.PUSH) == 0) return;
+		if ((button.getStyle() & SWT.PUSH) == 0) return;
 		if (button == defaultButton) {
 			if (save) saveDefault = defaultButton;
 			return;
 		}
 	}
-	if (defaultButton != null) {
-		if (!defaultButton.isDisposed ()) defaultButton.setDefault (false);
-	}
+	// TODO facade readd
+//	if (defaultButton != null) {
+//		if (!defaultButton.isDisposed ()) defaultButton.setDefault (false);
+//	}
 	if ((defaultButton = button) == null) defaultButton = saveDefault;
-	if (defaultButton != null) {
-		if (!defaultButton.isDisposed ()) defaultButton.setDefault (true);
-	}
+//	if (defaultButton != null) {
+//		if (!defaultButton.isDisposed ()) defaultButton.setDefault (true);
+//	}
 	if (save) saveDefault = defaultButton;
 	if (saveDefault != null && saveDefault.isDisposed ()) saveDefault = null;
 }
@@ -1410,7 +1411,8 @@ boolean traverseItem (boolean next) {
 boolean traverseReturn () {
 	if (defaultButton == null || defaultButton.isDisposed ()) return false;
 	if (!defaultButton.isVisible () || !defaultButton.isEnabled ()) return false;
-	defaultButton.click ();
+	// TODO facade readd
+//	defaultButton.click ();
 	return true;
 }
 

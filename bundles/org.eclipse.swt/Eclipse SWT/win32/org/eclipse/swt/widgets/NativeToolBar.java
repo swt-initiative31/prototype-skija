@@ -49,7 +49,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeToolBar extends NativeComposite {
+public abstract class NativeToolBar extends NativeComposite implements IToolBar {
 	int lastFocusId, lastArrowId, lastHotId, _width, _height, _count = -1, _wHint = -1, _hHint = -1;
 	long currentToolItemToolTip;
 	NativeToolItem [] items;
@@ -191,7 +191,7 @@ void checkBuffered () {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -541,14 +541,16 @@ ImageList getImageList () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public NativeToolItem getItem (int index) {
+@Override
+public ToolItem getItem (int index) {
 	checkWidget ();
 	int count = (int)OS.SendMessage (handle, OS.TB_BUTTONCOUNT, 0, 0);
 	if (!(0 <= index && index < count)) error (SWT.ERROR_INVALID_RANGE);
 	TBBUTTON lpButton = new TBBUTTON ();
 	long result = OS.SendMessage (handle, OS.TB_GETBUTTON, index, lpButton);
 	if (result == 0) error (SWT.ERROR_CANNOT_GET_ITEM);
-	return items [lpButton.idCommand];
+	NativeToolItem item = items [lpButton.idCommand];
+	return item != null ? item.getWrapper() : null;
 }
 
 /**
@@ -567,14 +569,16 @@ public NativeToolItem getItem (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public NativeToolItem getItem (Point point) {
+@Override
+public ToolItem getItem (Point point) {
 	checkWidget ();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
-	return getItemInPixels(DPIUtil.scaleUp(point, getZoom()));
+	NativeToolItem item = getItemInPixels(DPIUtil.scaleUp(point, getZoom()));
+	return item != null ? item.getWrapper() : null;
 }
 
 NativeToolItem getItemInPixels (Point point) {
-	for (NativeToolItem item : getItems ()) {
+	for (NativeToolItem item : _getItems ()) {
 		Rectangle rect = item.getBoundsInPixels ();
 		if (rect.contains (point)) return item;
 	}
@@ -591,6 +595,7 @@ NativeToolItem getItemInPixels (Point point) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getItemCount () {
 	checkWidget ();
 	return (int)OS.SendMessage (handle, OS.TB_BUTTONCOUNT, 0, 0);
@@ -612,9 +617,10 @@ public int getItemCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public NativeToolItem [] getItems () {
+@Override
+public ToolItem [] getItems () {
 	checkWidget ();
-	return _getItems ();
+	return Arrays.stream(_getItems ()).map(NativeToolItem::getWrapper).toArray(ToolItem[]::new);
 }
 
 NativeToolItem [] _getItems () {
@@ -641,6 +647,7 @@ NativeToolItem [] _getItems () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getRowCount () {
 	checkWidget ();
 	if ((style & SWT.VERTICAL) != 0) {
@@ -685,11 +692,12 @@ NativeToolItem [] _getTabItemList () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public int indexOf (NativeToolItem item) {
+@Override
+public int indexOf (ToolItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
-	return (int)OS.SendMessage (handle, OS.TB_COMMANDTOINDEX, item.id, 0);
+	return (int)OS.SendMessage (handle, OS.TB_COMMANDTOINDEX, Widget.checkNative(item).id, 0);
 }
 
 void layoutItems () {

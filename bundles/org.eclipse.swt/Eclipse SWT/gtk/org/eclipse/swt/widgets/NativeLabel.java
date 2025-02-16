@@ -54,7 +54,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeLabel extends NativeControl {
+public abstract class NativeLabel extends NativeControl implements ILabel {
 	long frameHandle, labelHandle, imageHandle, boxHandle;
 	Image image;
 	String text;

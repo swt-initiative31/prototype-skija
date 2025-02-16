@@ -14,6 +14,8 @@
 package org.eclipse.swt.widgets;
 
 
+import java.util.*;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
@@ -49,7 +51,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/snippets/#composite">Composite snippets</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public abstract class NativeComposite extends NativeScrollable {
+public abstract class NativeComposite extends NativeScrollable implements IComposite {
 	Layout layout;
 	WINDOWPOS [] lpwp;
 	NativeControl [] tabList;
@@ -164,8 +166,9 @@ NativeControl [] _getTabList () {
  * @deprecated use {@link NativeComposite#layout(NativeControl[], int)} instead
  * @since 3.1
  */
+@Override
 @Deprecated
-public void changed (NativeControl[] changed) {
+public void changed (Control[] changed) {
 	layout(changed, SWT.DEFER);
 }
 
@@ -189,7 +192,7 @@ void checkComposited () {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	/* Do nothing - Subclassing is allowed */
 }
 
@@ -353,6 +356,7 @@ int applyThemeBackground () {
  *
  * @since 3.6
  */
+@Override
 public void drawBackground (GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
 	checkWidget ();
 	int zoom = getZoom();
@@ -439,6 +443,7 @@ void fixTabList (NativeControl control) {
  *
  * @since 3.2
  */
+@Override
 public int getBackgroundMode () {
 	checkWidget ();
 	return backgroundMode;
@@ -465,9 +470,10 @@ public int getBackgroundMode () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public NativeControl [] getChildren () {
+@Override
+public Control [] getChildren () {
 	checkWidget ();
-	return _getChildren ();
+	return Arrays.stream(_getChildren ()).map(NativeControl::getWrapper).toArray(Control[]::new);
 }
 
 int getChildrenCount () {
@@ -495,6 +501,7 @@ int getChildrenCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Layout getLayout () {
 	checkWidget ();
 	return layout;
@@ -512,7 +519,8 @@ public Layout getLayout () {
  *
  * @see #setTabList
  */
-public NativeControl [] getTabList () {
+@Override
+public Control [] getTabList () {
 	checkWidget ();
 	NativeControl [] tabList = _getTabList ();
 	if (tabList == null) {
@@ -529,7 +537,7 @@ public NativeControl [] getTabList () {
 			}
 		}
 	}
-	return tabList;
+	return Arrays.stream(tabList).map(NativeControl::getWrapper).toArray(Control[]::new);
 }
 
 boolean hooksKeys () {
@@ -552,6 +560,7 @@ boolean hooksKeys () {
  *
  * @since 3.1
  */
+@Override
 public boolean getLayoutDeferred () {
 	checkWidget ();
 	return layoutCount > 0 ;
@@ -575,6 +584,7 @@ public boolean getLayoutDeferred () {
  *
  * @since 3.1
  */
+@Override
 public boolean isLayoutDeferred () {
 	checkWidget ();
 	return findDeferredControl () != null;
@@ -607,6 +617,7 @@ public boolean isLayoutDeferred () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void layout () {
 	checkWidget ();
 	layout (true);
@@ -650,6 +661,7 @@ public void layout () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void layout (boolean changed) {
 	checkWidget ();
 	if (layout == null) return;
@@ -697,6 +709,7 @@ public void layout (boolean changed) {
  *
  * @since 3.1
  */
+@Override
 public void layout (boolean changed, boolean all) {
 	checkWidget ();
 	if (layout == null && !all) return;
@@ -739,7 +752,8 @@ public void layout (boolean changed, boolean all) {
  *
  * @since 3.1
  */
-public void layout (NativeControl [] changed) {
+@Override
+public void layout (Control [] changed) {
 	checkWidget ();
 	if (changed == null) error (SWT.ERROR_INVALID_ARGUMENT);
 	layout (changed, SWT.NONE);
@@ -803,7 +817,12 @@ public void layout (NativeControl [] changed) {
  *
  * @since 3.6
  */
-public void layout (NativeControl [] changed, int flags) {
+@Override
+public void layout (Control [] changed, int flags) {
+	layout (Widget.checkNative(changed), flags);
+}
+
+private void layout (NativeControl [] changed, int flags) {
 	checkWidget ();
 	if (changed != null) {
 		for (NativeControl control : changed) {
@@ -1046,6 +1065,7 @@ void sendResize () {
  *
  * @since 3.2
  */
+@Override
 public void setBackgroundMode (int mode) {
 	checkWidget ();
 	backgroundMode = mode;
@@ -1097,6 +1117,7 @@ public boolean setFocus () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setLayout (Layout layout) {
 	checkWidget ();
 	this.layout = layout;
@@ -1120,10 +1141,11 @@ public void setLayout (Layout layout) {
  * </ul>
  *
  * @see #layout(boolean)
- * @see #layout(NativeControl[])
+ * @see #layout(Control[])
  *
  * @since 3.1
  */
+@Override
 public void setLayoutDeferred (boolean defer) {
 	checkWidget();
 	if (!defer) {
@@ -1151,7 +1173,12 @@ public void setLayoutDeferred (boolean defer) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setTabList (NativeControl [] tabList) {
+@Override
+public void setTabList (Control [] tabList) {
+	setTabList(Widget.checkNative(tabList));
+}
+
+private void setTabList(NativeControl[] tabList) {
 	checkWidget ();
 	if (tabList != null) {
 		for (NativeControl control : tabList) {
@@ -1980,8 +2007,8 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 	if (!(Widget.checkNative(widget) instanceof NativeComposite composite)) {
 		return;
 	}
-	for (NativeControl child : composite.getChildren()) {
-		DPIZoomChangeRegistry.applyChange(child.getWrapper(), newZoom, scalingFactor);
+	for (Control child : composite.getChildren()) {
+		DPIZoomChangeRegistry.applyChange(child, newZoom, scalingFactor);
 	}
 	composite.redrawInPixels (null, true);
 }

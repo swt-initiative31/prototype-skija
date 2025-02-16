@@ -39,7 +39,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeProgressBar extends NativeControl {
+public abstract class NativeProgressBar extends NativeControl implements IProgressBar {
 	static final int DELAY = 100;
 	static final int TIMER_ID = 100;
 	static final int MINIMUM_WIDTH = 100;
@@ -161,6 +161,7 @@ int defaultForeground () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getMaximum () {
 	checkWidget ();
 	return (int)OS.SendMessage (handle, OS.PBM_GETRANGE, 0, 0);
@@ -176,6 +177,7 @@ public int getMaximum () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getMinimum () {
 	checkWidget ();
 	return (int)OS.SendMessage (handle, OS.PBM_GETRANGE, 1, 0);
@@ -191,6 +193,7 @@ public int getMinimum () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getSelection () {
 	checkWidget ();
 	return (int)OS.SendMessage (handle, OS.PBM_GETPOS, 0, 0);
@@ -213,6 +216,7 @@ public int getSelection () {
  *
  * @since 3.4
  */
+@Override
 public int getState () {
 	checkWidget ();
 	int state = (int)OS.SendMessage (handle, OS.PBM_GETSTATE, 0, 0);
@@ -277,6 +281,7 @@ void setForegroundPixel (int pixel) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setMaximum (int value) {
 	checkWidget ();
 	int minimum = (int)OS.SendMessage (handle, OS.PBM_GETRANGE, 1, 0);
@@ -298,6 +303,7 @@ public void setMaximum (int value) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setMinimum (int value) {
 	checkWidget ();
 	int maximum = (int)OS.SendMessage (handle, OS.PBM_GETRANGE, 0, 0);
@@ -318,6 +324,7 @@ public void setMinimum (int value) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setSelection (int value) {
 	checkWidget ();
 	OS.SendMessage (handle, OS.PBM_SETPOS, value, 0);
@@ -355,6 +362,7 @@ public void setSelection (int value) {
  *
  * @since 3.4
  */
+@Override
 public void setState (int state) {
 	checkWidget ();
 	switch (state) {

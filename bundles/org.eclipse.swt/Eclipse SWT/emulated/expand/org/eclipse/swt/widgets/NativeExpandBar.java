@@ -111,7 +111,7 @@ protected NativeExpandBar (NativeComposite parent, int style) {
 	addListener (SWT.FocusOut, listener);
 	addListener (SWT.Traverse, listener);
 
-	NativeScrollBar verticalBar = getVerticalBar ();
+	ScrollBar verticalBar = getVerticalBar ();
 	if (verticalBar != null) {
 		verticalBar.addListener (SWT.Selection, event -> onScroll (event));
 	}
@@ -401,7 +401,7 @@ public void setForeground (Color color) {
 
 void setScrollbar () {
 	if (itemCount == 0) return;
-	NativeScrollBar verticalBar = getVerticalBar ();
+	ScrollBar verticalBar = getVerticalBar ();
 	if (verticalBar == null) return;
 	int height = getClientArea ().height;
 	NativeExpandItem item = items [itemCount - 1];
@@ -565,7 +565,7 @@ void onResize () {
 }
 
 void onScroll (Event event) {
-	NativeScrollBar verticalBar = getVerticalBar ();
+	ScrollBar verticalBar = getVerticalBar ();
 	if (verticalBar != null) {
 		yCurrentScroll = verticalBar.getSelection();
 		layoutItems (0, false);

@@ -334,9 +334,9 @@ NSCalendarDate getCalendarDate () {
 }
 
 @Override
-public NativeControl [] getChildren () {
+public Control [] getChildren () {
 	checkWidget();
-	return new NativeControl [0];
+	return new Control [0];
 }
 
 /**

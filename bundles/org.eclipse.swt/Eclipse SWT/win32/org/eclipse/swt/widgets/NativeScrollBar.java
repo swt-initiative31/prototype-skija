@@ -79,7 +79,6 @@ import org.eclipse.swt.internal.win32.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see NativeSlider
  * @see NativeScrollable
  * @see NativeScrollable#getHorizontalBar
  * @see NativeScrollable#getVerticalBar
@@ -743,7 +742,7 @@ boolean SetScrollInfo (long hwnd, int flags, SCROLLINFO info, boolean fRedraw) {
 	boolean barVisible = false;
 	boolean visible = getVisible ();
 
-	NativeScrollBar bar = null;
+	ScrollBar bar = null;
 	switch (flags) {
 		case OS.SB_HORZ:
 			bar = parent.getVerticalBar ();

@@ -917,7 +917,7 @@ public Region getRegion () {
  * @see #getParent
  */
 public Shell getShell () {
-	NativeShell wrappedShell = getWrappedWidget().getShell();
+	NativeShell wrappedShell = getWrappedWidget() instanceof NativeControl natCon ? natCon.getShell() : null;
 	return wrappedShell != null ? wrappedShell.getWrapper() : null;
 }
 
@@ -2392,7 +2392,7 @@ Decorations menuShell () {
 }
 
 @Override
-protected abstract NativeControl getWrappedWidget();
+protected abstract IControl getWrappedWidget();
 
 }
 

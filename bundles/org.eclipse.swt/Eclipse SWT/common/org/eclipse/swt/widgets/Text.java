@@ -87,7 +87,7 @@ public class Text extends Scrollable {
 		DELIMITER = "\r\n";
 	}
 
-	private final NativeText wrappedText;
+	private final IText wrappedText;
 
 /**
  * Constructs a new instance of this class given its parent
@@ -1167,7 +1167,7 @@ public void showSelection () {
 }
 
 @Override
-protected NativeText getWrappedWidget() {
+protected IText getWrappedWidget() {
 	return wrappedText;
 }
 

@@ -75,7 +75,7 @@ public class Combo extends Composite {
 		LIMIT = 0x7FFFFFFF;
 	}
 
-	private final NativeCombo wrappedCombo;
+	private final ICombo wrappedCombo;
 
 /**
  * Constructs a new instance of this class given its parent
@@ -1028,7 +1028,7 @@ public void setVisibleItemCount (int count) {
 }
 
 @Override
-protected NativeCombo getWrappedWidget() {
+protected ICombo getWrappedWidget() {
 	return wrappedCombo;
 }
 

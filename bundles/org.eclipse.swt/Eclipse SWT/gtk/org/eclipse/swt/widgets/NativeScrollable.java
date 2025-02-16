@@ -40,7 +40,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeScrollable extends NativeControl {
+public abstract class NativeScrollable extends NativeControl implements IScrollable {
 	long scrolledHandle;
 	NativeScrollBar horizontalBar, verticalBar;
 
@@ -116,6 +116,7 @@ long clientHandle () {
  *
  * @see #getClientArea
  */
+@Override
 public Rectangle computeTrim (int x, int y, int width, int height) {
 	checkWidget();
 	Rectangle rect = DPIUtil.autoScaleUp(new Rectangle (x, y, width, height));
@@ -254,6 +255,7 @@ int getBorderWidthInPixels () {
  *
  * @see #computeTrim
  */
+@Override
 public Rectangle getClientArea () {
 	checkWidget ();
 	return DPIUtil.autoScaleDown(getClientAreaInPixels());
@@ -284,9 +286,10 @@ Rectangle getClientAreaInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public NativeScrollBar getHorizontalBar () {
+@Override
+public ScrollBar getHorizontalBar () {
 	checkWidget ();
-	return horizontalBar;
+	return horizontalBar != null ? horizontalBar.getWrapper() : null;
 }
 /**
  * Returns the mode of the receiver's scrollbars. This will be
@@ -311,6 +314,7 @@ public NativeScrollBar getHorizontalBar () {
  *
  * @since 3.8
  */
+@Override
 public int getScrollbarsMode () {
 	checkWidget();
 	if (!GTK.GTK4) {
@@ -344,6 +348,7 @@ public int getScrollbarsMode () {
  *
  * @since 3.126
  */
+@Override
 public void setScrollbarsMode (int mode) {
 	checkWidget();
 	boolean overlayScrolling = (mode & SWT.SCROLLBAR_OVERLAY) != 0;
@@ -360,9 +365,10 @@ public void setScrollbarsMode (int mode) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public NativeScrollBar getVerticalBar () {
+@Override
+public ScrollBar getVerticalBar () {
 	checkWidget ();
-	return verticalBar;
+	return verticalBar != null ? verticalBar.getWrapper() : null;
 }
 
 @Override
