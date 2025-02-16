@@ -200,7 +200,7 @@ public class Event {
 	 *   installed layouts to find something latin.</li>
 	 * </ul>
 	 *
-	 * For detailed information, see {@link Widget#setKeyState} per
+	 * For detailed information, see {@link NativeWidget#setKeyState} per
 	 * platform.
 	 *
 	 *

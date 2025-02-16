@@ -62,7 +62,7 @@ class ControlWin32Tests {
 		Shell shell = new Shell(display);
 		DPITestUtil.changeDPIZoom(shell, 175);
 
-		Button button = new Button(shell, SWT.PUSH);
+		NativeButton button = Widget.checkNative(new Button(shell, SWT.PUSH));
 		button.setText("Widget Test");
 		button.setBounds(new Rectangle(0, 47, 200, 47));
 		shell.open();

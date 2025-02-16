@@ -119,7 +119,7 @@ OleAutomation(IDispatch idispatch) {
  */
 public OleAutomation(OleClientSite clientSite) {
 	if (clientSite == null) OLE.error(OLE.ERROR_INVALID_INTERFACE_ADDRESS);
-	objIDispatch = clientSite.getAutomationObject();
+	objIDispatch = clientSite.getWrappedWidget().getAutomationObject();
 
 	long[] ppv = new long[1];
 	/* GetTypeInfo([in] iTInfo, [in] lcid, [out] ppTInfo)
