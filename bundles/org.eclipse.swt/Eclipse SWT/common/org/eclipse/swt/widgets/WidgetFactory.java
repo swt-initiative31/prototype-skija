@@ -27,7 +27,7 @@ final class WidgetFactory {
 	 * CONTROLS
 	 */
 
-	static NativeButton createButton(Button wrapper, Composite parent, int style) {
+	static IButton createButton(Button wrapper, Composite parent, int style) {
 		return new NativeButton(Widget.checkNative(parent), style) {
 			@Override
 			public Button getWrapper() {
@@ -36,7 +36,7 @@ final class WidgetFactory {
 		};
 	}
 
-	static NativeLabel createLabel(Label wrapper, Composite parent, int style) {
+	static ILabel createLabel(Label wrapper, Composite parent, int style) {
 		return new NativeLabel(Widget.checkNative(parent), style) {
 			@Override
 			public Label getWrapper() {
@@ -45,7 +45,7 @@ final class WidgetFactory {
 		};
 	}
 
-	static NativeLink createLink(Link wrapper, Composite parent, int style) {
+	static ILink createLink(Link wrapper, Composite parent, int style) {
 		return new NativeLink(Widget.checkNative(parent), style) {
 			@Override
 			public Link getWrapper() {
@@ -54,7 +54,7 @@ final class WidgetFactory {
 		};
 	}
 
-	static NativeProgressBar createProgressBar(ProgressBar wrapper, Composite parent, int style) {
+	static IProgressBar createProgressBar(ProgressBar wrapper, Composite parent, int style) {
 		return new NativeProgressBar(Widget.checkNative(parent), style) {
 			@Override
 			public ProgressBar getWrapper() {
@@ -63,7 +63,7 @@ final class WidgetFactory {
 		};
 	}
 
-	static NativeSash createSash(Sash wrapper, Composite parent, int style) {
+	static ISash createSash(Sash wrapper, Composite parent, int style) {
 		return new NativeSash(Widget.checkNative(parent), style) {
 			@Override
 			public Sash getWrapper() {
@@ -72,7 +72,7 @@ final class WidgetFactory {
 		};
 	}
 
-	static NativeScale createScale(Scale wrapper, Composite parent, int style) {
+	static IScale createScale(Scale wrapper, Composite parent, int style) {
 		return new NativeScale(Widget.checkNative(parent), style) {
 			@Override
 			public Scale getWrapper() {
@@ -81,7 +81,7 @@ final class WidgetFactory {
 		};
 	}
 
-	static NativeComposite createComposite(Composite wrapper, Composite parent, int style) {
+	static IComposite createComposite(Composite wrapper, Composite parent, int style) {
 		return new NativeComposite(Widget.checkNative(parent), style) {
 			@Override
 			public Composite getWrapper() {
@@ -90,7 +90,7 @@ final class WidgetFactory {
 		};
 	}
 
-	static NativeCanvas createCanvas(Canvas wrapper, Composite parent, int style) {
+	static ICanvas createCanvas(Canvas wrapper, Composite parent, int style) {
 		return new NativeCanvas(Widget.checkNative(parent), style) {
 			@Override
 			public Canvas getWrapper() {
@@ -118,7 +118,7 @@ final class WidgetFactory {
 		};
 	}
 
-	static NativeCombo createCombo(Combo wrapper, Composite parent, int style) {
+	static ICombo createCombo(Combo wrapper, Composite parent, int style) {
 		return new NativeCombo(Widget.checkNative(parent), style) {
 			@Override
 			public Combo getWrapper() {
@@ -190,7 +190,7 @@ final class WidgetFactory {
 		};
 	}
 
-	static NativeToolBar createToolBar(ToolBar wrapper, Composite parent, int style) {
+	static IToolBar createToolBar(ToolBar wrapper, Composite parent, int style) {
 		return new NativeToolBar(Widget.checkNative(parent), style) {
 			@Override
 			public ToolBar getWrapper() {
@@ -208,7 +208,7 @@ final class WidgetFactory {
 		};
 	}
 
-	static NativeSlider createSlider(Slider wrapper, Composite parent, int style) {
+	static ISlider createSlider(Slider wrapper, Composite parent, int style) {
 		return new NativeSlider(Widget.checkNative(parent), style) {
 			@Override
 			public Slider getWrapper() {
@@ -226,7 +226,7 @@ final class WidgetFactory {
 		};
 	}
 
-	static NativeText createText(Text wrapper, Composite parent, int style) {
+	static IText createText(Text wrapper, Composite parent, int style) {
 		return new NativeText(Widget.checkNative(parent), style) {
 			@Override
 			public Text getWrapper() {
@@ -239,7 +239,7 @@ final class WidgetFactory {
 	 * ITEMS
 	 */
 
-	static NativeItem createItem(Item wrapper, Widget parent, int style) {
+	static IItem createItem(Item wrapper, Widget parent, int style) {
 		return new NativeItem(Widget.checkNative(parent), style) {
 			@Override
 			public Item getWrapper() {
@@ -374,7 +374,7 @@ final class WidgetFactory {
 		};
 	}
 
-	static NativeToolItem createToolItem(ToolItem wrapper, ToolBar parent, int style) {
+	static IToolItem createToolItem(ToolItem wrapper, ToolBar parent, int style) {
 		return new NativeToolItem(Widget.checkNative(parent), style) {
 			@Override
 			public ToolItem getWrapper() {
@@ -383,7 +383,7 @@ final class WidgetFactory {
 		};
 	}
 
-	static NativeToolItem createToolItem(ToolItem wrapper, ToolBar parent, int style, int index) {
+	static IToolItem createToolItem(ToolItem wrapper, ToolBar parent, int style, int index) {
 		return new NativeToolItem(Widget.checkNative(parent), style, index) {
 			@Override
 			public ToolItem getWrapper() {

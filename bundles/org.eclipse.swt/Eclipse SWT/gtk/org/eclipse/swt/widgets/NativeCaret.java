@@ -315,7 +315,7 @@ void killFocus () {
 void releaseParent () {
 	super.releaseParent ();
 	if (parent != null && this == parent.caret) {
-		if (!parent.isDisposed()) parent.setCaret (null);
+		if (!parent.isDisposed()) parent.setCaret ((NativeCaret) null);
 		else parent.caret = null;
 	}
 }

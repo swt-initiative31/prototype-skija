@@ -45,7 +45,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeToolItem extends NativeItem {
+public abstract class NativeToolItem extends NativeItem implements IToolItem {
 	long arrowHandle, labelHandle, imageHandle;
 	long eventHandle, proxyMenuItem, provider;
 
@@ -188,6 +188,7 @@ protected NativeToolItem (NativeToolBar parent, int style, int index) {
  * @see #removeSelectionListener
  * @see SelectionEvent
  */
+@Override
 public void addSelectionListener(SelectionListener listener) {
 	addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 }
@@ -389,6 +390,7 @@ public void dispose () {
  *
  * @since 3.120
  */
+@Override
 public Color getBackground () {
 	checkWidget ();
 	return (background != null) ? background : parent.getBackground ();
@@ -405,6 +407,7 @@ public Color getBackground () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Rectangle getBounds () {
 	checkWidget ();
 	return DPIUtil.autoScaleDown (getBoundsInPixels ());
@@ -436,9 +439,10 @@ Rectangle getBoundsInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public NativeControl getControl () {
+@Override
+public Control getControl () {
 	checkWidget();
-	return control;
+	return control != null ? control.getWrapper() : null;
 }
 
 /**
@@ -455,6 +459,7 @@ public NativeControl getControl () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Image getDisabledImage () {
 	checkWidget();
 	return disabledImage;
@@ -475,6 +480,7 @@ public Image getDisabledImage () {
  *
  * @see #isEnabled
  */
+@Override
 public boolean getEnabled () {
 	checkWidget();
 	long topHandle = topHandle ();
@@ -493,6 +499,7 @@ public boolean getEnabled () {
  *
  * @since 3.120
  */
+@Override
 public Color getForeground () {
 	checkWidget ();
 	return (foreground != null) ? foreground : parent.getForeground ();
@@ -512,6 +519,7 @@ public Color getForeground () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Image getHotImage () {
 	checkWidget();
 	return hotImage;
@@ -543,10 +551,11 @@ public Image getImage () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public NativeToolBar getParent () {
+@Override
+public ToolBar getParent () {
 	checkWidget();
 	if (parent == null) error (SWT.ERROR_WIDGET_DISPOSED);
-	return parent;
+	return parent != null ? parent.getWrapper() : null;
 }
 
 /**
@@ -566,6 +575,7 @@ public NativeToolBar getParent () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public boolean getSelection () {
 	checkWidget();
 	if ((style & (SWT.CHECK | SWT.RADIO)) == 0) return false;
@@ -590,6 +600,7 @@ public boolean getSelection () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public String getToolTipText () {
 	checkWidget();
 	return toolTipText;
@@ -605,6 +616,7 @@ public String getToolTipText () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getWidth () {
 	checkWidget ();
 	return DPIUtil.autoScaleDown (getWidthInPixels ());
@@ -968,6 +980,7 @@ void hookEvents () {
  *
  * @see #getEnabled
  */
+@Override
 public boolean isEnabled () {
 	checkWidget();
 	return getEnabled () && parent.isEnabled ();
@@ -981,9 +994,9 @@ boolean isTabGroup () {
 		}
 	}
 	if ((style & SWT.SEPARATOR) != 0) return true;
-	int index = parent.indexOf (this);
+	int index = parent.indexOf (this.getWrapper());
 	if (index == 0) return true;
-	NativeToolItem previous = parent.getItem (index - 1);
+	ToolItem previous = parent.getItem (index - 1);
 	return (previous.getStyle () & SWT.SEPARATOR) != 0;
 }
 
@@ -1029,6 +1042,7 @@ void releaseWidget () {
  * @see SelectionListener
  * @see #addSelectionListener
  */
+@Override
 public void removeSelectionListener(SelectionListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1075,7 +1089,7 @@ void resizeHandle(int width, int height) {
 
 void selectRadio () {
 	int index = 0;
-	NativeToolItem [] items = parent.getItems ();
+	NativeToolItem [] items = parent._getItems ();
 	while (index < items.length && items [index] != this) index++;
 	int i = index - 1;
 	while (i >= 0 && items [i].setRadioSelection (false)) --i;
@@ -1103,6 +1117,7 @@ void selectRadio () {
  *
  * @since 3.120
  */
+@Override
 public void setBackground (Color color) {
 	checkWidget ();
 	if (color != null && color.isDisposed ()) {
@@ -1118,7 +1133,7 @@ public void setBackground (Color color) {
  * Sets the control that is used to fill the bounds of
  * the item when the item is a <code>SEPARATOR</code>.
  *
- * @param control the new control
+ * @param controlWrapper the new control
  *
  * @exception IllegalArgumentException <ul>
  *    <li>ERROR_INVALID_ARGUMENT - if the control has been disposed</li>
@@ -1129,8 +1144,10 @@ public void setBackground (Color color) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setControl (NativeControl control) {
+@Override
+public void setControl (Control controlWrapper) {
 	checkWidget ();
+	NativeControl control = Widget.checkNative(controlWrapper);
 	if (control != null) {
 		if (control.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
 		if (control.parent != parent) error (SWT.ERROR_INVALID_PARENT);
@@ -1166,6 +1183,7 @@ public void setControl (NativeControl control) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setDisabledImage (Image image) {
 	checkWidget();
 	if (this.disabledImage == image) return;
@@ -1195,6 +1213,7 @@ public void setDisabledImage (Image image) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setEnabled (boolean enabled) {
 	checkWidget();
 	long topHandle = topHandle();
@@ -1247,6 +1266,7 @@ void setFontDescription (long font) {
  *
  * @since 3.120
  */
+@Override
 public void setForeground (Color color) {
 	checkWidget ();
 	if (color != null && color.isDisposed ()) {
@@ -1275,6 +1295,7 @@ public void setForeground (Color color) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setHotImage (Image image) {
 	checkWidget();
 	if (this.hotImage == image) return;
@@ -1383,6 +1404,7 @@ boolean setRadioSelection (boolean value) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setSelection (boolean selected) {
 	checkWidget ();
 	if ((style & (SWT.CHECK | SWT.RADIO)) == 0) return;
@@ -1486,6 +1508,7 @@ public void setText (String string) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setToolTipText(String string) {
 	checkWidget();
 	if (toolTipText == string || (toolTipText != null && toolTipText.equals(string))) return;
@@ -1532,6 +1555,7 @@ public void setToolTipText(String string) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setWidth (int width) {
 	checkWidget ();
 	setWidthInPixels(DPIUtil.autoScaleUp(width));

@@ -107,7 +107,7 @@ public abstract class NativeDecorations extends NativeCanvas {
 	NativeMenu menuBar;
 	NativeMenu [] menus;
 	NativeControl savedFocus;
-	NativeButton defaultButton, saveDefault;
+	Button defaultButton, saveDefault;
 	long accelGroup, vboxHandle;
 
 NativeDecorations () {
@@ -290,8 +290,8 @@ void fixAccelGroup () {
 void fixDecorations (NativeDecorations newDecorations, NativeControl control, NativeMenu [] menus) {
 	if (this == newDecorations) return;
 	if (control == savedFocus) savedFocus = null;
-	if (control == defaultButton) defaultButton = null;
-	if (control == saveDefault) saveDefault = null;
+	if (control.getWrapper() == defaultButton) defaultButton = null;
+	if (control.getWrapper() == saveDefault) saveDefault = null;
 	if (menus == null) return;
 	NativeMenu menu = control.menu;
 	if (menu != null) {
@@ -318,11 +318,11 @@ void fixDecorations (NativeDecorations newDecorations, NativeControl control, Na
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see #setDefaultButton(NativeButton)
+ * @see #setDefaultButton(Button)
  */
-public NativeButton getDefaultButton () {
+public Button getDefaultButton () {
 	checkWidget();
-	NativeButton button = defaultButton != null ? defaultButton : saveDefault;
+	Button button = defaultButton != null ? defaultButton : saveDefault;
 	if (button != null && button.isDisposed ()) return null;
 	return button;
 }
@@ -571,20 +571,22 @@ boolean restoreFocus () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setDefaultButton (NativeButton button) {
+public void setDefaultButton (Button button) {
 	checkWidget();
 	long buttonHandle = 0;
 	if (saveDefault != null && !saveDefault.isDisposed ()  ) {
-		long saveButtonHandle = saveDefault.handle;
-		if (saveButtonHandle != 0) {
-			long context = GTK.gtk_widget_get_style_context (saveButtonHandle);
-			GTK.gtk_style_context_remove_class(context, GTK.GTK_STYLE_CLASS_SUGGESTED_ACTION);
-		}
+		// TODO Facade readd
+//		long saveButtonHandle = saveDefault.handle;
+//		if (saveButtonHandle != 0) {
+//			long context = GTK.gtk_widget_get_style_context (saveButtonHandle);
+//			GTK.gtk_style_context_remove_class(context, GTK.GTK_STYLE_CLASS_SUGGESTED_ACTION);
+//		}
 	}
 	if (button != null) {
 		if (button.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
-		if (button.menuShell () != this) error (SWT.ERROR_INVALID_PARENT);
-		buttonHandle = button.handle;
+		if (button.menuShell () != this.getWrapper()) error (SWT.ERROR_INVALID_PARENT);
+		// TODO Facade readd
+//		buttonHandle = button.handle;
 	}
 	saveDefault = defaultButton = button;
 	if (buttonHandle != 0) {
@@ -809,7 +811,7 @@ boolean traverseItem (boolean next) {
 
 @Override
 boolean traverseReturn () {
-	NativeButton button = defaultButton != null ? defaultButton: saveDefault;
+	Button button = defaultButton != null ? defaultButton: saveDefault;
 	if (button == null || button.isDisposed ()) return false;
 	/*
 	* Bug in GTK.  When a default button that is disabled is

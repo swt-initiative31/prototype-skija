@@ -39,7 +39,7 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeProgressBar extends NativeControl {
+public abstract class NativeProgressBar extends NativeControl implements IProgressBar {
 	NSBezierPath visiblePath;
 
 /**
@@ -154,6 +154,7 @@ void _drawThemeProgressArea (long id, long sel, long arg0) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getMaximum () {
 	checkWidget();
 	return (int)((NSProgressIndicator)view).maxValue();
@@ -169,6 +170,7 @@ public int getMaximum () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getMinimum () {
 	checkWidget();
 	return (int)((NSProgressIndicator)view).minValue();
@@ -184,6 +186,7 @@ public int getMinimum () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getSelection () {
 	checkWidget();
 	return (int)((NSProgressIndicator)view).doubleValue();
@@ -206,6 +209,7 @@ public int getSelection () {
  *
  * @since 3.4
  */
+@Override
 public int getState () {
 	checkWidget ();
 	return SWT.NORMAL;
@@ -224,6 +228,7 @@ public int getState () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setMaximum (int value) {
 	checkWidget();
 	int minimum = (int)((NSProgressIndicator)view).minValue();
@@ -249,6 +254,7 @@ public void setMaximum (int value) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setMinimum (int value) {
 	checkWidget();
 	int maximum =  (int)((NSProgressIndicator)view).maxValue();
@@ -273,6 +279,7 @@ public void setMinimum (int value) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setSelection (int value) {
 	checkWidget();
 	((NSProgressIndicator)view).setDoubleValue(value);
@@ -307,6 +314,7 @@ public void setSelection (int value) {
  *
  * @since 3.4
  */
+@Override
 public void setState (int state) {
 	checkWidget ();
 	//NOT IMPLEMENTED

@@ -41,7 +41,7 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeScale extends NativeControl {
+public abstract class NativeScale extends NativeControl implements IScale {
 	int increment = 1;
 	int pageIncrement = 10;
 
@@ -101,6 +101,7 @@ protected NativeScale (NativeComposite parent, int style) {
  * @see SelectionListener
  * @see #removeSelectionListener
  */
+@Override
 public void addSelectionListener(SelectionListener listener) {
 	addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 }
@@ -163,6 +164,7 @@ void deregister() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getIncrement () {
 	checkWidget();
 	return increment;
@@ -178,6 +180,7 @@ public int getIncrement () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getMaximum () {
 	checkWidget();
 	return (int)((NSSlider)view).maxValue();
@@ -193,6 +196,7 @@ public int getMaximum () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getMinimum () {
 	checkWidget();
 	return (int)((NSSlider)view).minValue();
@@ -210,6 +214,7 @@ public int getMinimum () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getPageIncrement () {
 	checkWidget();
 	return pageIncrement;
@@ -225,6 +230,7 @@ public int getPageIncrement () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getSelection () {
 	checkWidget();
 	return (int)((NSSlider)view).doubleValue();
@@ -253,6 +259,7 @@ void register() {
  * @see SelectionListener
  * @see #addSelectionListener
  */
+@Override
 public void removeSelectionListener(SelectionListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -282,6 +289,7 @@ void sendSelection () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setIncrement (int increment) {
 	checkWidget();
 	if (increment < 1) return;
@@ -301,6 +309,7 @@ public void setIncrement (int increment) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setMaximum (int value) {
 	checkWidget();
 	int minimum = (int)((NSSlider)view).minValue();
@@ -321,6 +330,7 @@ public void setMaximum (int value) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setMinimum (int value) {
 	checkWidget();
 	int maximum = (int)((NSSlider)view).maxValue();
@@ -341,6 +351,7 @@ public void setMinimum (int value) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setPageIncrement (int pageIncrement) {
 	checkWidget();
 	if (pageIncrement < 1) return;
@@ -358,6 +369,7 @@ public void setPageIncrement (int pageIncrement) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setSelection (int value) {
 	checkWidget();
 	((NSSlider)view).setDoubleValue(value);

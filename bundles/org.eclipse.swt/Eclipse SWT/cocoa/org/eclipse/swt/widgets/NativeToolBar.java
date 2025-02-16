@@ -14,6 +14,8 @@
 package org.eclipse.swt.widgets;
 
 
+import java.util.*;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
@@ -47,7 +49,7 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeToolBar extends NativeComposite {
+public abstract class NativeToolBar extends NativeComposite implements IToolBar {
 	int itemCount;
 	NativeToolItem [] items;
 	NSToolbar nsToolbar;
@@ -132,7 +134,7 @@ long accessibilityAttributeValue (long id, long sel, long arg0) {
 		NSMutableArray returnValue = NSMutableArray.arrayWithCapacity(itemCount);
 
 		for (int i = 0; i < itemCount; i++) {
-			returnValue.addObject(new id(getItem(i).accessibleHandle()));
+			returnValue.addObject(new id(getNativeItem(i).accessibleHandle()));
 		}
 		return returnValue.id;
 	} else if (nsAttributeName.isEqualToString(OS.NSAccessibilityEnabledAttribute)) {
@@ -389,7 +391,7 @@ public Rectangle getBounds () {
 @Override
 boolean forceFocus (NSView focusView) {
 	if (lastFocus != null && lastFocus.setFocus ()) return true;
-	NativeToolItem [] items = getItems ();
+	NativeToolItem [] items = getNativeItems ();
 	for (int i = 0; i < items.length; i++) {
 		NativeToolItem item = items [i];
 		if (item.setFocus ()) {
@@ -415,7 +417,13 @@ boolean forceFocus (NSView focusView) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public NativeToolItem getItem (int index) {
+@Override
+public ToolItem getItem (int index) {
+	NativeToolItem item = getNativeItem(index);
+	return item != null ? item.getWrapper() : null;
+}
+
+private NativeToolItem getNativeItem (int index) {
 	checkWidget();
 	if (0 <= index && index < itemCount) return items [index];
 	error (SWT.ERROR_INVALID_RANGE);
@@ -438,12 +446,16 @@ public NativeToolItem getItem (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public NativeToolItem getItem (Point point) {
+@Override
+public ToolItem getItem (Point point) {
 	checkWidget();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
 	for (int i=0; i<itemCount; i++) {
 		Rectangle rect = items [i].getBounds ();
-		if (rect.contains (point)) return items [i];
+		if (rect.contains (point)) {
+			NativeToolItem item = items [i];
+			return item != null ? item.getWrapper() : null;
+		}
 	}
 	return null;
 }
@@ -458,6 +470,7 @@ public NativeToolItem getItem (Point point) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getItemCount () {
 	checkWidget();
 	return itemCount;
@@ -479,7 +492,12 @@ public int getItemCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public NativeToolItem [] getItems () {
+@Override
+public ToolItem [] getItems () {
+	return Arrays.stream(getNativeItems()).map(NativeToolItem::getWrapper).toArray(ToolItem[]::new);
+}
+
+NativeToolItem [] getNativeItems () {
 	checkWidget();
 	NativeToolItem [] result = new NativeToolItem [itemCount];
 	System.arraycopy (items, 0, result, 0, itemCount);
@@ -499,6 +517,7 @@ public NativeToolItem [] getItems () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getRowCount () {
 	checkWidget();
 	Rectangle rect = getClientArea ();
@@ -528,12 +547,13 @@ boolean hasKeyboardFocus(long inId) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public int indexOf (NativeToolItem item) {
+@Override
+public int indexOf (ToolItem item) {
 	checkWidget();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
 	for (int i=0; i<itemCount; i++) {
-		if (items [i] == item) return i;
+		if (items [i].getWrapper() == item) return i;
 	}
 	return -1;
 }
@@ -872,7 +892,7 @@ boolean translateTraversal (int key, NSEvent theEvent, boolean[] consume) {
 		if (lastFocus.handleKeyDown()) return false;
 	}
 
-	NativeToolItem[] items = getItems();
+	NativeToolItem[] items = getNativeItems();
 	NativeToolItem item = lastFocus;
 	int length = items.length;
 	int index = 0;

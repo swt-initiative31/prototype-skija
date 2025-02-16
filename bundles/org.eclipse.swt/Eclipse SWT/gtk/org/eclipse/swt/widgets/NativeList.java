@@ -43,7 +43,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeList extends NativeScrollable {
+public abstract class NativeList extends NativeScrollable implements IList {
 	long modelHandle;
 	int topIndex;
 	int selectionCountOnPress,selectionCountOnRelease;
@@ -103,6 +103,7 @@ protected NativeList (NativeComposite parent, int style) {
  *
  * @see #add(String,int)
  */
+@Override
 public void add (String string) {
 	checkWidget();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -140,6 +141,7 @@ public void add (String string) {
  *
  * @see #add(String)
  */
+@Override
 public void add (String string, int index) {
 	checkWidget();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -187,6 +189,7 @@ public void add (String string, int index) {
  * @see #removeSelectionListener
  * @see SelectionEvent
  */
+@Override
 public void addSelectionListener(SelectionListener listener) {
 	addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 }
@@ -320,6 +323,7 @@ void deregister() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void deselect (int index) {
 	checkWidget();
 	if (!(0 <= index && index < GTK.gtk_tree_model_iter_n_children (modelHandle, 0)))  return;
@@ -347,6 +351,7 @@ public void deselect (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void deselect (int start, int end) {
 	checkWidget();
 	if (start < 0 && end < 0) return;
@@ -382,6 +387,7 @@ public void deselect (int start, int end) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void deselect (int [] indices) {
 	checkWidget();
 	if (indices == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -407,6 +413,7 @@ public void deselect (int [] indices) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void deselectAll () {
 	checkWidget();
 	long selection = GTK.gtk_tree_view_get_selection (handle);
@@ -470,6 +477,7 @@ long eventWindow () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getFocusIndex () {
 	checkWidget();
 	long [] path = new long [1];
@@ -497,6 +505,7 @@ public int getFocusIndex () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public String getItem (int index) {
 	checkWidget();
 	if (!(0 <= index && index < GTK.gtk_tree_model_iter_n_children (modelHandle, 0)))  {
@@ -525,6 +534,7 @@ public String getItem (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getItemCount () {
 	checkWidget();
 	return GTK.gtk_tree_model_iter_n_children (modelHandle, 0);
@@ -541,6 +551,7 @@ public int getItemCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getItemHeight () {
 	checkWidget();
 	return DPIUtil.autoScaleDown(getItemHeightInPixels());
@@ -589,6 +600,7 @@ int getItemHeightInPixels() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public String [] getItems () {
 	checkWidget();
 	int count = GTK.gtk_tree_model_iter_n_children (modelHandle, 0);
@@ -626,6 +638,7 @@ public String [] getItems () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public String [] getSelection () {
 	checkWidget();
 	int [] indices = getSelectionIndices ();
@@ -646,6 +659,7 @@ public String [] getSelection () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getSelectionCount () {
 	checkWidget();
 	long selection = GTK.gtk_tree_view_get_selection (handle);
@@ -663,6 +677,7 @@ public int getSelectionCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getSelectionIndex () {
 	checkWidget();
 	long selection = GTK.gtk_tree_view_get_selection (handle);
@@ -705,6 +720,7 @@ public int getSelectionIndex () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int [] getSelectionIndices () {
 	checkWidget();
 	long selection = GTK.gtk_tree_view_get_selection (handle);
@@ -763,6 +779,7 @@ long getTextRenderer (long column) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getTopIndex () {
 	checkWidget();
 	/*
@@ -1052,6 +1069,7 @@ void hookEvents () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int indexOf (String string) {
 	checkWidget();
 	return indexOf (string, 0);
@@ -1076,6 +1094,7 @@ public int indexOf (String string) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int indexOf (String string, int start) {
 	checkWidget();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1099,6 +1118,7 @@ public int indexOf (String string, int start) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public boolean isSelected (int index) {
 	checkWidget();
 	long selection = GTK.gtk_tree_view_get_selection (handle);
@@ -1143,6 +1163,7 @@ void releaseWidget () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void remove (int index) {
 	checkWidget();
 	if (!(0 <= index && index < GTK.gtk_tree_model_iter_n_children (modelHandle, 0)))  {
@@ -1173,6 +1194,7 @@ public void remove (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void remove (int start, int end) {
 	checkWidget();
 	if (start > end) return;
@@ -1207,6 +1229,7 @@ public void remove (int start, int end) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void remove (String string) {
 	checkWidget();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1230,6 +1253,7 @@ public void remove (String string) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void remove (int [] indices) {
 	checkWidget();
 	if (indices == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1266,6 +1290,7 @@ public void remove (int [] indices) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void removeAll () {
 	checkWidget();
 	long selection = GTK.gtk_tree_view_get_selection (handle);
@@ -1291,6 +1316,7 @@ public void removeAll () {
  * @see SelectionListener
  * @see #addSelectionListener
  */
+@Override
 public void removeSelectionListener(SelectionListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1311,6 +1337,7 @@ public void removeSelectionListener(SelectionListener listener) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void select (int index) {
 	checkWidget();
 	if (!(0 <= index && index < GTK.gtk_tree_model_iter_n_children (modelHandle, 0)))  return;
@@ -1350,6 +1377,7 @@ public void select (int index) {
  *
  * @see NativeList#setSelection(int,int)
  */
+@Override
 public void select (int start, int end) {
 	checkWidget ();
 	if (end < 0 || start > end || ((style & SWT.SINGLE) != 0 && start != end)) return;
@@ -1395,6 +1423,7 @@ public void select (int start, int end) {
  *
  * @see NativeList#setSelection(int[])
  */
+@Override
 public void select (int [] indices) {
 	checkWidget ();
 	if (indices == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1429,6 +1458,7 @@ public void select (int [] indices) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void selectAll () {
 	checkWidget();
 	if ((style & SWT.SINGLE) != 0) return;
@@ -1488,6 +1518,7 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setItem (int index, String string) {
 	checkWidget();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1515,6 +1546,7 @@ public void setItem (int index, String string) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setItems (String... items) {
 	checkWidget();
 	if (items == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1558,6 +1590,7 @@ void setForegroundGdkRGBA (GdkRGBA rgba) {
  * @see NativeList#deselectAll()
  * @see NativeList#select(int)
  */
+@Override
 public void setSelection (int index) {
 	checkWidget ();
 	deselectAll ();
@@ -1587,6 +1620,7 @@ public void setSelection (int index) {
  * @see NativeList#deselectAll()
  * @see NativeList#select(int,int)
  */
+@Override
 public void setSelection (int start, int end) {
 	checkWidget ();
 	deselectAll ();
@@ -1624,6 +1658,7 @@ public void setSelection (int start, int end) {
  * @see NativeList#deselectAll()
  * @see NativeList#select(int[])
  */
+@Override
 public void setSelection(int[] indices) {
 	checkWidget ();
 	if (indices == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1660,6 +1695,7 @@ public void setSelection(int[] indices) {
  * @see NativeList#select(int[])
  * @see NativeList#setSelection(int[])
  */
+@Override
 public void setSelection (String [] items) {
 	checkWidget ();
 	if (items == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1702,6 +1738,7 @@ public void setSelection (String [] items) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setTopIndex (int index) {
 	checkWidget();
 	/*
@@ -1733,6 +1770,7 @@ public void setTopIndex (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void showSelection () {
 	checkWidget();
 	int index = getSelectionIndex ();

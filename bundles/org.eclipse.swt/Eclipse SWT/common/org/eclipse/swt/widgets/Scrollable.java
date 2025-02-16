@@ -133,8 +133,7 @@ public Rectangle getClientArea () {
  * </ul>
  */
 public ScrollBar getHorizontalBar () {
-	NativeScrollBar wrappedHorizontalBar = getWrappedWidget().getHorizontalBar();
-	return wrappedHorizontalBar != null ? wrappedHorizontalBar.getWrapper() : null;
+	return getWrappedWidget().getHorizontalBar();
 }
 
 /**
@@ -201,11 +200,10 @@ public void setScrollbarsMode (int mode) {
  * </ul>
  */
 public ScrollBar getVerticalBar () {
-	NativeScrollBar wrappedVerticalBar = getWrappedWidget().getVerticalBar();
-	return wrappedVerticalBar != null ? wrappedVerticalBar.getWrapper() : null;
+	return getWrappedWidget().getVerticalBar();
 }
 
 @Override
-protected abstract NativeScrollable getWrappedWidget();
+protected abstract IScrollable getWrappedWidget();
 
 }

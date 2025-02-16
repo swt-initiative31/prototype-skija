@@ -41,7 +41,7 @@ import org.eclipse.swt.graphics.*;
  */
 public class Link extends Control {
 
-	private final NativeLink wrappedLink;
+	private final ILink wrappedLink;
 
 /**
  * Constructs a new instance of this class given its parent
@@ -218,7 +218,7 @@ public void setText (String string) {
 }
 
 @Override
-protected NativeLink getWrappedWidget() {
+protected ILink getWrappedWidget() {
 	return wrappedLink;
 }
 

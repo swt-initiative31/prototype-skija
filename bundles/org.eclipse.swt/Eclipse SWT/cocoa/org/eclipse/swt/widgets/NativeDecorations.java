@@ -104,7 +104,7 @@ public abstract class NativeDecorations extends NativeCanvas {
 	String text = "";
 	boolean minimized, maximized;
 	NativeControl savedFocus;
-	NativeButton defaultButton;
+	Button defaultButton;
 
 NativeDecorations () {
 	/* Do nothing */
@@ -202,7 +202,7 @@ NativeControl computeTabRoot () {
 void fixDecorations (NativeDecorations newDecorations, NativeControl control, NativeMenu [] menus) {
 	if (this == newDecorations) return;
 	if (control == savedFocus) savedFocus = null;
-	if (control == defaultButton) defaultButton = null;
+	if (control.getWrapper() == defaultButton) defaultButton = null;
 	if (menus == null) return;
 	NativeMenu menu = control.menu;
 	if (menu != null) {
@@ -229,9 +229,9 @@ void fixDecorations (NativeDecorations newDecorations, NativeControl control, Na
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see #setDefaultButton(NativeButton)
+ * @see #setDefaultButton(Button)
  */
-public NativeButton getDefaultButton () {
+public Button getDefaultButton() {
 	checkWidget();
 	if (defaultButton != null && defaultButton.isDisposed ()) return null;
 	return defaultButton;
@@ -476,20 +476,21 @@ void saveFocus () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setDefaultButton (NativeButton button) {
+public void setDefaultButton(Button button) {
 	checkWidget();
 	if (button != null) {
 		if (button.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
-		if (button.menuShell () != this) error (SWT.ERROR_INVALID_PARENT);
-		if ((button.style & SWT.PUSH) == 0) return;
+		if (button.menuShell () != this.getWrapper()) error (SWT.ERROR_INVALID_PARENT);
+		if ((button.getStyle() & SWT.PUSH) == 0) return;
 	}
 	if (button == defaultButton) return;
 	defaultButton = button;
-	NSButtonCell cell = null;
-	if (defaultButton != null && (defaultButton.style & SWT.PUSH) != 0) {
-		cell = new NSButtonCell (((NSButton)defaultButton.view).cell ());
-	}
-	view.window().setDefaultButtonCell (cell);
+	// TODO Facade readd
+//	NSButtonCell cell = null;
+//	if (defaultButton != null && (defaultButton.getStyle() & SWT.PUSH) != 0) {
+//		cell = new NSButtonCell (((NSButton)defaultButton.view).cell ());
+//	}
+//	view.window().setDefaultButtonCell (cell);
 	display.updateDefaultButton();
 }
 
@@ -711,7 +712,8 @@ boolean traverseItem (boolean next) {
 boolean traverseReturn () {
 	if (defaultButton == null || defaultButton.isDisposed ()) return false;
 	if (!defaultButton.isVisible () || !defaultButton.isEnabled ()) return false;
-	defaultButton.click ();
+	// TODO Facade readd
+//	defaultButton.click ();
 	return true;
 }
 

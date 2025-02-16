@@ -73,7 +73,7 @@ import org.eclipse.swt.events.*;
  */
 public class Slider extends Control {
 
-	private final NativeSlider wrappedSlider;
+	private final ISlider wrappedSlider;
 
 /**
  * Constructs a new instance of this class given its parent
@@ -384,7 +384,7 @@ public void setValues (int selection, int minimum, int maximum, int thumb, int i
 }
 
 @Override
-protected NativeSlider getWrappedWidget() {
+protected ISlider getWrappedWidget() {
 	return wrappedSlider;
 }
 

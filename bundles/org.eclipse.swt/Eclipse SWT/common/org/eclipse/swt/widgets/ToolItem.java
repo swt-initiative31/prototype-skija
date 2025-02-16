@@ -40,7 +40,7 @@ import org.eclipse.swt.graphics.*;
  */
 public class ToolItem extends Item {
 
-	private final NativeToolItem wrappedToolItem;
+	private final IToolItem wrappedToolItem;
 
 /**
  * Constructs a new instance of this class given its parent
@@ -186,8 +186,7 @@ public Rectangle getBounds () {
  * </ul>
  */
 public Control getControl () {
-	NativeControl wrappedControl = wrappedToolItem.getControl();
-	return wrappedControl != null ? wrappedControl.getWrapper() : null;
+	return wrappedToolItem.getControl();
 }
 
 /**
@@ -308,8 +307,7 @@ public Image getImage () {
  * </ul>
  */
 public ToolBar getParent () {
-	NativeToolBar wrappedToolBar = wrappedToolItem.getParent();
-	return wrappedToolBar != null ? wrappedToolBar.getWrapper() : null;
+	return wrappedToolItem.getParent();
 }
 
 /**
@@ -440,7 +438,7 @@ public void setBackground (Color color) {
  * </ul>
  */
 public void setControl (Control control) {
-	wrappedToolItem.setControl(checkNative(control));
+	wrappedToolItem.setControl(control);
 }
 
 /**
@@ -635,7 +633,7 @@ public void setWidth (int width) {
 }
 
 @Override
-protected NativeToolItem getWrappedWidget() {
+protected IToolItem getWrappedWidget() {
 	return wrappedToolItem;
 }
 
