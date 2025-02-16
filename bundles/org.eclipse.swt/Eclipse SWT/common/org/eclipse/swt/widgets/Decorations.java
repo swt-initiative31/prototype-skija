@@ -323,7 +323,8 @@ public boolean isReparentable () {
  * </ul>
  */
 public void setDefaultButton (Button button) {
-	getWrappedWidget().setDefaultButton(checkNative(button));
+	// TODO FACADE enable again
+//	getWrappedWidget().setDefaultButton(checkNative(button));
 }
 
 /**

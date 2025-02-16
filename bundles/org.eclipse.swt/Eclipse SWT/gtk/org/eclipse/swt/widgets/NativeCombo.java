@@ -61,7 +61,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeCombo extends NativeComposite {
+public abstract class NativeCombo extends NativeComposite implements ICombo {
 	long buttonHandle, entryHandle, textRenderer, cellHandle, popupHandle, menuHandle,
 		buttonBoxHandle, cellBoxHandle, arrowHandle;
 	int lastEventTime, visibleCount = 10;
@@ -143,6 +143,7 @@ protected NativeCombo (NativeComposite parent, int style) {
  *
  * @see #add(String,int)
  */
+@Override
 public void add (String string) {
 	checkWidget();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -175,6 +176,7 @@ public void add (String string) {
  *
  * @see #add(String)
  */
+@Override
 public void add(String string, int index) {
 	checkWidget();
 	if (string == null) error(SWT.ERROR_NULL_ARGUMENT);
@@ -268,6 +270,7 @@ private void gtk_combo_box_toggle_wrap (boolean wrap) {
  * @see ModifyListener
  * @see #removeModifyListener
  */
+@Override
 public void addModifyListener (ModifyListener listener) {
 	addTypedListener(listener, SWT.Modify);
 }
@@ -306,6 +309,7 @@ public void addModifyListener (ModifyListener listener) {
  *
  * @since 3.103
  */
+@Override
 public void addSegmentListener (SegmentListener listener) {
 	addTypedListener(listener, SWT.Segments);
 }
@@ -334,6 +338,7 @@ public void addSegmentListener (SegmentListener listener) {
  * @see #removeSelectionListener
  * @see SelectionEvent
  */
+@Override
 public void addSelectionListener(SelectionListener listener) {
 	addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 }
@@ -359,6 +364,7 @@ public void addSelectionListener(SelectionListener listener) {
  *
  * @since 3.1
  */
+@Override
 public void addVerifyListener (VerifyListener listener) {
 	addTypedListener(listener, SWT.Verify);
 }
@@ -413,6 +419,7 @@ public void checkSubclass () {
  *
  * @see #deselectAll
  */
+@Override
 public void clearSelection () {
 	checkWidget();
 	if (entryHandle != 0) {
@@ -502,6 +509,7 @@ Point computeNativeSize (long h, int wHint, int hHint, boolean changed) {
  *
  * @since 2.1
  */
+@Override
 public void copy () {
 	checkWidget ();
 	if (entryHandle != 0) {
@@ -606,6 +614,7 @@ void createHandle (int index) {
  *
  * @since 2.1
  */
+@Override
 public void cut () {
 	checkWidget ();
 	if (entryHandle != 0) {
@@ -977,6 +986,7 @@ long imContext () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void deselect (int index) {
 	checkWidget();
 	if (index < 0 || index >= items.length) return;
@@ -1000,6 +1010,7 @@ public void deselect (int index) {
  *
  * @see #clearSelection
  */
+@Override
 public void deselectAll () {
 	checkWidget();
 	clearText();
@@ -1079,6 +1090,7 @@ long eventSurface () {
  *
  * @since 3.8
  */
+@Override
 public Point getCaretLocation () {
 	checkWidget ();
 	return DPIUtil.autoScaleDown(getCaretLocationInPixels());
@@ -1118,6 +1130,7 @@ Point getCaretLocationInPixels () {
  *
  * @since 3.8
  */
+@Override
 public int getCaretPosition () {
 	checkWidget ();
 	if ((style & SWT.READ_ONLY) != 0) {
@@ -1159,6 +1172,7 @@ GdkRGBA getContextColorGdkRGBA () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public String getItem (int index) {
 	checkWidget();
 	if (!(0 <= index && index < items.length)) {
@@ -1177,6 +1191,7 @@ public String getItem (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getItemCount () {
 	checkWidget();
 	return items.length;
@@ -1193,6 +1208,7 @@ public int getItemCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getItemHeight () {
 	checkWidget();
 
@@ -1219,6 +1235,7 @@ public int getItemHeight () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public String[] getItems() {
 	checkWidget();
 	String [] result = new String [items.length];
@@ -1245,6 +1262,7 @@ public String[] getItems() {
  *
  * @since 3.4
  */
+@Override
 public boolean getListVisible () {
 	checkWidget ();
 	return popupHandle != 0 && GTK.gtk_widget_get_visible (popupHandle);
@@ -1291,6 +1309,7 @@ public int getOrientation () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Point getSelection () {
 	checkWidget ();
 	if ((style & SWT.READ_ONLY) != 0) {
@@ -1321,6 +1340,7 @@ public Point getSelection () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getSelectionIndex () {
 	checkWidget();
 	return GTK.gtk_combo_box_get_active (handle);
@@ -1338,6 +1358,7 @@ public int getSelectionIndex () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public String getText () {
 	checkWidget();
 
@@ -1383,6 +1404,7 @@ String getText (int start, int stop) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getTextHeight () {
 	checkWidget();
 	return DPIUtil.autoScaleDown(getTextHeightInPixels());
@@ -1411,6 +1433,7 @@ int getTextHeightInPixels () {
  *
  * @see #LIMIT
  */
+@Override
 public int getTextLimit () {
 	checkWidget();
 	int limit = entryHandle != 0 ? GTK.gtk_entry_get_max_length (entryHandle) : 0;
@@ -1434,6 +1457,7 @@ public int getTextLimit () {
  *
  * @since 3.0
  */
+@Override
 public int getVisibleItemCount () {
 	checkWidget ();
 	return visibleCount;
@@ -1900,6 +1924,7 @@ long gtk_style_updated (long widget) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int indexOf (String string) {
 	checkWidget();
 	return indexOf(string, 0);
@@ -1924,6 +1949,7 @@ public int indexOf (String string) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int indexOf (String string, int start) {
 	checkWidget();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1970,6 +1996,7 @@ long paintSurface () {
  *
  * @since 2.1
  */
+@Override
 public void paste () {
 	checkWidget ();
 	if (entryHandle != 0) GTK3.gtk_editable_paste_clipboard (entryHandle);
@@ -2039,6 +2066,7 @@ void releaseWidget () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void remove (int index) {
 	checkWidget();
 	if (!(0 <= index && index < items.length)) {
@@ -2069,6 +2097,7 @@ public void remove (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void remove (int start, int end) {
 	checkWidget();
 	if (start > end) return;
@@ -2106,6 +2135,7 @@ public void remove (int start, int end) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void remove (String string) {
 	checkWidget();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2122,6 +2152,7 @@ public void remove (String string) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void removeAll () {
 	checkWidget();
 
@@ -2147,6 +2178,7 @@ public void removeAll () {
  * @see ModifyListener
  * @see #addModifyListener
  */
+@Override
 public void removeModifyListener (ModifyListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2174,6 +2206,7 @@ public void removeModifyListener (ModifyListener listener) {
  *
  * @since 3.103
  */
+@Override
 public void removeSegmentListener (SegmentListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2197,6 +2230,7 @@ public void removeSegmentListener (SegmentListener listener) {
  * @see SelectionListener
  * @see #addSelectionListener
  */
+@Override
 public void removeSelectionListener (SelectionListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2224,6 +2258,7 @@ public void removeSelectionListener (SelectionListener listener) {
  *
  * @since 3.1
  */
+@Override
 public void removeVerifyListener (VerifyListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2243,6 +2278,7 @@ public void removeVerifyListener (VerifyListener listener) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void select (int index) {
 	checkWidget();
 	if (index < 0 || index >= items.length) return;
@@ -2375,6 +2411,7 @@ void setInitialBounds () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setItem (int index, String string) {
 	checkWidget();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2406,6 +2443,7 @@ public void setItem (int index, String string) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setItems (String... items) {
 	checkWidget();
 	if (items == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2450,6 +2488,7 @@ private void gtk_combo_box_text_remove_all() {
  *
  * @since 3.4
  */
+@Override
 public void setListVisible (boolean visible) {
 	checkWidget ();
 	if (visible) {
@@ -2506,6 +2545,7 @@ public void setOrientation (int orientation) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setSelection (Point selection) {
 	checkWidget();
 	if (selection == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2555,6 +2595,7 @@ public void setSelection (Point selection) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setText (String string) {
 	checkWidget();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2612,6 +2653,7 @@ public void setText (String string) {
  *
  * @see #LIMIT
  */
+@Override
 public void setTextLimit (int limit) {
 	checkWidget();
 	if (limit == 0) error (SWT.ERROR_CANNOT_BE_ZERO);
@@ -2641,6 +2683,7 @@ void setToolTipText(NativeShell shell, String newString) {
  *
  * @since 3.0
  */
+@Override
 public void setVisibleItemCount (int count) {
 	checkWidget ();
 	if (count < 0) return;

@@ -43,7 +43,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeSash extends NativeControl {
+public abstract class NativeSash extends NativeControl implements ISash {
 	boolean dragging;
 	int startX, startY, lastX, lastY;
 	long defaultCursor;
@@ -112,6 +112,7 @@ protected NativeSash(NativeComposite parent, int style) {
  * @see #removeSelectionListener
  * @see SelectionEvent
  */
+@Override
 public void addSelectionListener(SelectionListener listener) {
 	addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 }
@@ -650,6 +651,7 @@ void releaseWidget() {
  * @see SelectionListener
  * @see #addSelectionListener
  */
+@Override
 public void removeSelectionListener(SelectionListener listener) {
 	checkWidget();
 	if (listener == null) error(SWT.ERROR_NULL_ARGUMENT);

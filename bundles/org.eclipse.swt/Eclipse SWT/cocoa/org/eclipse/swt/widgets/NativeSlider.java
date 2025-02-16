@@ -73,7 +73,7 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeSlider extends NativeControl {
+public abstract class NativeSlider extends NativeControl implements ISlider {
 	boolean dragging;
 	int minimum, maximum, thumb;
 	int increment = 1;
@@ -144,6 +144,7 @@ protected NativeSlider (NativeComposite parent, int style) {
  * @see #removeSelectionListener
  * @see SelectionEvent
  */
+@Override
 public void addSelectionListener(SelectionListener listener) {
 	addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 }
@@ -218,6 +219,7 @@ void enableWidget(boolean enabled) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getIncrement () {
 	checkWidget();
 	return increment;
@@ -233,6 +235,7 @@ public int getIncrement () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getMaximum () {
 	checkWidget();
 	return maximum;
@@ -248,6 +251,7 @@ public int getMaximum () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getMinimum () {
 	checkWidget();
 	return minimum;
@@ -265,6 +269,7 @@ public int getMinimum () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getPageIncrement () {
 	checkWidget();
 	return pageIncrement;
@@ -280,6 +285,7 @@ public int getPageIncrement () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getSelection () {
 	checkWidget();
 	NSScroller widget = (NSScroller)view;
@@ -297,6 +303,7 @@ public int getSelection () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getThumb () {
 	checkWidget();
 	return thumb;
@@ -319,6 +326,7 @@ public int getThumb () {
  * @see SelectionListener
  * @see #addSelectionListener
  */
+@Override
 public void removeSelectionListener(SelectionListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -372,6 +380,7 @@ void sendSelection () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setIncrement (int value) {
 	checkWidget();
 	if (value < 1) return;
@@ -391,6 +400,7 @@ public void setIncrement (int value) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setMaximum (int value) {
 	checkWidget();
 	if (value < 0) return;
@@ -416,6 +426,7 @@ public void setMaximum (int value) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setMinimum (int value) {
 	checkWidget();
 	if (value < 0) return;
@@ -441,6 +452,7 @@ public void setMinimum (int value) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setPageIncrement (int value) {
 	checkWidget();
 	if (value < 1) return;
@@ -459,6 +471,7 @@ public void setPageIncrement (int value) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setSelection (int value) {
 	checkWidget();
 	updateBar(value, minimum, maximum, thumb);
@@ -498,6 +511,7 @@ void updateBar (int selection, int minimum, int maximum, int thumb) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setThumb (int value) {
 	checkWidget();
 	if (value < 1) return;
@@ -527,6 +541,7 @@ public void setThumb (int value) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setValues (int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement) {
 	checkWidget();
 	if (minimum < 0) return;

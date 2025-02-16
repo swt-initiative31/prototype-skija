@@ -50,7 +50,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see #checkSubclass
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public abstract class NativeWidget {
+public abstract class NativeWidget implements IWidget {
 	/**
 	 * the native zoom of the monitor in percent
 	 * (Warning: This field is platform dependent)
@@ -218,6 +218,7 @@ void _removeListener (int eventType, Listener listener) {
  * @see #removeListener(int, Listener)
  * @see #notifyListeners
  */
+@Override
 public void addListener (int eventType, Listener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -250,7 +251,8 @@ public void addListener (int eventType, Listener listener) {
  * @see #notifyListeners
  * @since 3.126
  */
-protected void addTypedListener (EventListener listener, int... eventTypes) {
+@Override
+public void addTypedListener (EventListener listener, int... eventTypes) {
 	checkWidget();
 	if (listener == null) {
 		SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -280,6 +282,7 @@ protected void addTypedListener (EventListener listener, int... eventTypes) {
  * @see DisposeListener
  * @see #removeDisposeListener
  */
+@Override
 public void addDisposeListener (DisposeListener listener) {
 	addTypedListener(listener, SWT.Dispose);
 }
@@ -387,7 +390,8 @@ void maybeEnableDarkSystemTheme(long handle) {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-protected void checkSubclass () {
+@Override
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -413,7 +417,8 @@ protected void checkSubclass () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-protected void checkWidget () {
+@Override
+public void checkWidget () {
 	Display display = this.display;
 	if (display == null) error (SWT.ERROR_WIDGET_DISPOSED);
 	if (display.thread != Thread.currentThread ()) error (SWT.ERROR_THREAD_INVALID_ACCESS);
@@ -467,6 +472,7 @@ void destroyWidget () {
  * @see #removeDisposeListener
  * @see #checkWidget
  */
+@Override
 public void dispose () {
 	/*
 	* Note:  It is valid to attempt to dispose a widget
@@ -560,6 +566,7 @@ char [] fixMnemonic (String string, boolean spaces, boolean removeAppended) {
  *
  * @see #setData(Object)
  */
+@Override
 public Object getData () {
 	checkWidget();
 	return (state & KEYED_DATA) != 0 ? ((Object []) data) [0] : data;
@@ -589,6 +596,7 @@ public Object getData () {
  *
  * @see #setData(String, Object)
  */
+@Override
 public Object getData (String key) {
 	checkWidget();
 	if (key == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -615,6 +623,7 @@ public Object getData (String key) {
  *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public Display getDisplay () {
 	Display display = this.display;
 	if (display == null) error (SWT.ERROR_WIDGET_DISPOSED);
@@ -640,6 +649,7 @@ public Display getDisplay () {
  *
  * @since 3.4
  */
+@Override
 public Listener[] getListeners (int eventType) {
 	checkWidget();
 	if (eventTable == null) return new Listener[0];
@@ -667,6 +677,7 @@ public Listener[] getListeners (int eventType) {
  *
  * @since 3.126
  */
+@Override
 public <L extends EventListener> Stream<L> getTypedListeners (int eventType, Class<L> listenerType) {
 	return Arrays.stream(getListeners(eventType)) //
 			.filter(TypedListener.class::isInstance).map(l -> ((TypedListener) l).eventListener)
@@ -724,6 +735,7 @@ String getNameText () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getStyle () {
 	checkWidget();
 	return style;
@@ -757,6 +769,7 @@ boolean hooks (int eventType) {
  *
  * @since 3.105
  */
+@Override
 public boolean isAutoDirection () {
 	return (state & HAS_AUTO_DIRECTION) != 0;
 }
@@ -772,6 +785,7 @@ public boolean isAutoDirection () {
  *
  * @return <code>true</code> when the widget is disposed and <code>false</code> otherwise
  */
+@Override
 public boolean isDisposed () {
 	return (state & DISPOSED) != 0;
 }
@@ -792,6 +806,7 @@ public boolean isDisposed () {
  *
  * @see SWT
  */
+@Override
 public boolean isListening (int eventType) {
 	checkWidget();
 	return hooks (eventType);
@@ -845,6 +860,7 @@ GC new_GC (GCData data) {
  * @see #getListeners(int)
  * @see #removeListener(int, Listener)
  */
+@Override
 public void notifyListeners (int eventType, Event event) {
 	checkWidget();
 	if (event == null) event = new Event ();
@@ -1005,6 +1021,7 @@ void releaseWidget () {
  * @see #getListeners(int)
  * @see #notifyListeners
  */
+@Override
 public void removeListener (int eventType, Listener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1038,7 +1055,8 @@ public void removeListener (int eventType, Listener listener) {
  * @noreference This method is not intended to be referenced by clients.
  * @nooverride This method is not intended to be re-implemented or extended by clients.
  */
-protected void removeListener (int eventType, SWTEventListener listener) {
+@Override
+public void removeListener (int eventType, SWTEventListener listener) {
 	removeTypedListener(eventType, listener);
 }
 
@@ -1069,7 +1087,8 @@ protected void removeListener (int eventType, SWTEventListener listener) {
  * @noreference This method is not intended to be referenced by clients.
  * @nooverride This method is not intended to be re-implemented or extended by clients.
  */
-protected void removeTypedListener (int eventType, EventListener listener) {
+@Override
+public void removeTypedListener (int eventType, EventListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (eventTable == null) return;
@@ -1093,6 +1112,7 @@ protected void removeTypedListener (int eventType, EventListener listener) {
  * @see DisposeListener
  * @see #addDisposeListener
  */
+@Override
 public void removeDisposeListener (DisposeListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1128,6 +1148,7 @@ public void removeDisposeListener (DisposeListener listener) {
  * </ul>
  * @since 3.6
  */
+@Override
 public void reskin (int flags) {
 	checkWidget ();
 	reskinWidget ();
@@ -1344,6 +1365,7 @@ boolean sendMouseWheelEvent (int type, long hwnd, long wParam, long lParam) {
  *
  * @see #getData()
  */
+@Override
 public void setData (Object data) {
 	checkWidget();
 	if ((state & KEYED_DATA) != 0) {
@@ -1377,6 +1399,7 @@ public void setData (Object data) {
  *
  * @see #getData(String)
  */
+@Override
 public void setData (String key, Object value) {
 	checkWidget();
 	if (key == null) error (SWT.ERROR_NULL_ARGUMENT);

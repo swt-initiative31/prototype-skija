@@ -51,7 +51,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class NativeControl extends NativeWidget implements Drawable {
+public abstract class NativeControl extends NativeWidget implements Drawable, IControl {
 	// allows to disable context menu entry for "insert emoji"
 	static final boolean DISABLE_EMOJI = Boolean.getBoolean("SWT_GTK_INPUT_HINT_NO_EMOJI");
 
@@ -373,6 +373,7 @@ long gestureHandle () {
  *
  * @since 3.7
  */
+@Override
 public int getOrientation () {
 	checkWidget();
 	return style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
@@ -391,6 +392,7 @@ public int getOrientation () {
  *
  * @since 3.102
  */
+@Override
 public int getTextDirection() {
 	checkWidget ();
 	/* return the widget orientation */
@@ -623,6 +625,7 @@ long paintSurface () {
  *
  * @since 3.4
  */
+@Override
 public boolean print (GC gc) {
 	checkWidget ();
 	if (gc == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -688,6 +691,7 @@ void printWindow (boolean first, NativeControl control, GC gc, long drawable, in
  * @see #pack(boolean)
  * @see "computeTrim, getClientArea for controls that implement them"
  */
+@Override
 public Point computeSize (int wHint, int hHint) {
 	return computeSize (wHint, hHint, true);
 }
@@ -827,6 +831,7 @@ void createWidget(int index) {
  * @see #pack(boolean)
  * @see "computeTrim, getClientArea for controls that implement them"
  */
+@Override
 public Point computeSize (int wHint, int hHint, boolean changed) {
 	checkWidget();
 	if (wHint != SWT.DEFAULT && wHint < 0) wHint = 0;
@@ -905,6 +910,7 @@ void forceResize () {
  *
  * @since 2.0
  */
+@Override
 public Accessible getAccessible () {
 	checkWidget ();
 	return _getAccessible ();
@@ -930,6 +936,7 @@ Accessible _getAccessible () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Rectangle getBounds () {
 	checkWidget();
 	return DPIUtil.autoScaleDown(getBoundsInPixels());
@@ -971,6 +978,7 @@ Rectangle getBoundsInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setBounds (Rectangle rect) {
 	checkWidget ();
 	if (rect == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1012,6 +1020,7 @@ void setBoundsInPixels (Rectangle rect) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setBounds (int x, int y, int width, int height) {
 	checkWidget();
 	Rectangle rect = DPIUtil.autoScaleUp(new Rectangle (x, y, width, height));
@@ -1226,6 +1235,7 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Point getLocation () {
 	checkWidget();
 	return DPIUtil.autoScaleDown(getLocationInPixels());
@@ -1259,6 +1269,7 @@ Point getLocationInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setLocation (Point location) {
 	checkWidget ();
 	if (location == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1287,6 +1298,7 @@ void setLocationInPixels (Point location) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setLocation(int x, int y) {
 	checkWidget();
 	Point loc = DPIUtil.autoScaleUp(new Point (x, y));
@@ -1311,6 +1323,7 @@ void setLocationInPixels(int x, int y) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Point getSize () {
 	checkWidget();
 	return DPIUtil.autoScaleDown(getSizeInPixels());
@@ -1349,6 +1362,7 @@ Point getSizeInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setSize (Point size) {
 	checkWidget ();
 	if (size == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1379,6 +1393,7 @@ void setSizeInPixels (Point size) {
  *
  * @since 3.4
  */
+@Override
 public void setRegion (Region region) {
 	checkWidget ();
 	if (region != null && region.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -1469,6 +1484,7 @@ void setRelations () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setSize (int width, int height) {
 	checkWidget();
 	Point size = DPIUtil.autoScaleUp(new Point (width, height));
@@ -1524,6 +1540,7 @@ boolean isFocusHandle (long widget) {
  * @see NativeControl#moveBelow
  * @see NativeComposite#getChildren
  */
+@Override
 public void moveAbove (Control controlWrapper) {
 	NativeControl control = Widget.checkNative(controlWrapper);
 	checkWidget();
@@ -1555,6 +1572,7 @@ public void moveAbove (Control controlWrapper) {
  * @see NativeControl#moveAbove
  * @see NativeComposite#getChildren
  */
+@Override
 public void moveBelow (Control controlWrapper) {
 	NativeControl control = Widget.checkNative(controlWrapper);
 	checkWidget();
@@ -1581,6 +1599,7 @@ void moveChildren (int oldWidth) {
  *
  * @see #computeSize(int, int, boolean)
  */
+@Override
 public void pack () {
 	pack (true);
 }
@@ -1606,6 +1625,7 @@ public void pack () {
  *
  * @see #computeSize(int, int, boolean)
  */
+@Override
 public void pack (boolean changed) {
 	setSize (computeSize (SWT.DEFAULT, SWT.DEFAULT, changed));
 }
@@ -1620,6 +1640,7 @@ public void pack (boolean changed) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setLayoutData (Object layoutData) {
 	checkWidget();
 	this.layoutData = layoutData;
@@ -1645,6 +1666,7 @@ public void setLayoutData (Object layoutData) {
  *
  * @since 2.1
  */
+@Override
 public Point toControl(int x, int y) {
 	checkWidget();
 	int[] origin_x = new int[1], origin_y = new int[1];
@@ -1684,6 +1706,7 @@ public Point toControl(int x, int y) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Point toControl (Point point) {
 	checkWidget ();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1710,6 +1733,7 @@ public Point toControl (Point point) {
  *
  * @since 2.1
  */
+@Override
 public Point toDisplay(int x, int y) {
 	checkWidget();
 	int[] origin_x = new int[1], origin_y = new int[1];
@@ -1769,6 +1793,7 @@ Point toDisplayInPixels(int x, int y) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Point toDisplay (Point point) {
 	checkWidget();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1811,6 +1836,7 @@ Point getControlOrigin() {
  * @see ControlListener
  * @see #removeControlListener
  */
+@Override
 public void addControlListener(ControlListener listener) {
 	addTypedListener(listener, SWT.Resize, SWT.Move);
 }
@@ -1836,6 +1862,7 @@ public void addControlListener(ControlListener listener) {
  *
  * @since 3.3
  */
+@Override
 public void addDragDetectListener (DragDetectListener listener) {
 	addTypedListener(listener, SWT.DragDetect);
 }
@@ -1859,6 +1886,7 @@ public void addDragDetectListener (DragDetectListener listener) {
  * @see FocusListener
  * @see #removeFocusListener
  */
+@Override
 public void addFocusListener(FocusListener listener) {
 	addTypedListener(listener, SWT.FocusIn, SWT.FocusOut);
 }
@@ -1895,6 +1923,7 @@ public void addFocusListener(FocusListener listener) {
  *
  * @since 3.7
  */
+@Override
 public void addGestureListener (GestureListener listener) {
 	addTypedListener(listener, SWT.Gesture);
 }
@@ -1918,6 +1947,7 @@ public void addGestureListener (GestureListener listener) {
  * @see HelpListener
  * @see #removeHelpListener
  */
+@Override
 public void addHelpListener (HelpListener listener) {
 	addTypedListener(listener, SWT.Help);
 }
@@ -1952,6 +1982,7 @@ public void addHelpListener (HelpListener listener) {
  * @see KeyListener
  * @see #removeKeyListener
  */
+@Override
 public void addKeyListener(KeyListener listener) {
 	addTypedListener(listener, SWT.KeyUp, SWT.KeyDown);
 }
@@ -1977,6 +2008,7 @@ public void addKeyListener(KeyListener listener) {
  *
  * @since 3.3
  */
+@Override
 public void addMenuDetectListener (MenuDetectListener listener) {
 	addTypedListener(listener, SWT.MenuDetect);
 }
@@ -2000,6 +2032,7 @@ public void addMenuDetectListener (MenuDetectListener listener) {
  * @see MouseListener
  * @see #removeMouseListener
  */
+@Override
 public void addMouseListener(MouseListener listener) {
 	addTypedListener(listener, SWT.MouseDown, SWT.MouseUp, SWT.MouseDoubleClick);
 }
@@ -2023,6 +2056,7 @@ public void addMouseListener(MouseListener listener) {
  * @see MouseMoveListener
  * @see #removeMouseMoveListener
  */
+@Override
 public void addMouseMoveListener(MouseMoveListener listener) {
 	addTypedListener(listener, SWT.MouseMove);
 }
@@ -2046,6 +2080,7 @@ public void addMouseMoveListener(MouseMoveListener listener) {
  * @see MouseTrackListener
  * @see #removeMouseTrackListener
  */
+@Override
 public void addMouseTrackListener (MouseTrackListener listener) {
 	addTypedListener(listener, SWT.MouseEnter, SWT.MouseExit, SWT.MouseHover);
 }
@@ -2071,6 +2106,7 @@ public void addMouseTrackListener (MouseTrackListener listener) {
  *
  * @since 3.3
  */
+@Override
 public void addMouseWheelListener (MouseWheelListener listener) {
 	addTypedListener(listener, SWT.MouseWheel);
 }
@@ -2094,6 +2130,7 @@ public void addMouseWheelListener (MouseWheelListener listener) {
  * @see PaintListener
  * @see #removePaintListener
  */
+@Override
 public void addPaintListener(PaintListener listener) {
 	addTypedListener(listener, SWT.Paint);
 }
@@ -2141,6 +2178,7 @@ void addRelation (NativeControl control) {
  *
  * @since 3.7
  */
+@Override
 public void addTouchListener (TouchListener listener) {
 	addTypedListener(listener, SWT.Touch);
 }
@@ -2164,6 +2202,7 @@ public void addTouchListener (TouchListener listener) {
  * @see TraverseListener
  * @see #removeTraverseListener
  */
+@Override
 public void addTraverseListener (TraverseListener listener) {
 	addTypedListener(listener, SWT.Traverse);
 }
@@ -2185,6 +2224,7 @@ public void addTraverseListener (TraverseListener listener) {
  * @see ControlListener
  * @see #addControlListener
  */
+@Override
 public void removeControlListener (ControlListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2212,6 +2252,7 @@ public void removeControlListener (ControlListener listener) {
  *
  * @since 3.3
  */
+@Override
 public void removeDragDetectListener(DragDetectListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2236,6 +2277,7 @@ public void removeDragDetectListener(DragDetectListener listener) {
  * @see FocusListener
  * @see #addFocusListener
  */
+@Override
 public void removeFocusListener(FocusListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2262,6 +2304,7 @@ public void removeFocusListener(FocusListener listener) {
  *
  * @since 3.7
  */
+@Override
 public void removeGestureListener (GestureListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2285,6 +2328,7 @@ public void removeGestureListener (GestureListener listener) {
  * @see HelpListener
  * @see #addHelpListener
  */
+@Override
 public void removeHelpListener (HelpListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2308,6 +2352,7 @@ public void removeHelpListener (HelpListener listener) {
  * @see KeyListener
  * @see #addKeyListener
  */
+@Override
 public void removeKeyListener(KeyListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2335,6 +2380,7 @@ public void removeKeyListener(KeyListener listener) {
  *
  * @since 3.3
  */
+@Override
 public void removeMenuDetectListener (MenuDetectListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2358,6 +2404,7 @@ public void removeMenuDetectListener (MenuDetectListener listener) {
  * @see MouseListener
  * @see #addMouseListener
  */
+@Override
 public void removeMouseListener (MouseListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2383,6 +2430,7 @@ public void removeMouseListener (MouseListener listener) {
  * @see MouseMoveListener
  * @see #addMouseMoveListener
  */
+@Override
 public void removeMouseMoveListener(MouseMoveListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2407,6 +2455,7 @@ public void removeMouseMoveListener(MouseMoveListener listener) {
  * @see MouseTrackListener
  * @see #addMouseTrackListener
  */
+@Override
 public void removeMouseTrackListener(MouseTrackListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2435,6 +2484,7 @@ public void removeMouseTrackListener(MouseTrackListener listener) {
  *
  * @since 3.3
  */
+@Override
 public void removeMouseWheelListener (MouseWheelListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2459,6 +2509,7 @@ public void removeMouseWheelListener (MouseWheelListener listener) {
  * @see PaintListener
  * @see #addPaintListener
  */
+@Override
 public void removePaintListener(PaintListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2496,6 +2547,7 @@ void removeRelation () {
  *
  * @since 3.7
  */
+@Override
 public void removeTouchListener(TouchListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2520,6 +2572,7 @@ public void removeTouchListener(TouchListener listener) {
  * @see TraverseListener
  * @see #addTraverseListener
  */
+@Override
 public void removeTraverseListener(TraverseListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2563,6 +2616,7 @@ public void removeTraverseListener(TraverseListener listener) {
  *
  * @since 3.3
  */
+@Override
 public boolean dragDetect (Event event) {
 	checkWidget ();
 	if (event == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2605,6 +2659,7 @@ public boolean dragDetect (Event event) {
  *
  * @since 3.3
  */
+@Override
 public boolean dragDetect (MouseEvent event) {
 	checkWidget ();
 	if (event == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2888,6 +2943,7 @@ void fixModal(long group, long modalGroup) {
  *
  * @see #setFocus
  */
+@Override
 public boolean forceFocus () {
 	checkWidget();
 	if (display.focusEvent == SWT.FocusOut) return false;
@@ -2938,6 +2994,7 @@ boolean forceFocus (long focusHandle) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Color getBackground () {
 	checkWidget();
 	Color color;
@@ -2967,6 +3024,7 @@ GdkRGBA getBackgroundGdkRGBA () {
  *
  * @since 3.2
  */
+@Override
 public Image getBackgroundImage () {
 	checkWidget ();
 	NativeControl control = findBackgroundControl ();
@@ -3007,6 +3065,7 @@ GdkRGBA getBaseGdkRGBA () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getBorderWidth () {
 	return DPIUtil.autoScaleDown(getBorderWidthInPixels());
 }
@@ -3039,6 +3098,7 @@ int getClientWidth () {
  *
  * @since 3.3
  */
+@Override
 public Cursor getCursor () {
 	checkWidget ();
 	return cursor;
@@ -3057,6 +3117,7 @@ public Cursor getCursor () {
  *
  * @since 3.3
  */
+@Override
 public boolean getDragDetect () {
 	checkWidget ();
 	return (state & DRAG_DETECT) != 0;
@@ -3077,6 +3138,7 @@ public boolean getDragDetect () {
  *
  * @see #isEnabled
  */
+@Override
 public boolean getEnabled () {
 	checkWidget ();
 	return (state & DISABLED) == 0;
@@ -3092,6 +3154,7 @@ public boolean getEnabled () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Font getFont () {
 	checkWidget();
 	return font != null ? font : defaultFont ();
@@ -3146,6 +3209,7 @@ long getFontDescription () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Color getForeground () {
 	checkWidget();
 	Color color;
@@ -3171,6 +3235,7 @@ Point getIMCaretPos () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Object getLayoutData () {
 	checkWidget();
 	return layoutData;
@@ -3191,6 +3256,7 @@ public Object getLayoutData () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Menu getMenu () {
 	checkWidget();
 	return menu != null ? menu.getWrapper() : null;
@@ -3208,6 +3274,7 @@ public Menu getMenu () {
  *
  * @since 3.0
  */
+@Override
 public Monitor getMonitor () {
 	checkWidget ();
 	Monitor[] monitors = display.getMonitors ();
@@ -3242,6 +3309,7 @@ public Monitor getMonitor () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Composite getParent () {
 	checkWidget();
 	return parent != null ? parent.getWrapper() : null;
@@ -3277,6 +3345,7 @@ NativeControl [] getPath () {
  *
  * @since 3.4
  */
+@Override
 public Region getRegion () {
 	checkWidget ();
 	return region;
@@ -3317,6 +3386,7 @@ NativeShell _getShell() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public String getToolTipText () {
 	checkWidget();
 	return toolTipText;
@@ -3342,6 +3412,7 @@ public String getToolTipText () {
  *
  * @since 3.7
  */
+@Override
 public boolean getTouchEnabled() {
 	checkWidget();
 	return false;
@@ -3364,6 +3435,7 @@ public boolean getTouchEnabled() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public boolean getVisible () {
 	checkWidget();
 	return (state & HIDDEN) == 0;
@@ -4458,6 +4530,7 @@ public void internal_dispose_GC (long hDC, GCData data) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public boolean isReparentable () {
 	checkWidget();
 	return true;
@@ -4516,6 +4589,7 @@ boolean isTabItem () {
  *
  * @see #getEnabled
  */
+@Override
 public boolean isEnabled () {
 	checkWidget ();
 	return getEnabled () && parent.isEnabled ();
@@ -4539,6 +4613,7 @@ boolean isFocusAncestor (NativeControl control) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public boolean isFocusControl () {
 	checkWidget();
 	NativeControl focusControl = display.focusControl;
@@ -4562,6 +4637,7 @@ public boolean isFocusControl () {
  *
  * @see #getVisible
  */
+@Override
 public boolean isVisible () {
 	checkWidget();
 	return getVisible () && parent.isVisible ();
@@ -4602,8 +4678,9 @@ void register () {
  *
  * @since 3.105
  */
+@Override
 public void requestLayout () {
-	getShell ().layout (new NativeControl[] {this}, SWT.DEFER);
+	getShell ().layout (new Control[] {this.getWrapper()}, SWT.DEFER);
 }
 
 /**
@@ -4632,6 +4709,7 @@ public void requestLayout () {
  * @see SWT#NO_MERGE_PAINTS
  * @see SWT#DOUBLE_BUFFERED
  */
+@Override
 public void redraw () {
 	checkWidget();
 	redraw (false);
@@ -4680,6 +4758,7 @@ void redraw (boolean all) {
  * @see SWT#NO_MERGE_PAINTS
  * @see SWT#DOUBLE_BUFFERED
  */
+@Override
 public void redraw (int x, int y, int width, int height, boolean all) {
 	checkWidget();
 	Rectangle rect = DPIUtil.autoScaleUp(new Rectangle(x, y, width, height));
@@ -5174,6 +5253,7 @@ void setBackground () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setBackground (Color color) {
 	checkWidget ();
 	_setBackground (color);
@@ -5282,6 +5362,7 @@ void setBackgroundGdkRGBA (long handle, GdkRGBA rgba) {
  *
  * @since 3.2
  */
+@Override
 public void setBackgroundImage (Image image) {
 	checkWidget ();
 	if (image != null && image.isDisposed ()) error(SWT.ERROR_INVALID_ARGUMENT);
@@ -5313,6 +5394,7 @@ void setBackgroundSurface (Image image) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setCapture (boolean capture) {
 	checkWidget();
 	/* FIXME !!!!! */
@@ -5343,6 +5425,7 @@ public void setCapture (boolean capture) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setCursor (Cursor cursor) {
 	checkWidget();
 	if (cursor != null && cursor.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -5377,6 +5460,7 @@ void setCursor (long cursor) {
  *
  * @since 3.3
  */
+@Override
 public void setDragDetect (boolean dragDetect) {
 	checkWidget ();
 	if (dragDetect) {
@@ -5399,6 +5483,7 @@ public void setDragDetect (boolean dragDetect) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setEnabled (boolean enabled) {
 	checkWidget();
 	if (((state & DISABLED) == 0) == enabled) return;
@@ -5470,6 +5555,7 @@ void cleanupEnableWindow() {
  *
  * @see #forceFocus
  */
+@Override
 public boolean setFocus () {
 	checkWidget();
 	if ((style & SWT.NO_FOCUS) != 0) return false;
@@ -5491,6 +5577,7 @@ public boolean setFocus () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setFont (Font font) {
 	checkWidget();
 	if (((state & FONT) == 0) && font == null) return;
@@ -5531,6 +5618,7 @@ void setFontDescription (long font) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setForeground (Color color) {
 	checkWidget();
 	if (((state & FOREGROUND) == 0) && color == null) return;
@@ -5773,6 +5861,7 @@ static void gestureEndProc(long gesture, long sequence, long user_data) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setMenu (Menu menuWrapper) {
 	NativeMenu menu = Widget.checkNative(menuWrapper);
 	checkWidget();
@@ -5809,6 +5898,7 @@ void setOrientation (boolean create) {
  *
  * @since 3.7
  */
+@Override
 public void setOrientation (int orientation) {
 	checkWidget ();
 	int flags = SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT;
@@ -5836,6 +5926,7 @@ public void setOrientation (int orientation) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  *	</ul>
  */
+@Override
 public boolean setParent (Composite parentWrapper) {
 	NativeComposite parent = Widget.checkNative(parentWrapper);
 	checkWidget ();
@@ -5929,6 +6020,7 @@ boolean setRadioSelection (boolean value) {
  * @see #redraw(int, int, int, int, boolean)
  * @see #update()
  */
+@Override
 public void setRedraw (boolean redraw) {
 	checkWidget();
 	if (redraw) {
@@ -6004,6 +6096,7 @@ boolean setTabItemFocus (boolean next) {
  *
  * @since 3.102
  */
+@Override
 public void setTextDirection(int textDirection) {
 	checkWidget ();
 }
@@ -6033,6 +6126,7 @@ public void setTextDirection(int textDirection) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setToolTipText(String string) {
 	checkWidget();
 
@@ -6077,6 +6171,7 @@ void setToolTipText(NativeShell shell, String newString) {
  *
  * @since 3.7
  */
+@Override
 public void setTouchEnabled(boolean enabled) {
 	checkWidget();
 }
@@ -6097,6 +6192,7 @@ public void setTouchEnabled(boolean enabled) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setVisible (boolean visible) {
 	checkWidget();
 	if (((state & HIDDEN) == 0) == visible) return;
@@ -6365,6 +6461,7 @@ void sort (int [] items) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public boolean traverse (int traversal) {
 	checkWidget ();
 	Event event = new Event ();
@@ -6405,6 +6502,7 @@ public boolean traverse (int traversal) {
  *
  * @since 3.6
  */
+@Override
 public boolean traverse (int traversal, Event event) {
 	checkWidget ();
 	if (event == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -6443,6 +6541,7 @@ public boolean traverse (int traversal, Event event) {
  *
  * @since 3.6
  */
+@Override
 public boolean traverse (int traversal, KeyEvent event) {
 	checkWidget ();
 	if (event == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -6780,6 +6879,7 @@ boolean traverseMnemonic (char key) {
  * @see PaintListener
  * @see SWT#Paint
  */
+@Override
 public void update () {
 	checkWidget ();
 	update (false, true);

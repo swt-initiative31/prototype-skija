@@ -140,9 +140,9 @@ void handleLabels(NativeControl c) {
 			labelDragHandlersAdded = true;
 		}
 	} else if (c instanceof NativeComposite) {
-		NativeControl[] cal = ((NativeComposite) c).getChildren();
-		for (NativeControl child : cal) {
-			handleLabels(child);
+		Control[] cal = ((NativeComposite) c).getChildren();
+		for (Control child : cal) {
+			handleLabels(Widget.checkNative(child));
 		}
 	}
 }

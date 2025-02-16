@@ -48,7 +48,7 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see #checkSubclass
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public abstract class NativeWidget {
+public abstract class NativeWidget implements IWidget {
 	int style, state;
 	Display display;
 	EventTable eventTable;
@@ -421,6 +421,7 @@ void becomeKeyWindow (long id, long sel) {
  * </ul>
  * @since 3.6
  */
+@Override
 public void reskin (int flags) {
 	checkWidget ();
 	reskinWidget ();
@@ -463,6 +464,7 @@ boolean resignFirstResponder (long id, long sel) {
  * @see #removeListener(int, Listener)
  * @see #notifyListeners
  */
+@Override
 public void addListener (int eventType, Listener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -495,6 +497,7 @@ public void addListener (int eventType, Listener listener) {
  * @see #notifyListeners
  * @since 3.126
  */
+@Override
 public void addTypedListener (EventListener listener, int... eventTypes) {
 	checkWidget();
 	if (listener == null) {
@@ -530,6 +533,7 @@ void _addListener (int eventType, Listener listener) {
  * @see DisposeListener
  * @see #removeDisposeListener
  */
+@Override
 public void addDisposeListener (DisposeListener listener) {
 	addTypedListener(listener, SWT.Dispose);
 }
@@ -601,6 +605,7 @@ void checkParent (NativeWidget parent) {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
+@Override
 public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
@@ -627,6 +632,7 @@ public void checkSubclass () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void checkWidget () {
 	Display display = this.display;
 	if (display == null) error (SWT.ERROR_WIDGET_DISPOSED);
@@ -720,6 +726,7 @@ void destroyWidget () {
  * @see #removeDisposeListener
  * @see #checkWidget
  */
+@Override
 public void dispose () {
 	/*
 	* Note:  It is valid to attempt to dispose a widget
@@ -915,6 +922,7 @@ NSRect focusRingMaskBoundsForFrame(long id, long sel, NSRect cellFrame,  long vi
  *
  * @see #setData(Object)
  */
+@Override
 public Object getData () {
 	checkWidget();
 	return (state & KEYED_DATA) != 0 ? ((Object []) data) [0] : data;
@@ -944,6 +952,7 @@ public Object getData () {
  *
  * @see #setData(String, Object)
  */
+@Override
 public Object getData (String key) {
 	checkWidget();
 	if (key == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -972,6 +981,7 @@ public Object getData (String key) {
  *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public Display getDisplay () {
 	Display display = this.display;
 	if (display == null) error (SWT.ERROR_WIDGET_DISPOSED);
@@ -1001,6 +1011,7 @@ boolean getDrawing () {
  *
  * @since 3.4
  */
+@Override
 public Listener[] getListeners (int eventType) {
 	checkWidget();
 	if (eventTable == null) return new Listener[0];
@@ -1028,6 +1039,7 @@ public Listener[] getListeners (int eventType) {
  *
  * @since 3.126
  */
+@Override
 public <L extends EventListener> Stream<L> getTypedListeners (int eventType, Class<L> listenerType) {
 	return Arrays.stream(getListeners(eventType)) //
 			.filter(TypedListener.class::isInstance).map(l -> ((TypedListener) l).eventListener)
@@ -1065,6 +1077,7 @@ String getNameText () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getStyle () {
 	checkWidget();
 	return style;
@@ -1127,6 +1140,7 @@ boolean isActive () {
  *
  * @since 3.105
  */
+@Override
 public boolean isAutoDirection () {
 	return false;
 }
@@ -1142,6 +1156,7 @@ public boolean isAutoDirection () {
  *
  * @return <code>true</code> when the widget is disposed and <code>false</code> otherwise
  */
+@Override
 public boolean isDisposed () {
 	return (state & DISPOSED) != 0;
 }
@@ -1173,6 +1188,7 @@ boolean isFlipped(long id, long sel) {
  *
  * @see SWT
  */
+@Override
 public boolean isListening (int eventType) {
 	checkWidget();
 	return hooks (eventType);
@@ -1386,6 +1402,7 @@ boolean outlineView_writeItems_toPasteboard(long id, long sel, long arg0, long a
  * @see #getListeners(int)
  * @see #removeListener(int, Listener)
  */
+@Override
 public void notifyListeners (int eventType, Event event) {
 	checkWidget();
 	if (event == null) event = new Event ();
@@ -1489,6 +1506,7 @@ void releaseWidget () {
  * @see #getListeners(int)
  * @see #notifyListeners
  */
+@Override
 public void removeListener (int eventType, Listener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1523,6 +1541,7 @@ public void removeListener (int eventType, Listener listener) {
  * @noreference This method is not intended to be referenced by clients.
  * @nooverride This method is not intended to be re-implemented or extended by clients.
  */
+@Override
 public void removeListener (int eventType, SWTEventListener listener) {
 	removeTypedListener(eventType, listener);
 }
@@ -1554,6 +1573,7 @@ public void removeListener (int eventType, SWTEventListener listener) {
  * @noreference This method is not intended to be referenced by clients.
  * @nooverride This method is not intended to be re-implemented or extended by clients.
  */
+@Override
 public void removeTypedListener (int eventType, EventListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1578,6 +1598,7 @@ public void removeTypedListener (int eventType, EventListener listener) {
  * @see DisposeListener
  * @see #addDisposeListener
  */
+@Override
 public void removeDisposeListener (DisposeListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1720,6 +1741,7 @@ void sendVerticalSelection () {
  *
  * @see #getData()
  */
+@Override
 public void setData (Object data) {
 	checkWidget();
 	if (WEBKIT_EVENTS_FIX_KEY.equals (data)) {
@@ -1764,6 +1786,7 @@ void setIsStyledText() {
  *
  * @see #getData(String)
  */
+@Override
 public void setData (String key, Object value) {
 	checkWidget();
 	if (key == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2414,6 +2437,7 @@ void notifyDisposalTracker() {
 	}
 }
 
+@Override
 public abstract Widget getWrapper();
 
 }

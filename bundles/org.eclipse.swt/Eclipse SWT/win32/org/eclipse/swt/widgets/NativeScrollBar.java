@@ -743,7 +743,7 @@ boolean SetScrollInfo (long hwnd, int flags, SCROLLINFO info, boolean fRedraw) {
 	boolean barVisible = false;
 	boolean visible = getVisible ();
 
-	NativeScrollBar bar = null;
+	ScrollBar bar = null;
 	switch (flags) {
 		case OS.SB_HORZ:
 			bar = parent.getVerticalBar ();

@@ -14,8 +14,6 @@
 package org.eclipse.swt.widgets;
 
 
-import java.util.*;
-
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 
@@ -191,7 +189,7 @@ public int getBackgroundMode () {
  * </ul>
  */
 public Control [] getChildren () {
-	return Arrays.stream(getWrappedWidget().getChildren()).map(NativeControl::getWrapper).toArray(Control[]::new);
+	return getWrappedWidget().getChildren();
 }
 
 /**
@@ -222,7 +220,7 @@ public Layout getLayout () {
  * @see #setTabList
  */
 public Control [] getTabList () {
-	return Arrays.stream(getWrappedWidget().getTabList()).map(NativeControl::getWrapper).toArray(Control[]::new);
+	return getWrappedWidget().getTabList();
 }
 
 /**
@@ -421,7 +419,7 @@ public void layout (boolean changed, boolean all) {
  * @since 3.1
  */
 public void layout (Control [] changed) {
-	getWrappedWidget().layout(checkNative(changed));
+	getWrappedWidget().layout(changed);
 }
 
 /**
@@ -483,7 +481,7 @@ public void layout (Control [] changed) {
  * @since 3.6
  */
 public void layout (Control [] changed, int flags) {
-	getWrappedWidget().layout(checkNative(changed), flags);
+	getWrappedWidget().layout(changed, flags);
 }
 
 /**
@@ -568,7 +566,7 @@ public void setLayoutDeferred (boolean defer) {
  * </ul>
  */
 public void setTabList (Control [] tabList) {
-	getWrappedWidget().setTabList(checkNative(tabList));
+	getWrappedWidget().setTabList(tabList);
 }
 
 @Override

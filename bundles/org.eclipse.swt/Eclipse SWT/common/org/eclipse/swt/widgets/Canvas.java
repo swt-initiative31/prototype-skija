@@ -121,8 +121,7 @@ public void drawBackground (GC gc, int x, int y, int width, int height) {
  * </ul>
  */
 public Caret getCaret () {
-	NativeCaret wrappedCaret = wrappedCanvas.getCaret();
-	return wrappedCaret != null ? wrappedCaret.getWrapper() : null;
+	return wrappedCanvas.getCaret();
 }
 
 /**
@@ -138,8 +137,7 @@ public Caret getCaret () {
  * @since 3.4
  */
 public IME getIME () {
-	NativeIME wrappedIME = wrappedCanvas.getIME();
-	return wrappedIME != null ? wrappedIME.getWrapper() : null;
+	return wrappedCanvas.getIME();
 }
 
 /**
@@ -189,7 +187,7 @@ public void scroll (int destX, int destY, int x, int y, int width, int height, b
  * </ul>
  */
 public void setCaret (Caret caret) {
-	wrappedCanvas.setCaret(checkNative(caret));
+	wrappedCanvas.setCaret(caret);
 }
 
 @Override
@@ -213,7 +211,7 @@ public void setFont (Font font) {
  * @since 3.4
  */
 public void setIME (IME ime) {
-	wrappedCanvas.setIME(checkNative(ime));
+	wrappedCanvas.setIME(ime);
 }
 
 @Override
