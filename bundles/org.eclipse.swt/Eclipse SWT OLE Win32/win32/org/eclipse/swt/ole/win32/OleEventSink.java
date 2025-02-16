@@ -20,7 +20,7 @@ import org.eclipse.swt.internal.win32.*;
 
 final class OleEventSink
 {
-	private OleControlSite widget;
+	private NativeOleControlSite widget;
 
 	private COMObject iDispatch;
 	private int refCount;
@@ -31,7 +31,7 @@ final class OleEventSink
 
 	private OleEventTable eventTable;
 
-OleEventSink(OleControlSite widget, long iUnknown, GUID riid) {
+OleEventSink(NativeOleControlSite widget, long iUnknown, GUID riid) {
 
 	this.widget = widget;
 	this.eventGuid = riid;

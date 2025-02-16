@@ -15,10 +15,13 @@
 package org.eclipse.swt.widgets;
 
 
+import java.util.*;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.custom.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.*;
 
 /**
  * Instances of this class are controls that allow the user
@@ -59,7 +62,7 @@ import org.eclipse.swt.graphics.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class CustomCombo extends CCombo {
+public abstract class CustomCombo extends CCombo implements ICombo {
 
 	/**
 	 * the operating system limit for the number of characters
@@ -112,7 +115,7 @@ public CustomCombo (Composite parent, int style) {
 }
 
 @Override
-protected void checkSubclass() {
+public void checkSubclass() {
 	// TODO: implement correctly
 }
 
@@ -147,23 +150,51 @@ public void setItems (String... items) {
 //	ignoreSelection = false;
 }
 
+@Override
 public void addSegmentListener(SegmentListener listener) {
 	System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 }
 
+@Override
 public void removeSegmentListener(SegmentListener listener) {
 	System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 }
 
+@Override
 public int getCaretPosition() {
 	System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	return -1;
 }
 
+@Override
 public Point getCaretLocation() {
 	System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	return null;
 }
 
+@Override
+public void addTypedListener(EventListener listener, int... eventTypes) {
+	super.addTypedListener(listener, eventTypes);
+}
+
+@Override
+public void removeTypedListener(int eventType, EventListener listener) {
+	super.removeTypedListener(eventType, listener);
+}
+
+@Override
+public void removeListener(int eventType, EventListener listener) {
+	super.removeListener(eventType, listener);
+}
+
+@Override
+public void removeListener(int eventType, SWTEventListener listener) {
+	super.removeListener(eventType, listener);
+}
+
+@Override
+public void checkWidget() {
+	super.checkWidget();
+}
 
 }

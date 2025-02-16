@@ -45,7 +45,7 @@ import org.eclipse.swt.widgets.LinkRenderer.*;
  * @since 3.1
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class CustomLink extends CustomControl {
+public abstract class CustomLink extends CustomControl implements ILink {
 
 	private static final Color LINK_COLOR = new Color(0, 102, 204);
 
@@ -153,6 +153,7 @@ public class CustomLink extends CustomControl {
 		}
 	}
 
+	@Override
 	public void addSelectionListener(SelectionListener listener) {
 		addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 	}
@@ -180,6 +181,7 @@ public class CustomLink extends CustomControl {
 	 * @see SelectionListener
 	 * @see #addSelectionListener
 	 */
+	@Override
 	public void removeSelectionListener(SelectionListener listener) {
 		checkWidget();
 		if (listener == null) {
@@ -326,7 +328,7 @@ public class CustomLink extends CustomControl {
 		if (size.x == 0 || size.y == 0) {
 			return;
 		}
-		Drawing.drawWithGC(this, event.gc, gc -> renderer.paint(gc, size.x, size.y));
+		Drawing.drawWithGC(this.getWrapper(), event.gc, gc -> renderer.paint(gc, size.x, size.y));
 		links = renderer.getLinks();
 	}
 
@@ -372,6 +374,7 @@ public class CustomLink extends CustomControl {
 	 *                                     receiver</li>
 	 *                                     </ul>
 	 */
+	@Override
 	public void setText(String text) {
 		checkWidget();
 		if (text == null) error(SWT.ERROR_NULL_ARGUMENT);
@@ -399,6 +402,7 @@ public class CustomLink extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public String getText() {
 		checkWidget();
 		return text;
@@ -428,6 +432,7 @@ public class CustomLink extends CustomControl {
 	 *                                     </ul>
 	 * @since 3.105
 	 */
+	@Override
 	public void setLinkForeground(Color color) {
 		checkWidget();
 
@@ -458,6 +463,7 @@ public class CustomLink extends CustomControl {
 	 *                         </ul>
 	 * @since 3.105
 	 */
+	@Override
 	public Color getLinkForeground() {
 		checkWidget();
 		return linkColor != null ? linkColor : LINK_COLOR;

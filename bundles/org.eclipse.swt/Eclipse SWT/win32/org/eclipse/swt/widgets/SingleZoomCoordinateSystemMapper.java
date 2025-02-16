@@ -25,7 +25,7 @@ class SingleZoomCoordinateSystemMapper implements CoordinateSystemMapper {
 		this.display = display;
 	}
 
-	private int getZoomLevelForMapping(Control from, Control to) {
+	private int getZoomLevelForMapping(NativeControl from, NativeControl to) {
 		if (from != null && from.isDisposed()) {
 			display.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
@@ -39,21 +39,21 @@ class SingleZoomCoordinateSystemMapper implements CoordinateSystemMapper {
 	}
 
 	@Override
-	public Point map(Control from, Control to, Point point) {
+	public Point map(NativeControl from, NativeControl to, Point point) {
 		int zoom = getZoomLevelForMapping(from, to);
 		point = DPIUtil.scaleUp(point, zoom);
 		return DPIUtil.scaleDown(display.mapInPixels(from, to, point), zoom);
 	}
 
 	@Override
-	public Rectangle map(Control from, Control to, Rectangle rectangle) {
+	public Rectangle map(NativeControl from, NativeControl to, Rectangle rectangle) {
 		int zoom = getZoomLevelForMapping(from, to);
 		rectangle = DPIUtil.scaleUp(rectangle, zoom);
 		return DPIUtil.scaleDown(display.mapInPixels(from, to, rectangle), zoom);
 	}
 
 	@Override
-	public Point map(Control from, Control to, int x, int y) {
+	public Point map(NativeControl from, NativeControl to, int x, int y) {
 		int zoom = getZoomLevelForMapping(from, to);
 		x = DPIUtil.scaleUp(x, zoom);
 		y = DPIUtil.scaleUp(y, zoom);
@@ -61,7 +61,7 @@ class SingleZoomCoordinateSystemMapper implements CoordinateSystemMapper {
 	}
 
 	@Override
-	public Rectangle map(Control from, Control to, int x, int y, int width, int height) {
+	public Rectangle map(NativeControl from, NativeControl to, int x, int y, int width, int height) {
 		int zoom = getZoomLevelForMapping(from, to);
 		x = DPIUtil.scaleUp(x, zoom);
 		y = DPIUtil.scaleUp(y, zoom);

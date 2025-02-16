@@ -97,7 +97,7 @@ public static void addLanguageListener (long hwnd, Runnable runnable) {
 	subclass(hwnd);
 }
 public static void addLanguageListener (Control control, Runnable runnable) {
-	addLanguageListener(control.handle, runnable);
+	addLanguageListener(Widget.checkNative(control).handle, runnable);
 }
 /**
  * Proc used for OS.EnumSystemLanguageGroups call during isBidiPlatform test.
@@ -449,7 +449,7 @@ public static void removeLanguageListener (long hwnd) {
 	unsubclass(hwnd);
 }
 public static void removeLanguageListener (Control control) {
-	removeLanguageListener(control.handle);
+	removeLanguageListener(Widget.checkNative(control).handle);
 }
 
 /**
@@ -559,7 +559,7 @@ public static boolean setOrientation (long hwnd, int orientation) {
 	return true;
 }
 public static boolean setOrientation (Control control, int orientation) {
-	return setOrientation(control.handle, orientation);
+	return setOrientation(Widget.checkNative(control).handle, orientation);
 }
 /**
  * Override the window proc.

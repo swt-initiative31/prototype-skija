@@ -121,7 +121,7 @@ public class TreeDropTargetEffect extends DropTargetEffect {
 	@Override
 	public void dragLeave(DropTargetEvent event) {
 		Tree tree = (Tree) control;
-		long handle = tree.handle;
+		long handle = Widget.checkNative(tree).handle;
 		if (dropIndex != -1) {
 			TVITEM tvItem = new TVITEM ();
 			tvItem.hItem = dropIndex;
@@ -163,9 +163,9 @@ public class TreeDropTargetEffect extends DropTargetEffect {
 	public void dragOver(DropTargetEvent event) {
 		Tree tree = (Tree) getControl();
 		int effect = checkEffect(event.feedback);
-		long handle = tree.handle;
+		long handle = Widget.checkNative(tree).handle;
 		Point coordinates = new Point(event.x, event.y);
-		coordinates = DPIUtil.scaleUp(tree.toControl(coordinates), DPIUtil.getZoomForAutoscaleProperty(tree.nativeZoom)); // To Pixels
+		coordinates = DPIUtil.scaleUp(tree.toControl(coordinates), DPIUtil.getZoomForAutoscaleProperty(Widget.checkNative(tree).nativeZoom)); // To Pixels
 		TVHITTESTINFO lpht = new TVHITTESTINFO ();
 		lpht.x = coordinates.x;
 		lpht.y = coordinates.y;
@@ -215,7 +215,7 @@ public class TreeDropTargetEffect extends DropTargetEffect {
 			if (hItem != -1 && expandIndex == hItem && expandBeginTime != 0) {
 				if (System.currentTimeMillis() >= expandBeginTime) {
 					if (OS.SendMessage (handle, OS.TVM_GETNEXTITEM, OS.TVGN_CHILD, hItem) != 0) {
-						TreeItem item = (TreeItem)tree.getDisplay().findWidget(tree.handle, hItem);
+						TreeItem item = (TreeItem)tree.getDisplay().findWidget(Widget.checkNative(tree).handle, hItem);
 						if (item != null && !item.getExpanded()) {
 							item.setExpanded(true);
 							tree.redraw();
@@ -261,7 +261,7 @@ public class TreeDropTargetEffect extends DropTargetEffect {
 			* Since the insert mark can not be queried from the tree,
 			* use the Tree API rather than calling the OS directly.
 			*/
-			TreeItem item = (TreeItem)tree.getDisplay().findWidget(tree.handle, hItem);
+			TreeItem item = (TreeItem)tree.getDisplay().findWidget(Widget.checkNative(tree).handle, hItem);
 			if (item != null) {
 				if (item != insertItem || before != insertBefore) {
 					tree.setInsertMark(item, before);

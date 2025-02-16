@@ -22,9 +22,9 @@ public abstract class ControlRenderer {
 
 	protected abstract void paint(GC gc, int width, int height);
 
-	private final Control control;
+	private final NativeBasedCustomControl control;
 
-	protected ControlRenderer(Control control) {
+	protected ControlRenderer(NativeBasedCustomControl control) {
 		this.control = control;
 	}
 
@@ -55,10 +55,10 @@ public abstract class ControlRenderer {
 	}
 
 	protected final <T> T measure(Function<GC, T> function) {
-		return Drawing.measure(control, function);
+		return Drawing.measure(control.getWrapper(), function);
 	}
 
 	protected final Point getTextExtent(String text, int flags) {
-		return Drawing.getTextExtent(control, text, flags);
+		return Drawing.getTextExtent(control.getWrapper(), text, flags);
 	}
 }

@@ -14,11 +14,11 @@
 package org.eclipse.swt.ole.win32;
 
 
-import org.eclipse.swt.widgets.Widget;
+import org.eclipse.swt.widgets.NativeWidget;
 
 public class OleEvent {
 	public int type;
-	public Widget widget;
+	public NativeWidget widget;
 	public int detail;
 	public boolean doit = true;
 	public Variant[] arguments;

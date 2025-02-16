@@ -75,7 +75,7 @@ import org.eclipse.swt.graphics.*;
  *      information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class CustomSlider extends CustomControl {
+public abstract class CustomSlider extends CustomControl implements ISlider {
 	private final boolean horizontal;
 
 	private int selection;
@@ -251,7 +251,8 @@ public class CustomSlider extends CustomControl {
 		}
 
 		Rectangle drawingArea = getBounds();
-		Drawing.drawWithGC(this, event.gc, gc -> renderer.paint(gc, drawingArea.width, drawingArea.height));
+		Drawing.drawWithGC(this.getWrapper(), event.gc,
+				gc -> renderer.paint(gc, drawingArea.width, drawingArea.height));
 		this.drawWidth = drawingArea.width;
 		this.drawHeight = drawingArea.height;
 		this.thumbRectangle = renderer.getThumbRectangle();
@@ -412,6 +413,7 @@ public class CustomSlider extends CustomControl {
 	 * @see SelectionListener
 	 * @see #removeSelectionListener
 	 */
+	@Override
 	public void addSelectionListener(SelectionListener listener) {
 		addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 	}
@@ -439,6 +441,7 @@ public class CustomSlider extends CustomControl {
 	 * @see SelectionListener
 	 * @see #addSelectionListener
 	 */
+	@Override
 	public void removeSelectionListener(SelectionListener listener) {
 		checkWidget();
 		if (listener == null) error(SWT.ERROR_NULL_ARGUMENT);
@@ -461,6 +464,7 @@ public class CustomSlider extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public int getIncrement() {
 		return increment;
 	}
@@ -478,6 +482,7 @@ public class CustomSlider extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public int getMaximum() {
 		return maximum;
 	}
@@ -495,6 +500,7 @@ public class CustomSlider extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public int getMinimum() {
 		return minimum;
 	}
@@ -513,6 +519,7 @@ public class CustomSlider extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public int getPageIncrement() {
 		return pageIncrement;
 	}
@@ -530,6 +537,7 @@ public class CustomSlider extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public int getSelection() {
 		return selection;
 	}
@@ -547,6 +555,7 @@ public class CustomSlider extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public int getThumb() {
 		return thumb;
 	}
@@ -566,6 +575,7 @@ public class CustomSlider extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public void setIncrement(int increment) {
 		checkWidget();
 		this.increment = Math.max(1, increment);
@@ -587,6 +597,7 @@ public class CustomSlider extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public void setMaximum(int max) {
 		checkWidget();
 		setMaximum(max, true);
@@ -623,6 +634,7 @@ public class CustomSlider extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public void setMinimum(int minimum) {
 		checkWidget();
 		setMinimum(minimum, true);
@@ -679,6 +691,7 @@ public class CustomSlider extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public void setPageIncrement(int pageIncrement) {
 		checkWidget();
 		this.pageIncrement = Math.max(1, pageIncrement);
@@ -699,6 +712,7 @@ public class CustomSlider extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public void setSelection(int selection) {
 		checkWidget();
 		setSelection(selection, true);
@@ -741,6 +755,7 @@ public class CustomSlider extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public void setThumb(int thumb) {
 		checkWidget();
 		setThumb(thumb, true);
@@ -797,6 +812,7 @@ public class CustomSlider extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public void setValues(int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement) {
 		checkWidget();
 		setSelection(selection, false);

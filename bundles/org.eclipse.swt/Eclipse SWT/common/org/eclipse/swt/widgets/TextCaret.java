@@ -33,7 +33,7 @@ import org.eclipse.swt.graphics.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further
  *      information</a>
  */
-class TextCaret extends Widget {
+class TextCaret extends NativeWidget {
 	static TextCaret currentCaret;;
 	CustomText parent;
 	int x, y, width, height;
@@ -54,7 +54,7 @@ class TextCaret extends Widget {
 				if (currentCaret.blinkCaret()) {
 					int blinkRate = currentCaret.blinkRate;
 					if (blinkRate != 0) {
-						currentCaret.display.timerExec(blinkRate, this);
+						currentCaret.getDisplay().timerExec(blinkRate, this);
 					}
 				} else {
 					currentCaret = null;
@@ -637,5 +637,10 @@ class TextCaret extends Widget {
 			gc.fillRectangle(getBounds());
 			gc.setBackground(oldBackground);
 		}
+	}
+
+	@Override
+	public Widget getWrapper() {
+		return null;
 	}
 }

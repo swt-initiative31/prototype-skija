@@ -40,7 +40,7 @@ import org.eclipse.swt.graphics.*;
  *      information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class CustomScale extends CustomControl {
+public abstract class CustomScale extends CustomControl implements IScale {
 
 	private int minimum = 0;
 	private int maximum = 100;
@@ -303,7 +303,7 @@ public class CustomScale extends CustomControl {
 			return;
 		}
 
-		Drawing.drawWithGC(this, event.gc, gc -> renderer.paint(gc, size.x, size.y));
+		Drawing.drawWithGC(this.getWrapper(), event.gc, gc -> renderer.paint(gc, size.x, size.y));
 	}
 
 	@Override
@@ -339,6 +339,7 @@ public class CustomScale extends CustomControl {
 	 * @see SelectionListener
 	 * @see #removeSelectionListener
 	 */
+	@Override
 	public void addSelectionListener(SelectionListener listener) {
 		addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 	}
@@ -357,6 +358,7 @@ public class CustomScale extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public int getIncrement() {
 		checkWidget();
 		return increment;
@@ -375,6 +377,7 @@ public class CustomScale extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public int getMaximum() {
 		checkWidget();
 		return maximum;
@@ -393,6 +396,7 @@ public class CustomScale extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public int getMinimum() {
 		checkWidget();
 		return minimum;
@@ -412,6 +416,7 @@ public class CustomScale extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public int getPageIncrement() {
 		checkWidget();
 		return pageIncrement;
@@ -430,6 +435,7 @@ public class CustomScale extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public int getSelection() {
 		checkWidget();
 		return selection;
@@ -458,6 +464,7 @@ public class CustomScale extends CustomControl {
 	 * @see SelectionListener
 	 * @see #addSelectionListener
 	 */
+	@Override
 	public void removeSelectionListener(SelectionListener listener) {
 		checkWidget();
 		if (listener == null)
@@ -483,6 +490,7 @@ public class CustomScale extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public void setIncrement(int increment) {
 		checkWidget();
 		this.increment = Math.max(1, increment);
@@ -506,6 +514,7 @@ public class CustomScale extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public void setMaximum(int maximum) {
 		checkWidget();
 		if (maximum < minimum) {
@@ -532,6 +541,7 @@ public class CustomScale extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public void setMinimum(int minimum) {
 		checkWidget();
 		if (minimum < 0 || minimum < maximum) {
@@ -556,6 +566,7 @@ public class CustomScale extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public void setPageIncrement(int pageIncrement) {
 		checkWidget();
 		this.pageIncrement = Math.max(1, pageIncrement);
@@ -578,6 +589,7 @@ public class CustomScale extends CustomControl {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public void setSelection(int selection) {
 		checkWidget();
 		selectAndNotify(minMax(minimum, selection, maximum));

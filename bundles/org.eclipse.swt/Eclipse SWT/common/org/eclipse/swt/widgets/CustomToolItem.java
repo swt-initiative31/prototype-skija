@@ -41,7 +41,7 @@ import org.eclipse.swt.widgets.toolbar.*;
  *      information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class CustomToolItem extends Item {
+public abstract class CustomToolItem extends NativeItem implements IToolItem {
 	/**
 	 * The renderer interface for the {@link CustomToolItem}.
 	 *
@@ -288,6 +288,7 @@ public class CustomToolItem extends Item {
 	 * @see #removeSelectionListener
 	 * @see SelectionEvent
 	 */
+	@Override
 	public void addSelectionListener(SelectionListener listener) {
 		addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 	}
@@ -314,6 +315,7 @@ public class CustomToolItem extends Item {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public Rectangle getBounds() {
 		checkWidget();
 		return bounds;
@@ -333,6 +335,7 @@ public class CustomToolItem extends Item {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public Control getControl() {
 		checkWidget();
 		return control;
@@ -354,6 +357,7 @@ public class CustomToolItem extends Item {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public Image getDisabledImage() {
 		checkWidget();
 		return disabledImage;
@@ -379,6 +383,7 @@ public class CustomToolItem extends Item {
 	 *
 	 * @since 3.120
 	 */
+	@Override
 	public Color getBackground() {
 		checkWidget();
 		return backgroundColor;
@@ -401,6 +406,7 @@ public class CustomToolItem extends Item {
 	 *
 	 * @see #isEnabled
 	 */
+	@Override
 	public boolean getEnabled() {
 		checkWidget();
 		return enabled;
@@ -421,6 +427,7 @@ public class CustomToolItem extends Item {
 	 *
 	 * @since 3.120
 	 */
+	@Override
 	public Color getForeground() {
 		checkWidget();
 		return foregroundColor;
@@ -442,6 +449,7 @@ public class CustomToolItem extends Item {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public Image getHotImage() {
 		checkWidget();
 		return hotImage;
@@ -460,9 +468,10 @@ public class CustomToolItem extends Item {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
-	public CustomToolBar getParent() {
+	@Override
+	public ToolBar getParent() {
 		checkWidget();
-		return parent;
+		return parent != null ? (ToolBar) parent.getWrapper() : null;
 	}
 
 	/**
@@ -483,6 +492,7 @@ public class CustomToolItem extends Item {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public boolean getSelection() {
 		checkWidget();
 		return isSelected;
@@ -501,6 +511,7 @@ public class CustomToolItem extends Item {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public String getToolTipText() {
 		checkWidget();
 		return toolTipText;
@@ -519,6 +530,7 @@ public class CustomToolItem extends Item {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public int getWidth() {
 		checkWidget();
 		return renderer.getSize().x;
@@ -556,6 +568,7 @@ public class CustomToolItem extends Item {
 	 *
 	 * @see #getEnabled
 	 */
+	@Override
 	public boolean isEnabled() {
 		checkWidget();
 		return getEnabled() && parent.isEnabled();
@@ -584,6 +597,7 @@ public class CustomToolItem extends Item {
 	 * @see SelectionListener
 	 * @see #addSelectionListener
 	 */
+	@Override
 	public void removeSelectionListener(SelectionListener listener) {
 		checkWidget();
 		if (listener == null)
@@ -619,6 +633,7 @@ public class CustomToolItem extends Item {
 	 *
 	 * @since 3.120
 	 */
+	@Override
 	public void setBackground(Color color) {
 		checkWidget();
 		backgroundColor = color;
@@ -646,6 +661,7 @@ public class CustomToolItem extends Item {
 	 *                                     receiver</li>
 	 *                                     </ul>
 	 */
+	@Override
 	public void setControl(Control control) {
 		checkWidget();
 		this.control = control;
@@ -669,6 +685,7 @@ public class CustomToolItem extends Item {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public void setEnabled(boolean enabled) {
 		checkWidget();
 		this.enabled = enabled;
@@ -697,6 +714,7 @@ public class CustomToolItem extends Item {
 	 *                                     receiver</li>
 	 *                                     </ul>
 	 */
+	@Override
 	public void setDisabledImage(Image image) {
 		checkWidget();
 		this.disabledImage = image;
@@ -727,6 +745,7 @@ public class CustomToolItem extends Item {
 	 *
 	 * @since 3.120
 	 */
+	@Override
 	public void setForeground(Color color) {
 		checkWidget();
 		foregroundColor = color;
@@ -755,6 +774,7 @@ public class CustomToolItem extends Item {
 	 *                                     receiver</li>
 	 *                                     </ul>
 	 */
+	@Override
 	public void setHotImage(Image image) {
 		checkWidget();
 		this.hotImage = image;
@@ -778,6 +798,7 @@ public class CustomToolItem extends Item {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public void setSelection(boolean selected) {
 		checkWidget();
 		internalSelect();
@@ -810,6 +831,7 @@ public class CustomToolItem extends Item {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public void setToolTipText(String string) {
 		checkWidget();
 		toolTipText = string;
@@ -838,6 +860,7 @@ public class CustomToolItem extends Item {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public void setWidth(int width) {
 		checkWidget();
 		if (!isSeparator()) {
@@ -980,4 +1003,5 @@ public class CustomToolItem extends Item {
 			sendEvent(SWT.Selection, new Event());
 		}
 	}
+
 }

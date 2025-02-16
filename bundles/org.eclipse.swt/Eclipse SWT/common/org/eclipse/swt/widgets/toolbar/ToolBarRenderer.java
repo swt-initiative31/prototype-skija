@@ -53,7 +53,7 @@ public class ToolBarRenderer implements IToolBarRenderer {
 		for (int i = 0; i < rows.size(); i++) {
 			Row row = rows.get(i);
 			for (ItemRecord itemRecord : row.items) {
-				bar.getItem(itemRecord.index()).render(gc, itemRecord.bounds());
+				bar.getItemInternal(itemRecord.index()).render(gc, itemRecord.bounds());
 			}
 			if (row.hasRowSeparator) {
 				drawHorizontalSeparator(gc, row);
@@ -71,7 +71,7 @@ public class ToolBarRenderer implements IToolBarRenderer {
 		// Collect all item sizes
 		List<ItemRecord> itemRecords = new ArrayList<>();
 		for (int i = 0; i < bar.getItemCount(); i++) {
-			CustomToolItem item = bar.getItem(i);
+			CustomToolItem item = bar.getItemInternal(i);
 			Point preferedSize = item.getSize();
 			Rectangle initialBounds = new Rectangle(0, 0, preferedSize.x, preferedSize.y);
 			ItemRecord itemRecord = new ItemRecord(i, initialBounds, item.isSeparator());
