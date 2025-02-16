@@ -30,7 +30,7 @@ class WidgetWin32Tests extends Win32AutoscaleTestBase {
 		int zoom = DPIUtil.getDeviceZoom();
 		int scaledZoom = zoom * 2;
 
-		Button button = new Button(shell, SWT.PUSH);
+		NativeButton button = new NativeButton(shell, SWT.PUSH);
 		button.setBounds(0, 0, 200, 50);
 		button.setText("Widget Test");
 		button.setBackground(shell.getDisplay().getSystemColor(SWT.COLOR_CYAN));
@@ -46,12 +46,12 @@ class WidgetWin32Tests extends Win32AutoscaleTestBase {
 		int zoom = DPIUtil.getDeviceZoom();
 		int scaledZoom = zoom * 2;
 
-		shell = new Shell(display);
+		shell = new NativeShell(display);
 		shell.setBounds(0, 0, 100, 160);
 		shell.setLayout(new FillLayout());
 		shell.pack();
 
-		Button button = new Button(shell, SWT.PUSH);
+		NativeButton button = new NativeButton(shell, SWT.PUSH);
 		button.setText("Button");
 		button.setBounds(0, 0, 100, 200);
 		Point sizeBeforeEvent = button.getSize();
@@ -94,12 +94,12 @@ class WidgetWin32Tests extends Win32AutoscaleTestBase {
 		int zoom = DPIUtil.getDeviceZoom();
 		int scaledZoom = zoom * 2;
 
-		shell = new Shell(display);
+		shell = new NativeShell(display);
 		shell.setBounds(0, 0, 100, 160);
 		shell.setLayout(new FillLayout());
 		shell.pack();
 
-		Button button = new Button(shell, SWT.PUSH);
+		NativeButton button = new NativeButton(shell, SWT.PUSH);
 		button.setText("Button");
 		button.setBounds(0, 0, 100, 200);
 		Font font = new Font(display, "Arial", 12, SWT.BOLD);
@@ -118,14 +118,14 @@ class WidgetWin32Tests extends Win32AutoscaleTestBase {
 		int zoom = DPIUtil.getDeviceZoom();
 		int scaledZoom = zoom * 2;
 
-		shell = new Shell(display);
+		shell = new NativeShell(display);
 		shell.setBounds(0, 0, 100, 160);
 		shell.setLayout(new FillLayout());
 		shell.pack();
 
-		CoolBar coolBar = new CoolBar(shell, SWT.NONE);
-		CoolItem item1 = new CoolItem(coolBar, SWT.NONE);
-		Label label1 = new Label(coolBar, SWT.NONE);
+		NativeCoolBar coolBar = new NativeCoolBar(shell, SWT.NONE);
+		NativeCoolItem item1 = new NativeCoolItem(coolBar, SWT.NONE);
+		NativeLabel label1 = new NativeLabel(coolBar, SWT.NONE);
 		label1.setText("Label 1");
 		label1.setSize(new Point(10, 20));
 		item1.setControl(label1);
@@ -156,14 +156,14 @@ class WidgetWin32Tests extends Win32AutoscaleTestBase {
 		int zoom = DPIUtil.getDeviceZoom();
 		int scaledZoom = zoom * 2;
 
-		shell = new Shell(display);
+		shell = new NativeShell(display);
 		shell.setBounds(0, 0, 100, 160);
 		shell.setLayout(new FillLayout());
 		shell.pack();
 
-		ExpandBar coolBar = new ExpandBar(shell, SWT.NONE);
-		ExpandItem item1 = new ExpandItem(coolBar, SWT.NONE);
-		Label label1 = new Label(coolBar, SWT.NONE);
+		NativeExpandBar coolBar = new NativeExpandBar(shell, SWT.NONE);
+		NativeExpandItem item1 = new NativeExpandItem(coolBar, SWT.NONE);
+		NativeLabel label1 = new NativeLabel(coolBar, SWT.NONE);
 		label1.setText("Label 1");
 		item1.setControl(label1);
 		item1.setHeight(10);
@@ -182,17 +182,17 @@ class WidgetWin32Tests extends Win32AutoscaleTestBase {
 		int zoom = DPIUtil.getDeviceZoom();
 		int scaledZoom = zoom * 2;
 
-		shell = new Shell(display);
+		shell = new NativeShell(display);
 		shell.setBounds(0, 0, 100, 160);
 		shell.setLayout(new FillLayout());
 		shell.pack();
 
-		TabFolder tabFolder = new TabFolder(shell, SWT.NONE);
+		NativeTabFolder tabFolder = new NativeTabFolder(shell, SWT.NONE);
 		tabFolder.setBounds(20, 20, 360, 240);
 
-		TabItem tabItem = new TabItem(tabFolder, SWT.NONE);
+		NativeTabItem tabItem = new NativeTabItem(tabFolder, SWT.NONE);
 		tabItem.setText("Tab 1");
-		Label label = new Label(tabFolder, SWT.NONE);
+		NativeLabel label = new NativeLabel(tabFolder, SWT.NONE);
 		label.setSize(200, 200);
 		tabItem.setControl(label);
 
@@ -211,27 +211,27 @@ class WidgetWin32Tests extends Win32AutoscaleTestBase {
 		int zoom = DPIUtil.getDeviceZoom();
 		int scaledZoom = zoom * 2;
 
-		shell = new Shell(display);
+		shell = new NativeShell(display);
 		shell.setBounds(0, 0, 100, 160);
 		shell.setLayout(new FillLayout());
 		shell.pack();
 
-		Table table = new Table(shell, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
+		NativeTable table = new NativeTable(shell, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
 		table.setBounds(20, 20, 360, 240);
 		table.setHeaderVisible(true);
 		table.setLinesVisible(true);
 
-		TableColumn column = new TableColumn(table, SWT.NONE);
+		NativeTableColumn column = new NativeTableColumn(table, SWT.NONE);
 		column.setText("Column 1");
 		column.setWidth(200);
 
 		Font font = new Font(display, "Arial", 12, SWT.BOLD);
 
-		TableItem item1 = new TableItem(table, SWT.NONE);
+		NativeTableItem item1 = new NativeTableItem(table, SWT.NONE);
 		item1.setText("Item 1");
 		item1.setFont(font);
 
-		for (TableColumn col : table.getColumns()) {
+		for (NativeTableColumn col : table.getColumns()) {
 			col.pack();
 		}
 
@@ -248,25 +248,25 @@ class WidgetWin32Tests extends Win32AutoscaleTestBase {
 		int zoom = DPIUtil.getDeviceZoom();
 		int scaledZoom = zoom * 2;
 
-		shell = new Shell(display);
+		shell = new NativeShell(display);
 		shell.setBounds(0, 0, 100, 160);
 		shell.setLayout(new FillLayout());
 		shell.pack();
 
-		Tree tree = new Tree(shell, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
+		NativeTree tree = new NativeTree(shell, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
 		tree.setBounds(20, 20, 360, 240);
 		tree.setHeaderVisible(true);
 		tree.setLinesVisible(true);
 
-		TreeColumn column = new TreeColumn(tree, SWT.NONE);
+		NativeTreeColumn column = new NativeTreeColumn(tree, SWT.NONE);
 		column.setText("Column 1");
 		column.setWidth(200);
 
 		Font font = new Font(display, "Arial", 12, SWT.BOLD);
-		TreeItem item1 = new TreeItem(tree, SWT.NONE);
+		NativeTreeItem item1 = new NativeTreeItem(tree, SWT.NONE);
 		item1.setText("Item 1");
 		item1.setFont(font);
-		for (TreeColumn col : tree.getColumns()) {
+		for (NativeTreeColumn col : tree.getColumns()) {
 			col.pack();
 		}
 
@@ -283,13 +283,13 @@ class WidgetWin32Tests extends Win32AutoscaleTestBase {
 		int zoom = DPIUtil.getDeviceZoom();
 		int scaledZoom = zoom * 2;
 
-		shell = new Shell(display);
+		shell = new NativeShell(display);
 		shell.setBounds(0, 0, 100, 160);
 		shell.setLayout(new FillLayout());
 		shell.pack();
 
 		// Create the StyledText widget
-		StyledText styledText = new StyledText(shell, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
+		StyledText styledText = new StyledText(shell.getWrapper(), SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
 		styledText.setBounds(10, 10, 360, 200);
 
 		// Set some text with different styles
@@ -310,9 +310,9 @@ class WidgetWin32Tests extends Win32AutoscaleTestBase {
 		styledText.setStyleRange(styleRange2);
 
 		// Get the caret size
-		Point caretSize = styledText.getCaret().getSizeInPixels();
+		Point caretSize = Widget.checkNative(styledText.getCaret()).getSizeInPixels();
 		changeDPIZoom(scaledZoom);
-		Point caretSize2 = styledText.getCaret().getSizeInPixels();
+		Point caretSize2 = Widget.checkNative(styledText.getCaret()).getSizeInPixels();
 
 		assertEquals("Height of a Caret for Styled Text should be doubled after zooming to 200", caretSize.y * 2,
 				caretSize2.y);

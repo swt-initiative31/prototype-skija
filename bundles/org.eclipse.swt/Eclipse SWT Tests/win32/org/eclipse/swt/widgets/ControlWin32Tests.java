@@ -24,7 +24,7 @@ import org.junit.jupiter.api.*;
  * Automated Tests for class org.eclipse.swt.widgets.Control
  * for Windows specific behavior
  *
- * @see org.eclipse.swt.widgets.Control
+ * @see org.eclipse.swt.widgets.NativeControl
  */
 class ControlWin32Tests extends Win32AutoscaleTestBase {
 
@@ -33,7 +33,7 @@ class ControlWin32Tests extends Win32AutoscaleTestBase {
 		assertTrue("Autoscale property is not set to true", display.isRescalingAtRuntime());
 
 		int scalingFactor = 2;
-		Control control = new Composite(shell, SWT.NONE);
+		Control control = new Composite(shell.getWrapper(), SWT.NONE);
 		int zoom = DPIUtil.getDeviceZoom();
 		int newZoom = zoom * scalingFactor;
 		try {
@@ -58,7 +58,7 @@ class ControlWin32Tests extends Win32AutoscaleTestBase {
 		assertFalse("Autoscale property is not set to false", display.isRescalingAtRuntime());
 
 		int scalingFactor = 2;
-		Control control = new Composite(shell, SWT.NONE);
+		Control control = new Composite(shell.getWrapper(), SWT.NONE);
 		int zoom = DPIUtil.getDeviceZoom();
 		int newZoom = zoom * scalingFactor;
 		try {

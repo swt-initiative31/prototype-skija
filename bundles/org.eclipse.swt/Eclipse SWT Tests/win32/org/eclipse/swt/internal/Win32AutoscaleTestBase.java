@@ -18,7 +18,8 @@ import org.junit.jupiter.api.*;
 
 public abstract class Win32AutoscaleTestBase {
 	protected Display display;
-	protected Shell shell;
+	protected NativeShell shell;
+	private Shell shellWrapper;
 
 	@BeforeAll
 	public static void assumeIsFittingPlatform() {
@@ -29,7 +30,8 @@ public abstract class Win32AutoscaleTestBase {
 	public void setUpTest() {
 		display = Display.getDefault();
 		display.setRescalingAtRuntime(true);
-		shell = new Shell(display);
+		shellWrapper = new Shell(display);
+		shell = Widget.checkNative(shellWrapper);
 	}
 
 	@AfterEach
@@ -43,6 +45,6 @@ public abstract class Win32AutoscaleTestBase {
 	protected void changeDPIZoom (int nativeZoom) {
 		DPIUtil.setDeviceZoom(nativeZoom);
 		float scalingFactor = 1f * DPIUtil.getZoomForAutoscaleProperty(nativeZoom) / DPIUtil.getZoomForAutoscaleProperty(shell.nativeZoom);
-		DPIZoomChangeRegistry.applyChange(shell, nativeZoom, scalingFactor);
+		DPIZoomChangeRegistry.applyChange(shellWrapper, nativeZoom, scalingFactor);
 	}
 }

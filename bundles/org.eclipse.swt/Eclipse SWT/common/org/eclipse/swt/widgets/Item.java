@@ -16,7 +16,6 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.*;
 
 /**
  * This class is the abstract superclass of all non-windowed
@@ -33,17 +32,8 @@ import org.eclipse.swt.internal.*;
  */
 
 public abstract class Item extends Widget {
-	String text;
-	Image image;
-	/**
-	 * Maximum number of characters Windows can reliably display in one line.
-	 * Mac and Linux can display more but we are limited by windows here.
-	 */
-	static final int TEXT_LIMIT = 8192;
 
-	static final String ELLIPSIS = "...";
-
-
+	private final NativeItem wrappedItem;
 
 /**
  * Constructs a new instance of this class given its parent
@@ -70,11 +60,12 @@ public abstract class Item extends Widget {
  * </ul>
  *
  * @see SWT
- * @see Widget#getStyle
+ * @see NativeWidget#getStyle
  */
 public Item (Widget parent, int style) {
-	super (parent, style);
-	text = "";
+	wrappedItem = new NativeItem(checkNative(parent), style) {
+	};
+	wrappedItem.wrapperWidget = this;
 }
 
 /**
@@ -105,15 +96,14 @@ public Item (Widget parent, int style) {
  * </ul>
  *
  * @see SWT
- * @see Widget#getStyle
+ * @see NativeWidget#getStyle
  */
 public Item (Widget parent, int style, int index) {
 	this (parent, style);
 }
 
-@Override
-protected void checkSubclass () {
-	/* Do Nothing - Subclassing is allowed */
+Item () {
+	wrappedItem = null;
 }
 
 /**
@@ -128,13 +118,7 @@ protected void checkSubclass () {
  * </ul>
  */
 public Image getImage () {
-	checkWidget ();
-	return image;
-}
-
-@Override
-String getNameText () {
-	return getText ();
+	return getWrappedWidget().getImage();
 }
 
 /**
@@ -149,15 +133,7 @@ String getNameText () {
  * </ul>
  */
 public String getText () {
-	checkWidget();
-	return text;
-}
-
-@Override
-void releaseWidget () {
-	super.releaseWidget ();
-	text = null;
-	image = null;
+	return getWrappedWidget().getText();
 }
 
 /**
@@ -175,10 +151,7 @@ void releaseWidget () {
  * </ul>
  */
 public void setImage (Image image) {
-	checkWidget ();
-	if (this.image == image) return;
-	if (image != null && image.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
-	this.image = image;
+	getWrappedWidget().setImage(image);
 }
 
 /**
@@ -198,30 +171,15 @@ public void setImage (Image image) {
  * </ul>
  */
 public void setText (String string) {
-	checkWidget ();
-	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
-	text = string;
-	if ((state & HAS_AUTO_DIRECTION) != 0) {
-		updateTextDirection (AUTO_TEXT_DIRECTION);
-	}
+	getWrappedWidget().setText(string);
 }
 
-boolean updateTextDirection(int textDirection) {
-	/*
-	 * textDirection argument passed here is either (1) AUTO_TEXT_DIRECTION, or
-	 * (2) 0 (i.e. match orientation) or FLIP_TEXT_DIRECTION (mismatch orientation).
-	 */
-	if (textDirection == AUTO_TEXT_DIRECTION) {
-		state |= HAS_AUTO_DIRECTION;
-		textDirection = (style ^ BidiUtil.resolveTextDirection (text)) == 0 ? 0 : SWT.FLIP_TEXT_DIRECTION;
-	} else {
-		state &= ~HAS_AUTO_DIRECTION;
+@Override
+protected NativeItem getWrappedWidget() {
+	if (wrappedItem == null) {
+		SWT.error (SWT.ERROR_NULL_ARGUMENT, null, " subclass has to overwrite method for retrieving wrapped widget");
 	}
-	if (((style & SWT.FLIP_TEXT_DIRECTION) ^ textDirection) != 0) {
-		style ^= SWT.FLIP_TEXT_DIRECTION;
-		return true;
-	}
-	return textDirection == AUTO_TEXT_DIRECTION;
+	return wrappedItem;
 }
 
 }

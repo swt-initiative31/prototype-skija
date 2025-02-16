@@ -110,7 +110,7 @@ public class TableDropTargetEffect extends DropTargetEffect {
 	@Override
 	public void dragLeave(DropTargetEvent event) {
 		Table table = (Table) control;
-		long handle = table.handle;
+		long handle = Widget.checkNative(table).handle;
 		if (dropHighlight != null) {
 			LVITEM lvItem = new LVITEM ();
 			lvItem.stateMask = OS.LVIS_DROPHILITED;
@@ -149,9 +149,9 @@ public class TableDropTargetEffect extends DropTargetEffect {
 	public void dragOver(DropTargetEvent event) {
 		Table table = (Table) getControl();
 		int effect = checkEffect(event.feedback);
-		long handle = table.handle;
+		long handle = Widget.checkNative(table).handle;
 		Point coordinates = new Point(event.x, event.y);
-		coordinates = DPIUtil.scaleUp(table.toControl(coordinates), DPIUtil.getZoomForAutoscaleProperty(table.nativeZoom)); // To Pixels
+		coordinates = DPIUtil.scaleUp(table.toControl(coordinates), DPIUtil.getZoomForAutoscaleProperty(Widget.checkNative(table).nativeZoom)); // To Pixels
 		LVHITTESTINFO pinfo = new LVHITTESTINFO();
 		pinfo.x = coordinates.x;
 		pinfo.y = coordinates.y;

@@ -26,6 +26,6 @@ WebBrowser createWebBrowser (int style) {
 			System.err.println(e);
 		}
 	}
-	return new IE ();
+	return new Edge ();
 }
 }

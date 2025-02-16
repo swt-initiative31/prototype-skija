@@ -24,7 +24,7 @@ import org.eclipse.swt.widgets.*;
 public class WidgetSpy {
 
 	/**
-	 * Flag to prevent {@link Widget} from entering this class during debugging,
+	 * Flag to prevent {@link NativeWidget} from entering this class during debugging,
 	 * if tracking of creation and disposal is not enabled.
 	 */
 	public static boolean isEnabled;
@@ -42,7 +42,7 @@ public class WidgetSpy {
 	}
 
 	/**
-	 * Enables tracking of {@link Widget} object creation and disposal.
+	 * Enables tracking of {@link NativeWidget} object creation and disposal.
 	 *
 	 * WARNING: the tracker will be called from the UI thread. Do not block
 	 * it and do not throw any exceptions.
@@ -56,13 +56,13 @@ public class WidgetSpy {
 		widgetTracker = tracker;
 	}
 
-	public void widgetCreated(Widget widget) {
+	public void widgetCreated(NativeWidget widget) {
 		if (widgetTracker != null) {
 			widgetTracker.widgetCreated(widget);
 		}
 	}
 
-	public void widgetDisposed(Widget widget) {
+	public void widgetDisposed(NativeWidget widget) {
 		if (widgetTracker != null) {
 			widgetTracker.widgetDisposed(widget);
 		}
@@ -72,9 +72,9 @@ public class WidgetSpy {
 	 * Custom callback to register widget creation / disposal
 	 */
 	public static interface WidgetTracker {
-		default void widgetCreated(Widget widget) {}
+		default void widgetCreated(NativeWidget widget) {}
 
-		default void widgetDisposed(Widget widget) {}
+		default void widgetDisposed(NativeWidget widget) {}
 	}
 
 	/**
@@ -82,11 +82,11 @@ public class WidgetSpy {
 	 */
 	public static class NonDisposedWidgetTracker implements WidgetTracker {
 
-		private final Map<Widget, Error> nonDisposedWidgets = new LinkedHashMap<>();
-		private final Set<Class<? extends Widget> > trackedTypes = new HashSet<>();
+		private final Map<NativeWidget, Error> nonDisposedWidgets = new LinkedHashMap<>();
+		private final Set<Class<? extends NativeWidget> > trackedTypes = new HashSet<>();
 
 		@Override
-		public void widgetCreated(Widget widget) {
+		public void widgetCreated(NativeWidget widget) {
 			boolean isTracked = isTracked(widget);
 			if (isTracked) {
 				Error creationException = new Error("Created widget of type: " + widget.getClass().getSimpleName());
@@ -95,14 +95,14 @@ public class WidgetSpy {
 		}
 
 		@Override
-		public void widgetDisposed(Widget widget) {
+		public void widgetDisposed(NativeWidget widget) {
 			boolean isTracked = isTracked(widget);
 			if (isTracked) {
 				nonDisposedWidgets.remove(widget);
 			}
 		}
 
-		public Map<Widget, Error> getNonDisposedWidgets() {
+		public Map<NativeWidget, Error> getNonDisposedWidgets() {
 			return Collections.unmodifiableMap(nonDisposedWidgets);
 		}
 
@@ -127,22 +127,22 @@ public class WidgetSpy {
 			}
 		}
 
-		public void setTrackedTypes(List<Class<? extends Widget>> types) {
+		public void setTrackedTypes(List<Class<? extends NativeWidget>> types) {
 			trackedTypes.clear();
 			trackedTypes.addAll(types);
 		}
 
-		private boolean isTracked(Widget widget) {
+		private boolean isTracked(NativeWidget widget) {
 			boolean isTrackingAllTypes = trackedTypes.isEmpty();
 			if (isTrackingAllTypes) {
 				return true;
 			}
 			if (widget != null) {
-				Class<? extends Widget> widgetType = widget.getClass();
+				Class<? extends NativeWidget> widgetType = widget.getClass();
 				if (trackedTypes.contains(widgetType)) {
 					return true;
 				}
-				for (Class<? extends Widget> filteredType : trackedTypes) {
+				for (Class<? extends NativeWidget> filteredType : trackedTypes) {
 					if (filteredType.isAssignableFrom(widgetType)) {
 						return true;
 					}

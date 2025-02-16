@@ -14,6 +14,8 @@
 package org.eclipse.swt.widgets;
 
 
+import java.util.*;
+
 import org.eclipse.swt.*;
 
 /**
@@ -38,34 +40,16 @@ import org.eclipse.swt.*;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class Tray extends Widget {
-	int itemCount;
-	TrayItem [] items = new TrayItem [4];
+
+	private final NativeTray wrappedTray;
 
 Tray (Display display, int style) {
-	this.display = display;
-	reskinWidget ();
+	this (new NativeTray(display, style));
 }
 
-void createItem (TrayItem item, int index) {
-	if (!(0 <= index && index <= itemCount)) error (SWT.ERROR_INVALID_RANGE);
-	if (itemCount == items.length) {
-		TrayItem [] newItems = new TrayItem [items.length + 4];
-		System.arraycopy (items, 0, newItems, 0, items.length);
-		items = newItems;
-	}
-	System.arraycopy (items, index, items, index + 1, itemCount++ - index);
-	items [index] = item;
-}
-
-void destroyItem (TrayItem item) {
-	int index = 0;
-	while (index < itemCount) {
-		if (items [index] == item) break;
-		index++;
-	}
-	if (index == itemCount) return;
-	System.arraycopy (items, index + 1, items, index, --itemCount - index);
-	items [itemCount] = null;
+private Tray (NativeTray nativeTray) {
+	this.wrappedTray = nativeTray;
+	this.wrappedTray.wrapperTray = this;
 }
 
 /**
@@ -84,9 +68,8 @@ void destroyItem (TrayItem item) {
  * </ul>
  */
 public TrayItem getItem (int index) {
-	checkWidget ();
-	if (!(0 <= index && index < itemCount)) error (SWT.ERROR_INVALID_RANGE);
-	return items [index];
+	NativeTrayItem wrappedTrayItem = wrappedTray.getItem(index);
+	return wrappedTrayItem != null ? wrappedTrayItem.getWrapper() : null;
 }
 
 /**
@@ -100,8 +83,7 @@ public TrayItem getItem (int index) {
  * </ul>
  */
 public int getItemCount () {
-	checkWidget ();
-	return itemCount;
+	return wrappedTray.getItemCount();
 }
 
 /**
@@ -121,39 +103,12 @@ public int getItemCount () {
  * </ul>
  */
 public TrayItem [] getItems () {
-	checkWidget ();
-	TrayItem [] result = new TrayItem [itemCount];
-	System.arraycopy (items, 0, result, 0, result.length);
-	return result;
+	return Arrays.stream(wrappedTray.getItems()).map(NativeTrayItem::getWrapper).toArray(TrayItem[]::new);
 }
 
 @Override
-void releaseChildren (boolean destroy) {
-	if (items != null) {
-		for (TrayItem item : items) {
-			if (item != null && !item.isDisposed ()) {
-				item.release (false);
-			}
-		}
-		items = null;
-	}
-	super.releaseChildren (destroy);
-}
-
-@Override
-void releaseParent () {
-	super.releaseParent ();
-	if (display.tray == this) display.tray = null;
-}
-
-@Override
-void reskinChildren (int flags) {
-	if (items != null) {
-		for (TrayItem item : items) {
-			if (item != null) item.reskin (flags);
-		}
-	}
-	super.reskinChildren (flags);
+protected NativeTray getWrappedWidget() {
+	return wrappedTray;
 }
 
 }

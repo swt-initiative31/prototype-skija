@@ -580,7 +580,7 @@ public void create(Composite parent, int style) {
 		setupBrowser((int)result, pv);
 		return COM.S_OK;
 	});
-	containingEnvironment.environment().CreateCoreWebView2Controller(browser.handle, setupBrowserCallback);
+	containingEnvironment.environment().CreateCoreWebView2Controller(nativeBrowser.handle, setupBrowserCallback);
 }
 
 void setupBrowser(int hr, long pv) {
@@ -739,7 +739,7 @@ void browserMove(Event event) {
 
 void browserResize(Event event) {
 	RECT rect = new RECT();
-	OS.GetClientRect(browser.handle, rect);
+	OS.GetClientRect(nativeBrowser.handle, rect);
 	controller.put_Bounds(rect);
 	controller.put_IsVisible(true);
 }
@@ -1092,8 +1092,8 @@ int handleContextMenuRequested(long pView, long pArgs) {
 	//   swt.autoScale property into account
 	//   which is also later considered in Menu#setLocation()
 	pt = new Point( //
-			DPIUtil.scaleDown(pt.x, DPIUtil.getZoomForAutoscaleProperty(browser.getShell().nativeZoom)), //
-			DPIUtil.scaleDown(pt.y, DPIUtil.getZoomForAutoscaleProperty(browser.getShell().nativeZoom)));
+			DPIUtil.scaleDown(pt.x, DPIUtil.getZoomForAutoscaleProperty(nativeBrowser.getShell().nativeZoom)), //
+			DPIUtil.scaleDown(pt.y, DPIUtil.getZoomForAutoscaleProperty(nativeBrowser.getShell().nativeZoom)));
 	// - finally, translate the POINT from widget-relative
 	//   to DISPLAY-relative coordinates
 	pt = browser.toDisplay(pt.x, pt.y);
@@ -1220,7 +1220,7 @@ int handleNewWindowRequested(long pView, long pArgs) {
 				if (browser.isDisposed()) return;
 			}
 			if (openEvent.browser != null && !openEvent.browser.isDisposed()) {
-				WebBrowser other = openEvent.browser.webBrowser;
+				WebBrowser other = openEvent.browser.getWrappedWidget().webBrowser;
 				args.put_Handled(true);
 				if (other instanceof Edge otherEdge) {
 					args.put_NewWindow(otherEdge.webViewProvider.getWebView(true).getAddress());
@@ -1257,7 +1257,7 @@ int handleGotFocus(long pView, long pArg) {
 	// to the browser, and, while doing so, ignoring any recursive
 	// calls in #browserFocusIn(Event).
 	ignoreFocus = true;
-	OS.SendMessage (browser.handle, OS.WM_SETFOCUS, 0, 0);
+	OS.SendMessage (nativeBrowser.handle, OS.WM_SETFOCUS, 0, 0);
 	ignoreFocus = false;
 	return COM.S_OK;
 }
