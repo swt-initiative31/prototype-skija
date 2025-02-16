@@ -35,7 +35,7 @@ class WidgetWin32Tests {
 		int zoom = DPIUtil.getDeviceZoom();
 		int scaledZoom = zoom * 2;
 
-		Button button = new Button(shell, SWT.PUSH);
+		NativeButton button = Widget.checkNative(new Button(shell, SWT.PUSH));
 		button.setBounds(0, 0, 200, 50);
 		button.setText("Widget Test");
 		button.setBackground(shell.getDisplay().getSystemColor(SWT.COLOR_CYAN));
@@ -57,7 +57,7 @@ class WidgetWin32Tests {
 		shell.setLayout(new FillLayout());
 		shell.pack();
 
-		Button button = new Button(shell, SWT.PUSH);
+		NativeButton button = Widget.checkNative(new Button(shell, SWT.PUSH));
 		button.setText("Button");
 		button.setBounds(0, 0, 100, 200);
 		Point sizeBeforeEvent = button.getSize();
@@ -133,8 +133,8 @@ class WidgetWin32Tests {
 		shell.pack();
 
 		CoolBar coolBar = new CoolBar(shell, SWT.NONE);
-		CoolItem item1 = new CoolItem(coolBar, SWT.NONE);
-		Label label1 = new Label(coolBar, SWT.NONE);
+		NativeCoolItem item1 = Widget.checkNative(new CoolItem(coolBar, SWT.NONE));
+		NativeLabel label1 = Widget.checkNative(new Label(coolBar, SWT.NONE));
 		label1.setText("Label 1");
 		label1.setSize(new Point(10, 20));
 		item1.setControl(label1);
@@ -172,8 +172,8 @@ class WidgetWin32Tests {
 		shell.pack();
 
 		ExpandBar coolBar = new ExpandBar(shell, SWT.NONE);
-		ExpandItem item1 = new ExpandItem(coolBar, SWT.NONE);
-		Label label1 = new Label(coolBar, SWT.NONE);
+		NativeExpandItem item1 = Widget.checkNative(new ExpandItem(coolBar, SWT.NONE));
+		NativeLabel label1 = Widget.checkNative(new Label(coolBar, SWT.NONE));
 		label1.setText("Label 1");
 		item1.setControl(label1);
 		item1.setHeight(10);
@@ -324,9 +324,9 @@ class WidgetWin32Tests {
 		styledText.setStyleRange(styleRange2);
 
 		// Get the caret size
-		Point caretSize = styledText.getCaret().getSizeInPixels();
+		Point caretSize = Widget.checkNative(styledText.getCaret()).getSizeInPixels();
 		DPITestUtil.changeDPIZoom(shell, scaledZoom);
-		Point caretSize2 = styledText.getCaret().getSizeInPixels();
+		Point caretSize2 = Widget.checkNative(styledText.getCaret()).getSizeInPixels();
 
 		assertEquals("Height of a Caret for Styled Text should be doubled after zooming to 200", caretSize.y * 2,
 				caretSize2.y);

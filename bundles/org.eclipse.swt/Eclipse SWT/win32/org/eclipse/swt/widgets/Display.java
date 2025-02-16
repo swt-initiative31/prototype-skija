@@ -142,7 +142,7 @@ public class Display extends Device implements Executor {
 	private boolean rescalingAtRuntime;
 
 	/* Widget Table */
-	private Map<Long, Control> controlByHandle;
+	private Map<Long, NativeControl> controlByHandle;
 	static final int GROW_SIZE = 1024;
 
 	/* Startup info */
@@ -289,11 +289,11 @@ public class Display extends Device implements Executor {
 
 	/* Focus */
 	int focusEvent;
-	Control focusControl;
+	NativeControl focusControl;
 
 	/* Menus */
-	Menu [] bars, popups;
-	MenuItem [] items;
+	NativeMenu [] bars, popups;
+	NativeMenuItem [] items;
 
 	/*
 	* The start value for WM_COMMAND id's.
@@ -338,11 +338,11 @@ public class Display extends Device implements Executor {
 	Runnable [] disposeList;
 
 	/* Deferred Layout list */
-	Composite[] layoutDeferred;
+	NativeComposite[] layoutDeferred;
 	int layoutDeferredCount;
 
 	/* System Tray */
-	Tray tray;
+	NativeTray tray;
 	int nextTrayId;
 
 	/* TaskBar */
@@ -384,7 +384,7 @@ public class Display extends Device implements Executor {
 
 	/* MDI */
 	boolean ignoreRestoreFocus;
-	Control lastHittestControl;
+	NativeControl lastHittestControl;
 	int lastHittest;
 
 	/* Message Only Window */
@@ -513,8 +513,8 @@ public class Display extends Device implements Executor {
 	int monitorCount = 0;
 
 	/* Modality */
-	Shell [] modalShells;
-	Dialog modalDialog;
+	NativeShell [] modalShells;
+	NativeDialog modalDialog;
 	static boolean TrimEnabled = false;
 
 	/* Private SWT Window Messages */
@@ -532,7 +532,7 @@ public class Display extends Device implements Executor {
 	static int SWT_OPENDOC;
 
 	/* Skinning support */
-	Widget [] skinList = new Widget [GROW_SIZE];
+	NativeWidget [] skinList = new NativeWidget [GROW_SIZE];
 	int skinCount;
 
 	/* Package Name */
@@ -581,8 +581,8 @@ static void setDevice (Device device) {
  *
  * @see #getCurrent
  * @see #getDefault
- * @see Widget#checkSubclass
- * @see Shell
+ * @see NativeWidget#checkSubclass
+ * @see NativeShell
  */
 public Display () {
 	this (null);
@@ -597,12 +597,12 @@ public Display (DeviceData data) {
 	super (data);
 }
 
-Control _getFocusControl () {
+NativeControl _getFocusControl () {
 	return findControl (OS.GetFocus ());
 }
 
-void addBar (Menu menu) {
-	if (bars == null) bars = new Menu [4];
+void addBar (NativeMenu menu) {
+	if (bars == null) bars = new NativeMenu [4];
 	int length = bars.length;
 	for (int i=0; i<length; i++) {
 		if (bars [i] == menu) return;
@@ -613,20 +613,20 @@ void addBar (Menu menu) {
 		index++;
 	}
 	if (index == length) {
-		Menu [] newBars = new Menu [length + 4];
+		NativeMenu [] newBars = new NativeMenu [length + 4];
 		System.arraycopy (bars, 0, newBars, 0, length);
 		bars = newBars;
 	}
 	bars [index] = menu;
 }
-void addControl (long handle, Control control) {
+void addControl (long handle, NativeControl control) {
 	if (handle == 0) return;
 	controlByHandle.put(handle, control);
 }
 
-void addSkinnableWidget (Widget widget) {
+void addSkinnableWidget (NativeWidget widget) {
 	if (skinCount >= skinList.length) {
-		Widget[] newSkinWidgets = new Widget [(skinList.length + 1) * 3 / 2];
+		NativeWidget[] newSkinWidgets = new NativeWidget [(skinList.length + 1) * 3 / 2];
 		System.arraycopy (skinList, 0, newSkinWidgets, 0, skinList.length);
 		skinList = newSkinWidgets;
 	}
@@ -676,10 +676,10 @@ public void addFilter (int eventType, Listener listener) {
 	filterTable.hook (eventType, listener);
 }
 
-void addLayoutDeferred (Composite comp) {
-	if (layoutDeferred == null) layoutDeferred = new Composite [64];
+void addLayoutDeferred (NativeComposite comp) {
+	if (layoutDeferred == null) layoutDeferred = new NativeComposite [64];
 	if (layoutDeferredCount == layoutDeferred.length) {
-		Composite [] temp = new Composite [layoutDeferred.length + 64];
+		NativeComposite [] temp = new NativeComposite [layoutDeferred.length + 64];
 		System.arraycopy (layoutDeferred, 0, temp, 0, layoutDeferred.length);
 		layoutDeferred = temp;
 	}
@@ -717,8 +717,8 @@ public void addListener (int eventType, Listener listener) {
 	eventTable.hook (eventType, listener);
 }
 
-void addMenuItem (MenuItem item) {
-	if (items == null) items = new MenuItem [64];
+void addMenuItem (NativeMenuItem item) {
+	if (items == null) items = new NativeMenuItem [64];
 	for (int i=0; i<items.length; i++) {
 		if (items [i] == null) {
 			item.id = i + ID_START;
@@ -727,14 +727,14 @@ void addMenuItem (MenuItem item) {
 		}
 	}
 	item.id = items.length + ID_START;
-	MenuItem [] newItems = new MenuItem [items.length + 64];
+	NativeMenuItem [] newItems = new NativeMenuItem [items.length + 64];
 	newItems [items.length] = item;
 	System.arraycopy (items, 0, newItems, 0, items.length);
 	items = newItems;
 }
 
-void addPopup (Menu menu) {
-	if (popups == null) popups = new Menu [4];
+void addPopup (NativeMenu menu) {
+	if (popups == null) popups = new NativeMenu [4];
 	int length = popups.length;
 	for (int i=0; i<length; i++) {
 		if (popups [i] == menu) return;
@@ -745,7 +745,7 @@ void addPopup (Menu menu) {
 		index++;
 	}
 	if (index == length) {
-		Menu [] newPopups = new Menu [length + 4];
+		NativeMenu [] newPopups = new NativeMenu [length + 4];
 		System.arraycopy (popups, 0, newPopups, 0, length);
 		popups = newPopups;
 	}
@@ -864,7 +864,7 @@ public void beep () {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  *
- * @see Widget#checkSubclass
+ * @see NativeWidget#checkSubclass
  */
 protected void checkSubclass () {
 	if (!isValidClass (getClass ())) error (SWT.ERROR_INVALID_SUBCLASS);
@@ -890,7 +890,7 @@ static void checkDisplay (Thread thread, boolean multiple) {
 	}
 }
 
-void clearModal (Shell shell) {
+void clearModal (NativeShell shell) {
 	if (modalShells == null) return;
 	int index = 0, length = modalShells.length;
 	while (index < length) {
@@ -902,7 +902,7 @@ void clearModal (Shell shell) {
 	System.arraycopy (modalShells, index + 1, modalShells, index, --length - index);
 	modalShells [length] = null;
 	if (index == 0 && modalShells [0] == null) modalShells = null;
-	for (Shell activeShell : getShells ())
+	for (NativeShell activeShell : getNativeShells ())
 		activeShell.updateModal ();
 }
 
@@ -1209,7 +1209,7 @@ static Image createIcon (Image image, int zoom) {
 
 long getTextSearchIcon(int size) {
 	if (!sizeToSearchIconHandle.containsKey(size)) {
-		int searchIconResource = textUseDarkthemeIcons ? Text.IDI_SEARCH_DARKTHEME : Text.IDI_SEARCH;
+		int searchIconResource = textUseDarkthemeIcons ? NativeText.IDI_SEARCH_DARKTHEME : NativeText.IDI_SEARCH;
 	    long iconHandle = OS.LoadImage (OS.GetLibraryHandle (), searchIconResource, OS.IMAGE_ICON, size, size, 0);
 	    if (iconHandle == 0) error(SWT.ERROR_NO_HANDLES);
 	    sizeToSearchIconHandle.put(size, iconHandle);
@@ -1219,7 +1219,7 @@ long getTextSearchIcon(int size) {
 
 long getTextCancelIcon(int size) {
 	if (!sizeToCancelIconHandle.containsKey(size)) {
-		int searchIconResource = textUseDarkthemeIcons ? Text.IDI_CANCEL_DARKTHEME : Text.IDI_CANCEL;
+		int searchIconResource = textUseDarkthemeIcons ? NativeText.IDI_CANCEL_DARKTHEME : NativeText.IDI_CANCEL;
 	    long iconHandle = OS.LoadImage (OS.GetLibraryHandle (), searchIconResource, OS.IMAGE_ICON, size, size, 0);
 	    if (iconHandle == 0) error(SWT.ERROR_NO_HANDLES);
 	    sizeToCancelIconHandle.put(size, iconHandle);
@@ -1285,7 +1285,7 @@ public void disposeExec (Runnable runnable) {
 
 void drawMenuBars () {
 	if (bars == null) return;
-	for (Menu menu : bars) {
+	for (NativeMenu menu : bars) {
 		if (menu != null && !menu.isDisposed ()) menu.update ();
 	}
 	bars = null;
@@ -1347,7 +1347,7 @@ boolean filters (int eventType) {
 boolean filterMessage (MSG msg) {
 	int message = msg.message;
 	if (OS.WM_KEYFIRST <= message && message <= OS.WM_KEYLAST) {
-		Control control = findControl (msg.hwnd);
+		NativeControl control = findControl (msg.hwnd);
 		if (control != null) {
 			if (translateAccelerator (msg, control) || translateMnemonic (msg, control) || translateTraversal (msg, control)) {
 				lastAscii = lastKey = 0;
@@ -1359,11 +1359,11 @@ boolean filterMessage (MSG msg) {
 	return false;
 }
 
-Control findControl (long handle) {
+NativeControl findControl (long handle) {
 	if (handle == 0) return null;
 	long hwndOwner = 0;
 	do {
-		Control control = getControl (handle);
+		NativeControl control = getControl (handle);
 		if (control != null) return control;
 		hwndOwner = OS.GetWindow (handle, OS.GW_OWNER);
 		handle = OS.GetParent (handle);
@@ -1391,7 +1391,7 @@ Control findControl (long handle) {
  *
  * @noreference This method is not intended to be referenced by clients.
  */
-public Widget findWidget (long handle) {
+public NativeWidget findWidget (long handle) {
 	checkDevice ();
 	return getControl (handle);
 }
@@ -1422,8 +1422,9 @@ public Widget findWidget (long handle) {
  */
 public Widget findWidget (long handle, long id) {
 	checkDevice ();
-	Control control = getControl (handle);
-	return control != null ? control.findItem (id) : null;
+	NativeControl control = getControl (handle);
+	NativeWidget idWidget = control != null ? control.findItem (id) : null;
+	return idWidget != null ? idWidget.getWrapper() : null;
 }
 
 /**
@@ -1447,8 +1448,8 @@ public Widget findWidget (long handle, long id) {
  */
 public Widget findWidget (Widget widget, long id) {
 	checkDevice ();
-	if (widget instanceof Control) {
-		return findWidget (((Control) widget).handle, id);
+	if (Widget.checkNative(widget) instanceof NativeControl nativeControl) {
+		return findWidget (nativeControl.handle, id);
 	}
 	return null;
 }
@@ -1551,8 +1552,8 @@ TouchSource findTouchSource (long touchDevice, Monitor monitor) {
  */
 public Shell getActiveShell () {
 	checkDevice ();
-	Control control = findControl (OS.GetActiveWindow ());
-	return control != null ? control.getShell () : null;
+	NativeControl control = findControl (OS.GetActiveWindow ());
+	return control != null ? control.getShell ().getWrapper() : null;
 }
 
 /**
@@ -1678,8 +1679,8 @@ Rectangle getClientAreaInPixels () {
 	return new Rectangle (x, y, width, height);
 }
 
-Control getControl (long handle) {
-	Control control = controlByHandle.get(handle);
+NativeControl getControl (long handle) {
+	NativeControl control = controlByHandle.get(handle);
 	return control;
 }
 
@@ -1699,7 +1700,8 @@ public Control getCursorControl () {
 	checkDevice ();
 	POINT pt = new POINT ();
 	if (!OS.GetCursorPos (pt)) return null;
-	return findControl (OS.WindowFromPoint (pt));
+	NativeControl control = findControl (OS.WindowFromPoint (pt));
+	return control != null ? control.getWrapper() : null;
 }
 
 /**
@@ -1906,6 +1908,12 @@ public int getDoubleClickTime () {
  * </ul>
  */
 public Control getFocusControl () {
+	NativeControl nativeFocusControl = getNativeFocusControl();
+	return nativeFocusControl != null ? nativeFocusControl.getWrapper() : null;
+}
+
+// TODO Facade added
+public NativeControl getNativeFocusControl () {
 	checkDevice ();
 	if (focusControl != null && !focusControl.isDisposed ()) {
 		return focusControl;
@@ -1997,7 +2005,7 @@ public int getIconDepth () {
  *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  *
- * @see Decorations#setImages(Image[])
+ * @see NativeDecorations#setImages(Image[])
  *
  * @since 3.0
  */
@@ -2167,24 +2175,24 @@ int getLastEventTime () {
 	return OS.GetMessageTime ();
 }
 
-MenuItem getMenuItem (int id) {
+NativeMenuItem getMenuItem (int id) {
 	if (items == null) return null;
 	id = id - ID_START;
 	if (0 <= id && id < items.length) return items [id];
 	return null;
 }
 
-Shell getModalShell () {
+NativeShell getModalShell () {
 	if (modalShells == null) return null;
 	int index = modalShells.length;
 	while (--index >= 0) {
-		Shell shell = modalShells [index];
+		NativeShell shell = modalShells [index];
 		if (shell != null) return shell;
 	}
 	return null;
 }
 
-Dialog getModalDialog () {
+NativeDialog getModalDialog () {
 	return modalDialog;
 }
 
@@ -2260,7 +2268,7 @@ long getMsgProc (long code, long wParam, long lParam) {
 			case OS.WM_KEYUP:
 			case OS.WM_SYSKEYDOWN:
 			case OS.WM_SYSKEYUP: {
-				Control control = findControl (msg.hwnd);
+				NativeControl control = findControl (msg.hwnd);
 				if (control != null) {
 					long hHeap = OS.GetProcessHeap ();
 					long keyMsg = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, MSG.sizeof);
@@ -2310,11 +2318,16 @@ public Monitor getPrimaryMonitor () {
  * </ul>
  */
 public Shell [] getShells () {
+	return Arrays.stream(getNativeShells()).map(NativeShell::getWrapper).toArray(Shell[]::new);
+}
+
+//TODO FACADE added
+public NativeShell [] getNativeShells () {
 	checkDevice ();
 	int index = 0;
-	Shell [] result = new Shell [16];
-	for (Control control : controlByHandle.values()) {
-		if (control instanceof Shell) {
+	NativeShell [] result = new NativeShell [16];
+	for (NativeControl control : controlByHandle.values()) {
+		if (control instanceof NativeShell) {
 			int j = 0;
 			while (j < index) {
 				if (result [j] == control) break;
@@ -2322,16 +2335,16 @@ public Shell [] getShells () {
 			}
 			if (j == index) {
 				if (index == result.length) {
-					Shell [] newResult = new Shell [index + 16];
+					NativeShell [] newResult = new NativeShell [index + 16];
 					System.arraycopy (result, 0, newResult, 0, index);
 					result = newResult;
 				}
-				result [index++] = (Shell) control;
+				result [index++] = (NativeShell) control;
 			}
 		}
 	}
 	if (index == result.length) return result;
-	Shell [] newResult = new Shell [index];
+	NativeShell [] newResult = new NativeShell [index];
 	System.arraycopy (result, 0, newResult, 0, index);
 	return newResult;
 }
@@ -2638,8 +2651,11 @@ public TaskBar getSystemTaskBar () {
  */
 public Tray getSystemTray () {
 	checkDevice ();
-	if (tray == null) tray = new Tray (this, SWT.NONE);
-	return tray;
+	if (tray == null) {
+		Tray wrapperTray = new Tray (this, SWT.NONE);
+		tray = wrapperTray.getWrappedWidget();
+	}
+	return tray.getWrapper();
 }
 
 /**
@@ -2958,13 +2974,18 @@ boolean isValidThread () {
  *
  * @since 2.1.2
  */
-public Point map (Control from, Control to, Point point) {
+public Point map (NativeControl from, NativeControl to, Point point) {
 	checkDevice ();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
 	return coordinateSystemMapper.map(from, to, point);
 }
 
-Point mapInPixels (Control from, Control to, Point point) {
+// TODO FACADE added
+public Point map (Control from, Control to, Point point) {
+	return map(Widget.checkNative(from), Widget.checkNative(to), point);
+}
+
+Point mapInPixels (NativeControl from, NativeControl to, Point point) {
 	return mapInPixels (from, to, point.x, point.y);
 }
 
@@ -3004,12 +3025,17 @@ Point mapInPixels (Control from, Control to, Point point) {
  *
  * @since 2.1.2
  */
-public Point map (Control from, Control to, int x, int y) {
+public Point map (NativeControl from, NativeControl to, int x, int y) {
 	checkDevice ();
 	return coordinateSystemMapper.map(from, to, x, y);
 }
 
-Point mapInPixels (Control from, Control to, int x, int y) {
+//TODO FACADE added
+public Point map (Control from, Control to, int x, int y) {
+	return map(Widget.checkNative(from), Widget.checkNative(to), x, y);
+}
+
+Point mapInPixels (NativeControl from, NativeControl to, int x, int y) {
 	if (from != null && from.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (to != null && to.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (from == to) return new Point (x, y);
@@ -3058,13 +3084,18 @@ Point mapInPixels (Control from, Control to, int x, int y) {
  *
  * @since 2.1.2
  */
-public Rectangle map (Control from, Control to, Rectangle rectangle) {
+public Rectangle map (NativeControl from, NativeControl to, Rectangle rectangle) {
 	checkDevice ();
 	if (rectangle == null) error (SWT.ERROR_NULL_ARGUMENT);
 	return coordinateSystemMapper.map(from, to, rectangle);
 }
 
-Rectangle mapInPixels (Control from, Control to, Rectangle rectangle) {
+// TODO FACADE added
+public Rectangle map (Control from, Control to, Rectangle rectangle) {
+	return map(Widget.checkNative(from), Widget.checkNative(to), rectangle);
+}
+
+Rectangle mapInPixels (NativeControl from, NativeControl to, Rectangle rectangle) {
 	return mapInPixels (from, to, rectangle.x, rectangle.y, rectangle.width, rectangle.height);
 }
 
@@ -3106,12 +3137,17 @@ Rectangle mapInPixels (Control from, Control to, Rectangle rectangle) {
  *
  * @since 2.1.2
  */
-public Rectangle map (Control from, Control to, int x, int y, int width, int height) {
+public Rectangle map (NativeControl from, NativeControl to, int x, int y, int width, int height) {
 	checkDevice ();
 	return coordinateSystemMapper.map(from, to, x, y, width, height);
 }
 
-Rectangle mapInPixels (Control from, Control to, int x, int y, int width, int height) {
+//TODO FACADE added
+public Rectangle map (Control from, Control to, int x, int y, int width, int height) {
+	return map(Widget.checkNative(from), Widget.checkNative(to), x, y, width, height);
+}
+
+Rectangle mapInPixels (NativeControl from, NativeControl to, int x, int y, int width, int height) {
 	if (from != null && from.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (to != null && to.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (from == to) return new Rectangle (x, y, width, height);
@@ -3152,7 +3188,7 @@ long messageProc (long hwnd, long msg, long wParam, long lParam) {
 			boolean consumed = false;
 			MSG keyMsg = new MSG ();
 			OS.MoveMemory (keyMsg, lParam, MSG.sizeof);
-			Control control = findControl (keyMsg.hwnd);
+			NativeControl control = findControl (keyMsg.hwnd);
 			if (control != null) {
 				/*
 				* Feature in Windows.  When the user types an accent key such
@@ -3248,7 +3284,7 @@ long messageProc (long hwnd, long msg, long wParam, long lParam) {
 		}
 		case SWT_TRAYICONMSG: {
 			if (tray != null) {
-				for (TrayItem item : tray.items) {
+				for (NativeTrayItem item : tray.items) {
 					if (item != null && item.id == wParam) {
 						return item.messageProc (hwnd, (int)msg, wParam, lParam);
 					}
@@ -3280,7 +3316,7 @@ long messageProc (long hwnd, long msg, long wParam, long lParam) {
 				if (!isXMouseActive ()) {
 					long hwndActive = OS.GetActiveWindow ();
 					if (hwndActive != 0 && OS.IsWindowEnabled (hwndActive)) break;
-					Shell modal = modalDialog != null ? modalDialog.parent : getModalShell ();
+					NativeShell modal = modalDialog != null ? modalDialog.parent : getModalShell ();
 					if (modal != null && !modal.isDisposed ()) {
 						long hwndModal = modal.handle;
 						if (OS.IsWindowEnabled (hwndModal)) {
@@ -3334,7 +3370,7 @@ long messageProc (long hwnd, long msg, long wParam, long lParam) {
 		default: {
 			if ((int)msg == TASKBARCREATED) {
 				if (tray != null) {
-					for (TrayItem item : tray.items) {
+					for (NativeTrayItem item : tray.items) {
 						if (item != null) item.recreate ();
 					}
 				}
@@ -3345,7 +3381,7 @@ long messageProc (long hwnd, long msg, long wParam, long lParam) {
 					if (filename.startsWith (TASKBAR_EVENT)) {
 						String text = filename.substring (TASKBAR_EVENT.length ());
 						int id = Integer.parseInt (text);
-						MenuItem item = getMenuItem (id);
+						NativeMenuItem item = getMenuItem (id);
 						if (item != null) {
 							item.sendSelectionEvent (SWT.Selection);
 						}
@@ -4060,7 +4096,7 @@ public void removeListener (int eventType, Listener listener) {
 	eventTable.unhook (eventType, listener);
 }
 
-void removeBar (Menu menu) {
+void removeBar (NativeMenu menu) {
 	if (bars == null) return;
 	for (int i=0; i<bars.length; i++) {
 		if (bars [i] == menu) {
@@ -4070,17 +4106,17 @@ void removeBar (Menu menu) {
 	}
 }
 
-Control removeControl (long handle) {
-	Control control = controlByHandle.remove(handle);
+NativeControl removeControl (long handle) {
+	NativeControl control = controlByHandle.remove(handle);
 	return control;
 }
 
-void removeMenuItem (MenuItem item) {
+void removeMenuItem (NativeMenuItem item) {
 	if (items == null) return;
 	items [item.id - ID_START] = null;
 }
 
-void removePopup (Menu menu) {
+void removePopup (NativeMenu menu) {
 	if (popups == null) return;
 	for (int i=0; i<popups.length; i++) {
 		if (popups [i] == menu) {
@@ -4111,9 +4147,9 @@ boolean runDeferredEvents () {
 		eventQueue [length] = null;
 
 		/* Run the event */
-		Widget widget = event.widget;
+		NativeWidget widget = Widget.checkNative(event.widget);
 		if (widget != null && !widget.isDisposed ()) {
-			Widget item = event.item;
+			NativeWidget item = Widget.checkNative(event.item);
 			if (item == null || !item.isDisposed ()) {
 				run = true;
 				widget.sendEvent (event);
@@ -4134,12 +4170,12 @@ boolean runDeferredEvents () {
 
 boolean runDeferredLayouts () {
 	if (layoutDeferredCount != 0) {
-		Composite[] temp = layoutDeferred;
+		NativeComposite[] temp = layoutDeferred;
 		int count = layoutDeferredCount;
 		layoutDeferred = null;
 		layoutDeferredCount = 0;
 		for (int i = 0; i < count; i++) {
-			Composite comp = temp[i];
+			NativeComposite comp = temp[i];
 			if (!comp.isDisposed()) comp.setLayoutDeferred (false);
 		}
 		return true;
@@ -4151,7 +4187,7 @@ boolean runPopups () {
 	if (popups == null) return false;
 	boolean result = false;
 	while (popups != null) {
-		Menu menu = popups [0];
+		NativeMenu menu = popups [0];
 		if (menu == null) break;
 		int length = popups.length;
 		System.arraycopy (popups, 1, popups, 0, --length);
@@ -4170,7 +4206,7 @@ void runSettings () {
 	sendEvent (SWT.Settings, null);
 	Font newFont = getSystemFont ();
 	boolean sameFont = oldFont.equals (newFont);
-	for (Shell shell : getShells ()) {
+	for (NativeShell shell : getNativeShells ()) {
 		if (!shell.isDisposed ()) {
 			if (!sameFont) {
 				shell.updateFont (oldFont, newFont);
@@ -4182,18 +4218,18 @@ void runSettings () {
 
 boolean runSkin () {
 	if (skinCount > 0) {
-		Widget [] oldSkinWidgets = skinList;
+		NativeWidget [] oldSkinWidgets = skinList;
 		int count = skinCount;
-		skinList = new Widget[GROW_SIZE];
+		skinList = new NativeWidget[GROW_SIZE];
 		skinCount = 0;
 		if (eventTable != null && eventTable.hooks(SWT.Skin)) {
 			for (int i = 0; i < count; i++) {
-				Widget widget = oldSkinWidgets[i];
+				NativeWidget widget = oldSkinWidgets[i];
 				if (widget != null && !widget.isDisposed()) {
-					widget.state &= ~Widget.SKIN_NEEDED;
+					widget.state &= ~NativeWidget.SKIN_NEEDED;
 					oldSkinWidgets[i] = null;
 					Event event = new Event ();
-					event.widget = widget;
+					event.widget = widget.getWrapper();
 					sendEvent (SWT.Skin, event);
 				}
 			}
@@ -4675,15 +4711,15 @@ public static void setAppVersion (String version) {
 	APP_VERSION = version;
 }
 
-void setModalDialog(Dialog modalDailog) {
+void setModalDialog(NativeDialog modalDailog) {
 	this.modalDialog = modalDailog;
-	for (Shell shell : getShells()) {
+	for (NativeShell shell : getNativeShells()) {
 		shell.updateModal();
 	}
 }
 
-void setModalShell (Shell shell) {
-	if (modalShells == null) modalShells = new Shell [4];
+void setModalShell (NativeShell shell) {
+	if (modalShells == null) modalShells = new NativeShell [4];
 	int index = 0, length = modalShells.length;
 	while (index < length) {
 		if (modalShells [index] == shell) return;
@@ -4691,12 +4727,12 @@ void setModalShell (Shell shell) {
 		index++;
 	}
 	if (index == length) {
-		Shell [] newModalShells = new Shell [length + 4];
+		NativeShell [] newModalShells = new NativeShell [length + 4];
 		System.arraycopy (modalShells, 0, newModalShells, 0, length);
 		modalShells = newModalShells;
 	}
 	modalShells [index] = shell;
-	for (Shell activeShell : getShells ()) {
+	for (NativeShell activeShell : getNativeShells ()) {
 		activeShell.updateModal ();
 	}
 }
@@ -4968,7 +5004,7 @@ public void timerExec (int milliseconds, Runnable runnable) {
 	}
 }
 
-boolean translateAccelerator (MSG msg, Control control) {
+boolean translateAccelerator (MSG msg, NativeControl control) {
 	accelKeyHit = true;
 	boolean result = control.translateAccelerator (msg);
 	accelKeyHit = false;
@@ -4982,7 +5018,7 @@ static int translateKey (int key) {
 	return 0;
 }
 
-boolean translateMnemonic (MSG msg, Control control) {
+boolean translateMnemonic (MSG msg, NativeControl control) {
 	switch (msg.message) {
 		case OS.WM_CHAR:
 		case OS.WM_SYSCHAR:
@@ -4991,7 +5027,7 @@ boolean translateMnemonic (MSG msg, Control control) {
 	return false;
 }
 
-boolean translateTraversal (MSG msg, Control control) {
+boolean translateTraversal (MSG msg, NativeControl control) {
 	switch (msg.message) {
 		case OS.WM_KEYDOWN:
 			switch ((int)msg.wParam) {
@@ -5033,7 +5069,7 @@ static int untranslateKey (int key) {
  *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  *
- * @see Control#update()
+ * @see NativeControl#update()
  */
 public void update() {
 	checkDevice ();
@@ -5055,7 +5091,7 @@ public void update() {
 		int flags = OS.PM_REMOVE | OS.PM_NOYIELD;
 		OS.PeekMessage (msg, hwndMessage, SWT_NULL, SWT_NULL, flags);
 	}
-	for (Shell shell : getShells ()) {
+	for (NativeShell shell : getNativeShells ()) {
 		if (!shell.isDisposed ()) shell.update (true);
 	}
 }
@@ -5084,7 +5120,7 @@ void wakeThread () {
 }
 
 long windowProc (long hwnd, long msg, long wParam, long lParam) {
-	Control control = getControl(hwnd);
+	NativeControl control = getControl(hwnd);
 	if (control != null) {
 		return control.windowProc (hwnd, (int)msg, wParam, lParam);
 	}
@@ -5163,7 +5199,7 @@ String wrapText (String text, long handle, int width) {
 
 static String withCrLf (String string) {
 	/* Create a new string with the CR/LF line terminator. */
-	int i = 0;	
+	int i = 0;
 	int length = string.length();
 	StringBuilder result = new StringBuilder (length);
 	while (i < length) {
@@ -5180,7 +5216,7 @@ static String withCrLf (String string) {
 			}
 		}
 	}
-	
+
 	/* Avoid creating a copy of the string if it has not changed */
 	if (string.length()== result.length()) return string;
 	return result.toString ();

@@ -87,7 +87,7 @@ public class TableDragSourceEffect extends DragSourceEffect {
 		dragSourceImage = null;
 		SHDRAGIMAGE shdi = new SHDRAGIMAGE();
 		int DI_GETDRAGIMAGE = OS.RegisterWindowMessage (new TCHAR (0, "ShellGetDragImage", true)); //$NON-NLS-1$
-		if (OS.SendMessage (control.handle, DI_GETDRAGIMAGE, 0, shdi) != 0) {
+		if (OS.SendMessage (Widget.checkNative(control).handle, DI_GETDRAGIMAGE, 0, shdi) != 0) {
 			if ((control.getStyle() & SWT.MIRRORED) != 0) {
 				event.offsetX = shdi.sizeDragImage.cx - shdi.ptOffset.x;
 			} else {
@@ -147,7 +147,7 @@ public class TableDragSourceEffect extends DragSourceEffect {
 					data.transparentPixel = shdi.crColorKey << 8;
 				}
 				Display display = control.getDisplay();
-				dragSourceImage = new Image(display, new AutoScaleImageDataProvider(display, data, DPIUtil.getZoomForAutoscaleProperty(control.nativeZoom)));
+				dragSourceImage = new Image(display, new AutoScaleImageDataProvider(display, data, DPIUtil.getZoomForAutoscaleProperty(Widget.checkNative(control).nativeZoom)));
 				OS.SelectObject (memHdc, oldMemBitmap);
 				OS.DeleteDC (memHdc);
 				OS.DeleteObject (memDib);

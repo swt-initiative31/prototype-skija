@@ -56,7 +56,7 @@ public class PatternWin32ManualTest {
 
 	private static Shell createShellWithPattern(int width, int height, final Pattern pat, int nativeZoom) {
 		Shell shell = new Shell(display);
-		shell.nativeZoom = nativeZoom;
+		Widget.checkNative(shell).nativeZoom = nativeZoom;
 		shell.setText("Unscaled shell");
 		shell.setSize(width, height);
 		shell.addPaintListener(e -> {

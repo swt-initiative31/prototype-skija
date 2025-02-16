@@ -17,13 +17,13 @@ import org.eclipse.swt.graphics.*;
 
 interface CoordinateSystemMapper {
 
-	Rectangle map(Control from, Control to, Rectangle rectangle);
+	Rectangle map(NativeControl from, NativeControl to, Rectangle rectangle);
 
-	Rectangle map(Control from, Control to, int x, int y, int width, int height);
+	Rectangle map(NativeControl from, NativeControl to, int x, int y, int width, int height);
 
-	Point map(Control from, Control to, Point point);
+	Point map(NativeControl from, NativeControl to, Point point);
 
-	Point map(Control from, Control to, int x, int y);
+	Point map(NativeControl from, NativeControl to, int x, int y);
 
 	Rectangle mapMonitorBounds(Rectangle rectangle, int zoom);
 
