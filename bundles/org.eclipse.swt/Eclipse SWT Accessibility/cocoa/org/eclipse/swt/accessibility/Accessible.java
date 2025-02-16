@@ -83,7 +83,7 @@ public class Accessible {
 
 	Relation relations[] = new Relation[MAX_RELATION_TYPES];
 	Accessible parent;
-	Control control;
+	NativeControl control;
 	int currentRole = -1;
 
 	Map<Integer, SWTAccessibleDelegate> childToIdMap = new HashMap<>();
@@ -122,7 +122,7 @@ public class Accessible {
 	protected Accessible() {
 	}
 
-	Accessible(Control control) {
+	Accessible(NativeControl control) {
 		this.control = control;
 	}
 
@@ -141,7 +141,7 @@ public class Accessible {
 	 *
 	 * @noreference This method is not intended to be referenced by clients.
 	 */
-	public static Accessible internal_new_Accessible(Control control) {
+	public static Accessible internal_new_Accessible(NativeControl control) {
 		return new Accessible(control);
 	}
 
@@ -1585,7 +1585,7 @@ public class Accessible {
 	 * @since 3.0
 	 */
 	public Control getControl() {
-		return control;
+		return control.getWrapper();
 	}
 
 	/**
@@ -2232,7 +2232,7 @@ public class Accessible {
 				if (control.getParent() != null)
 					pt = control.getParent().toDisplay(location.x, location.y);
 				else
-					pt = ((Shell)control).toDisplay(location.x, location.y);
+					pt = ((NativeShell)control).toDisplay(location.x, location.y);
 
 				osPositionAttribute.x = pt.x;
 				osPositionAttribute.y = pt.y;
@@ -2300,7 +2300,7 @@ public class Accessible {
 		// If no description was provided, and this is a composite or canvas, return a blank string
 		// -- otherwise, let the Cocoa control handle it.
 		if (returnValue == null) {
-			if (control instanceof Composite) returnValue = NSString.string();
+			if (control instanceof NativeComposite) returnValue = NSString.string();
 		}
 
 		return returnValue;

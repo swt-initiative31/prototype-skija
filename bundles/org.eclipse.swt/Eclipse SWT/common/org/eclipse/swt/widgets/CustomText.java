@@ -57,7 +57,7 @@ import org.eclipse.swt.graphics.*;
  *      information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class CustomText extends NativeBasedCustomScrollable {
+public abstract class CustomText extends NativeBasedCustomScrollable implements IText {
 
 	private static final Color DISABLED_COLOR = new Color(160, 160, 160);
 	private static final Color TEXT_COLOR = new Color(0, 0, 0);
@@ -129,7 +129,7 @@ public class CustomText extends NativeBasedCustomScrollable {
 	 * @see Widget#getStyle
 	 */
 	public CustomText(Composite parent, int style) {
-		super(parent, checkStyle(style) & ~SWT.BORDER);
+		super(Widget.checkNative(parent), checkStyle(style) & ~SWT.BORDER);
 		this.style = style;
 		model = new TextModel();
 		message = "";
@@ -422,6 +422,7 @@ public class CustomText extends NativeBasedCustomScrollable {
 		}
 	}
 
+	@Override
 	public void clearSelection() {
 		model.clearSelection();
 	}
@@ -487,7 +488,7 @@ public class CustomText extends NativeBasedCustomScrollable {
 
 	private void paintControl(Event e) {
 		Rectangle visibleArea = getVisibleArea();
-		Drawing.drawWithGC(this, e.gc, gc -> {
+		Drawing.drawWithGC(this.getWrapper(), e.gc, gc -> {
 			gc.setFont(getFont());
 			gc.setForeground(getForeground());
 			gc.setBackground(getBackground());
@@ -618,23 +619,28 @@ public class CustomText extends NativeBasedCustomScrollable {
 		return clientArea;
 	}
 
+	@Override
 	public String getMessage() {
 		return message;
 	}
 
+	@Override
 	public void setMessage(String message) {
 		this.message = message;
 		redraw();
 	}
 
+	@Override
 	public String getText() {
 		return model.getText();
 	}
 
+	@Override
 	public String getText(int start, int end) {
 		return model.getText(start, end + 1);
 	}
 
+	@Override
 	public void setText(String text) {
 		// TODO move verify listener to TextModel
 		if (hooks(SWT.Verify) || filters(SWT.Verify)) {
@@ -646,10 +652,12 @@ public class CustomText extends NativeBasedCustomScrollable {
 		model.setText(text);
 	}
 
+	@Override
 	public void setTextChars(char[] cs) {
 		model.setTextChars(cs);
 	}
 
+	@Override
 	public void append(String string) {
 		if (hooks(SWT.Verify) || filters(SWT.Verify)) {
 			string = verifyText(string, 0, getCharCount());
@@ -660,14 +668,17 @@ public class CustomText extends NativeBasedCustomScrollable {
 		model.append(string);
 	}
 
+	@Override
 	public void setSelection(int start) {
 		model.setSelection(start);
 	}
 
+	@Override
 	public void setSelection(int start, int end) {
 		model.setSelection(start, end);
 	}
 
+	@Override
 	public void setSelection(Point selection) {
 		if (selection == null) {
 			error(SWT.ERROR_NULL_ARGUMENT);
@@ -675,10 +686,12 @@ public class CustomText extends NativeBasedCustomScrollable {
 		setSelection(selection.x, selection.y);
 	}
 
+	@Override
 	public void selectAll() {
 		model.selectAll();
 	}
 
+	@Override
 	public Point getSelection() {
 		if (model.isTextSelected()) {
 			return new Point(model.getSelectionStart(), model.getSelectionEnd());
@@ -688,10 +701,12 @@ public class CustomText extends NativeBasedCustomScrollable {
 		}
 	}
 
+	@Override
 	public String getSelectionText() {
 		return model.getSelectedText();
 	}
 
+	@Override
 	public int getTopIndex() {
 		if ((style & SWT.SINGLE) != 0) {
 			return 0;
@@ -700,6 +715,7 @@ public class CustomText extends NativeBasedCustomScrollable {
 		return visibleArea.y / getLineHeight();
 	}
 
+	@Override
 	public int getTopPixel() {
 		checkWidget();
 		if ((style & SWT.SINGLE) != 0) {
@@ -708,6 +724,7 @@ public class CustomText extends NativeBasedCustomScrollable {
 		return getVisibleArea().y;
 	}
 
+	@Override
 	public void setTopIndex(int index) {
 		checkWidget();
 		if ((style & SWT.SINGLE) != 0) {
@@ -734,6 +751,7 @@ public class CustomText extends NativeBasedCustomScrollable {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public Point getCaretLocation() {
 		return getLocationByOffset(model.getCaretOffset(), new GC(this));
 	}
@@ -784,6 +802,7 @@ public class CustomText extends NativeBasedCustomScrollable {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public int getCaretPosition() {
 		return model.getCaretOffset();
 	}
@@ -792,10 +811,12 @@ public class CustomText extends NativeBasedCustomScrollable {
 		redraw();
 	}
 
+	@Override
 	public void addSelectionListener(SelectionListener listener) {
 		addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 	}
 
+	@Override
 	public void removeSelectionListener(SelectionListener listener) {
 		checkWidget();
 		if (listener == null) {
@@ -808,10 +829,12 @@ public class CustomText extends NativeBasedCustomScrollable {
 		eventTable.unhook(SWT.DefaultSelection, listener);
 	}
 
+	@Override
 	public void addModifyListener(ModifyListener listener) {
 		addTypedListener(listener, SWT.Modify);
 	}
 
+	@Override
 	public void removeModifyListener(ModifyListener listener) {
 		checkWidget();
 		if (listener == null) {
@@ -823,6 +846,7 @@ public class CustomText extends NativeBasedCustomScrollable {
 		eventTable.unhook(SWT.Modify, listener);
 	}
 
+	@Override
 	public void setEditable(boolean editable) {
 		checkWidget();
 		if (editable) {
@@ -833,16 +857,19 @@ public class CustomText extends NativeBasedCustomScrollable {
 		redraw();
 	}
 
+	@Override
 	public boolean getEditable() {
 		checkWidget();
 		return (style & SWT.READ_ONLY) == 0;
 	}
 
+	@Override
 	public int getTextLimit() {
 		checkWidget();
 		return textLimit;
 	}
 
+	@Override
 	public void setTextLimit(int limit) {
 		checkWidget();
 		if (limit == 0) {
@@ -862,6 +889,7 @@ public class CustomText extends NativeBasedCustomScrollable {
 		return super.getBorderWidth();
 	}
 
+	@Override
 	public int getLineHeight() {
 		checkWidget();
 		GC gc = new GC(this);
@@ -890,6 +918,7 @@ public class CustomText extends NativeBasedCustomScrollable {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public void copy() {
 		checkWidget();
 		if ((style & SWT.PASSWORD) != 0)// || echoCharacter != '\0')
@@ -897,30 +926,36 @@ public class CustomText extends NativeBasedCustomScrollable {
 //		copyToClipboard(model.getSelectedText().toCharArray());
 	}
 
+	@Override
 	public void cut() {
 		copy();
 		model.replaceSelectedTextWith("");
 	}
 
+	@Override
 	public void paste() {
 		checkWidget();
 		String clipboardText = ""; // getClipboardText();
 		model.insert(clipboardText);
 	}
 
+	@Override
 	public int getSelectionCount() {
 		return model.getSelectionCount();
 	}
 
+	@Override
 	public void showSelection() {
 		checkWidget();
 		setSelection(getSelection());
 	}
 
+	@Override
 	public void addVerifyListener(VerifyListener listener) {
 		addTypedListener(listener, SWT.Verify);
 	}
 
+	@Override
 	public void removeVerifyListener(VerifyListener listener) {
 		checkWidget();
 		if (listener == null) {
@@ -932,6 +967,7 @@ public class CustomText extends NativeBasedCustomScrollable {
 		eventTable.unhook(SWT.Verify, listener);
 	}
 
+	@Override
 	public int getCaretLineNumber() {
 		checkWidget();
 		if ((style & SWT.SINGLE) != 0) {
@@ -940,6 +976,7 @@ public class CustomText extends NativeBasedCustomScrollable {
 		return model.getCaretLocation().line;
 	}
 
+	@Override
 	public void insert(String string) {
 		checkWidget();
 		if (string == null) {
@@ -972,26 +1009,32 @@ public class CustomText extends NativeBasedCustomScrollable {
 		return event.text;
 	}
 
+	@Override
 	public int getCharCount() {
 		return model.getCharCount();
 	}
 
+	@Override
 	public boolean getDoubleClickEnabled() {
 		return doubleClick;
 	}
 
+	@Override
 	public void setDoubleClickEnabled(boolean doubleClick) {
 		this.doubleClick = doubleClick;
 	}
 
+	@Override
 	public char getEchoChar() {
 		return echoChar;
 	}
 
+	@Override
 	public void setEchoChar(char echoChar) {
 		this.echoChar = echoChar;
 	}
 
+	@Override
 	public int getLineCount() {
 		checkWidget();
 		if ((style & SWT.SINGLE) != 0) {
@@ -1000,15 +1043,18 @@ public class CustomText extends NativeBasedCustomScrollable {
 		return model.getLineCount();
 	}
 
+	@Override
 	public String getLineDelimiter() {
 		checkWidget();
 		return TextModel.DELIMITER;
 	}
 
+	@Override
 	public void addSegmentListener(SegmentListener listener) {
 		addTypedListener(listener, SWT.Segments);
 	}
 
+	@Override
 	public void removeSegmentListener(SegmentListener listener) {
 		checkWidget();
 		if (listener == null) {
@@ -1017,10 +1063,12 @@ public class CustomText extends NativeBasedCustomScrollable {
 		eventTable.unhook(SWT.Segments, listener);
 	}
 
+	@Override
 	public int getTabs() {
 		return tabs;
 	}
 
+	@Override
 	public void setTabs(int tabs) {
 		this.tabs = tabs;
 	}
@@ -1044,4 +1092,10 @@ public class CustomText extends NativeBasedCustomScrollable {
 		caret.setFocus();
 		return super.setFocus();
 	}
+
+	@Override
+	public char[] getTextChars() {
+		return getText().toCharArray();
+	}
+
 }

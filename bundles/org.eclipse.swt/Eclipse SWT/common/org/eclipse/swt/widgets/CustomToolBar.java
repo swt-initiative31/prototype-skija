@@ -53,7 +53,7 @@ import org.eclipse.swt.widgets.toolbar.*;
  *      information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class CustomToolBar extends Composite {
+public abstract class CustomToolBar extends NativeComposite implements IToolBar {
 
 	/**
 	 * Renderer interface for the {@link CustomToolBar} widget. All renderers have to
@@ -145,7 +145,7 @@ public class CustomToolBar extends Composite {
 	 * @see Widget#getStyle()
 	 */
 	public CustomToolBar(Composite parent, int style, boolean internal) {
-		super(parent, checkStyle(style));
+		super(Widget.checkNative(parent), checkStyle(style));
 		this.style |= SWT.DOUBLE_BUFFERED;
 
 		renderer = new ToolBarRenderer(this);
@@ -306,7 +306,7 @@ public class CustomToolBar extends Composite {
 			return;
 		}
 
-		Drawing.drawWithGC(this, event.gc, gc -> renderer.render(gc, bounds));
+		Drawing.drawWithGC(this.getWrapper(), event.gc, gc -> renderer.render(gc, bounds));
 	}
 
 	/**
@@ -357,6 +357,7 @@ public class CustomToolBar extends Composite {
 		return size;
 	}
 
+	@Override
 	Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
 		checkWidget();
 		Point sizeHint = new Point(wHint, hHint);
@@ -392,7 +393,13 @@ public class CustomToolBar extends Composite {
 	 *                                     receiver</li>
 	 *                                     </ul>
 	 */
-	public CustomToolItem getItem(int index) {
+	@Override
+	public ToolItem getItem(int index) {
+		CustomToolItem item = getItemInternal(index);
+		return item != null ? (ToolItem) item.getWrapper() : null;
+	}
+
+	public CustomToolItem getItemInternal(int index) {
 		checkRange(index, items.size());
 		checkWidget();
 		return items.get(index);
@@ -423,9 +430,10 @@ public class CustomToolBar extends Composite {
 	 *                                     receiver</li>
 	 *                                     </ul>
 	 */
-	public CustomToolItem getItem(Point point) {
+	@Override
+	public ToolItem getItem(Point point) {
 		checkWidget();
-		for (CustomToolItem item : getItems()) {
+		for (ToolItem item : getItems()) {
 			if (item.getBounds().contains(point)) {
 				return item;
 			}
@@ -446,6 +454,7 @@ public class CustomToolBar extends Composite {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public int getItemCount() {
 		checkWidget();
 		return items.size();
@@ -469,9 +478,10 @@ public class CustomToolBar extends Composite {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
-	public CustomToolItem[] getItems() {
+	@Override
+	public ToolItem[] getItems() {
 		checkWidget();
-		return items.toArray(CustomToolItem[]::new);
+		return items.stream().map(CustomToolItem::getWrapper).toArray(ToolItem[]::new);
 	}
 
 	/**
@@ -489,6 +499,7 @@ public class CustomToolBar extends Composite {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
+	@Override
 	public int getRowCount() {
 		checkWidget();
 		return renderer.rowCount();
@@ -518,10 +529,11 @@ public class CustomToolBar extends Composite {
 	 *                                     receiver</li>
 	 *                                     </ul>
 	 */
-	public int indexOf(CustomToolItem item) {
+	@Override
+	public int indexOf(ToolItem item) {
 		checkItem(item);
 		checkWidget();
-		return items.indexOf(item);
+		return items.indexOf(item.getWrappedWidget());
 	}
 
 	@Override
@@ -542,7 +554,7 @@ public class CustomToolBar extends Composite {
 
 		// un-select each radio item before the selected one
 		for (int i = selectedIndex - 1; i >= 0; i--) {
-			CustomToolItem item = getItem(i);
+			CustomToolItem item = getItemInternal(i);
 			if ((item.style & SWT.RADIO) == SWT.RADIO) {
 				item.internalUnselect();
 			} else {
@@ -553,7 +565,7 @@ public class CustomToolBar extends Composite {
 
 		// un-select each radio item before the selected one
 		for (int i = selectedIndex + 1; i < getItemCount(); i++) {
-			CustomToolItem item = getItem(i);
+			CustomToolItem item = getItemInternal(i);
 			if ((item.style & SWT.RADIO) == SWT.RADIO) {
 				item.internalUnselect();
 			} else {
@@ -581,7 +593,7 @@ public class CustomToolBar extends Composite {
 		}
 	}
 
-	private void checkItem(CustomToolItem item) {
+	private void checkItem(ToolItem item) {
 		if (item == null) {
 			error(SWT.ERROR_NULL_ARGUMENT);
 		} else if (item.isDisposed()) {

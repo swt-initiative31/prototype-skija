@@ -50,7 +50,7 @@ import org.eclipse.swt.graphics.*;
  *      information</a>
  * @see LabelRenderer#shortenText(GC, String, int, int)
  */
-public class CustomLabel extends CustomControl {
+public abstract class CustomLabel extends CustomControl implements ILabel {
 
 	private final LabelRenderer renderer;
 
@@ -187,6 +187,7 @@ public class CustomLabel extends CustomControl {
 	 *
 	 * @return SWT.LEFT, SWT.RIGHT or SWT.CENTER
 	 */
+	@Override
 	public int getAlignment() {
 		/*
 		 * This call is intentionally commented out, to allow this getter method
@@ -219,6 +220,7 @@ public class CustomLabel extends CustomControl {
 	 *
 	 * @return the image of the label or null
 	 */
+	@Override
 	public Image getImage() {
 		/*
 		 * This call is intentionally commented out, to allow this getter method
@@ -279,6 +281,7 @@ public class CustomLabel extends CustomControl {
 	 *
 	 * @return the text of the label or null
 	 */
+	@Override
 	public String getText() {
 		/*
 		 * This call is intentionally commented out, to allow this getter method
@@ -394,7 +397,7 @@ public class CustomLabel extends CustomControl {
 			Control[] children = control.getChildren();
 			int index = 0;
 			while (index < children.length) {
-				if (children[index] == this) {
+				if (children[index] == this.getWrapper()) {
 					break;
 				}
 				index++;
@@ -411,7 +414,7 @@ public class CustomLabel extends CustomControl {
 	}
 
 	private void onPaint(Event event) {
-		Drawing.drawWithGC(this, event.gc, renderer::paint);
+		Drawing.drawWithGC(this.getWrapper(), event.gc, renderer::paint);
 	}
 
 
@@ -432,6 +435,7 @@ public class CustomLabel extends CustomControl {
 	 *                one of SWT.LEFT, SWT.RIGHT or SWT.CENTER</li>
 	 *                </ul>
 	 */
+	@Override
 	public void setAlignment(int align) {
 		checkWidget();
 		if (align != SWT.LEFT && align != SWT.RIGHT && align != SWT.CENTER) {
@@ -619,6 +623,7 @@ public class CustomLabel extends CustomControl {
 	 *                thread that created the receiver</li>
 	 *                </ul>
 	 */
+	@Override
 	public void setImage(Image image) {
 		checkWidget();
 		if (image != renderer.getImage()) {
@@ -735,6 +740,7 @@ public class CustomLabel extends CustomControl {
 	 *                thread that created the receiver</li>
 	 *                </ul>
 	 */
+	@Override
 	public void setText(String text) {
 		checkWidget();
 		if (text == null) {

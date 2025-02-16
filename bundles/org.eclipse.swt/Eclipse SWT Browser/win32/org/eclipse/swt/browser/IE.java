@@ -265,7 +265,7 @@ class IE extends WebBrowser {
 @Override
 public void create(Composite parent, int style) {
 	this.style = style;
-	frame = new OleFrame(browser, SWT.NONE);
+	frame = new OleFrame(nativeBrowser, SWT.NONE);
 
 	try {
 		site = new WebSite(frame, SWT.NONE, ProgId);
@@ -372,12 +372,12 @@ public void create(Composite parent, int style) {
 				e.type = SWT.NONE;
 
 				/* invoke onbeforeunload handlers */
-				if (!browser.isClosing) {
+				if (!nativeBrowser.isClosing) {
 					LocationListener[] oldLocationListeners = locationListeners;
 					locationListeners = new LocationListener[0];
-					site.ignoreAllMessages = true;
+					site.getWrappedWidget().ignoreAllMessages = true;
 					execute ("window.location.href='about:blank'"); //$NON-NLS-1$
-					site.ignoreAllMessages = false;
+					site.getWrappedWidget().ignoreAllMessages = false;
 					locationListeners = oldLocationListeners;
 				}
 
@@ -425,7 +425,7 @@ public void create(Composite parent, int style) {
 				 * listen for traversals and re-perform the traversal on the
 				 * appropriate control.
 				 */
-				if (e.detail == SWT.TRAVERSE_TAB_PREVIOUS && e.widget instanceof WebSite) {
+				if (e.detail == SWT.TRAVERSE_TAB_PREVIOUS) { // TODO FACADE && e.widget instanceof WebSite) {
 					/* otherwise will traverse to the Browser control */
 					browser.traverse(SWT.TRAVERSE_TAB_PREVIOUS, e);
 					e.doit = false;
@@ -445,10 +445,10 @@ public void create(Composite parent, int style) {
 			}
 		}
 	};
-	browser.addListener(SWT.Dispose, listener);
-	browser.addListener(SWT.FocusIn, listener);
-	browser.addListener(SWT.Resize, listener);
-	browser.addListener(SWT.Traverse, listener);
+	nativeBrowser.addListener(SWT.Dispose, listener);
+	nativeBrowser.addListener(SWT.FocusIn, listener);
+	nativeBrowser.addListener(SWT.Resize, listener);
+	nativeBrowser.addListener(SWT.Traverse, listener);
 	site.addListener(SWT.MouseWheel, listener);
 	site.addListener(SWT.Traverse, listener);
 
@@ -639,7 +639,7 @@ public void create(Composite parent, int style) {
 							globalDispatch = 0;
 
 							/* re-install registered functions iff needed */
-							IE ie = (IE)browser.webBrowser;
+							IE ie = (IE)nativeBrowser.webBrowser;
 							if (ie.installFunctionsOnDocumentComplete) {
 								ie.installFunctionsOnDocumentComplete = false;
 								Iterator<BrowserFunction> elements1 = functions.values().iterator ();
@@ -834,8 +834,8 @@ public void create(Composite parent, int style) {
 						openWindowListener.open(newEvent2);
 					}
 					IE browser = null;
-					if (newEvent2.browser != null && newEvent2.browser.webBrowser instanceof IE) {
-						browser = (IE)newEvent2.browser.webBrowser;
+					if (newEvent2.browser != null && newEvent2.browser.getWrappedWidget().webBrowser instanceof IE) {
+						browser = (IE)newEvent2.browser.getWrappedWidget().webBrowser;
 					}
 					boolean doit2 = browser != null && !browser.browser.isDisposed();
 					if (doit2) {
@@ -1441,7 +1441,7 @@ private void setUntrustedText(boolean value) {
 }
 
 private void updateForceTrusted() {
-	site.isForceTrusted = isAboutBlank && !untrustedText;
+	site.getWrappedWidget().isForceTrusted = isAboutBlank && !untrustedText;
 }
 
 @Override
@@ -1617,7 +1617,7 @@ void handleDOMEvent (OleEvent e) {
 
 		MSG msg = new MSG ();
 		int flags = OS.PM_NOYIELD | (consume ? OS.PM_REMOVE : OS.PM_NOREMOVE);
-		if (OS.PeekMessage (msg, frame.handle, OS.WM_CHAR, OS.WM_CHAR, flags)) {
+		if (OS.PeekMessage (msg, frame.getWrappedWidget().handle, OS.WM_CHAR, OS.WM_CHAR, flags)) {
 			/* a keypress will be received for this key so don't send KeyDown here */
 			event.dispose();
 			return;

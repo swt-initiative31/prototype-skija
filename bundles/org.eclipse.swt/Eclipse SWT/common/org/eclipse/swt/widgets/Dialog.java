@@ -74,15 +74,14 @@ import org.eclipse.swt.*;
  * and SYSTEM_MODAL may be specified.
  * </p>
  *
- * @see Shell
+ * @see NativeShell
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
 
 public abstract class Dialog {
-	int style;
-	Shell parent;
-	String title;
+
+	private final NativeDialog wrappedDialog;
 
 /**
  * Constructs a new instance of this class given only its
@@ -98,7 +97,8 @@ public abstract class Dialog {
  * </ul>
  */
 public Dialog (Shell parent) {
-	this (parent, SWT.PRIMARY_MODAL);
+	this (new NativeDialog(Widget.checkNative(parent)) {
+	});
 }
 
 /**
@@ -128,10 +128,12 @@ public Dialog (Shell parent) {
  * @see SWT#SYSTEM_MODAL
  */
 public Dialog (Shell parent, int style) {
-	checkParent (parent);
-	this.parent = parent;
-	this.style = style;
-	title = "";
+	this (new NativeDialog(Widget.checkNative(parent), style) {
+	});
+}
+
+protected Dialog(NativeDialog nativeDialog) {
+	this.wrappedDialog = nativeDialog;
 }
 
 /**
@@ -144,62 +146,10 @@ public Dialog (Shell parent, int style) {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  *
- * @see Widget#checkSubclass
+ * @see NativeWidget#checkSubclass
  */
 protected void checkSubclass () {
-	if (!Display.isValidClass (getClass ())) {
-		error (SWT.ERROR_INVALID_SUBCLASS);
-	}
-}
-
-/**
- * Throws an exception if the specified widget can not be
- * used as a parent for the receiver.
- *
- * @exception IllegalArgumentException <ul>
- *    <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
- *    <li>ERROR_INVALID_ARGUMENT - if the parent is disposed</li>
- * </ul>
- * @exception SWTException <ul>
- *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the parent</li>
- * </ul>
- */
-void checkParent (Shell parent) {
-	if (parent == null) error (SWT.ERROR_NULL_ARGUMENT);
-	parent.checkWidget ();
-}
-
-static int checkStyle (Shell parent, int style) {
-	int mask = SWT.PRIMARY_MODAL | SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL;
-	if ((style & SWT.SHEET) != 0) {
-		style &= ~SWT.SHEET;
-		if ((style & mask) == 0) {
-			style |= parent == null ? SWT.APPLICATION_MODAL : SWT.PRIMARY_MODAL;
-		}
-	}
-	if ((style & mask) == 0) {
-		style |= SWT.APPLICATION_MODAL;
-	}
-	style &= ~SWT.MIRRORED;
-	if ((style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT)) == 0) {
-		if (parent != null) {
-			if ((parent.style & SWT.LEFT_TO_RIGHT) != 0) style |= SWT.LEFT_TO_RIGHT;
-			if ((parent.style & SWT.RIGHT_TO_LEFT) != 0) style |= SWT.RIGHT_TO_LEFT;
-		}
-	}
-	return Widget.checkBits (style, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, 0, 0, 0, 0);
-}
-
-/**
- * Does whatever dialog specific cleanup is required, and then
- * uses the code in <code>SWTError.error</code> to handle the error.
- *
- * @param code the descriptive error code
- *
- * @see SWT#error(int)
- */
-void error (int code) {
-	SWT.error(code);
+	getWrappedDialog().checkSubclass();
 }
 
 /**
@@ -214,7 +164,8 @@ void error (int code) {
  * </ul>
  */
 public Shell getParent () {
-	return parent;
+	NativeShell wrappedShell = getWrappedDialog().getParent();
+	return wrappedShell != null ? wrappedShell.getWrapper() : null;
 }
 
 /**
@@ -233,7 +184,7 @@ public Shell getParent () {
  * </ul>
  */
 public int getStyle () {
-	return style;
+	return getWrappedDialog().getStyle();
 }
 
 /**
@@ -250,7 +201,7 @@ public int getStyle () {
  * </ul>
  */
 public String getText () {
-	return title;
+	return getWrappedDialog().getText();
 }
 
 /**
@@ -269,8 +220,11 @@ public String getText () {
  * </ul>
  */
 public void setText (String string) {
-	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
-	title = string;
+	getWrappedDialog().setText(string);
+}
+
+protected NativeDialog getWrappedDialog() {
+	return wrappedDialog;
 }
 
 }

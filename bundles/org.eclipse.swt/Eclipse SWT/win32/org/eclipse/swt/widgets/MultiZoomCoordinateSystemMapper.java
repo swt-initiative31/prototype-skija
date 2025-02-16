@@ -34,17 +34,17 @@ class MultiZoomCoordinateSystemMapper implements CoordinateSystemMapper {
 	}
 
 	@Override
-	public Point map(Control from, Control to, Point point) {
+	public Point map(NativeControl from, NativeControl to, Point point) {
 		return map(from, to, point.x, point.y);
 	}
 
 	@Override
-	public Rectangle map(Control from, Control to, Rectangle rectangle) {
+	public Rectangle map(NativeControl from, NativeControl to, Rectangle rectangle) {
 		return map(from, to, rectangle.x, rectangle.y, rectangle.width, rectangle.height);
 	}
 
 	@Override
-	public Point map(Control from, Control to, int x, int y) {
+	public Point map(NativeControl from, NativeControl to, int x, int y) {
 		Point mappedPointInPoints;
 		if (from == null) {
 			Point mappedPointInpixels = display.mapInPixels(from, to,
@@ -62,7 +62,7 @@ class MultiZoomCoordinateSystemMapper implements CoordinateSystemMapper {
 	}
 
 	@Override
-	public Rectangle map(Control from, Control to, int x, int y, int width, int height) {
+	public Rectangle map(NativeControl from, NativeControl to, int x, int y, int width, int height) {
 		Rectangle mappedRectangleInPoints;
 		if (from == null) {
 			Rectangle mappedRectangleInPixels = display.mapInPixels(from, to,

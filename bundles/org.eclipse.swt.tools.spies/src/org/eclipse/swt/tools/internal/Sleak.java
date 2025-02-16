@@ -489,7 +489,7 @@ private void setVisible(Control control, boolean visible) {
 }
 
 private void filterNonDisposedWidgetTypes() {
-	java.util.List<Class<? extends Widget>> trackedTypes = Arrays.asList(
+	java.util.List<Class<? extends NativeWidget>> trackedTypes = Arrays.asList(
 //		Composite.class, 
 //		Menu.class
 	);

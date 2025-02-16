@@ -54,7 +54,7 @@ import org.eclipse.swt.graphics.*;
  *      information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class CustomButton extends CustomControl {
+public abstract class CustomButton extends CustomControl implements IButton {
 	private String text = "", message = "";
 	private Image image;
 	private boolean checked;
@@ -263,11 +263,11 @@ public class CustomButton extends CustomControl {
 			return null;
 		}
 
-		Control[] children = parent._getChildren();
+		Control[] children = parent.getChildren();
 
-		ArrayList<CustomButton> radioGroup = new ArrayList<>();
+		ArrayList<Button> radioGroup = new ArrayList<>();
 		for (int k = 0; k < children.length; k++) {
-			if (children[k] instanceof CustomButton b
+			if (children[k] instanceof Button b
 					&& (children[k].getStyle() & SWT.RADIO) != 0) {
 				radioGroup.add(b);
 			}
@@ -319,7 +319,7 @@ public class CustomButton extends CustomControl {
 		if (!isVisible()) {
 			return;
 		}
-		Drawing.drawWithGC(this, event.gc, renderer::paint);
+		Drawing.drawWithGC(this.getWrapper(), event.gc, renderer::paint);
 	}
 
 	private void onDispose(Event event) {
@@ -413,6 +413,7 @@ public class CustomButton extends CustomControl {
 	 * @see #removeSelectionListener
 	 * @see SelectionEvent
 	 */
+	@Override
 	public void addSelectionListener(SelectionListener listener) {
 		addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 	}
@@ -456,6 +457,7 @@ public class CustomButton extends CustomControl {
 	 *                thread that created the receiver</li>
 	 *                </ul>
 	 */
+	@Override
 	public int getAlignment() {
 		checkWidget();
 		if ((style & SWT.ARROW) != 0) {
@@ -509,6 +511,7 @@ public class CustomButton extends CustomControl {
 	 *
 	 * @since 3.4
 	 */
+	@Override
 	public boolean getGrayed() {
 		checkWidget();
 		if (!isCheckButton()) {
@@ -530,6 +533,7 @@ public class CustomButton extends CustomControl {
 	 *                thread that created the receiver</li>
 	 *                </ul>
 	 */
+	@Override
 	public Image getImage() {
 		checkWidget();
 		return image;
@@ -581,6 +585,7 @@ public class CustomButton extends CustomControl {
 	 *                thread that created the receiver</li>
 	 *                </ul>
 	 */
+	@Override
 	public boolean getSelection() {
 		checkWidget();
 		if ((style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0) {
@@ -603,6 +608,7 @@ public class CustomButton extends CustomControl {
 	 *                thread that created the receiver</li>
 	 *                </ul>
 	 */
+	@Override
 	public String getText() {
 		checkWidget();
 		if ((style & SWT.ARROW) != 0) {
@@ -718,6 +724,7 @@ public class CustomButton extends CustomControl {
 	 * @see SelectionListener
 	 * @see #addSelectionListener
 	 */
+	@Override
 	public void removeSelectionListener(SelectionListener listener) {
 		checkWidget();
 		if (listener == null) {
@@ -749,6 +756,7 @@ public class CustomButton extends CustomControl {
 	 *                thread that created the receiver</li>
 	 *                </ul>
 	 */
+	@Override
 	public void setAlignment(int alignment) {
 		checkWidget();
 
@@ -857,6 +865,7 @@ public class CustomButton extends CustomControl {
 	 *                thread that created the receiver</li>
 	 *                </ul>
 	 */
+	@Override
 	public void setImage(Image image) {
 		checkWidget();
 		if (image != null && image.isDisposed()) {
@@ -887,6 +896,7 @@ public class CustomButton extends CustomControl {
 	 *
 	 * @since 3.4
 	 */
+	@Override
 	public void setGrayed(boolean grayed) {
 		checkWidget();
 		if ((style & SWT.CHECK) == 0) {
@@ -954,6 +964,7 @@ public class CustomButton extends CustomControl {
 	 *                thread that created the receiver</li>
 	 *                </ul>
 	 */
+	@Override
 	public void setSelection(boolean selected) {
 		checkWidget();
 		this.checked = selected;
@@ -1040,6 +1051,7 @@ public class CustomButton extends CustomControl {
 	 *                thread that created the receiver</li>
 	 *                </ul>
 	 */
+	@Override
 	public void setText(String string) {
 		checkWidget();
 		if (string == null) {
@@ -1055,4 +1067,7 @@ public class CustomButton extends CustomControl {
 	private boolean isChecked() {
 		return checked;
 	}
+
+	@Override
+	public abstract Button getWrapper();
 }
