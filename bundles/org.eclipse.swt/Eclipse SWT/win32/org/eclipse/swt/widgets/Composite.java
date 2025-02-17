@@ -14,6 +14,8 @@
 package org.eclipse.swt.widgets;
 
 
+import java.util.*;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
@@ -104,26 +106,35 @@ public Composite (Composite parent, int style) {
 }
 
 Control [] _getChildren () {
-	int count = 0;
 	long hwndChild = OS.GetWindow (handle, OS.GW_CHILD);
-	if (hwndChild == 0) return new Control [0];
-	while (hwndChild != 0) {
-		count++;
-		hwndChild = OS.GetWindow (hwndChild, OS.GW_HWNDNEXT);
-	}
-	Control [] children = new Control [count];
-	int index = 0;
-	hwndChild = OS.GetWindow (handle, OS.GW_CHILD);
-	while (hwndChild != 0) {
-		Control control = display.getControl (hwndChild);
-		if (control != null && control != this) {
-			children [index++] = control;
+	Control [] children = null;
+	int count = 0;
+	if (hwndChild != 0) {
+		while (hwndChild != 0) {
+			count++;
+			hwndChild = OS.GetWindow (hwndChild, OS.GW_HWNDNEXT);
 		}
-		hwndChild = OS.GetWindow (hwndChild, OS.GW_HWNDNEXT);
+		children = new Control[count];
+		int index = 0;
+		hwndChild = OS.GetWindow (handle, OS.GW_CHILD);
+		while (hwndChild != 0) {
+			Control control = display.getControl (hwndChild);
+			if (control != null && control != this) {
+				children [index++] = control;
+			}
+			hwndChild = OS.GetWindow (hwndChild, OS.GW_HWNDNEXT);
+		}
+		count = index;
 	}
-	if (count == index) return children;
-	Control [] newChildren = new Control [index];
-	System.arraycopy (children, 0, newChildren, 0, index);
+	final CustomControl[] customControls = customBridge != null ? customBridge.getChildren() : null;
+	final int customCount = customControls != null ? customControls.length : 0;
+	Control [] newChildren = new Control [count + customCount];
+	if (children != null) {
+		System.arraycopy (children, 0, newChildren, 0, count);
+	}
+	if (customControls != null) {
+		System.arraycopy(customControls, 0, newChildren, count, customCount);
+	}
 	return newChildren;
 }
 
@@ -1990,5 +2001,24 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 		DPIZoomChangeRegistry.applyChange(child, newZoom, scalingFactor);
 	}
 	composite.redrawInPixels (null, true);
+}
+
+private CustomBridge customBridge;
+
+CustomBridge getCustomBridge() {
+	return Objects.requireNonNull(customBridge);
+}
+
+void addCustomChild(CustomControl customControl) {
+	if (customBridge == null) {
+		customBridge = new CustomBridge(this);
+	}
+	customBridge.add(customControl);
+}
+
+void removeCustomChild(CustomControl customControl) {
+    if (customBridge != null) {
+        customBridge.remove(customControl);
+    }
 }
 }
