@@ -44,7 +44,7 @@ public abstract class ControlRenderer {
 	}
 
 	protected final boolean hasFocus() {
-		return control.hasFocus();
+		return control.isFocusControl();
 	}
 
 	protected final int getStyle() {
