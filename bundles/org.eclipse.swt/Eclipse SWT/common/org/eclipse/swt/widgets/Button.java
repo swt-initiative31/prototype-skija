@@ -331,6 +331,7 @@ public class Button extends CustomControl {
 	private void onMouseDown(Event e) {
 		if (e.button == 1) {
 			renderer.setPressed(true);
+			setFocus();
 			redraw();
 		}
 	}
