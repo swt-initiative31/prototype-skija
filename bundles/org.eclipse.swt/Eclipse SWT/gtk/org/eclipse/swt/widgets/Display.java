@@ -124,7 +124,7 @@ public class Display extends Device implements Executor {
 	/* Events Dispatching and Callback */
 	int gdkEventCount;
 	long [] gdkEvents;
-	Widget [] gdkEventWidgets;
+	NativeWidget [] gdkEventWidgets;
 	int [] dispatchEvents;
 	Event [] eventQueue;
 	long fds;
@@ -160,8 +160,8 @@ public class Display extends Device implements Executor {
 	int [] indexTable;
 	int freeSlot;
 	long lastHandle;
-	Widget lastWidget;
-	Widget [] widgetTable;
+	NativeWidget lastWidget;
+	NativeWidget [] widgetTable;
 	final static int GROW_SIZE = 1024;
 	static final int SWT_OBJECT_INDEX;
 	static final int SWT_OBJECT_INDEX1;
@@ -176,22 +176,22 @@ public class Display extends Device implements Executor {
 	}
 
 	/* Modality */
-	Shell [] modalShells;
-	Dialog modalDialog;
+	NativeShell [] modalShells;
+	NativeDialog modalDialog;
 	static final String GET_MODAL_DIALOG = "org.eclipse.swt.internal.gtk.getModalDialog"; //$NON-NLS-1$
 	static final String SET_MODAL_DIALOG = "org.eclipse.swt.internal.gtk.setModalDialog"; //$NON-NLS-1$
 
 	/* Focus */
 	int focusEvent;
-	Control focusControl;
-	Shell activeShell;
+	NativeControl focusControl;
+	NativeShell activeShell;
 	boolean activePending;
 	boolean ignoreActivate, ignoreFocus;
 
-	Tracker tracker;
+	NativeTracker tracker;
 
 	/* Input method resources */
-	Control imControl;
+	NativeControl imControl;
 	long preeditWindow, preeditLabel;
 
 	/* Sync/Async Widget Communication */
@@ -226,12 +226,12 @@ public class Display extends Device implements Executor {
 	Runnable [] disposeList;
 
 	/* Deferred Layout list */
-	Composite[] layoutDeferred;
+	NativeComposite[] layoutDeferred;
 	int layoutDeferredCount;
 
 	/* System Tray */
-	Tray tray;
-	TrayItem currentTrayItem;
+	NativeTray tray;
+	NativeTrayItem currentTrayItem;
 
 	/* Timers */
 	int [] timerIds;
@@ -242,13 +242,13 @@ public class Display extends Device implements Executor {
 	long windowTimerProc;
 
 	/* Caret */
-	Caret currentCaret;
+	NativeCaret currentCaret;
 	Callback caretCallback;
 	int caretId;
 	long caretProc;
 
 	/* Mnemonics */
-	Control mnemonicControl;
+	NativeControl mnemonicControl;
 
 	/* Mouse hover */
 	int mouseHoverId;
@@ -304,7 +304,7 @@ public class Display extends Device implements Executor {
 	boolean entrySelectOnFocus;
 
 	/* Enter/Exit events */
-	Control currentControl;
+	NativeControl currentControl;
 
 	/* Flush exposes */
 	long checkIfEventProc;
@@ -348,7 +348,7 @@ public class Display extends Device implements Executor {
 	private final static Pattern colorPattern = Pattern.compile("[^-]color: (rgba?\\((?:\\d+(?:,\\s?)?){3,4}\\))");
 
 	/* Popup Menus */
-	Menu [] popups;
+	NativeMenu [] popups;
 
 	/* Click count*/
 	int clickCount = 1;
@@ -502,7 +502,7 @@ public class Display extends Device implements Executor {
 	static Display [] Displays = new Display [1];
 
 	/* Skinning support */
-	Widget [] skinList = new Widget [GROW_SIZE];
+	NativeWidget [] skinList = new NativeWidget [GROW_SIZE];
 	int skinCount;
 
 	/* Package name */
@@ -617,8 +617,8 @@ static void setDevice (Device device) {
  *
  * @see #getCurrent
  * @see #getDefault
- * @see Widget#checkSubclass
- * @see Shell
+ * @see NativeWidget#checkSubclass
+ * @see NativeShell
  */
 public Display () {
 	this (null);
@@ -676,10 +676,10 @@ public void addFilter (int eventType, Listener listener) {
 	filterTable.hook (eventType, listener);
 }
 
-void addLayoutDeferred (Composite comp) {
-	if (layoutDeferred == null) layoutDeferred = new Composite [64];
+void addLayoutDeferred (NativeComposite comp) {
+	if (layoutDeferred == null) layoutDeferred = new NativeComposite [64];
 	if (layoutDeferredCount == layoutDeferred.length) {
-		Composite [] temp = new Composite [layoutDeferred.length + 64];
+		NativeComposite [] temp = new NativeComposite [layoutDeferred.length + 64];
 		System.arraycopy (layoutDeferred, 0, temp, 0, layoutDeferred.length);
 		layoutDeferred = temp;
 	}
@@ -690,7 +690,7 @@ void addGdkEvent (long event) {
 	if (gdkEvents == null) {
 		int length = GROW_SIZE;
 		gdkEvents = new long [length];
-		gdkEventWidgets = new Widget [length];
+		gdkEventWidgets = new NativeWidget [length];
 		gdkEventCount = 0;
 	}
 	if (gdkEventCount == gdkEvents.length) {
@@ -698,11 +698,11 @@ void addGdkEvent (long event) {
 		long [] newEvents = new long [length];
 		System.arraycopy (gdkEvents, 0, newEvents, 0, gdkEventCount);
 		gdkEvents = newEvents;
-		Widget [] newWidgets = new Widget [length];
+		NativeWidget [] newWidgets = new NativeWidget [length];
 		System.arraycopy (gdkEventWidgets, 0, newWidgets, 0, gdkEventCount);
 		gdkEventWidgets = newWidgets;
 	}
-	Widget widget = null;
+	NativeWidget widget = null;
 	long handle = GTK3.gtk_get_event_widget (event);
 	if (handle != 0) {
 		do {
@@ -824,8 +824,8 @@ void addMouseHoverTimeout (long handle) {
 	mouseHoverHandle = handle;
 }
 
-void addPopup (Menu menu) {
-	if (popups == null) popups = new Menu [4];
+void addPopup (NativeMenu menu) {
+	if (popups == null) popups = new NativeMenu [4];
 	int length = popups.length;
 	for (int i=0; i<length; i++) {
 		if (popups [i] == menu) return;
@@ -842,29 +842,29 @@ void addPopup (Menu menu) {
 		index++;
 	}
 	if (index == length) {
-		Menu [] newPopups = new Menu [length + 4];
+		NativeMenu [] newPopups = new NativeMenu [length + 4];
 		System.arraycopy (popups, 0, newPopups, 0, length);
 		popups = newPopups;
 	}
 	popups [index] = menu;
 }
 
-void addSkinnableWidget (Widget widget) {
+void addSkinnableWidget (NativeWidget widget) {
 	if (skinCount >= skinList.length) {
-		Widget[] newSkinWidgets = new Widget [(skinList.length + 1) * 3 / 2];
+		NativeWidget[] newSkinWidgets = new NativeWidget [(skinList.length + 1) * 3 / 2];
 		System.arraycopy (skinList, 0, newSkinWidgets, 0, skinList.length);
 		skinList = newSkinWidgets;
 	}
 	skinList [skinCount++] = widget;
 }
 
-void addWidget (long handle, Widget widget) {
+void addWidget (long handle, NativeWidget widget) {
 	if (handle == 0) return;
 	// Last element in the indexTable is -1, so if freeSlot == -1 we have no place anymore
 	if (freeSlot == LAST_TABLE_INDEX) {
 		int length = (freeSlot = indexTable.length) + GROW_SIZE;
 		int[] newIndexTable = new int[length];
-		Widget[] newWidgetTable = new Widget [length];
+		NativeWidget[] newWidgetTable = new NativeWidget [length];
 		System.arraycopy (indexTable, 0, newIndexTable, 0, freeSlot);
 		System.arraycopy (widgetTable, 0, newWidgetTable, 0, freeSlot);
 		for (int i = freeSlot; i < length - 1; i++) {
@@ -990,7 +990,7 @@ public void beep () {
 }
 
 long cellDataProc (long tree_column, long cell, long tree_model, long iter, long data) {
-	Widget widget = getWidget (data);
+	NativeWidget widget = getWidget (data);
 	if (widget == null) return 0;
 	return widget.cellDataProc (tree_column, cell, tree_model, iter, data);
 }
@@ -1063,13 +1063,13 @@ long checkIfEventProc (long display, long xEvent, long userData) {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  *
- * @see Widget#checkSubclass
+ * @see NativeWidget#checkSubclass
  */
 protected void checkSubclass () {
 	if (!isValidClass (getClass ())) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
-void clearModal (Shell shell) {
+void clearModal (NativeShell shell) {
 	if (modalShells == null) return;
 	int index = 0, length = modalShells.length;
 	while (index < length) {
@@ -1081,7 +1081,7 @@ void clearModal (Shell shell) {
 	System.arraycopy (modalShells, index + 1, modalShells, index, --length - index);
 	modalShells [length] = null;
 	if (index == 0 && modalShells [0] == null) modalShells = null;
-	Shell [] shells = getShells ();
+	NativeShell [] shells = getNativeShells ();
 	for (int i=0; i<shells.length; i++) shells [i].updateModal ();
 }
 
@@ -1566,7 +1566,7 @@ long eventProc (long event, long data) {
 	if (time != 0) lastEventTime = time;
 
 	int eventType = GTK.GTK4 ? GDK.gdk_event_get_event_type(event) : GDK.GDK_EVENT_TYPE (event);
-	Control.fixGdkEventTypeValues(eventType);
+	NativeControl.fixGdkEventTypeValues(eventType);
 	switch (eventType) {
 		case GDK.GDK_BUTTON_PRESS:
 		case GDK.GDK_KEY_PRESS:
@@ -1622,7 +1622,7 @@ long eventProc (long event, long data) {
  *
  * @noreference This method is not intended to be referenced by clients.
  */
-public Widget findWidget (long handle) {
+public NativeWidget findWidget (long handle) {
 	checkDevice ();
 	return getWidget (handle);
 }
@@ -1695,7 +1695,7 @@ static long rendererClassInitProc (long g_class, long class_data) {
 
 void snapshotDrawProc(long handle, long snapshot) {
 	Display display = getCurrent ();
-	Widget widget = display.getWidget (handle);
+	NativeWidget widget = display.getWidget (handle);
 	if (widget != null) widget.snapshotToDraw(handle, snapshot);
 	long child = GTK4.gtk_widget_get_first_child(handle);
 	// Propagate the snapshot down the widget tree
@@ -1707,21 +1707,21 @@ void snapshotDrawProc(long handle, long snapshot) {
 
 static long rendererGetPreferredWidthProc (long cell, long handle, long minimun_size, long natural_size) {
 	Display display = getCurrent ();
-	Widget widget = display.getWidget (handle);
+	NativeWidget widget = display.getWidget (handle);
 	if (widget != null) return widget.rendererGetPreferredWidthProc (cell, handle, minimun_size, natural_size);
 	return 0;
 }
 
 static long rendererRenderProc (long cell, long cr, long handle, long background_area, long cell_area, long flags) {
 	Display display = getCurrent ();
-	Widget widget = display.getWidget (handle);
+	NativeWidget widget = display.getWidget (handle);
 	if (widget != null) return widget.rendererRenderProc (cell, cr, handle, background_area, cell_area, flags);
 	return 0;
 }
 
 static long rendererSnapshotProc (long cell, long snapshot, long handle, long background_area, long cell_area, long flags) {
 	Display display = getCurrent ();
-	Widget widget = display.getWidget (handle);
+	NativeWidget widget = display.getWidget (handle);
 	if (widget != null) return widget.rendererSnapshotProc (cell, snapshot, handle, background_area, cell_area, flags);
 	return 0;
 }
@@ -1752,7 +1752,7 @@ void flushExposes (long window, boolean all) {
  */
 public Shell getActiveShell () {
 	checkDevice ();
-	return activeShell;
+	return activeShell != null ? activeShell.wrap() : null;
 }
 
 /**
@@ -1939,10 +1939,10 @@ public Control getCursorControl () {
 	}
 	if (handle == 0) return null;
 	do {
-		Widget widget = getWidget (handle);
-		if (widget != null && widget instanceof Control) {
-			Control control = (Control) widget;
-			if (control.isEnabled ()) return control;
+		NativeWidget widget = getWidget (handle);
+		if (widget != null && widget instanceof NativeControl) {
+			NativeControl control = (NativeControl) widget;
+			if (control.isEnabled ()) return control.wrap();
 		}
 	} while ((handle = GTK.gtk_widget_get_parent (handle)) != 0);
 	return null;
@@ -2005,13 +2005,13 @@ Point getCursorLocationInPixels() {
 		 * in Wayland. See Bug 514483.
 		 */
 		if (OS.isWayland() && activeShell != null) {
-			Shell tempShell = activeShell;
+			NativeShell tempShell = activeShell;
 			int [] offsetX = new int [1], offsetY = new int [1];
 			while (tempShell.getParent() != null) {
 				GTK3.gtk_window_get_position(tempShell.shellHandle, offsetX, offsetY);
 				x[0]+= offsetX[0];
 				y[0]+= offsetY[0];
-				tempShell = tempShell.getParent().getShell();
+				tempShell = tempShell.getParent().getShell().getWrappedWidget();
 			}
 		}
 	}
@@ -2479,6 +2479,12 @@ public int getDoubleClickTime () {
  * </ul>
  */
 public Control getFocusControl () {
+	NativeControl nativeFocusControl = getNativeFocusControl();
+	return nativeFocusControl != null ? nativeFocusControl.wrap() : null;
+}
+
+// TODO Facade added
+public NativeControl getNativeFocusControl() {
 	checkDevice ();
 	if (focusControl != null && !focusControl.isDisposed ()) {
 		return focusControl;
@@ -2488,9 +2494,9 @@ public Control getFocusControl () {
 	long handle = GTK.gtk_window_get_focus (shellHandle);
 	if (handle == 0) return null;
 	do {
-		Widget widget = getWidget (handle);
-		if (widget != null && widget instanceof Control) {
-			Control control = (Control) widget;
+		NativeWidget widget = getWidget (handle);
+		if (widget != null && widget instanceof NativeControl) {
+			NativeControl control = (NativeControl) widget;
 			return control.isEnabled () ? control : null;
 		}
 	} while ((handle = GTK.gtk_widget_get_parent (handle)) != 0);
@@ -2596,7 +2602,7 @@ int getLastEventTime () {
 	return lastEventTime;
 }
 
-Dialog getModalDialog () {
+NativeDialog getModalDialog () {
 	return modalDialog;
 }
 
@@ -2759,12 +2765,16 @@ public Monitor getPrimaryMonitor() {
  * </ul>
  */
 public Shell [] getShells () {
+	return Arrays.stream(getNativeShells()).map(NativeShell::wrap).toArray(Shell[]::new);
+}
+
+public NativeShell[] getNativeShells() {
 	checkDevice ();
 	int index = 0;
-	Shell [] result = new Shell [16];
+	NativeShell [] result = new NativeShell [16];
 	for (int i = 0; i < widgetTable.length; i++) {
-		Widget widget = widgetTable [i];
-		if (!(widget instanceof Shell)) {
+		NativeWidget widget = widgetTable [i];
+		if (!(widget instanceof NativeShell)) {
 			continue;
 		}
 		if (!widget.isDisposed()) {
@@ -2775,11 +2785,11 @@ public Shell [] getShells () {
 			}
 			if (j == index) {
 				if (index == result.length) {
-					Shell [] newResult = new Shell [index + 16];
+					NativeShell [] newResult = new NativeShell [index + 16];
 					System.arraycopy (result, 0, newResult, 0, index);
 					result = newResult;
 				}
-				result [index++] = (Shell) widget;
+				result [index++] = (NativeShell) widget;
 			}
 		} else {
 			// bug 532632: somehow widgetTable got corrupted and we have disposed
@@ -2800,7 +2810,7 @@ public Shell [] getShells () {
 		}
 	}
 	if (index == result.length) return result;
-	Shell [] newResult = new Shell [index];
+	NativeShell [] newResult = new NativeShell [index];
 	System.arraycopy (result, 0, newResult, 0, index);
 	return newResult;
 }
@@ -3405,8 +3415,8 @@ public TaskBar getSystemTaskBar () {
  */
 public Tray getSystemTray () {
 	checkDevice ();
-	if (tray != null) return tray;
-	return tray = new Tray (this, SWT.NONE);
+	if (tray != null) return tray.wrap();
+	return (tray = new Tray (this, SWT.NONE).getWrappedWidget()).wrap();
 }
 
 /**
@@ -3443,7 +3453,7 @@ public boolean getTouchEnabled() {
 	return false;
 }
 
-Widget getWidget (long handle) {
+NativeWidget getWidget (long handle) {
 	if (handle == 0) return null;
 	if (lastWidget != null && lastHandle == handle) return lastWidget;
 	long index = OS.g_object_get_qdata (handle, SWT_OBJECT_INDEX) - 1;
@@ -3485,33 +3495,33 @@ protected void init () {
 }
 
 void initializeCallbacks () {
-	closures = new long [Widget.LAST_SIGNAL];
-	closuresCount = new int[Widget.LAST_SIGNAL];
-	closuresProc = new long [Widget.LAST_SIGNAL];
-	signalIds = new int [Widget.LAST_SIGNAL];
+	closures = new long [NativeWidget.LAST_SIGNAL];
+	closuresCount = new int[NativeWidget.LAST_SIGNAL];
+	closuresProc = new long [NativeWidget.LAST_SIGNAL];
+	signalIds = new int [NativeWidget.LAST_SIGNAL];
 
 	/* Cache signals for GtkWidget */
-	signalIds [Widget.BUTTON_PRESS_EVENT] = OS.g_signal_lookup (OS.button_press_event, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.BUTTON_RELEASE_EVENT] = OS.g_signal_lookup (OS.button_release_event, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.CONFIGURE_EVENT] = OS.g_signal_lookup (OS.configure_event, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.DELETE_EVENT] = OS.g_signal_lookup (OS.delete_event, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.ENTER_NOTIFY_EVENT] = OS.g_signal_lookup (OS.enter_notify_event, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.EVENT_AFTER] = OS.g_signal_lookup (OS.event_after, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.EXPOSE_EVENT] = OS.g_signal_lookup (OS.draw, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.EXPOSE_EVENT_INVERSE] = OS.g_signal_lookup (OS.draw, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.FOCUS] = OS.g_signal_lookup (OS.focus, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.FOCUS_IN_EVENT] = OS.g_signal_lookup (OS.focus_in_event, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.FOCUS_OUT_EVENT] = OS.g_signal_lookup (OS.focus_out_event, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.GRAB_FOCUS] = OS.g_signal_lookup (OS.grab_focus, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.HIDE] = OS.g_signal_lookup (OS.hide, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.KEY_PRESS_EVENT] = OS.g_signal_lookup (OS.key_press_event, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.KEY_RELEASE_EVENT] = OS.g_signal_lookup (OS.key_release_event, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.LEAVE_NOTIFY_EVENT] = OS.g_signal_lookup (OS.leave_notify_event, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.MAP] = OS.g_signal_lookup (OS.map, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.MAP_EVENT] = OS.g_signal_lookup (OS.map_event, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.MNEMONIC_ACTIVATE] = OS.g_signal_lookup (OS.mnemonic_activate, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.MOTION_NOTIFY_EVENT] = OS.g_signal_lookup (OS.motion_notify_event, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.COMPUTE_SIZE] = OS.g_signal_lookup(OS.compute_size, GTK.GTK_TYPE_WIDGET() );
+	signalIds [NativeWidget.BUTTON_PRESS_EVENT] = OS.g_signal_lookup (OS.button_press_event, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.BUTTON_RELEASE_EVENT] = OS.g_signal_lookup (OS.button_release_event, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.CONFIGURE_EVENT] = OS.g_signal_lookup (OS.configure_event, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.DELETE_EVENT] = OS.g_signal_lookup (OS.delete_event, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.ENTER_NOTIFY_EVENT] = OS.g_signal_lookup (OS.enter_notify_event, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.EVENT_AFTER] = OS.g_signal_lookup (OS.event_after, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.EXPOSE_EVENT] = OS.g_signal_lookup (OS.draw, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.EXPOSE_EVENT_INVERSE] = OS.g_signal_lookup (OS.draw, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.FOCUS] = OS.g_signal_lookup (OS.focus, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.FOCUS_IN_EVENT] = OS.g_signal_lookup (OS.focus_in_event, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.FOCUS_OUT_EVENT] = OS.g_signal_lookup (OS.focus_out_event, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.GRAB_FOCUS] = OS.g_signal_lookup (OS.grab_focus, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.HIDE] = OS.g_signal_lookup (OS.hide, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.KEY_PRESS_EVENT] = OS.g_signal_lookup (OS.key_press_event, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.KEY_RELEASE_EVENT] = OS.g_signal_lookup (OS.key_release_event, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.LEAVE_NOTIFY_EVENT] = OS.g_signal_lookup (OS.leave_notify_event, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.MAP] = OS.g_signal_lookup (OS.map, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.MAP_EVENT] = OS.g_signal_lookup (OS.map_event, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.MNEMONIC_ACTIVATE] = OS.g_signal_lookup (OS.mnemonic_activate, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.MOTION_NOTIFY_EVENT] = OS.g_signal_lookup (OS.motion_notify_event, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.COMPUTE_SIZE] = OS.g_signal_lookup(OS.compute_size, GTK.GTK_TYPE_WIDGET() );
 	/*
 	 * Connect to the "popped-up" signal if the user has specified the
 	 * SWT_MENU_LOCATION_DEBUGGING environment variable.
@@ -3519,21 +3529,21 @@ void initializeCallbacks () {
 	if (OS.SWT_MENU_LOCATION_DEBUGGING) {
 		long menuType = GTK3.GTK_TYPE_MENU ();
 		OS.g_type_class_ref (menuType);
-		signalIds [Widget.POPPED_UP] = OS.g_signal_lookup (OS.popped_up, menuType);
+		signalIds [NativeWidget.POPPED_UP] = OS.g_signal_lookup (OS.popped_up, menuType);
 	} else {
-		signalIds [Widget.POPPED_UP] = 0;
+		signalIds [NativeWidget.POPPED_UP] = 0;
 	}
-	signalIds [Widget.POPUP_MENU] = OS.g_signal_lookup (OS.popup_menu, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.REALIZE] = OS.g_signal_lookup (OS.realize, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.SCROLL_EVENT] = OS.g_signal_lookup (OS.scroll_event, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.SHOW] = OS.g_signal_lookup (OS.show, GTK.GTK_TYPE_WIDGET ());
-	if (!GTK.GTK4) signalIds[Widget.SHOW_HELP] = OS.g_signal_lookup(OS.show_help, GTK.GTK_TYPE_WIDGET());
-	if (!GTK.GTK4) signalIds[Widget.SIZE_ALLOCATE] = OS.g_signal_lookup(OS.size_allocate, GTK.GTK_TYPE_WIDGET());
-	signalIds [Widget.STYLE_UPDATED] = OS.g_signal_lookup (OS.style_updated, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.UNMAP] = OS.g_signal_lookup (OS.unmap, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.UNMAP_EVENT] = OS.g_signal_lookup (OS.unmap_event, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.UNREALIZE] = OS.g_signal_lookup (OS.realize, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.WINDOW_STATE_EVENT] = OS.g_signal_lookup (OS.window_state_event, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.POPUP_MENU] = OS.g_signal_lookup (OS.popup_menu, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.REALIZE] = OS.g_signal_lookup (OS.realize, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.SCROLL_EVENT] = OS.g_signal_lookup (OS.scroll_event, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.SHOW] = OS.g_signal_lookup (OS.show, GTK.GTK_TYPE_WIDGET ());
+	if (!GTK.GTK4) signalIds[NativeWidget.SHOW_HELP] = OS.g_signal_lookup(OS.show_help, GTK.GTK_TYPE_WIDGET());
+	if (!GTK.GTK4) signalIds[NativeWidget.SIZE_ALLOCATE] = OS.g_signal_lookup(OS.size_allocate, GTK.GTK_TYPE_WIDGET());
+	signalIds [NativeWidget.STYLE_UPDATED] = OS.g_signal_lookup (OS.style_updated, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.UNMAP] = OS.g_signal_lookup (OS.unmap, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.UNMAP_EVENT] = OS.g_signal_lookup (OS.unmap_event, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.UNREALIZE] = OS.g_signal_lookup (OS.realize, GTK.GTK_TYPE_WIDGET ());
+	signalIds [NativeWidget.WINDOW_STATE_EVENT] = OS.g_signal_lookup (OS.window_state_event, GTK.GTK_TYPE_WIDGET ());
 
 	windowCallback2 = new Callback (this, "windowProc", 2); //$NON-NLS-1$
 	windowProc2 = windowCallback2.getAddress ();
@@ -3581,93 +3591,93 @@ void initializeCallbacks () {
 			long.class, long.class, long.class}); //$NON-NLS-1$
 	notifyProc = notifyCallback.getAddress();
 
-	closuresProc [Widget.NOTIFY_STATE] = notifyProc;
-	closuresProc [Widget.DPI_CHANGED] = notifyProc;
+	closuresProc [NativeWidget.NOTIFY_STATE] = notifyProc;
+	closuresProc [NativeWidget.DPI_CHANGED] = notifyProc;
 
-	closuresProc [Widget.ACTIVATE] = windowProc2;
-	closuresProc [Widget.ACTIVATE_INVERSE] = windowProc2;
-	closuresProc [Widget.CHANGED] = windowProc2;
-	closuresProc [Widget.CLICKED] = windowProc2;
-	closuresProc [Widget.CLOSE_REQUEST] = windowProc2;
-	closuresProc [Widget.CREATE_MENU_PROXY] = windowProc2;
-	closuresProc [Widget.DAY_SELECTED] = windowProc2;
-	closuresProc [Widget.DAY_SELECTED_DOUBLE_CLICK] = windowProc2;
-	closuresProc [Widget.HIDE] = windowProc2;
-	closuresProc [Widget.GRAB_FOCUS] = windowProc2;
-	closuresProc [Widget.MAP] = windowProc2;
-	closuresProc [Widget.MONTH_CHANGED] = windowProc2;
-	closuresProc [Widget.OUTPUT] = windowProc2;
-	closuresProc [Widget.POPUP_MENU] = windowProc2;
-	closuresProc [Widget.PREEDIT_CHANGED] = windowProc2;
-	closuresProc [Widget.REALIZE] = windowProc2;
-	closuresProc [Widget.SELECT] = windowProc2;
-	closuresProc [Widget.SELECTION_DONE] = windowProc2;
-	closuresProc [Widget.SHOW] = windowProc2;
-	closuresProc [Widget.START_INTERACTIVE_SEARCH] = windowProc2;
-	closuresProc [Widget.STYLE_UPDATED] = windowProc2;
-	closuresProc [Widget.VALUE_CHANGED] = windowProc2;
-	closuresProc [Widget.UNMAP] = windowProc2;
-	closuresProc [Widget.UNREALIZE] = windowProc2;
-	closuresProc [Widget.BACKSPACE] = windowProc2;
-	closuresProc [Widget.BACKSPACE_INVERSE] = windowProc2;
-	closuresProc [Widget.COPY_CLIPBOARD] = windowProc2;
-	closuresProc [Widget.COPY_CLIPBOARD_INVERSE] = windowProc2;
-	closuresProc [Widget.CUT_CLIPBOARD] = windowProc2;
-	closuresProc [Widget.CUT_CLIPBOARD_INVERSE] = windowProc2;
-	closuresProc [Widget.PASTE_CLIPBOARD] = windowProc2;
-	closuresProc [Widget.PASTE_CLIPBOARD_INVERSE] = windowProc2;
+	closuresProc [NativeWidget.ACTIVATE] = windowProc2;
+	closuresProc [NativeWidget.ACTIVATE_INVERSE] = windowProc2;
+	closuresProc [NativeWidget.CHANGED] = windowProc2;
+	closuresProc [NativeWidget.CLICKED] = windowProc2;
+	closuresProc [NativeWidget.CLOSE_REQUEST] = windowProc2;
+	closuresProc [NativeWidget.CREATE_MENU_PROXY] = windowProc2;
+	closuresProc [NativeWidget.DAY_SELECTED] = windowProc2;
+	closuresProc [NativeWidget.DAY_SELECTED_DOUBLE_CLICK] = windowProc2;
+	closuresProc [NativeWidget.HIDE] = windowProc2;
+	closuresProc [NativeWidget.GRAB_FOCUS] = windowProc2;
+	closuresProc [NativeWidget.MAP] = windowProc2;
+	closuresProc [NativeWidget.MONTH_CHANGED] = windowProc2;
+	closuresProc [NativeWidget.OUTPUT] = windowProc2;
+	closuresProc [NativeWidget.POPUP_MENU] = windowProc2;
+	closuresProc [NativeWidget.PREEDIT_CHANGED] = windowProc2;
+	closuresProc [NativeWidget.REALIZE] = windowProc2;
+	closuresProc [NativeWidget.SELECT] = windowProc2;
+	closuresProc [NativeWidget.SELECTION_DONE] = windowProc2;
+	closuresProc [NativeWidget.SHOW] = windowProc2;
+	closuresProc [NativeWidget.START_INTERACTIVE_SEARCH] = windowProc2;
+	closuresProc [NativeWidget.STYLE_UPDATED] = windowProc2;
+	closuresProc [NativeWidget.VALUE_CHANGED] = windowProc2;
+	closuresProc [NativeWidget.UNMAP] = windowProc2;
+	closuresProc [NativeWidget.UNREALIZE] = windowProc2;
+	closuresProc [NativeWidget.BACKSPACE] = windowProc2;
+	closuresProc [NativeWidget.BACKSPACE_INVERSE] = windowProc2;
+	closuresProc [NativeWidget.COPY_CLIPBOARD] = windowProc2;
+	closuresProc [NativeWidget.COPY_CLIPBOARD_INVERSE] = windowProc2;
+	closuresProc [NativeWidget.CUT_CLIPBOARD] = windowProc2;
+	closuresProc [NativeWidget.CUT_CLIPBOARD_INVERSE] = windowProc2;
+	closuresProc [NativeWidget.PASTE_CLIPBOARD] = windowProc2;
+	closuresProc [NativeWidget.PASTE_CLIPBOARD_INVERSE] = windowProc2;
 
 	windowCallback3 = new Callback (this, "windowProc", 3); //$NON-NLS-1$
 	windowProc3 = windowCallback3.getAddress ();
 
-	closuresProc [Widget.BUTTON_PRESS_EVENT] = windowProc3;
-	closuresProc [Widget.BUTTON_PRESS_EVENT_INVERSE] = windowProc3;
-	closuresProc [Widget.BUTTON_RELEASE_EVENT] = windowProc3;
-	closuresProc [Widget.BUTTON_RELEASE_EVENT_INVERSE] = windowProc3;
-	closuresProc [Widget.COMMIT] = windowProc3;
-	closuresProc [Widget.CONFIGURE_EVENT] = windowProc3;
-	closuresProc [Widget.DELETE_EVENT] = windowProc3;
-	closuresProc [Widget.ENTER_NOTIFY_EVENT] = windowProc3;
-	closuresProc [Widget.EVENT_AFTER] = windowProc3;
-	closuresProc [Widget.EXPOSE_EVENT] = windowProc3;
-	closuresProc [Widget.EXPOSE_EVENT_INVERSE] = windowProc3;
-	closuresProc [Widget.FOCUS] = windowProc3;
-	closuresProc [Widget.FOCUS_IN_EVENT] = windowProc3;
-	closuresProc [Widget.FOCUS_OUT_EVENT] = windowProc3;
-	closuresProc [Widget.KEY_PRESS_EVENT] = windowProc3;
-	closuresProc [Widget.KEY_RELEASE_EVENT] = windowProc3;
-	closuresProc [Widget.INPUT] = windowProc3;
-	closuresProc [Widget.LEAVE_NOTIFY_EVENT] = windowProc3;
-	closuresProc [Widget.MAP_EVENT] = windowProc3;
-	closuresProc [Widget.MNEMONIC_ACTIVATE] = windowProc3;
-	closuresProc [Widget.MOTION_NOTIFY_EVENT] = windowProc3;
-	closuresProc [Widget.MOTION_NOTIFY_EVENT_INVERSE] = windowProc3;
-	closuresProc [Widget.MOVE_FOCUS] = windowProc3;
-	closuresProc [Widget.POPULATE_POPUP] = windowProc3;
-	closuresProc [Widget.SCROLL_EVENT] = windowProc3;
-	closuresProc [Widget.SHOW_HELP] = windowProc3;
-	closuresProc [Widget.SIZE_ALLOCATE] = windowProc3;
-	closuresProc [Widget.TOGGLED] = windowProc3;
-	closuresProc [Widget.UNMAP_EVENT] = windowProc3;
-	closuresProc [Widget.WINDOW_STATE_EVENT] = windowProc3;
-	closuresProc [Widget.DIRECTION_CHANGED] = windowProc3;
+	closuresProc [NativeWidget.BUTTON_PRESS_EVENT] = windowProc3;
+	closuresProc [NativeWidget.BUTTON_PRESS_EVENT_INVERSE] = windowProc3;
+	closuresProc [NativeWidget.BUTTON_RELEASE_EVENT] = windowProc3;
+	closuresProc [NativeWidget.BUTTON_RELEASE_EVENT_INVERSE] = windowProc3;
+	closuresProc [NativeWidget.COMMIT] = windowProc3;
+	closuresProc [NativeWidget.CONFIGURE_EVENT] = windowProc3;
+	closuresProc [NativeWidget.DELETE_EVENT] = windowProc3;
+	closuresProc [NativeWidget.ENTER_NOTIFY_EVENT] = windowProc3;
+	closuresProc [NativeWidget.EVENT_AFTER] = windowProc3;
+	closuresProc [NativeWidget.EXPOSE_EVENT] = windowProc3;
+	closuresProc [NativeWidget.EXPOSE_EVENT_INVERSE] = windowProc3;
+	closuresProc [NativeWidget.FOCUS] = windowProc3;
+	closuresProc [NativeWidget.FOCUS_IN_EVENT] = windowProc3;
+	closuresProc [NativeWidget.FOCUS_OUT_EVENT] = windowProc3;
+	closuresProc [NativeWidget.KEY_PRESS_EVENT] = windowProc3;
+	closuresProc [NativeWidget.KEY_RELEASE_EVENT] = windowProc3;
+	closuresProc [NativeWidget.INPUT] = windowProc3;
+	closuresProc [NativeWidget.LEAVE_NOTIFY_EVENT] = windowProc3;
+	closuresProc [NativeWidget.MAP_EVENT] = windowProc3;
+	closuresProc [NativeWidget.MNEMONIC_ACTIVATE] = windowProc3;
+	closuresProc [NativeWidget.MOTION_NOTIFY_EVENT] = windowProc3;
+	closuresProc [NativeWidget.MOTION_NOTIFY_EVENT_INVERSE] = windowProc3;
+	closuresProc [NativeWidget.MOVE_FOCUS] = windowProc3;
+	closuresProc [NativeWidget.POPULATE_POPUP] = windowProc3;
+	closuresProc [NativeWidget.SCROLL_EVENT] = windowProc3;
+	closuresProc [NativeWidget.SHOW_HELP] = windowProc3;
+	closuresProc [NativeWidget.SIZE_ALLOCATE] = windowProc3;
+	closuresProc [NativeWidget.TOGGLED] = windowProc3;
+	closuresProc [NativeWidget.UNMAP_EVENT] = windowProc3;
+	closuresProc [NativeWidget.WINDOW_STATE_EVENT] = windowProc3;
+	closuresProc [NativeWidget.DIRECTION_CHANGED] = windowProc3;
 
 	windowCallback4 = new Callback (this, "windowProc", 4); //$NON-NLS-1$
 	windowProc4 = windowCallback4.getAddress ();
 
-	closuresProc [Widget.DELETE_RANGE] = windowProc4;
-	closuresProc [Widget.DELETE_TEXT] = windowProc4;
-	closuresProc [Widget.ICON_RELEASE] = windowProc4;
-	closuresProc [Widget.ROW_ACTIVATED] = windowProc4;
-	closuresProc [Widget.SCROLL_CHILD] = windowProc4;
-	closuresProc [Widget.STATUS_ICON_POPUP_MENU] = windowProc4;
-	closuresProc [Widget.SWITCH_PAGE] = windowProc4;
-	closuresProc [Widget.TEST_COLLAPSE_ROW] = windowProc4;
-	closuresProc [Widget.TEST_EXPAND_ROW] = windowProc4;
-	closuresProc [Widget.ROW_HAS_CHILD_TOGGLED] = windowProc4;
-	closuresProc [Widget.DELETE_FROM_CURSOR] = windowProc4;
-	closuresProc [Widget.DELETE_FROM_CURSOR_INVERSE] = windowProc4;
-	closuresProc [Widget.SIZE_ALLOCATE_GTK4] = windowProc4;
+	closuresProc [NativeWidget.DELETE_RANGE] = windowProc4;
+	closuresProc [NativeWidget.DELETE_TEXT] = windowProc4;
+	closuresProc [NativeWidget.ICON_RELEASE] = windowProc4;
+	closuresProc [NativeWidget.ROW_ACTIVATED] = windowProc4;
+	closuresProc [NativeWidget.SCROLL_CHILD] = windowProc4;
+	closuresProc [NativeWidget.STATUS_ICON_POPUP_MENU] = windowProc4;
+	closuresProc [NativeWidget.SWITCH_PAGE] = windowProc4;
+	closuresProc [NativeWidget.TEST_COLLAPSE_ROW] = windowProc4;
+	closuresProc [NativeWidget.TEST_EXPAND_ROW] = windowProc4;
+	closuresProc [NativeWidget.ROW_HAS_CHILD_TOGGLED] = windowProc4;
+	closuresProc [NativeWidget.DELETE_FROM_CURSOR] = windowProc4;
+	closuresProc [NativeWidget.DELETE_FROM_CURSOR_INVERSE] = windowProc4;
+	closuresProc [NativeWidget.SIZE_ALLOCATE_GTK4] = windowProc4;
 
 	windowCallback5 = new Callback (this, "windowProc", 5); //$NON-NLS-1$
 	windowProc5 = windowCallback5.getAddress ();
@@ -3678,21 +3688,21 @@ void initializeCallbacks () {
 	 */
 	changeValue = new Callback (this, "changeValue", boolean.class, new Type [] {long.class, int.class, double.class, long.class}); //$NON-NLS-1$
 	changeValueProc = changeValue.getAddress ();
-	closuresProc [Widget.CHANGE_VALUE] = changeValueProc;
+	closuresProc [NativeWidget.CHANGE_VALUE] = changeValueProc;
 
-	closuresProc [Widget.EXPAND_COLLAPSE_CURSOR_ROW] = windowProc5;
-	closuresProc [Widget.INSERT_TEXT] = windowProc5;
-	closuresProc [Widget.TEXT_BUFFER_INSERT_TEXT] = windowProc5;
-	closuresProc [Widget.MOVE_CURSOR] = windowProc5;
-	closuresProc [Widget.MOVE_CURSOR_INVERSE] = windowProc5;
+	closuresProc [NativeWidget.EXPAND_COLLAPSE_CURSOR_ROW] = windowProc5;
+	closuresProc [NativeWidget.INSERT_TEXT] = windowProc5;
+	closuresProc [NativeWidget.TEXT_BUFFER_INSERT_TEXT] = windowProc5;
+	closuresProc [NativeWidget.MOVE_CURSOR] = windowProc5;
+	closuresProc [NativeWidget.MOVE_CURSOR_INVERSE] = windowProc5;
 
-	if (signalIds [Widget.POPPED_UP] != 0) {
+	if (signalIds [NativeWidget.POPPED_UP] != 0) {
 		windowCallback6 = new Callback (this, "windowProc", 6); //$NON-NLS-1$
 		windowProc6 = windowCallback6.getAddress ();
-		closuresProc [Widget.POPPED_UP] = windowProc6;
+		closuresProc [NativeWidget.POPPED_UP] = windowProc6;
 	}
 
-	for (int i = 0; i < Widget.LAST_SIGNAL; i++) {
+	for (int i = 0; i < NativeWidget.LAST_SIGNAL; i++) {
 		if (closuresProc[i] != 0) {
 			closures [i] = OS.g_cclosure_new(closuresProc [i], i, 0);
 		}
@@ -3815,7 +3825,7 @@ void initializeSystemSettings () {
 
 void initializeWidgetTable () {
 	indexTable = new int [GROW_SIZE];
-	widgetTable = new Widget [GROW_SIZE];
+	widgetTable = new NativeWidget [GROW_SIZE];
 	for (int i=0; i<GROW_SIZE-1; i++) indexTable [i] = i + 1;
 	indexTable [GROW_SIZE - 1] = -1;
 }
@@ -3924,6 +3934,26 @@ boolean isValidThread () {
 	return thread == Thread.currentThread ();
 }
 
+//TODO FACADE added
+public Point map (Control from, Control to, Point point) {
+	return map(Widget.checkNative(from), Widget.checkNative(to), point);
+}
+
+//TODO FACADE added
+public Point map (Control from, Control to, int x, int y) {
+	return map(Widget.checkNative(from), Widget.checkNative(to), x, y);
+}
+
+//TODO FACADE added
+public Rectangle map (Control from, Control to, Rectangle rectangle) {
+	return map(Widget.checkNative(from), Widget.checkNative(to), rectangle);
+}
+
+//TODO FACADE added
+public Rectangle map (Control from, Control to, int x, int y, int width, int height) {
+	return map(Widget.checkNative(from), Widget.checkNative(to), x, y, width, height);
+}
+
 /**
  * Maps a point from one coordinate system to another.
  * When the control is null, coordinates are mapped to
@@ -3960,7 +3990,7 @@ boolean isValidThread () {
  *
  * @since 2.1.2
  */
-public Point map (Control from, Control to, Point point) {
+public Point map (NativeControl from, NativeControl to, Point point) {
 	checkDevice ();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
 	return map (from, to, point.x, point.y);
@@ -4002,7 +4032,7 @@ public Point map (Control from, Control to, Point point) {
  *
  * @since 2.1.2
  */
-public Point map (Control from, Control to, int x, int y) {
+public Point map (NativeControl from, NativeControl to, int x, int y) {
 	checkDevice ();
 	if (from != null && from.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (to != null && to.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -4023,7 +4053,7 @@ public Point map (Control from, Control to, int x, int y) {
 	return point;
 }
 
-Point mapInPixels (Control from, Control to, int x, int y) {
+Point mapInPixels (NativeControl from, NativeControl to, int x, int y) {
 	checkDevice ();
 	if (from != null && from.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (to != null && to.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -4080,16 +4110,21 @@ Point mapInPixels (Control from, Control to, int x, int y) {
  *
  * @since 2.1.2
  */
-public Rectangle map (Control from, Control to, Rectangle rectangle) {
+public Rectangle map (NativeControl from, NativeControl to, Rectangle rectangle) {
 	checkDevice();
 	if (rectangle == null) error (SWT.ERROR_NULL_ARGUMENT);
 	return map (from, to, rectangle.x, rectangle.y, rectangle.width, rectangle.height);
 }
 
-Rectangle mapInPixels (Control from, Control to, Rectangle rectangle) {
+Rectangle mapInPixels (NativeControl from, NativeControl to, Rectangle rectangle) {
 	checkDevice();
 	if (rectangle == null) error (SWT.ERROR_NULL_ARGUMENT);
 	return mapInPixels (from, to, rectangle.x, rectangle.y, rectangle.width, rectangle.height);
+}
+
+// TODO FACADE added
+Rectangle mapInPixels (Control from, Control to, Rectangle rectangle) {
+	return mapInPixels (Widget.checkNative(from), Widget.checkNative(to), rectangle);
 }
 
 /**
@@ -4130,7 +4165,7 @@ Rectangle mapInPixels (Control from, Control to, Rectangle rectangle) {
  *
  * @since 2.1.2
  */
-public Rectangle map (Control from, Control to, int x, int y, int width, int height) {
+public Rectangle map (NativeControl from, NativeControl to, int x, int y, int width, int height) {
 	checkDevice();
 	if (from != null && from.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (to != null && to.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -4154,7 +4189,7 @@ public Rectangle map (Control from, Control to, int x, int y, int width, int hei
 	return rect;
 }
 
-Rectangle mapInPixels (Control from, Control to, int x, int y, int width, int height) {
+Rectangle mapInPixels (NativeControl from, NativeControl to, int x, int y, int width, int height) {
 	checkDevice();
 	if (from != null && from.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (to != null && to.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -4183,7 +4218,7 @@ Rectangle mapInPixels (Control from, Control to, int x, int y, int width, int he
 }
 
 long mouseHoverProc (long handle) {
-	Widget widget = getWidget (handle);
+	NativeWidget widget = getWidget (handle);
 	// null the GSource id as our implementation always returns 0 so the hover is
 	// hidden and this leads to the GSource to be destroyed
 	mouseHoverId = 0;
@@ -4456,7 +4491,7 @@ void putGdkEvents () {
 	if (gdkEventCount != 0) {
 		for (int i = 0; i < gdkEventCount; i++) {
 			long event = gdkEvents [i];
-			Widget widget = gdkEventWidgets [i];
+			NativeWidget widget = gdkEventWidgets [i];
 			if (widget == null || !widget.isDisposed ()) {
 				if (GTK.GTK4) {
 					long display = GDK.gdk_display_get_default();
@@ -4570,7 +4605,7 @@ protected void release () {
 			exceptions.stash (ex);
 		}
 
-		for (Shell shell : getShells ()) {
+		for (NativeShell shell : getNativeShells ()) {
 			try {
 				if (!shell.isDisposed ()) shell.dispose ();
 			} catch (Error | RuntimeException ex) {
@@ -4730,7 +4765,7 @@ void releaseDisplay () {
 	caretCallback = null;
 
 	/* Release closures */
-	for (int i = 0; i < Widget.LAST_SIGNAL; i++) {
+	for (int i = 0; i < NativeWidget.LAST_SIGNAL; i++) {
 		if (closures [i] != 0) OS.g_closure_unref (closures [i]);
 	}
 	if (shellMapProcClosure != 0) OS.g_closure_unref (shellMapProcClosure);
@@ -4964,7 +4999,7 @@ void removeMouseHoverTimeout (long handle) {
 	mouseHoverHandle = 0;
 }
 
-void removePopup (Menu menu) {
+void removePopup (NativeMenu menu) {
 	if (popups == null) return;
 	for (int i=0; i<popups.length; i++) {
 		if (popups [i] == menu) {
@@ -4974,10 +5009,10 @@ void removePopup (Menu menu) {
 	}
 }
 
-Widget removeWidget (long handle) {
+NativeWidget removeWidget (long handle) {
 	if (handle == 0) return null;
 	lastWidget = null;
-	Widget widget = null;
+	NativeWidget widget = null;
 	int index;
 	long data = OS.g_object_get_qdata (handle, SWT_OBJECT_INDEX) - 1;
 	if(data < 0 || data > Integer.MAX_VALUE) {
@@ -5012,7 +5047,7 @@ String debugInfoForIndex(long index) {
 
 void dpiChanged(int newScaleFactor) {
 	DPIUtil.setDeviceZoom (DPIUtil.mapDPIToZoom(getDPI().x * newScaleFactor));
-	Shell[] shells = getShells();
+	NativeShell[] shells = getNativeShells();
 	for (int i = 0; i < shells.length; i++) {
 		shells[i].layout(true, true);
 	}
@@ -5021,17 +5056,17 @@ void dpiChanged(int newScaleFactor) {
 String dumpWidgetTableInfo() {
 	StringBuilder sb = new StringBuilder(", table size: ");
 	sb.append(widgetTable.length);
-	IdentityHashMap<Widget, Collection<Integer>> disposed = new IdentityHashMap<>();
+	IdentityHashMap<NativeWidget, Collection<Integer>> disposed = new IdentityHashMap<>();
 	for (int i = 0; i < widgetTable.length; i++) {
-		Widget w = widgetTable[i];
+		NativeWidget w = widgetTable[i];
 		if (w != null && w.isDisposed()) {
 			disposed.computeIfAbsent(w, k -> new ArrayList<>()).add(Integer.valueOf(i));
 		}
 	}
 	if (!disposed.isEmpty()) {
 		sb.append(", leaked elements:");
-		Set<Entry<Widget,Collection<Integer>>> set = disposed.entrySet();
-		for (Entry<Widget, Collection<Integer>> entry : set) {
+		Set<Entry<NativeWidget,Collection<Integer>>> set = disposed.entrySet();
+		for (Entry<NativeWidget, Collection<Integer>> entry : set) {
 			sb.append(" ").append(entry.getKey()).append(" at ").append(entry.getValue()).append(",");
 		}
 	}
@@ -5059,9 +5094,9 @@ boolean runDeferredEvents () {
 		eventQueue [length] = null;
 
 		/* Run the event */
-		Widget widget = event.widget;
+		NativeWidget widget = Widget.checkNative(event.widget);
 		if (widget != null && !widget.isDisposed ()) {
-			Widget item = event.item;
+			NativeWidget item = Widget.checkNative(event.item);
 			if (item == null || !item.isDisposed ()) {
 				run = true;
 				widget.sendEvent (event);
@@ -5082,12 +5117,12 @@ boolean runDeferredEvents () {
 
 boolean runDeferredLayouts () {
 	if (layoutDeferredCount != 0) {
-		Composite[] temp = layoutDeferred;
+		NativeComposite[] temp = layoutDeferred;
 		int count = layoutDeferredCount;
 		layoutDeferred = null;
 		layoutDeferredCount = 0;
 		for (int i = 0; i < count; i++) {
-			Composite comp = temp[i];
+			NativeComposite comp = temp[i];
 			if (!comp.isDisposed()) comp.setLayoutDeferred (false);
 		}
 		update ();
@@ -5100,7 +5135,7 @@ boolean runPopups () {
 	if (popups == null) return false;
 	boolean result = false;
 	while (popups != null) {
-		Menu menu = popups [0];
+		NativeMenu menu = popups [0];
 		if (menu == null) break;
 		int length = popups.length;
 		System.arraycopy (popups, 1, popups, 0, --length);
@@ -5119,9 +5154,9 @@ boolean runSettings () {
 	saveResources ();
 	initializeSystemColors ();
 	sendEvent (SWT.Settings, null);
-	Shell [] shells = getShells ();
+	NativeShell [] shells = getNativeShells ();
 	for (int i=0; i<shells.length; i++) {
-		Shell shell = shells [i];
+		NativeShell shell = shells [i];
 		if (!shell.isDisposed ()) {
 			shell.fixStyle ();
 			shell.redraw (true);
@@ -5133,18 +5168,18 @@ boolean runSettings () {
 
 boolean runSkin () {
 	if (skinCount > 0) {
-		Widget [] oldSkinWidgets = skinList;
+		NativeWidget [] oldSkinWidgets = skinList;
 		int count = skinCount;
-		skinList = new Widget[GROW_SIZE];
+		skinList = new NativeWidget[GROW_SIZE];
 		skinCount = 0;
 		if (eventTable != null && eventTable.hooks(SWT.Skin)) {
 			for (int i = 0; i < count; i++) {
-				Widget widget = oldSkinWidgets[i];
+				NativeWidget widget = oldSkinWidgets[i];
 				if (widget != null && !widget.isDisposed()) {
-					widget.state &= ~Widget.SKIN_NEEDED;
+					widget.state &= ~NativeWidget.SKIN_NEEDED;
 					oldSkinWidgets[i] = null;
 					Event event = new Event ();
-					event.widget = widget;
+					event.widget = widget.wrap();
 					sendEvent (SWT.Skin, event);
 				}
 			}
@@ -5314,13 +5349,13 @@ public void setData (String key, Object value) {
 		}
 	}
 	if (key.equals (SET_MODAL_DIALOG)) {
-		setModalDialog ((Dialog) value);
+		setModalDialog (value instanceof NativeDialog nativeDialog ? nativeDialog : ((Dialog) value).getWrappedDialog());
 		return;
 	}
 	if (key.equals (ADD_WIDGET_KEY)) {
 		Object [] data = (Object []) value;
 		long handle = ((LONG) data [0]).value;
-		Widget widget = (Widget) data [1];
+		NativeWidget widget = (NativeWidget) data [1];
 		if (widget != null) {
 			addWidget (handle, widget);
 		} else {
@@ -5428,14 +5463,14 @@ long setDirectionProc (long widget, long direction) {
 	return 0;
 }
 
-void setModalDialog (Dialog modalDailog) {
+void setModalDialog (NativeDialog modalDailog) {
 	this.modalDialog = modalDailog;
-	Shell [] shells = getShells ();
+	NativeShell [] shells = getNativeShells ();
 	for (int i=0; i<shells.length; i++) shells [i].updateModal ();
 }
 
-void setModalShell (Shell shell) {
-	if (modalShells == null) modalShells = new Shell [4];
+void setModalShell (NativeShell shell) {
+	if (modalShells == null) modalShells = new NativeShell [4];
 	int index = 0, length = modalShells.length;
 	while (index < length) {
 		if (modalShells [index] == shell) return;
@@ -5443,12 +5478,12 @@ void setModalShell (Shell shell) {
 		index++;
 	}
 	if (index == length) {
-		Shell [] newModalShells = new Shell [length + 4];
+		NativeShell [] newModalShells = new NativeShell [length + 4];
 		System.arraycopy (modalShells, 0, newModalShells, 0, length);
 		modalShells = newModalShells;
 	}
 	modalShells [index] = shell;
-	Shell [] shells = getShells ();
+	NativeShell [] shells = getNativeShells ();
 	for (int i=0; i<shells.length; i++) shells [i].updateModal ();
 }
 
@@ -5539,7 +5574,7 @@ public final Consumer<Error> getErrorHandler () {
 	return errorHandler;
 }
 
-void showIMWindow (Control control) {
+void showIMWindow (NativeControl control) {
 	imControl = control;
 	if (preeditWindow == 0) {
 		preeditWindow = GTK3.gtk_window_new (GTK.GTK_WINDOW_POPUP);
@@ -5559,7 +5594,7 @@ void showIMWindow (Control control) {
 	long imHandle = control.imHandle ();
 	GTK.gtk_im_context_get_preedit_string (imHandle, preeditString, pangoAttrs, null);
 	if (preeditString [0] != 0 && C.strlen (preeditString [0]) > 0) {
-		Control widget = control.findBackgroundControl ();
+		NativeControl widget = control.findBackgroundControl ();
 		if (widget == null) widget = control;
 		widget.setBackgroundGdkRGBA (preeditWindow, control.getBackgroundGdkRGBA());
 		widget.setForegroundGdkRGBA (preeditLabel, control.getForegroundGdkRGBA());
@@ -5781,13 +5816,13 @@ void resetCaretTiming() {
 }
 
 long sizeAllocateProc (long handle, long arg0, long user_data) {
-	Widget widget = getWidget (user_data);
+	NativeWidget widget = getWidget (user_data);
 	if (widget == null) return 0;
 	return widget.sizeAllocateProc (handle, arg0, user_data);
 }
 
 long sizeRequestProc (long handle, long arg0, long user_data) {
-	Widget widget = getWidget (user_data);
+	NativeWidget widget = getWidget (user_data);
 	if (widget == null) return 0;
 	return widget.sizeRequestProc (handle, arg0, user_data);
 }
@@ -5894,7 +5929,7 @@ public void sendPostExternalEventDispatchEvent () {
 	sendJDKInternalEvent (SWT.PostExternalEventDispatch);
 }
 
-void setCurrentCaret (Caret caret) {
+void setCurrentCaret (NativeCaret caret) {
 	if (caretId != 0) OS.g_source_remove(caretId);
 	caretId = 0;
 	currentCaret = caret;
@@ -5908,7 +5943,7 @@ void setCurrentCaret (Caret caret) {
 }
 
 long shellMapProc (long handle, long arg0, long user_data) {
-	Widget widget = getWidget (handle);
+	NativeWidget widget = getWidget (handle);
 	if (widget == null) return 0;
 	return widget.shellMapProc (handle, arg0, user_data);
 }
@@ -6032,7 +6067,7 @@ static int untranslateKey (int key) {
  *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  *
- * @see Control#update()
+ * @see NativeControl#update()
  */
 public void update () {
 	checkDevice ();
@@ -6065,14 +6100,14 @@ void wakeThread () {
 
 void enterMotionProc(long controller, double x, double y, long user_data) {
 	long handle = GTK.gtk_event_controller_get_widget(controller);
-	Widget widget = getWidget(handle);
+	NativeWidget widget = getWidget(handle);
 
 	if (widget != null) widget.enterMotionProc(controller, x, y, user_data);
 }
 
 boolean scrollProc(long controller, double dx, double dy, long user_data) {
 	long handle = GTK.gtk_event_controller_get_widget(controller);
-	Widget widget = getWidget(handle);
+	NativeWidget widget = getWidget(handle);
 
 	if (widget != null) return widget.scrollProc(controller, dx, dy, user_data);
 
@@ -6081,19 +6116,19 @@ boolean scrollProc(long controller, double dx, double dy, long user_data) {
 
 void focusProc(long controller, long user_data) {;
 	long handle = GTK.gtk_event_controller_get_widget(controller);
-	Widget widget = getWidget(handle);
+	NativeWidget widget = getWidget(handle);
 
 	if (widget != null) widget.focusProc(controller, user_data);
 }
 
 void windowActiveProc(long handle, long user_data) {;
-	Widget widget = getWidget(handle);
+	NativeWidget widget = getWidget(handle);
 	if (widget != null) widget.windowActiveProc(handle, user_data);
 }
 
 boolean keyPressReleaseProc(long controller, int keyval, int keycode, int state, long user_data) {
 	long handle = GTK.gtk_event_controller_get_widget(controller);
-	Widget widget = getWidget(handle);
+	NativeWidget widget = getWidget(handle);
 	if (widget == null) return false;
 
 	return widget.keyPressReleaseProc(controller, keyval, keycode, state, user_data);
@@ -6101,14 +6136,14 @@ boolean keyPressReleaseProc(long controller, int keyval, int keycode, int state,
 
 void gesturePressReleaseProc(long gesture, int n_press, double x, double y, long user_data) {
 	long handle = GTK.gtk_event_controller_get_widget(gesture);
-	Widget widget = getWidget(handle);
+	NativeWidget widget = getWidget(handle);
 
 	if (widget != null) widget.gesturePressReleaseProc(gesture, n_press, x, y, user_data);
 }
 
 void leaveProc(long controller, long user_data) {
 	long handle = GTK.gtk_event_controller_get_widget(controller);
-	Widget widget = getWidget(handle);
+	NativeWidget widget = getWidget(handle);
 
 	if (widget != null) widget.leaveProc(controller, handle, user_data);
 }
@@ -6118,19 +6153,19 @@ void computeSizeProc(long toplevel, long size, long user_data) {
 }
 
 void activateProc(long action, long parameter, long user_data) {
-	Widget widget = getWidget(user_data);
+	NativeWidget widget = getWidget(user_data);
 	if(widget == null) return;
 
 	widget.gtk_activate(user_data);
 }
 
 void resizeProc(long handle, int width, int height) {
-	Widget widget = getWidget(handle);
+	NativeWidget widget = getWidget(handle);
 	if (widget != null) widget.gtk_size_allocate(handle, 0);
 }
 
 long notifyProc (long object, long param_spec, long user_data) {
-	Widget widget = getWidget (object);
+	NativeWidget widget = getWidget (object);
 	if (widget == null) {
 		widget = getWidget (user_data);
 		if (widget == null) {
@@ -6140,50 +6175,50 @@ long notifyProc (long object, long param_spec, long user_data) {
 			 * There is a corner case where the connected handle is actually
 			 * a GdkSurface.
 			 */
-			return widget.notifyProc(object, param_spec, Widget.NOTIFY_STATE);
+			return widget.notifyProc(object, param_spec, NativeWidget.NOTIFY_STATE);
 		}
 	}
 	return widget.notifyProc(object, param_spec, user_data);
 }
 
 boolean changeValue (long handle, int scroll, double value, long user_data) {
-	Widget widget = getWidget (handle);
+	NativeWidget widget = getWidget (handle);
 	if (widget == null) return false;
 	return widget.gtk_change_value(handle, scroll, value, user_data);
 }
 
 long windowProc (long handle, long user_data) {
-	Widget widget = getWidget (handle);
+	NativeWidget widget = getWidget (handle);
 	if (widget == null) return 0;
 	return widget.windowProc (handle, user_data);
 }
 
 long windowProc (long handle, long arg0, long user_data) {
-	Widget widget = getWidget (handle);
+	NativeWidget widget = getWidget (handle);
 	if (widget == null) return 0;
 	return widget.windowProc (handle, arg0, user_data);
 }
 
 long windowProc (long handle, long arg0, long arg1, long user_data) {
-	Widget widget = getWidget (handle);
+	NativeWidget widget = getWidget (handle);
 	if (widget == null) return 0;
 	return widget.windowProc (handle, arg0, arg1, user_data);
 }
 
 long windowProc (long handle, long arg0, long arg1, long arg2, long user_data) {
-	Widget widget = getWidget (handle);
+	NativeWidget widget = getWidget (handle);
 	if (widget == null) return 0;
 	return widget.windowProc (handle, arg0, arg1, arg2, user_data);
 }
 
 long windowProc (long handle, long arg0, long arg1, long arg2, long arg3, long user_data) {
-	Widget widget = getWidget (handle);
+	NativeWidget widget = getWidget (handle);
 	if (widget == null) return 0;
 	return widget.windowProc (handle, arg0, arg1, arg2, arg3, user_data);
 }
 
 long windowTimerProc (long handle) {
-	Widget widget = getWidget (handle);
+	NativeWidget widget = getWidget (handle);
 	if (widget == null) return 0;
 	return widget.timerProc (handle);
 }

@@ -89,7 +89,7 @@ public class ListDragSourceEffect extends DragSourceEffect {
 		//TEMPORARY CODE
 		if (dragList.isListening(SWT.EraseItem) || dragList.isListening (SWT.PaintItem)) return null;
 
-		long handle = dragList.handle;
+		long handle = Widget.checkNative(dragList).handle;
 		long selection = GTK.gtk_tree_view_get_selection (handle);
 		long [] model = null;
 		long list = GTK.gtk_tree_selection_get_selected_rows (selection, model);

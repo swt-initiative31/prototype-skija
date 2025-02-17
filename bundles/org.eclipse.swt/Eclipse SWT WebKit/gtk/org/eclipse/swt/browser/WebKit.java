@@ -106,7 +106,7 @@ class WebKit extends WebBrowser {
 	 *
 	 * See bug 579257.
 	 */
-	private static Browser parentBrowser;
+	private static NativeBrowser parentBrowser;
 
 	/**
 	 * Timeout used for javascript execution / deadlock detection.
@@ -331,10 +331,10 @@ static String getString (long strPtr) {
 	return new String (Converter.mbcsToWcs (buffer));
 }
 
-static Browser FindBrowser (long webView) {
+static NativeBrowser FindBrowser (long webView) {
 	if (webView == 0) return null;
 	long parent = GTK.gtk_widget_get_parent (webView);
-	return (Browser)Display.getCurrent ().findWidget (parent);
+	return (NativeBrowser)Display.getCurrent ().findWidget (parent);
 }
 
 static boolean IsInstalled () {
@@ -356,7 +356,7 @@ static long JSDOMEventProc (long arg0, long event, long user_data) {
 		* in one or more WebKit instances (indicates that this instance may not be
 		* receiving events from the DOM).  This check is done up-front for performance.
 		*/
-		final Browser browser = FindBrowser (arg0);
+		final NativeBrowser browser = FindBrowser (arg0);
 		if (browser != null && user_data == WIDGET_EVENT){
 			/* this instance does need to use the GDK event to create an SWT event to send */
 			switch (GDK.GDK_EVENT_TYPE (event)) {
@@ -388,7 +388,7 @@ static long JSDOMEventProc (long arg0, long event, long user_data) {
 							}
 							case GDK.GDK_Escape: {
 								Event keyEvent = new Event ();
-								keyEvent.widget = browser;
+								keyEvent.widget = browser.wrap();
 								keyEvent.type = SWT.KeyDown;
 								keyEvent.keyCode = keyEvent.character = SWT.ESC;
 								if ((state[0] & GDK.GDK_MOD1_MASK) != 0) keyEvent.stateMask |= SWT.ALT;
@@ -425,7 +425,7 @@ static long RequestProc (long request, long user_data) {
 	String response = "null";
 
 	long webView = WebKitGTK.webkit_uri_scheme_request_get_web_view(request);
-	Browser browser = FindBrowser(webView);
+	NativeBrowser browser = FindBrowser(webView);
 	if (browser != null) {
 		BrowserFunction function = null;
 		Object[] args = null;
@@ -476,7 +476,7 @@ static long Proc (long handle, long user_data) {
 		return webkit_download_finished(webKitDownload);
 	}
 
-	Browser browser = FindBrowser (webView);
+	NativeBrowser browser = FindBrowser (webView);
 	if (browser == null) return 0;
 	WebKit webkit = (WebKit)browser.webBrowser;
 	return webkit.webViewProc (handle, user_data);
@@ -516,7 +516,7 @@ static long Proc (long handle, long arg0, long user_data) {
 	{ // Callbacks connected with a WebView.
 		assert handle != 0 : "Webview shouldn't be null here";
 		long webView = handle;
-		Browser browser = FindBrowser (webView);
+		NativeBrowser browser = FindBrowser (webView);
 		if (browser == null) return 0;
 		WebKit webkit = (WebKit)browser.webBrowser;
 		return webkit.webViewProc (webView, arg0, user_data);
@@ -524,7 +524,7 @@ static long Proc (long handle, long arg0, long user_data) {
 }
 
 static long Proc (long handle, long arg0, long arg1, long user_data) {
-	Browser browser = FindBrowser (handle);
+	NativeBrowser browser = FindBrowser (handle);
 	if (browser == null) return 0;
 	WebKit webkit = (WebKit)browser.webBrowser;
 	return webkit.webViewProc (handle, arg0, arg1, user_data);
@@ -532,7 +532,7 @@ static long Proc (long handle, long arg0, long arg1, long user_data) {
 
 static long Proc (long handle, long arg0, long arg1, long arg2, long user_data) {
 	long webView = handle;
-	Browser browser = FindBrowser (webView);
+	NativeBrowser browser = FindBrowser (webView);
 	if (browser == null) return 0;
 	WebKit webkit = (WebKit)browser.webBrowser;
 
@@ -643,12 +643,12 @@ public void create (Composite parent, int style) {
 	}
 
 	Composite parentShell = parent.getParent();
-	Browser parentBrowser = WebKit.parentBrowser;
+	NativeBrowser parentBrowser = WebKit.parentBrowser;
 	if (parentBrowser == null && parentShell != null) {
 		Control[] children = parentShell.getChildren();
 		for (int i = 0; i < children.length; i++) {
-			if (children[i] instanceof Browser) {
-				parentBrowser = (Browser) children[i];
+			if (Widget.checkNative(children[i]) instanceof NativeBrowser browserChild) {
+				parentBrowser = browserChild;
 				break;
 			}
 		}
@@ -679,9 +679,9 @@ public void create (Composite parent, int style) {
 
 	// Webkit2 Signal Documentation: https://webkitgtk.org/reference/webkit2gtk/stable/WebKitWebView.html#WebKitWebView--title
 	if (GTK.GTK4) {
-		OS.swt_fixed_add(browser.handle, webView);
+		OS.swt_fixed_add(nativeBrowser.handle, webView);
 	} else {
-		GTK3.gtk_container_add (browser.handle, webView);
+		GTK3.gtk_container_add (nativeBrowser.handle, webView);
 	}
 
 	OS.g_signal_connect (webView, WebKitGTK.close, Proc2.getAddress (), CLOSE_WEB_VIEW);
@@ -706,7 +706,7 @@ public void create (Composite parent, int style) {
 	OS.g_signal_connect (WebKitGTK.webkit_web_context_get_default(), WebKitGTK.download_started, Proc3.getAddress (), DOWNLOAD_STARTED);
 
 	GTK.gtk_widget_show (webView);
-	GTK.gtk_widget_show (browser.handle);
+	GTK.gtk_widget_show (nativeBrowser.handle);
 
 	// Webview 'title' property
 	OS.g_signal_connect (webView, WebKitGTK.notify_title, 						Proc3.getAddress (), NOTIFY_TITLE);
@@ -775,10 +775,10 @@ public void create (Composite parent, int style) {
 			}
 		}
 	};
-	browser.addListener (SWT.Dispose, listener);
-	browser.addListener (SWT.FocusIn, listener);
-	browser.addListener (SWT.KeyDown, listener);
-	browser.addListener (SWT.Resize, listener);
+	nativeBrowser.addListener (SWT.Dispose, listener);
+	nativeBrowser.addListener (SWT.FocusIn, listener);
+	nativeBrowser.addListener (SWT.KeyDown, listener);
+	nativeBrowser.addListener (SWT.Resize, listener);
 
 	/*
 	* Bug in WebKitGTK.  MouseOver/MouseLeave events are not consistently sent from
@@ -788,7 +788,7 @@ public void create (Composite parent, int style) {
 	* but in order to do this the Browser's default sub-window check behavior must
 	* be changed.
 	*/
-	browser.setData (KEY_CHECK_SUBWINDOW, Boolean.FALSE);
+	nativeBrowser.setData (KEY_CHECK_SUBWINDOW, Boolean.FALSE);
 
 	/*
 	 * Bug in WebKitGTK.  In WebKitGTK 1.10.x a crash can occur if an
@@ -798,12 +798,12 @@ public void create (Composite parent, int style) {
 	 */
 	int major = vers[0], minor = vers[1];
 	if (major == 1 && minor >= 10) {
-		Rectangle minSize = browser.computeTrim (0, 0, 2, 2);
-		Point size = browser.getSize ();
+		Rectangle minSize = nativeBrowser.computeTrim (0, 0, 2, 2);
+		Point size = nativeBrowser.getSize ();
 		size.x += minSize.width; size.y += minSize.height;
-		browser.setSize (size);
+		nativeBrowser.setSize (size);
 		size.x -= minSize.width; size.y -= minSize.height;
-		browser.setSize (size);
+		nativeBrowser.setSize (size);
 	}
 }
 
@@ -1784,7 +1784,7 @@ void onDispose (Event e) {
 	/* Browser could have been disposed by one of the Dispose listeners */
 	if (!browser.isDisposed()) {
 		/* invoke onbeforeunload handlers */
-		if (!browser.isClosing) {
+		if (!nativeBrowser.isClosing) {
 			close (false);
 		}
 	}
@@ -2154,7 +2154,7 @@ long webkit_create_web_view (long web_view, long frame) {
 	};
 	try {
 		nonBlockingEvaluate++; 	  // running evaluate() inside openWindowListener and waiting for return leads to deadlock. Bug 512001
-		parentBrowser = browser;
+		parentBrowser = nativeBrowser;
 		fireOpenWindowListeners.run();// Permit evaluate()/execute() to execute scripts in listener, but do not provide return value.
 	} catch (Exception e) {
 		throw e; // rethrow execption if thrown, but decrement counter first.
@@ -2163,11 +2163,11 @@ long webkit_create_web_view (long web_view, long frame) {
 		nonBlockingEvaluate--;
 	}
 	Browser browser = null;
-	if (newEvent.browser != null && newEvent.browser.webBrowser instanceof WebKit) {
+	if (newEvent.browser != null && newEvent.browser.getWrappedWidget().webBrowser instanceof WebKit) {
 		browser = newEvent.browser;
 	}
 	if (browser != null && !browser.isDisposed ()) {
-		return ((WebKit)browser.webBrowser).webView;
+		return ((WebKit)browser.getWrappedWidget().webBrowser).webView;
 	}
 	return 0;
 }
@@ -2184,10 +2184,10 @@ static long webkit_download_decide_destination(long webKitDownload, long suggest
 	final String fileName = getString(suggested_filename);
 	long webView = WebKitGTK.webkit_download_get_web_view(webKitDownload);
 	if (webView != 0) {
-		Browser browser = FindBrowser (webView);
+		NativeBrowser browser = FindBrowser (webView);
 		if (browser == null || browser.isDisposed() || browser.isClosing) return 0;
 
-		FileDialog dialog = new FileDialog (browser.getShell (), SWT.SAVE);
+		NativeFileDialog dialog = new NativeFileDialog (browser.getShell (), SWT.SAVE);
 		dialog.setFileName (fileName);
 		String title = Compatibility.getMessage ("SWT_FileDownload"); //$NON-NLS-1$
 		dialog.setText (title);
@@ -2343,11 +2343,11 @@ long webkit_load_changed (long web_view, int status, long user_data) {
 		case WebKitGTK.WEBKIT2_LOAD_FINISHED: {
 			if (firstLoad) {
 				GtkAllocation allocation = new GtkAllocation ();
-				GTK.gtk_widget_get_allocation(browser.handle, allocation);
+				GTK.gtk_widget_get_allocation(nativeBrowser.handle, allocation);
 				if (GTK.GTK4) {
-					GTK4.gtk_widget_size_allocate (browser.handle, allocation, -1);
+					GTK4.gtk_widget_size_allocate (nativeBrowser.handle, allocation, -1);
 				} else {
-					GTK3.gtk_widget_size_allocate(browser.handle, allocation);
+					GTK3.gtk_widget_size_allocate(nativeBrowser.handle, allocation);
 				}
 				firstLoad = false;
 			}
