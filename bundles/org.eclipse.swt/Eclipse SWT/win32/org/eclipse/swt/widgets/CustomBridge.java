@@ -25,6 +25,7 @@ final class CustomBridge {
 	private final Composite composite;
 
 	private CustomControl mouseOverControl;
+	private CustomControl focusControl;
 
 	public CustomBridge(Composite composite) {
 		this.composite = Objects.requireNonNull(composite);
@@ -37,6 +38,11 @@ final class CustomBridge {
 			case SWT.MouseExit -> onMouseExit(e);
 			case SWT.MouseDown,
 			     SWT.MouseUp -> onMouseDownOrUp(e);
+			case SWT.FocusIn -> onFocusIn(e);
+			case SWT.FocusOut -> onFocusOut(e);
+			case SWT.Traverse -> onTraverse(e);
+			case SWT.KeyDown -> onKeyDown(e);
+			case SWT.KeyUp -> onKeyUp(e);
 			}
 		};
 		composite.addListener(SWT.Paint, listener);
@@ -45,6 +51,11 @@ final class CustomBridge {
 		composite.addListener(SWT.MouseExit, listener);
 		composite.addListener(SWT.MouseDown, listener);
 		composite.addListener(SWT.MouseUp, listener);
+		composite.addListener(SWT.FocusIn, listener);
+		composite.addListener(SWT.FocusOut, listener);
+		composite.addListener(SWT.Traverse, listener);
+		composite.addListener(SWT.KeyDown, listener);
+		composite.addListener(SWT.KeyUp, listener);
 	}
 
 	public int getChildCount() {
@@ -71,6 +82,26 @@ final class CustomBridge {
 
 	public CustomControl[] getChildren() {
 		return childs.toArray(new CustomControl[0]);
+	}
+
+	public boolean isFocusControl(CustomControl control) {
+		Objects.requireNonNull(control);
+		return control == focusControl;
+	}
+
+	public void setFocus(CustomControl control) {
+		if (control == focusControl) {
+			return;
+		}
+
+		if (focusControl != null) {
+			focusControl.sendEvent(SWT.FocusOut);
+		}
+		this.focusControl = control;
+		composite.getDisplay().focusControl = control;
+		if (focusControl != null) {
+			control.sendEvent(SWT.FocusOut);
+		}
 	}
 
 	private void onPaint(Event e) {
@@ -146,6 +177,45 @@ final class CustomBridge {
 		}
 		if (mouseControl != null) {
 			sendEvent(mouseControl, e);
+		}
+	}
+
+	private void onFocusIn(Event event) {
+	}
+
+	private void onFocusOut(Event event) {
+		focusControl = null;
+	}
+
+	/** @see org.eclipse.swt.widgets.Control.traverse(org.eclipse.swt.widgets.Event) */
+	private void onTraverse(Event event) {
+		if (focusControl == null) {
+			return;
+		}
+
+		switch (event.detail) {
+		case SWT.TRAVERSE_ESCAPE -> focusControl.traverseEscape();
+		case SWT.TRAVERSE_RETURN -> focusControl.traverseReturn();
+		case SWT.TRAVERSE_TAB_NEXT -> focusControl.traverseGroup(true);
+		case SWT.TRAVERSE_TAB_PREVIOUS -> focusControl.traverseGroup(false);
+		case SWT.TRAVERSE_ARROW_NEXT -> focusControl.traverseItem(true);
+		case SWT.TRAVERSE_ARROW_PREVIOUS -> focusControl.traverseItem(false);
+		case SWT.TRAVERSE_MNEMONIC -> focusControl.traverseMnemonic(event.character);
+		case SWT.TRAVERSE_PAGE_NEXT -> focusControl.traversePage(true);
+		case SWT.TRAVERSE_PAGE_PREVIOUS -> focusControl.traversePage(false);
+		}
+		event.doit = false;
+	}
+
+	private void onKeyDown(Event event) {
+		if (focusControl != null) {
+			sendEvent(focusControl, event);
+		}
+	}
+
+	private void onKeyUp(Event event) {
+		if (focusControl != null) {
+			sendEvent(focusControl, event);
 		}
 	}
 
