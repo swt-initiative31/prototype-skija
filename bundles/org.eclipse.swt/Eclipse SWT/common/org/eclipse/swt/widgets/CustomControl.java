@@ -14,7 +14,9 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 
 /**
  * Temporary API.
@@ -25,6 +27,8 @@ public abstract class CustomControl extends NativeBasedCustomControl {
 
 	protected abstract ControlRenderer getRenderer();
 
+	private boolean visible = true;
+	private boolean enabled = true;
 	private int x;
 	private int y;
 	private int width;
@@ -34,6 +38,56 @@ public abstract class CustomControl extends NativeBasedCustomControl {
 
 	protected CustomControl(Composite parent, int style) {
 		super(parent, style);
+		parent.addCustomChild(this);
+	}
+
+	@Override
+	void destroyWidget() {
+		parent.removeCustomChild(this);
+	}
+
+	@Override
+	void reskinWidget() {
+	}
+
+	@Override
+	void createHandle() {
+	}
+
+	@Override
+	void register() {
+	}
+
+	@Override
+	void subclass() {
+	}
+
+	@Override
+	void setDefaultFont() {
+	}
+
+	@Override
+	void checkGesture() {
+	}
+
+	@Override
+	public boolean getEnabled() {
+		checkWidget();
+		return enabled;
+	}
+
+	@Override
+	public void setEnabled(boolean enabled) {
+		checkWidget();
+		if (enabled == this.enabled) {
+			return;
+		}
+
+		this.enabled = enabled;
+		if (parent.isEnabled()) {
+			redraw();
+		}
+		// todo fix focus if invisible
 	}
 
 	@Override
@@ -50,7 +104,6 @@ public abstract class CustomControl extends NativeBasedCustomControl {
 
 		this.width = width;
 		this.height = height;
-		super.setSize(this.width, this.height);
 		redraw();
 	}
 
@@ -110,19 +163,60 @@ public abstract class CustomControl extends NativeBasedCustomControl {
 		this.y = y;
 		this.width = width;
 		this.height = height;
-		super.setBounds(x, y, width, height);
 		redraw();
 	}
 
 	@Override
-	public void setEnabled(boolean enabled) {
-		if (enabled == getEnabled()) {
+	public void redraw() {
+		if (!isVisible()) {
 			return;
 		}
-		super.setEnabled(enabled);
-		if (parent.isEnabled()) {
-			redraw();
+
+		final Rectangle bounds = getBounds();
+		if (bounds.width < 1 || bounds.height < 1) {
+			return;
 		}
+		parent.redraw(bounds.x, bounds.y, bounds.width, bounds.height, false);
+	}
+
+	@Override
+	public boolean isVisible() {
+		checkWidget();
+		return getVisible() && parent.isVisible();
+	}
+
+	@Override
+	public boolean getVisible() {
+		checkWidget();
+		return visible;
+	}
+
+	@Override
+	public void setVisible(boolean visible) {
+		checkWidget();
+		if (visible == this.visible) {
+			return;
+		}
+
+		this.visible = visible;
+		redraw();
+		// todo fix focus if invisible
+	}
+
+	@Override
+	boolean isShowing() {
+		if (!isVisible()) {
+			return false;
+		}
+		Control control = this;
+		while (control != null) {
+			Point size = control.getSize();
+			if (size.x == 0 || size.y == 0) {
+				return false;
+			}
+			control = control.parent;
+		}
+		return true;
 	}
 
 	@Override
