@@ -82,6 +82,9 @@ public abstract class Widget {
 	}
 
 	public static NativeControl checkNative(Control control) {
+		if (control instanceof Button button) {
+			return checkNative(button);
+		}
 		return control != null ? (NativeControl) control.getWrappedWidget() : null;
 	}
 
@@ -89,7 +92,10 @@ public abstract class Widget {
 		return controls != null ? Arrays.stream(controls).map(Widget::checkNative).toArray(NativeControl[]::new) : null;
 	}
 
-	static NativeButton checkNative(Button button) {
+	static NativeControl checkNative(Button button) {
+		if (button != null && button.getWrappedWidget() instanceof CustomButton customButton) {
+			return customButton;
+		}
 		return button != null ? (NativeButton) button.getWrappedWidget() : null;
 	}
 
