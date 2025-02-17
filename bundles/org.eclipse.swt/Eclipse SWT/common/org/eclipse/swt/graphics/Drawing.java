@@ -19,8 +19,6 @@ public final class Drawing {
 
 	private static final Color DUMMY_COLOR = new Color(0, 0, 0, 0);
 
-	private static Color widgetBackground;
-
 	private Drawing() {
 	}
 
@@ -54,30 +52,28 @@ public final class Drawing {
 	 */
 	public static void drawWithGC(Control control, GC originalGC, Consumer<GC> drawOperation) {
 		Rectangle bounds = control.getBounds();
-		if (originalGC != null && originalGC.innerGC instanceof NativeGC nativeGC) {
-			if (nativeGC.drawable != control) {
+		final Rectangle clipping;
+		if (originalGC != null) {
+			if (originalGC.innerGC instanceof NativeGC nativeGC && nativeGC.drawable != control) {
 				throw new IllegalStateException("given GC was not created for given control");
 			}
-		}
 
-		if (originalGC == null) {
+			clipping = originalGC.getClipping();
+		} else {
 			originalGC = new GC(control);
+			clipping = bounds;
 		}
-		originalGC.setFont(control.getFont());
-		originalGC.setForeground(control.getForeground());
-		originalGC.setBackground(control.getBackground());
-		originalGC.setClipping(new Rectangle(0, 0, bounds.width, bounds.height));
-		originalGC.setAntialias(SWT.ON);
 
-		GC gc = createGraphicsContext(originalGC);
+		if (control instanceof Composite composite) {
+			final Rectangle clientArea = composite.getClientArea();
+			clipping.intersect(clientArea);
+		}
+
+		GC gc = createGraphicsContext(originalGC, false);
 
 		Image doubleBufferingImage = null;
 
 		if (SWT.getPlatform().equals("win32") || SWT.getPlatform().equals("gtk")) {
-			// Extract background color on first execution
-			if (widgetBackground == null) {
-				extractAndStoreBackgroundColor(bounds, originalGC);
-			}
 			control.style |= SWT.NO_BACKGROUND;
 		}
 
@@ -87,8 +83,8 @@ public final class Drawing {
 				doubleBufferingImage = new Image(gc.getDevice(), bounds.width, bounds.height);
 				originalGC.copyArea(doubleBufferingImage, 0, 0);
 				GC doubleBufferingGC = new GC(doubleBufferingImage);
-				doubleBufferingGC.setForeground(originalGC.getForeground());
-				doubleBufferingGC.setBackground(widgetBackground);
+				doubleBufferingGC.setForeground(control.getForeground());
+				doubleBufferingGC.setBackground(control.getBackground());
 				doubleBufferingGC.setAntialias(SWT.ON);
 				doubleBufferingGC.fillRectangle(0, 0, bounds.width, bounds.height);
 				gc = doubleBufferingGC;
@@ -96,7 +92,10 @@ public final class Drawing {
 		}
 
 		try {
+			gc.fillRectangle(clipping);
+
 			drawOperation.accept(gc);
+
 			gc.commit();
 			if (doubleBufferingImage != null) {
 				originalGC.drawImage(doubleBufferingImage, 0, 0);
@@ -106,14 +105,6 @@ public final class Drawing {
 			gc.dispose();
 			originalGC.dispose();
 		}
-	}
-
-	private static void extractAndStoreBackgroundColor(Rectangle r, GC originalGC) {
-		Image backgroundColorImage = new Image(originalGC.getDevice(), r.width, r.height);
-		originalGC.copyArea(backgroundColorImage, 0, 0);
-		int pixel = backgroundColorImage.getImageData().getPixel(0, 0);
-		backgroundColorImage.dispose();
-		widgetBackground = SWT.convertPixelToColor(pixel);
 	}
 
 	/**

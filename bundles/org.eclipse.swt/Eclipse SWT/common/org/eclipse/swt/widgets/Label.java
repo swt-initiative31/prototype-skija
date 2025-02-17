@@ -168,6 +168,7 @@ public class Label extends CustomControl {
 
 	@Override
 	boolean isTabItem() {
+		// to not be focused by traverse events, e.g. tab key
 		return false;
 	}
 
@@ -515,7 +516,8 @@ public class Label extends CustomControl {
 	}
 
 	void onPaint(PaintEvent event) {
-		Drawing.drawWithGC(this, event.gc, this::doPaint);
+		//Drawing.drawWithGC(this, event.gc, this::doPaint);
+		doPaint(event.gc);
 	}
 
 	void doPaint(GC gc) {
