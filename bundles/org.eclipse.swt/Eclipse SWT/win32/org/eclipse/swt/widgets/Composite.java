@@ -1445,7 +1445,7 @@ LRESULT WM_LBUTTONDOWN (long wParam, long lParam) {
 	if (result == LRESULT.ZERO) return result;
 
 	/* Set focus for a canvas with no children */
-	if ((state & CANVAS) != 0) {
+	if ((state & CANVAS) != 0 && customBridge == null) {
 		if ((style & SWT.NO_FOCUS) == 0 && hooksKeys ()) {
 			if (OS.GetWindow (handle, OS.GW_CHILD) == 0) setFocus ();
 		}

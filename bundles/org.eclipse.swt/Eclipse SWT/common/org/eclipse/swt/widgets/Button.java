@@ -337,6 +337,7 @@ public class Button extends CustomControl {
 	}
 
 	private void onMouseDown(Event e) {
+		setFocus();
 		redraw();
 	}
 
@@ -461,7 +462,7 @@ public class Button extends CustomControl {
 			int textLeftOffset = contentArea.x + imageSpace;
 			gc.drawText(text, textLeftOffset, textTopOffset, DRAW_FLAGS);
 		}
-		if (hasFocus()) {
+		if (isFocusControl()) {
 			if (((style & SWT.RADIO) | (style & SWT.CHECK)) != 0) {
 				int textTopOffset = (r.height - 1 - textHeight) / 2;
 				int textLeftOffset = contentArea.x + imageSpace;
@@ -554,7 +555,7 @@ public class Button extends CustomControl {
 
 		// if the button has focus, the border also changes the color
 		Color fg = gc.getForeground();
-		if (hasFocus()) {
+		if (isFocusControl()) {
 			gc.setForeground(SELECTION_COLOR);
 		}
 		gc.drawRoundRectangle(x, y, w - 1, h - 1, 6, 6);
