@@ -12,6 +12,9 @@
 package org.eclipse.swt.graphics;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.*;
@@ -216,6 +219,16 @@ public class SkijaGC extends GCHandle {
 				0, 0, originalDrawingSize.x, originalDrawingSize.y);
 		transferImage.dispose();
 	}
+
+	public void debug() {
+		io.github.humbleui.skija.Image im = surface.makeImageSnapshot();
+		byte[] imageBytes = EncoderPNG.encode(im).getBytes();
+        try {
+            Files.write(Paths.get("debug.png"), imageBytes, StandardOpenOption.CREATE);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
 	@Override
 	public Point textExtent(String string) {
