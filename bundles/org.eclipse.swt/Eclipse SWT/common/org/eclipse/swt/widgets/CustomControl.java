@@ -229,4 +229,47 @@ public abstract class CustomControl extends NativeBasedCustomControl {
 		int height = hHint == SWT.DEFAULT ? defaultSize.y : hHint;
 		return new Point(width, height);
 	}
+
+	@Override
+	boolean hasFocus() {
+		final Composite nativeParent = getNativeParent();
+		return nativeParent.hasFocus()
+		       && nativeParent.getCustomBridge().isFocusControl(this);
+	}
+
+	@Override
+	public boolean forceFocus() {
+		checkWidget();
+		if (display.focusEvent == SWT.FocusOut) {
+			return false;
+		}
+		Decorations shell = menuShell();
+		shell.setSavedFocus(this);
+		if (!isEnabled() || !isVisible() || !isActive()) {
+			return false;
+		}
+		if (display.getActiveShell() != shell && !Display.isActivateShellOnForceFocus()) {
+			return false;
+		}
+		if (isFocusControl()) {
+			return true;
+		}
+		shell.setSavedFocus(null);
+
+		getNativeParent().getCustomBridge().setFocus(this);
+
+		if (isDisposed()) {
+			return false;
+		}
+		shell.setSavedFocus(this);
+		final boolean focusControl = isFocusControl();
+		if (focusControl) {
+			redraw();
+		}
+		return focusControl;
+	}
+
+	private Composite getNativeParent() {
+		return parent;
+	}
 }
