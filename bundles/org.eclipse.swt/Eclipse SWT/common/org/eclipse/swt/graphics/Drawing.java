@@ -54,28 +54,33 @@ public final class Drawing {
 	 */
 	public static void drawWithGC(Control control, GC originalGC, Consumer<GC> drawOperation) {
 		Rectangle bounds = control.getBounds();
+		final Rectangle clipping;
+		boolean usingTemporaryGC = false;
 		if (originalGC != null && originalGC.innerGC instanceof NativeGC nativeGC
 				&& nativeGC.drawable instanceof Control gcControl) {
 			if (gcControl != control) {
 				throw new IllegalStateException("given GC was not created for given control");
 			}
-		}
 
-		boolean usingTemporaryGC = false;
-		if (originalGC == null) {
+			clipping = originalGC.getClipping();
+		} else {
 			originalGC = new GC(control);
+			clipping = bounds;
 			usingTemporaryGC = true;
 		}
-		originalGC.setFont(control.getFont());
-		originalGC.setForeground(control.getForeground());
-		originalGC.setBackground(control.getBackground());
-		originalGC.setClipping(new Rectangle(0, 0, bounds.width, bounds.height));
-		originalGC.setAntialias(SWT.ON);
+
+		if (control instanceof Composite composite) {
+			final Rectangle clientArea = composite.getClientArea();
+			clipping.intersect(clientArea);
+		}
 
 		GC gc = createGraphicsContext(originalGC, control);
 
 		try {
+			gc.fillRectangle(clipping);
+
 			drawOperation.accept(gc);
+
 			gc.commit();
 		} finally {
 			gc.dispose();
