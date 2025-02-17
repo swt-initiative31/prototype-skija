@@ -331,10 +331,8 @@ public class Button extends CustomControl {
 	}
 
 	private void onPaint(Event event) {
-		if (!isVisible()) {
-			return;
-		}
-		Drawing.drawWithGC(this, event.gc, this::doPaint);
+		//Drawing.drawWithGC(this, event.gc, this::doPaint);
+		doPaint(event.gc);
 	}
 
 	private void onDispose(Event event) {
