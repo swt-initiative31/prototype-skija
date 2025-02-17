@@ -113,7 +113,7 @@ protected NativeItem (NativeWidget parent, int style, int index) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	/* Do Nothing - Subclassing is allowed */
 }
 
