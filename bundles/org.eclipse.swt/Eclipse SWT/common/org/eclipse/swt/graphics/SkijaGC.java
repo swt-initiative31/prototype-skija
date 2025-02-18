@@ -30,6 +30,9 @@ import io.github.humbleui.types.*;
 
 public class SkijaGC extends GCHandle {
 	private final Surface surface;
+	private final int offsetX;
+	private final int offsetY;
+
 	private Rectangle clipping;
 
 	private NativeGC innerGC;
@@ -46,6 +49,8 @@ public class SkijaGC extends GCHandle {
 			backgroundColor = extractBackgroundColor(gc);
 		surface = createSurface(backgroundColor);
 		clipping = innerGC.getClipping();
+		offsetX = clipping.x;
+		offsetY = clipping.y;
 		initFont();
 	}
 
@@ -175,7 +180,7 @@ public class SkijaGC extends GCHandle {
 		Rectangle originalArea = innerGC.getClipping();
 		Rectangle scaledArea = DPIUtil.autoScaleUp(originalArea);
 		innerGC.drawImage(transferImage, 0, 0, scaledArea.width, scaledArea.height, //
-				0, 0, originalArea.width, originalArea.height);
+				offsetX, offsetY, originalArea.width, originalArea.height);
 		transferImage.dispose();
 		surface.close();
 	}
@@ -213,7 +218,7 @@ public class SkijaGC extends GCHandle {
 	@Override
 	public void drawImage(Image image, int x, int y) {
 		Canvas canvas = surface.getCanvas();
-		canvas.drawImage(convertSWTImageToSkijaImage(image), DPIUtil.autoScaleUp(x), DPIUtil.autoScaleUp(y));
+		canvas.drawImage(convertSWTImageToSkijaImage(image), DPIUtil.autoScaleUp(x - offsetX), DPIUtil.autoScaleUp(y - offsetY));
 	}
 
 	@Override
@@ -510,7 +515,7 @@ public class SkijaGC extends GCHandle {
 		}
 		performDrawText(paint -> {
 			TextBlob textBlob = buildTextBlob(text);
-			Point point = calculateSymbolCenterPoint(x, y);
+			Point point = calculateSymbolCenterPoint(x - offsetX, y - offsetY);
 			surface.getCanvas().drawTextBlob(textBlob, point.x, point.y, paint);
 		});
 	}
@@ -740,7 +745,7 @@ public class SkijaGC extends GCHandle {
 				xCoord = i;
 				isXCoord = false;
 			} else {
-				ps.add(new io.github.humbleui.types.Point(xCoord, i));
+				ps.add(new io.github.humbleui.types.Point(xCoord - offsetX, i - offsetY));
 				isXCoord = true;
 			}
 		}
@@ -883,8 +888,8 @@ public class SkijaGC extends GCHandle {
 	}
 
 	private Rect createScaledRectangle(int x, int y, int width, int height) {
-		return new Rect(DPIUtil.autoScaleUp(x), DPIUtil.autoScaleUp(y), DPIUtil.autoScaleUp(x + width),
-				DPIUtil.autoScaleUp(y + height));
+		return new Rect(DPIUtil.autoScaleUp(x - offsetX), DPIUtil.autoScaleUp(y - offsetY),
+				DPIUtil.autoScaleUp(x + width - offsetX), DPIUtil.autoScaleUp(y + height - offsetY));
 	}
 
 	private float getScaledOffsetValue() {
@@ -900,8 +905,8 @@ public class SkijaGC extends GCHandle {
 	}
 
 	private RRect createScaledRoundRectangle(int x, int y, int width, int height, float arcWidth, float arcHeight) {
-		return new RRect(DPIUtil.autoScaleUp(x), DPIUtil.autoScaleUp(y), DPIUtil.autoScaleUp(x + width),
-				DPIUtil.autoScaleUp(y + height),
+		return new RRect(DPIUtil.autoScaleUp(x - offsetX), DPIUtil.autoScaleUp(y - offsetY),
+				DPIUtil.autoScaleUp(x + width - offsetX), DPIUtil.autoScaleUp(y + height - offsetY),
 				new float[] { DPIUtil.autoScaleUp(arcWidth), DPIUtil.autoScaleUp(arcHeight) });
 	}
 
