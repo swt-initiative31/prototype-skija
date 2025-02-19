@@ -1073,8 +1073,9 @@ public ImageData getImageData () {
  */
 @Deprecated
 public ImageData getImageDataAtCurrentZoom () {
-	if (this.genericImage)
+	if (this.genericImage) {
 		return imageDataProvider.getImageData(100);
+	}
 
 	if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 
@@ -1517,8 +1518,9 @@ public void internal_dispose_GC (long hDC, GCData data) {
  */
 @Override
 public boolean isDisposed() {
-	if (this.genericImage)
+	if (this.genericImage) {
 		return false;
+	}
 
 	return surface == 0;
 }
@@ -1607,8 +1609,9 @@ public static void drawScaled(GC gc, Image original, int width, int height, floa
 
 
 void setImageDataProvider(ImageDataProvider imgDataProv) {
-	if (!this.isDisposed())
+	if (!this.isDisposed()) {
 		dispose();
+	}
 	this.genericImage = true;
 	this.imageDataProvider = imgDataProv;
 }

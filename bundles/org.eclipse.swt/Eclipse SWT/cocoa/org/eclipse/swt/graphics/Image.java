@@ -1403,8 +1403,9 @@ public ImageData getImageDataAtCurrentZoom() {
  * @since 3.106
  */
 public ImageData getImageData(int zoom) {
-	if (this.genericImage)
+	if (this.genericImage) {
 		return imageDataProvider.getImageData(zoom);
+	}
 
 	if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	NSAutoreleasePool pool = null;
@@ -1726,8 +1727,9 @@ public void internal_dispose_GC (long hDC, GCData data) {
  */
 @Override
 public boolean isDisposed() {
-	if (this.genericImage)
+	if (this.genericImage) {
 		return false;
+	}
 
 	return handle == null;
 }
@@ -1855,8 +1857,9 @@ public static void drawScaled(GC gc, Image original, int width, int height, floa
  * @param res
  */
 void setImageDataProvider(ImageDataProvider imgDataProv) {
-	if (!this.isDisposed())
+	if (!this.isDisposed()) {
 		dispose();
+	}
 
 	this.genericImage = true;
 	this.imageDataProvider = imgDataProv;
