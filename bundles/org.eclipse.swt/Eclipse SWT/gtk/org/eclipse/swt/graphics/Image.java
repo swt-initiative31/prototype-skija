@@ -1607,14 +1607,14 @@ public static void drawScaled(GC gc, Image original, int width, int height, floa
 
 
 void setImageDataProvider(ImageDataProvider imgDataProv) {
-    if (!this.isDisposed())
-	dispose();
-    this.genericImage = true;
-    this.imageDataProvider = imgDataProv;
+	if (!this.isDisposed())
+		dispose();
+	this.genericImage = true;
+	this.imageDataProvider = imgDataProv;
 }
 
 Image(ImageDataProvider imgDataProv) {
-    this.genericImage = true;
-    this.imageDataProvider = imgDataProv;
+	this.genericImage = true;
+	this.imageDataProvider = imgDataProv;
 }
 }
