@@ -1316,7 +1316,7 @@ public ImageData getImageDataAtCurrentZoom() {
  */
 public ImageData getImageData(int zoom) {
 	if (this.genericImage)
-	    return imageDataProvider.getImageData(zoom);
+		return imageDataProvider.getImageData(zoom);
 
 	if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	NSAutoreleasePool pool = null;
@@ -1729,15 +1729,15 @@ public String toString () {
  * @param res
  */
 void setImageDataProvider(ImageDataProvider imgDataProv) {
-    if (!this.isDisposed())
-	dispose();
+	if (!this.isDisposed())
+		dispose();
 
-    this.genericImage = true;
-    this.imageDataProvider = imgDataProv;
+	this.genericImage = true;
+	this.imageDataProvider = imgDataProv;
 }
 
 Image(ImageDataProvider imgDataProv) {
-    this.genericImage = true;
-    this.imageDataProvider = imgDataProv;
+	this.genericImage = true;
+	this.imageDataProvider = imgDataProv;
 }
 }
