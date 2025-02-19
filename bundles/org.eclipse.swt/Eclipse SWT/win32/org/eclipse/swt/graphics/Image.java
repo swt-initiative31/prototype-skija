@@ -1450,7 +1450,7 @@ public ImageData getImageData() {
  */
 public ImageData getImageData (int zoom) {
 	if (this.genericImage)
-	    return imageDataProvider.getImageData(zoom);
+		return imageDataProvider.getImageData(zoom);
 
 	if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	int currentZoom = getZoom();
@@ -2443,10 +2443,10 @@ private class StaticZoomUpdater implements AutoCloseable {
 }
 
 void setImageDataProvider(ImageDataProvider imgDataProv) {
-    if (!this.isDisposed())
-	dispose();
-    this.genericImage = true;
-    this.imageDataProvider = imgDataProv;
+	if (!this.isDisposed())
+		dispose();
+	this.genericImage = true;
+	this.imageDataProvider = imgDataProv;
 }
 
 /**
@@ -2456,7 +2456,7 @@ void setImageDataProvider(ImageDataProvider imgDataProv) {
  * @param res
  */
 Image(ImageDataProvider imgDataProvider) {
-    this.genericImage = true;
-    this.imageDataProvider = imgDataProvider;
+	this.genericImage = true;
+	this.imageDataProvider = imgDataProvider;
 }
 }
