@@ -1449,8 +1449,9 @@ public ImageData getImageData() {
  * @since 3.106
  */
 public ImageData getImageData (int zoom) {
-	if (this.genericImage)
+	if (this.genericImage) {
 		return imageDataProvider.getImageData(zoom);
+	}
 
 	if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	int currentZoom = getZoom();
@@ -1504,8 +1505,9 @@ public ImageData getImageData (int zoom) {
  */
 @Deprecated
 public ImageData getImageDataAtCurrentZoom() {
-	if (this.genericImage)
+	if (this.genericImage) {
 		return imageDataProvider.getImageData(100);
+	}
 
 	if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	BITMAP bm;
@@ -2313,8 +2315,9 @@ public void internal_dispose_GC (long hDC, GCData data) {
  */
 @Override
 public boolean isDisposed() {
-	if(this.genericImage)
+	if (this.genericImage) {
 		return false;
+	}
 
 	return handle == 0;
 }
@@ -2443,8 +2446,9 @@ private class StaticZoomUpdater implements AutoCloseable {
 }
 
 void setImageDataProvider(ImageDataProvider imgDataProv) {
-	if (!this.isDisposed())
+	if (!this.isDisposed()) {
 		dispose();
+	}
 	this.genericImage = true;
 	this.imageDataProvider = imgDataProv;
 }
