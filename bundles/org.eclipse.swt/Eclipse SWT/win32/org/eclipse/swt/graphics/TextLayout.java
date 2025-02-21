@@ -182,19 +182,13 @@ public final class TextLayout extends Resource {
 	// heuristic that doesn't work properly. This needs improvement drastically.
 	private float getFontSize() {
 
-		if (ascent != -1 && descent != -1) {
-			return (float) ((Math.abs(ascent) + Math.abs(descent)) / 2.0 * 1.5);
+//		if (ascent != -1 && descent != -1) {
+//			return (float) ((Math.abs(ascent) + Math.abs(descent)) / 2.0 * 1.5);
+//		}
+
+		try (var skijaFont = getSkijaFont()) {
+			return skijaFont.getSize();
 		}
-
-		Font f = getFont();
-
-		if (f == null)
-			f = device.getSystemFont();
-
-		FontData fd = f.getFontData()[0];
-
-		return (float) (fd.getHeightF() * 2.2);
-
 	}
 
 	void computeRuns(GC gc) {
@@ -293,17 +287,15 @@ public final class TextLayout extends Resource {
 				lineOffsets[1] = 0;
 				lineBounds = new Rectangle[1];
 
-				Font f = getFont();
+				try (var skijaFont = getSkijaFont()) {
+					var fm = getSkijaFont().getMetrics();
 
-				FontMetrics fm = innerGC.getFontMetrics();
+					// TODO dummy calculation for the line height. This seems to
+					// work, no idea whether it is right.
+					int he = (int) (Math.abs(fm.getAscent()) + Math.abs(fm.getDescent()) + fm.getLeading());
 
-				// TODO dummy calculation for the line height. This seems to
-				// work, no idea whether it is right.
-				int he = Math.abs(fm.getAscent()) + Math.abs(fm.getDescent())
-						+ fm.getLeading();
-
-				lineBounds[0] = new Rectangle(0, 0, 0, he);
-
+					lineBounds[0] = new Rectangle(0, 0, 0, he);
+				}
 			}
 		}
 
@@ -872,20 +864,20 @@ public final class TextLayout extends Resource {
 
 		FontCollection fc = new FontCollection();
 		fc.setDefaultFontManager(fontMgr);
-		Font f = getFont();
 
-		if (f == null)
-			f = device.getSystemFont();
+		var skijaFont = getSkijaFont();
 
-		String fontFamily = f.getFontData()[0].getName();
+		String fontFamily = skijaFont.getTypeface().getFamilyName();
 
 		io.github.humbleui.skija.paragraph.TextStyle normal = new io.github.humbleui.skija.paragraph.TextStyle()
-				.setFontSize(getFontSize())
+				.setFontStyle(skijaFont.getTypeface().getFontStyle())
+				.setFontSize(skijaFont.getSize())
 				.setFontFamilies(new String[] { fontFamily })
 				.setColor(0xFF000000);
 
 		io.github.humbleui.skija.paragraph.TextStyle selectionStyle = new io.github.humbleui.skija.paragraph.TextStyle()
-				.setFontSize(getFontSize())
+				.setFontStyle(skijaFont.getTypeface().getFontStyle())
+				.setFontSize(skijaFont.getSize())
 				.setFontFamilies(new String[] { fontFamily })
 				.setForeground(new Paint().setColor(SkijaGC
 						.convertSWTColorToSkijaColor(selectionForeground)))
@@ -1080,6 +1072,7 @@ public final class TextLayout extends Resource {
 				&& ts.font.getFontData().length >= 1) {
 			try (var skijaFont = SkijaGC.convertToSkijaFont(ts.font)) {
 				fs = skijaFont.getTypeface().getFontStyle();
+				fontSize = skijaFont.getSize();
 			}
 		}
 
@@ -1361,6 +1354,10 @@ public final class TextLayout extends Resource {
 			return swtFont;
 
 		return innerGC.getFont();
+	}
+
+	private io.github.humbleui.skija.Font getSkijaFont() {
+		return SkijaGC.convertToSkijaFont(getFont());
 	}
 
 	/**
