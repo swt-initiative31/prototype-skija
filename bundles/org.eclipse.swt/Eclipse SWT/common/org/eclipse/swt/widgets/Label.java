@@ -584,7 +584,7 @@ public class Label extends CustomControl {
 				Rectangle imageRect = backgroundImage.getBounds();
 				// tile image to fill space
 				gc.setBackground(getBackground());
-				gc.fillRectangle(rect);
+				gc.fillRectangle(0, 0, rect.width, rect.height);
 				int xPos = 0;
 				while (xPos < rect.width) {
 					int yPos = 0;
@@ -644,13 +644,13 @@ public class Label extends CustomControl {
 			} else {
 				if (background != null && background.getAlpha() > 0) {
 					gc.setBackground(getBackground());
-					gc.fillRectangle(rect);
+					gc.fillRectangle(0, 0, rect.width, rect.height);
 				}
 			}
 		} catch (SWTException e) {
 			if ((getStyle() & SWT.DOUBLE_BUFFERED) == 0) {
 				gc.setBackground(getBackground());
-				gc.fillRectangle(rect);
+				gc.fillRectangle(0, 0, rect.width, rect.height);
 			}
 		}
 
