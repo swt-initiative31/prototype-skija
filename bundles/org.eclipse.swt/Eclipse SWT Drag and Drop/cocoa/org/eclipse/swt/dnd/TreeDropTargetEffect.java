@@ -102,10 +102,10 @@ public class TreeDropTargetEffect extends DropTargetEffect {
 	 */
 	@Override
 	public void dragLeave(DropTargetEvent event) {
-		OS.objc_msgSend(control.view.id, OS.sel_setShouldExpandItem_, 1);
+		OS.objc_msgSend(Widget.checkNative(control).view.id, OS.sel_setShouldExpandItem_, 1);
 		if (shouldEnableScrolling) {
 			shouldEnableScrolling = false;
-			OS.objc_msgSend(control.view.id, OS.sel_setShouldScrollClipView_, 1);
+			OS.objc_msgSend(Widget.checkNative(control).view.id, OS.sel_setShouldScrollClipView_, 1);
 			control.redraw();
 		}
 	}
@@ -131,13 +131,13 @@ public class TreeDropTargetEffect extends DropTargetEffect {
 	@Override
 	public void dragOver(DropTargetEvent event) {
 		int effect = checkEffect(event.feedback);
-		((DropTarget)event.widget).feedback = effect;
-		OS.objc_msgSend(control.view.id, OS.sel_setShouldExpandItem_, (effect & DND.FEEDBACK_EXPAND) == 0 ? 0 : 1);
+		((NativeDropTarget)Widget.checkNative(event.widget)).feedback = effect;
+		OS.objc_msgSend(Widget.checkNative(control).view.id, OS.sel_setShouldExpandItem_, (effect & DND.FEEDBACK_EXPAND) == 0 ? 0 : 1);
 		if ((effect & DND.FEEDBACK_SCROLL) == 0) {
 			shouldEnableScrolling = true;
-			OS.objc_msgSend(control.view.id, OS.sel_setShouldScrollClipView_, 0);
+			OS.objc_msgSend(Widget.checkNative(control).view.id, OS.sel_setShouldScrollClipView_, 0);
 		} else {
-			OS.objc_msgSend(control.view.id, OS.sel_setShouldScrollClipView_, 1);
+			OS.objc_msgSend(Widget.checkNative(control).view.id, OS.sel_setShouldScrollClipView_, 1);
 		}
 	}
 }
