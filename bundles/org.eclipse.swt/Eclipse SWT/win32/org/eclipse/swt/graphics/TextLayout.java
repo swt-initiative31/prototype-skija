@@ -14,7 +14,7 @@ import io.github.humbleui.types.*;
  * This is the Skija TextLayout. The performance at scrolling for 1000s of lines in styled text is
  * insufficient.
  *
- * For this the fastCalculationMode works, but it also has bugs,
+ * For this the fastCalculationMode works, but it also has bugs, 
  * because the font size calculation from SWT to Skija does not yet work properly.
  *
  */
@@ -32,6 +32,7 @@ public final class TextLayout extends Resource {
 		textLayouts = new HashSet<>();
 	}
 
+	private io.github.humbleui.skija.Font font;
 	private String text;
 	int lineSpacingInPoints, ascent, descent, indent, wrapIndent,
 			verticalIndentInPoints;
@@ -68,10 +69,10 @@ public final class TextLayout extends Resource {
 	private Color selectionBackground;
 	private int textDirection;
 	private Font swtFont;
-	private io.github.humbleui.skija.Font skijaFont;
 
 	int nativeZoom = DPIUtil.getNativeDeviceZoom();
 	private static Surface surface;
+	private static GC innerGC;
 
 	static final char LTR_MARK = '\u200E', RTL_MARK = '\u200F';
 
@@ -136,7 +137,10 @@ public final class TextLayout extends Resource {
 
 			}
 
-			setFont(device.getSystemFont());
+			if (innerGC == null) {
+				innerGC = new GC(device);
+				setFont(innerGC.getFont());
+			}
 
 			textLayouts.add(this);
 
@@ -176,8 +180,25 @@ public final class TextLayout extends Resource {
 		return coordinates;
 	}
 
+	// heuristic that doesn't work properly. This needs improvement drastically.
 	private float getFontSize() {
-		return skijaFont.getSize();
+
+		if (this.font != null)
+			return (float) (this.font.getSize() * 1.4) + 2;
+
+		if (ascent != -1 && descent != -1) {
+			return (float) ((Math.abs(ascent) + Math.abs(descent)) / 2.0 * 1.5);
+		}
+
+		Font f = getFont();
+
+		if (f == null)
+			f = device.getSystemFont();
+
+		FontData fd = f.getFontData()[0];
+
+		return (float) (fd.getHeightF() * 2.2);
+
 	}
 
 	void computeRuns(GC gc) {
@@ -230,12 +251,10 @@ public final class TextLayout extends Resource {
 		this.selectionForeground = selectionForeground;
 		this.selectionBackground = selectionBackground;
 
-		int lineWidth = getWidth();
+		float lineWidth = getWidth();
 
-		if (lineWidth < 1) {
-			lineWidth = Integer.MAX_VALUE;
-		} else {
-			lineWidth += 1;
+		if (lineWidth < 0.00001) {
+			lineWidth = Float.MAX_VALUE;
 		}
 
 		paragraph.layout(lineWidth);
@@ -269,7 +288,7 @@ public final class TextLayout extends Resource {
 					}
 
 					lineBounds[k] = new Rectangle(startx, starty,
-							(int) m.getWidth(), (int) (m.getAscent() + m.getDescent() + lineSpacingInPoints));
+							(int) m.getWidth(), (int) m.getHeight());
 				}
 			} else {
 
@@ -277,7 +296,18 @@ public final class TextLayout extends Resource {
 				lineOffsets[0] = 0;
 				lineOffsets[1] = 0;
 				lineBounds = new Rectangle[1];
-				lineBounds[0] = new Rectangle(0, 0, 0, getLineHeight());
+
+				Font f = getFont();
+
+				FontMetrics fm = innerGC.getFontMetrics();
+
+				// TODO dummy calculation for the line height. This seems to
+				// work, no idea whether it is right.
+				int he = Math.abs(fm.getAscent()) + Math.abs(fm.getDescent())
+						+ fm.getLeading();
+
+				lineBounds[0] = new Rectangle(0, 0, 0, he);
+
 			}
 		}
 
@@ -295,14 +325,10 @@ public final class TextLayout extends Resource {
 
 	}
 
-	private int getLineHeight() {
-		var fm = skijaFont.getMetrics();
-		return (int) (Math.abs(fm.getAscent()) + Math.abs(fm.getDescent()) + fm.getLeading());
-	}
-
 	@Override
 	void destroy() {
 		freeRuns();
+		font = null;
 		text = null;
 		styles = null;
 		segments = null;
@@ -315,6 +341,10 @@ public final class TextLayout extends Resource {
 			if (textLayouts.isEmpty()) {
 				surface.close();
 				surface = null;
+
+				innerGC.dispose();
+				innerGC = null;
+
 			}
 
 		}
@@ -324,11 +354,6 @@ public final class TextLayout extends Resource {
 				paragraph.close();
 
 			paragraph = null;
-		}
-
-		if (skijaFont != null) {
-			skijaFont.close();
-			skijaFont = null;
 		}
 
 		super.destroy();
@@ -833,7 +858,7 @@ public final class TextLayout extends Resource {
 
 		// placeholder for tab
 		var tabPlaceholder = new PlaceholderStyle(40, // Width
-				getLineHeight(), // Height
+				getFontSize(), // Height
 				PlaceholderAlignment.MIDDLE, BaselineMode.ALPHABETIC, 0); // Offset
 
 		if (selectionForeground == null)
@@ -852,19 +877,21 @@ public final class TextLayout extends Resource {
 
 		FontCollection fc = new FontCollection();
 		fc.setDefaultFontManager(fontMgr);
+		Font f = getFont();
 
-		String fontFamily = skijaFont.getTypeface().getFamilyName();
+		if (f == null)
+			f = device.getSystemFont();
+
+		FontData fd = f.getFontData()[0];
 
 		io.github.humbleui.skija.paragraph.TextStyle normal = new io.github.humbleui.skija.paragraph.TextStyle()
-				.setFontStyle(skijaFont.getTypeface().getFontStyle())
-				.setFontSize(skijaFont.getSize())
-				.setFontFamilies(new String[] { fontFamily })
+				.setFontSize(getFontSize())
+				.setFontFamilies(new String[]{fd.getName()})
 				.setColor(0xFF000000);
 
 		io.github.humbleui.skija.paragraph.TextStyle selectionStyle = new io.github.humbleui.skija.paragraph.TextStyle()
-				.setFontStyle(skijaFont.getTypeface().getFontStyle())
-				.setFontSize(skijaFont.getSize())
-				.setFontFamilies(new String[] { fontFamily })
+				.setFontSize(getFontSize())
+				.setFontFamilies(new String[]{fd.getName()})
 				.setForeground(new Paint().setColor(SkijaGC
 						.convertSWTColorToSkijaColor(selectionForeground)))
 				.setBackground(new Paint().setColor(SkijaGC
@@ -914,7 +941,7 @@ public final class TextLayout extends Resource {
 				if (s != "") {
 					if (hasSelection) {
 
-						var ts = convertToTextStyle(si, fontFamily);
+						var ts = convertToTextStyle(si, fd);
 
 						for (int i = si.start; i < nextStyleStart; i++) {
 
@@ -961,7 +988,7 @@ public final class TextLayout extends Resource {
 
 					} else {
 
-						var ts = convertToTextStyle(si, fontFamily);
+						var ts = convertToTextStyle(si, fd);
 						paragraphBuilder.pushStyle(ts);
 
 						addText(paragraphBuilder, tabPlaceholder, s);
@@ -1016,7 +1043,7 @@ public final class TextLayout extends Resource {
 	}
 
 	private io.github.humbleui.skija.paragraph.TextStyle convertToTextStyle(
-			StyleItem si, String fontFamily) {
+			StyleItem si, FontData fd) {
 
 		TextStyle ts = si.style;
 
@@ -1032,7 +1059,7 @@ public final class TextLayout extends Resource {
 
 			return new io.github.humbleui.skija.paragraph.TextStyle()
 					.setFontSize(getFontSize())
-					.setFontFamilies(new String[] { fontFamily })
+					.setFontFamilies(new String[]{fd.getName()})
 					.setForeground(foreP);
 
 		}
@@ -1051,15 +1078,36 @@ public final class TextLayout extends Resource {
 
 		}
 
-		float fontSize = getFontSize();
-
 		FontStyle fs = FontStyle.NORMAL;
+
+		float fontSize = getFontSize();
 		if (ts.font != null && ts.font.getFontData() != null
 				&& ts.font.getFontData().length >= 1) {
-			try (var skijaFont = SkijaGC.convertToSkijaFont(ts.font)) {
-				fs = skijaFont.getTypeface().getFontStyle();
-				fontSize = skijaFont.getSize();
+			fd = ts.font.getFontData()[0];
+			// fontSize = (float) ((fd.getHeightF() * 1.4) + 2);
+
+			fs = ((fd.getStyle() & SWT.NORMAL) != 0) ? FontStyle.NORMAL : null;
+
+			if (fs == null) {
+				fs = (fd.getStyle() & SWT.BOLD) != 0 ? FontStyle.BOLD : null;
 			}
+
+			if ((fd.getStyle() & SWT.ITALIC) != 0) {
+
+				if (fs == null) {
+					fs = FontStyle.ITALIC;
+
+				}
+
+				if (fs == FontStyle.BOLD) {
+					fs = FontStyle.BOLD_ITALIC;
+				}
+
+			}
+
+			if (fs == null)
+				fs = FontStyle.NORMAL;
+
 		}
 
 		// boolean underline = ts.underline;
@@ -1079,9 +1127,12 @@ public final class TextLayout extends Resource {
 
 		io.github.humbleui.skija.paragraph.TextStyle textSty = new io.github.humbleui.skija.paragraph.TextStyle()
 				.setFontStyle(fs).setFontSize(fontSize)
-				.setFontFamilies(new String[] { fontFamily })
+				.setFontFamilies(new String[]{fd.getName()})
 				.setForeground(foreP) //
 				.setBackground(backP);
+
+		if (backP != null)
+			textSty = textSty.setBackground(backP);
 
 		return textSty;
 
@@ -1180,11 +1231,12 @@ public final class TextLayout extends Resource {
 
 		if (lineBounds == null && fastCalculationMode) {
 
-			var fm = skijaFont.getMetrics();
+			FontMetrics fm = innerGC.getFontMetrics();
 
-			int height = getLineHeight();
+			int height = Math.abs(fm.getAscent()) + Math.abs(fm.getDescent())
+					+ Math.abs(fm.getLeading());
 
-			double avgWidth = fm.getAvgCharWidth();
+			double avgWidth = fm.getAverageCharacterWidth();
 
 			String[] splits = text.split(System.lineSeparator());
 
@@ -1334,7 +1386,11 @@ public final class TextLayout extends Resource {
 
 	public Font getFont() {
 		checkLayout();
-		return swtFont;
+
+		if (swtFont != null)
+			return swtFont;
+
+		return innerGC.getFont();
 	}
 
 	/**
@@ -1513,7 +1569,10 @@ public final class TextLayout extends Resource {
 		checkLayout();
 
 		if (lineBounds == null && lineIndex == 0 && fastCalculationMode) {
-			return new Rectangle(0, 0, 0, getLineHeight());
+			FontMetrics fm = innerGC.getFontMetrics();
+
+			return new Rectangle(0, 0, 0, Math.abs(fm.getAscent())
+					+ Math.abs(fm.getDescent()) + Math.abs(fm.getLeading()));
 
 		}
 		computeRuns(null);
@@ -1593,45 +1652,53 @@ public final class TextLayout extends Resource {
 
 	public FontMetrics getLineMetrics(int lineIndex) {
 		checkLayout();
-		computeRuns(null);
-		FontMetrics fontMetrics = new FontMetrics();
 
-		var lineMetricsPerLine = paragraph.getLineMetrics();
-		var lineMetrics = lineMetricsPerLine.length > 0 ? lineMetricsPerLine[lineIndex] : null;
-		fontMetrics.innerFontMetrics = new FontMetricsHandle() {
-			@Override
-			public int getLeading() {
-				return lineMetrics != null
-						? (int) (lineMetrics.getHeight() - lineMetrics.getDescent() - lineMetrics.getAscent())
-						: getHeight() - getAscent() - getDescent();
-			}
+		// if (font == null)
+		// setFont(null);
+		// if (true) {
+		// IFontMetrics fm = new SkijaFontMetrics(font.getMetrics());
+		// return fm;
+		// }
+		//
+		// // TODO a GC just for getting the FontMetrics is wrong. This should
+		// be
+		// // done differently.
+		FontMetrics fm = innerGC.getFontMetrics();
 
-			@Override
-			public int getHeight() {
-				return lineMetrics != null ? (int) lineMetrics.getHeight() : TextLayout.this.getLineHeight();
-			}
+		return fm;
 
-			@Override
-			public int getDescent() {
-				return lineMetrics != null ? (int) lineMetrics.getDescent() : TextLayout.this.getDescent();
-			}
-
-			@Override
-			public double getAverageCharacterWidth() {
-				return skijaFont.getMetrics().getAvgCharWidth();
-			}
-
-			@Override
-			public int getAverageCharWidth() {
-				return (int) skijaFont.getMetrics().getAvgCharWidth();
-			}
-
-			@Override
-			public int getAscent() {
-				return lineMetrics != null ? (int) lineMetrics.getAscent() : TextLayout.this.getAscent();
-			}
-		};
-		return fontMetrics;
+		// NSAutoreleasePool pool = null;
+		// if (!NSThread.isMainThread())
+		// pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
+		// try {
+		// computeRuns();
+		// int lineCount = getLineCount();
+		// if (!(0 <= lineIndex && lineIndex < lineCount))
+		// SWT.error(SWT.ERROR_INVALID_RANGE);
+		// if (fixedLineMetrics != null)
+		// return fixedLineMetrics.makeCopy();
+		// int length = text.length();
+		// if (length == 0) {
+		// Font font = this.font != null ? this.font : device.systemFont;
+		// int ascent = (int) layoutManager
+		// .defaultBaselineOffsetForFont(font.handle);
+		// int descent = (int) layoutManager
+		// .defaultLineHeightForFont(font.handle) - ascent;
+		// ascent = Math.max(ascent, this.ascent);
+		// descent = Math.max(descent, this.descent);
+		// return FontMetrics.cocoa_new(ascent, descent, 0.0, 0,
+		// ascent + descent);
+		// }
+		// Rectangle rect = getLineBounds(lineIndex);
+		// int baseline = (int) layoutManager.typesetter()
+		// .baselineOffsetInLayoutManager(layoutManager,
+		// getLineOffsets()[lineIndex]);
+		// return FontMetrics.cocoa_new(rect.height - baseline, baseline, 0.0,
+		// 0, rect.height);
+		// } finally {
+		// if (pool != null)
+		// pool.release();
+		// }
 	}
 
 	Color getLinkForeground() {
@@ -2649,13 +2716,41 @@ public final class TextLayout extends Resource {
 			return;
 
 		this.swtFont = font;
-		if (swtFont == null) {
-			swtFont = device.getSystemFont();
+
+		freeRuns();
+
+		if (true)
+			return;
+
+		if (font == null)
+			font = device.getSystemFont();
+
+		if (font != null && font.isDisposed())
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+
+		innerGC.setFont(font);
+		FontData fontData = font.getFontData()[0];
+		FontStyle style = FontStyle.NORMAL;
+		boolean isBold = (fontData.getStyle() & SWT.BOLD) != 0;
+		boolean isItalic = (fontData.getStyle() & SWT.ITALIC) != 0;
+		if (isBold && isItalic) {
+			style = FontStyle.BOLD_ITALIC;
+		} else if (isBold) {
+			style = FontStyle.BOLD;
+		} else if (isItalic) {
+			style = FontStyle.ITALIC;
 		}
-		if (skijaFont != null) {
-			skijaFont.close();
+		this.font = new io.github.humbleui.skija.Font(
+				Typeface.makeFromName(fontData.getName(), style));
+		int fontSize = DPIUtil.autoScaleUp(fontData.getHeight());
+		if (SWT.getPlatform().equals("win32")) {
+			fontSize *= this.font.getSize()
+					/ innerGC.getDevice().getSystemFont().getFontData()[0]
+							.getHeight();
 		}
-		this.skijaFont = SkijaGC.createSkijaFont(getFont().getFontData()[0]);
+		this.font.setSize(fontSize);
+		this.font.setEdging(FontEdging.SUBPIXEL_ANTI_ALIAS);
+		this.font.setSubpixel(true);
 
 		freeRuns();
 	}
