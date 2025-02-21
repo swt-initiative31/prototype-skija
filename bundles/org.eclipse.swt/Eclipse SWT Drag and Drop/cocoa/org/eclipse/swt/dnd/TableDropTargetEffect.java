@@ -100,7 +100,7 @@ public class TableDropTargetEffect extends DropTargetEffect {
 	public void dragLeave(DropTargetEvent event) {
 		if (shouldEnableScrolling) {
 			shouldEnableScrolling = false;
-			OS.objc_msgSend(control.view.id, OS.sel_setShouldScrollClipView_, 1);
+			OS.objc_msgSend(Widget.checkNative(control).view.id, OS.sel_setShouldScrollClipView_, 1);
 			control.redraw();
 		}
 	}
@@ -125,12 +125,12 @@ public class TableDropTargetEffect extends DropTargetEffect {
 	@Override
 	public void dragOver(DropTargetEvent event) {
 		int effect = checkEffect(event.feedback);
-		((DropTarget)event.widget).feedback = effect;
+		((NativeDropTarget)Widget.checkNative(event.widget)).feedback = effect;
 		if ((effect & DND.FEEDBACK_SCROLL) == 0) {
 			shouldEnableScrolling = true;
-			OS.objc_msgSend(control.view.id, OS.sel_setShouldScrollClipView_, 0);
+			OS.objc_msgSend(Widget.checkNative(control).view.id, OS.sel_setShouldScrollClipView_, 0);
 		} else {
-			OS.objc_msgSend(control.view.id, OS.sel_setShouldScrollClipView_, 1);
+			OS.objc_msgSend(Widget.checkNative(control).view.id, OS.sel_setShouldScrollClipView_, 1);
 		}
 	}
 }
