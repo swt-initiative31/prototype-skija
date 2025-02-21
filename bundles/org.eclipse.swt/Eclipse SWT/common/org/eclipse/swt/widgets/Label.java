@@ -149,6 +149,8 @@ public class Label extends CustomControl {
 
 		addListener(SWT.Dispose, this::onDispose);
 
+		setBackground(new Color(255, 0, 0));
+
 		initAccessible();
 	}
 
