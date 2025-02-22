@@ -1375,7 +1375,6 @@ void updateOrientation () {
 	}
 }
 
-@Override
 void updateUIState () {
 	long hwndShell = getShell ().handle;
 	int uiState = (int)OS.SendMessage (hwndShell, OS.WM_QUERYUISTATE, 0, 0);
