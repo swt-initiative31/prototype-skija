@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.swt.widgets;
 
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
@@ -126,7 +127,7 @@ public abstract class Scrollable extends Control {
 			NSRect frame = scrollView.contentView().frame();
 			x -= frame.x;
 			y -= frame.y;
-		}
+	}
 		return new Rectangle(x, y, width, height);
 	}
 
@@ -153,19 +154,19 @@ public abstract class Scrollable extends Control {
 		} else {
 			scrollView.setVerticalScroller(scroller);
 			actionSelector = OS.sel_sendVerticalSelection;
-		}
+	}
 		bar.view = scroller;
 		bar.createJNIRef();
 		bar.register();
 		if ((state & CANVAS) == 0) {
 			bar.target = scroller.target();
 			bar.actionSelector = scroller.action();
-		}
+	}
 		scroller.setTarget(scrollView);
 		scroller.setAction(actionSelector);
 		if ((state & CANVAS) != 0) {
 			bar.updateBar(0, 0, 100, 10);
-		}
+	}
 		return bar;
 	}
 
@@ -211,7 +212,7 @@ public abstract class Scrollable extends Control {
 		} else {
 			NSRect rect = view.bounds();
 			return new Rectangle(0, 0, (int) rect.width, (int) rect.height);
-		}
+	}
 	}
 
 	/**
@@ -262,248 +263,216 @@ public abstract class Scrollable extends Control {
 		if (scrollView != null) {
 			if (scrollView.scrollerStyle() == OS.NSScrollerStyleOverlay) {
 				style = SWT.SCROLLBAR_OVERLAY;
-			}
-		}
-		return style;
-	}
-
-	/**
-	 * Sets the mode of the receiver's scrollbars. This will be <em>bitwise</em> OR
-	 * of one or more of the constants defined in class <code>SWT</code>.<br>
-	 * <ul>
-	 * <li><code>SWT.SCROLLBAR_OVERLAY</code> - if receiver uses overlay
-	 * scrollbars</li>
-	 * <li><code>SWT.NONE</code> - otherwise</li>
-	 * </ul>
-	 *
-	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
-	 *
-	 * @see SWT#SCROLLBAR_OVERLAY
-	 *
-	 * @since 3.126
-	 */
-	public void setScrollbarsMode(int mode) {
-		checkWidget();
-	}
-
-	/**
-	 * Returns the receiver's vertical scroll bar if it has one, and null if it does
-	 * not.
-	 *
-	 * @return the vertical scroll bar (or null)
-	 *
-	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
-	 */
-	public ScrollBar getVerticalBar() {
-		checkWidget();
-		return verticalBar;
-	}
-
-	boolean hooksKeys() {
-		return hooks(SWT.KeyDown) || hooks(SWT.KeyUp) || hooks(SWT.Traverse);
-	}
-
-	@Override
-	boolean isEventView(long id) {
-		return id == eventView().id;
-	}
-
-	boolean isNeeded(ScrollBar scrollbar) {
-		return true;
-	}
-
-	@Override
-	boolean isTrim(NSView view) {
-		if (scrollView != null) {
-			if (scrollView.id == view.id)
-				return true;
-			if (horizontalBar != null && horizontalBar.view.id == view.id)
-				return true;
-			if (verticalBar != null && verticalBar.view.id == view.id)
-				return true;
-		}
-		return super.isTrim(view);
-	}
-
-	void redrawBackgroundImage() {
-		if (scrollView != null) {
-			Control control = findBackgroundControl();
-			if (control != null && control.backgroundImage != null) {
-				redrawWidget(view, false);
-			}
 		}
 	}
+	return style;
+}
 
-	@Override
-	void reflectScrolledClipView(long id, long sel, long aClipView) {
-		super.reflectScrolledClipView(id, sel, aClipView);
-		redrawBackgroundImage();
+/**
+ * Sets the mode of the receiver's scrollbars. This will be <em>bitwise</em> OR
+ * of one or more of the constants defined in class <code>SWT</code>.<br>
+ * <ul>
+ * <li><code>SWT.SCROLLBAR_OVERLAY</code> - if receiver uses overlay
+ * scrollbars</li>
+ * <li><code>SWT.NONE</code> - otherwise</li>
+ * </ul>
+ *
+ * @exception SWTException
+ *                         <ul>
+ *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+ *                         disposed</li>
+ *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+ *                         the thread that created the receiver</li>
+ *                         </ul>
+ *
+ * @see SWT#SCROLLBAR_OVERLAY
+ *
+ * @since 3.126
+ */
+public void setScrollbarsMode(int mode) {
+	checkWidget();
+}
+
+/**
+ * Returns the receiver's vertical scroll bar if it has one, and null if it does
+ * not.
+ *
+ * @return the vertical scroll bar (or null)
+ *
+ * @exception SWTException
+ *                         <ul>
+ *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+ *                         disposed</li>
+ *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+ *                         the thread that created the receiver</li>
+ *                         </ul>
+ */
+public ScrollBar getVerticalBar() {
+	checkWidget();
+	return verticalBar;
+}
+
+boolean hooksKeys() {
+	return hooks(SWT.KeyDown) || hooks(SWT.KeyUp) || hooks(SWT.Traverse);
+}
+
+@Override
+boolean isEventView(long id) {
+	return id == eventView().id;
+}
+
+boolean isNeeded(ScrollBar scrollbar) {
+	return true;
+}
+
+@Override
+boolean isTrim(NSView view) {
+	if (scrollView != null) {
+		if (scrollView.id == view.id)
+			return true;
+		if (horizontalBar != null && horizontalBar.view.id == view.id)
+			return true;
+		if (verticalBar != null && verticalBar.view.id == view.id)
+			return true;
 	}
+	return super.isTrim(view);
+}
 
-	@Override
-	void register() {
-		super.register();
-		if (scrollView != null)
-			display.addWidget(scrollView, this);
-	}
-
-	@Override
-	void releaseHandle() {
-		super.releaseHandle();
-		if (scrollView != null)
-			scrollView.release();
-		scrollView = null;
-	}
-
-	@Override
-	void releaseChildren(boolean destroy) {
-		if (horizontalBar != null) {
-			horizontalBar.release(false);
-			horizontalBar = null;
+void redrawBackgroundImage() {
+	if (scrollView != null) {
+		Control control = findBackgroundControl();
+		if (control != null && control.backgroundImage != null) {
+			redrawWidget(view, false);
 		}
-		if (verticalBar != null) {
-			verticalBar.release(false);
-			verticalBar = null;
-		}
-		super.releaseChildren(destroy);
 	}
+}
 
-	@Override
-	void reskinChildren(int flags) {
-		if (horizontalBar != null)
-			horizontalBar.reskin(flags);
-		if (verticalBar != null)
-			verticalBar.reskin(flags);
-		super.reskinChildren(flags);
+@Override
+void reflectScrolledClipView(long id, long sel, long aClipView) {
+	super.reflectScrolledClipView(id, sel, aClipView);
+	redrawBackgroundImage();
+}
+
+@Override
+void register() {
+	super.register();
+	if (scrollView != null)
+		display.addWidget(scrollView, this);
+}
+
+@Override
+void releaseHandle() {
+	super.releaseHandle();
+	if (scrollView != null)
+		scrollView.release();
+	scrollView = null;
+}
+
+@Override
+void releaseChildren(boolean destroy) {
+	if (horizontalBar != null) {
+		horizontalBar.release(false);
+		horizontalBar = null;
 	}
-
-	@Override
-	void scrollClipViewToPoint(long id, long sel, long clipView, NSPoint point) {
-		if ((state & CANVAS) == 0 && scrollView != null) {
-			NSClipView clip = new NSClipView(clipView);
-			boolean oldCopies = clip.copiesOnScroll(), copies = oldCopies;
-			if (visibleRgn == 0)
-				copies = !isObscured();
-			if (copies)
-				copies = !hasRegion();
-			clip.setCopiesOnScroll(copies);
-		}
-		super.scrollClipViewToPoint(id, sel, clipView, point);
+	if (verticalBar != null) {
+		verticalBar.release(false);
+		verticalBar = null;
 	}
+	super.releaseChildren(destroy);
+}
 
-	@Override
-	void sendHorizontalSelection() {
-		if (horizontalBar.view.isHiddenOrHasHiddenAncestor())
-			return;
-		horizontalBar.sendSelection();
+@Override
+void reskinChildren(int flags) {
+	if (horizontalBar != null)
+		horizontalBar.reskin(flags);
+	if (verticalBar != null)
+		verticalBar.reskin(flags);
+	super.reskinChildren(flags);
+}
+
+@Override
+void scrollClipViewToPoint(long id, long sel, long clipView, NSPoint point) {
+	if ((state & CANVAS) == 0 && scrollView != null) {
+		NSClipView clip = new NSClipView(clipView);
+		boolean oldCopies = clip.copiesOnScroll(), copies = oldCopies;
+		if (visibleRgn == 0)
+			copies = !isObscured();
+		if (copies)
+			copies = !hasRegion();
+		clip.setCopiesOnScroll(copies);
 	}
+	super.scrollClipViewToPoint(id, sel, clipView, point);
+}
 
-	@Override
-	void sendVerticalSelection() {
-		if (verticalBar.view.isHiddenOrHasHiddenAncestor())
-			return;
-		verticalBar.sendSelection();
-	}
+@Override
+void sendHorizontalSelection() {
+	if (horizontalBar.view.isHiddenOrHasHiddenAncestor())
+		return;
+	horizontalBar.sendSelection();
+}
 
-	@Override
-	void enableWidget(boolean enabled) {
-		super.enableWidget(enabled);
-		if (horizontalBar != null)
-			horizontalBar.enableWidget(enabled && isNeeded(horizontalBar));
-		if (verticalBar != null)
-			verticalBar.enableWidget(enabled && isNeeded(verticalBar));
-	}
+@Override
+void sendVerticalSelection() {
+	if (verticalBar.view.isHiddenOrHasHiddenAncestor())
+		return;
+	verticalBar.sendSelection();
+}
 
-	boolean setScrollBarVisible(ScrollBar bar, boolean visible) {
-		if (scrollView == null)
+@Override
+void enableWidget(boolean enabled) {
+	super.enableWidget(enabled);
+	if (horizontalBar != null)
+		horizontalBar.enableWidget(enabled && isNeeded(horizontalBar));
+	if (verticalBar != null)
+		verticalBar.enableWidget(enabled && isNeeded(verticalBar));
+}
+
+boolean setScrollBarVisible(ScrollBar bar, boolean visible) {
+	if (scrollView == null)
+		return false;
+	if ((state & CANVAS) == 0)
+		return false;
+	if (visible) {
+		if ((bar.state & HIDDEN) == 0)
 			return false;
-		if ((state & CANVAS) == 0)
+		bar.state &= ~HIDDEN;
+	} else {
+		if ((bar.state & HIDDEN) != 0)
 			return false;
-		if (visible) {
-			if ((bar.state & HIDDEN) == 0)
-				return false;
-			bar.state &= ~HIDDEN;
-		} else {
-			if ((bar.state & HIDDEN) != 0)
-				return false;
-			bar.state |= HIDDEN;
-		}
-		if ((bar.style & SWT.HORIZONTAL) != 0) {
-			scrollView.setHasHorizontalScroller(visible);
-		} else {
-			scrollView.setHasVerticalScroller(visible);
-		}
-		bar.sendEvent(visible ? SWT.Show : SWT.Hide);
-		sendEvent(SWT.Resize);
-		return true;
+		bar.state |= HIDDEN;
 	}
+	if ((bar.style & SWT.HORIZONTAL) != 0) {
+		scrollView.setHasHorizontalScroller(visible);
+	} else {
+		scrollView.setHasVerticalScroller(visible);
+	}
+	bar.sendEvent(visible ? SWT.Show : SWT.Hide);
+	sendEvent(SWT.Resize);
+	return true;
+}
 
-	@Override
-	void setZOrder() {
-		super.setZOrder();
-		if (scrollView != null)
-			scrollView.setDocumentView(view);
-	}
+@Override
+void setZOrder() {
+	super.setZOrder();
+	if (scrollView != null)
+		scrollView.setDocumentView(view);
+}
 
-	@Override
-	NSView topView() {
-		if (scrollView != null)
-			return scrollView;
-		return super.topView();
-	}
+@Override
+NSView topView() {
+	if (scrollView != null)
+		return scrollView;
+	return super.topView();
+}
 
-	@Override
-	void updateCursorRects(boolean enabled) {
-		super.updateCursorRects(enabled);
-		if (scrollView == null)
-			return;
-		updateCursorRects(enabled, scrollView);
-		NSClipView contentView = scrollView.contentView();
-		updateCursorRects(enabled, contentView);
-	}
+@Override
+void updateCursorRects(boolean enabled) {
+	super.updateCursorRects(enabled);
+	if (scrollView == null)
+		return;
+	updateCursorRects(enabled, scrollView);
+	NSClipView contentView = scrollView.contentView();
+	updateCursorRects(enabled, contentView);
+}
 
-	@Override
-	void createHandle() {
-		if (this instanceof ICustomWidget) {
-			state |= CANVAS;
-			boolean scrolled = (style & (SWT.V_SCROLL | SWT.H_SCROLL)) != 0;
-			if (!scrolled)
-				state |= THEME_BACKGROUND;
-			NSRect rect = new NSRect();
-			if (scrolled || hasBorder()) {
-				NSScrollView scrollWidget = (NSScrollView) new SWTScrollView().alloc();
-				scrollWidget.initWithFrame(rect);
-				scrollWidget.setDrawsBackground(false);
-				if ((style & SWT.H_SCROLL) != 0)
-					scrollWidget.setHasHorizontalScroller(true);
-				if ((style & SWT.V_SCROLL) != 0)
-					scrollWidget.setHasVerticalScroller(true);
-				scrollWidget.setBorderType(hasBorder() ? OS.NSBezelBorder : OS.NSNoBorder);
-				scrollView = scrollWidget;
-			}
-			NSView widget = (NSView) new SWTCanvasView().alloc();
-			widget.initWithFrame(rect);
-//	widget.setFocusRingType(OS.NSFocusRingTypeExterior);
-			view = widget;
-			if (scrollView != null) {
-				NSClipView contentView = scrollView.contentView();
-				contentView.setAutoresizesSubviews(true);
-				view.setAutoresizingMask(OS.NSViewWidthSizable | OS.NSViewHeightSizable);
-			}
-		} else {
-			super.createHandle();
-		}
-	}
 }
