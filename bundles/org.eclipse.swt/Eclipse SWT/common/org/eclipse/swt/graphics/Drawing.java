@@ -53,7 +53,19 @@ public final class Drawing {
 	 * @param drawOperation the operation that draws the control
 	 */
 	public static void drawWithGC(Control control, GC originalGC, Consumer<GC> drawOperation) {
-		Rectangle bounds = control.getBounds();
+		final int width;
+		final int height;
+		if (control instanceof Composite composite) {
+			final Rectangle clientArea = composite.getClientArea();
+			width = clientArea.width;
+			height = clientArea.height;
+		}
+		else {
+			final Point size = control.getSize();
+			width = size.x;
+			height = size.y;
+		}
+
 		final Rectangle clipping;
 		if (originalGC != null && originalGC.innerGC instanceof NativeGC nativeGC
 				&& nativeGC.drawable instanceof Control gcControl) {
@@ -64,12 +76,7 @@ public final class Drawing {
 			clipping = originalGC.getClipping();
 		} else {
 			originalGC = new GC(control);
-			clipping = bounds;
-		}
-
-		if (control instanceof Composite composite) {
-			final Rectangle clientArea = composite.getClientArea();
-			clipping.intersect(clientArea);
+			clipping = new Rectangle(0, 0, width, height);
 		}
 
 		GC gc = createGraphicsContext(originalGC, control);
