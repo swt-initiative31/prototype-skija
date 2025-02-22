@@ -51,7 +51,19 @@ public final class Drawing {
 	 * @param drawOperation the operation that draws the control
 	 */
 	public static void drawWithGC(Control control, GC originalGC, Consumer<GC> drawOperation) {
-		Rectangle bounds = control.getBounds();
+		final int width;
+		final int height;
+		if (control instanceof Composite composite) {
+			final Rectangle clientArea = composite.getClientArea();
+			width = clientArea.width;
+			height = clientArea.height;
+		}
+		else {
+			final Point size = control.getSize();
+			width = size.x;
+			height = size.y;
+		}
+
 		final Rectangle clipping;
 		if (originalGC != null) {
 			if (originalGC.innerGC instanceof NativeGC nativeGC && nativeGC.drawable != control) {
@@ -61,12 +73,7 @@ public final class Drawing {
 			clipping = originalGC.getClipping();
 		} else {
 			originalGC = new GC(control);
-			clipping = bounds;
-		}
-
-		if (control instanceof Composite composite) {
-			final Rectangle clientArea = composite.getClientArea();
-			clipping.intersect(clientArea);
+			clipping = new Rectangle(0, 0, width, height);
 		}
 
 		GC gc = createGraphicsContext(originalGC, false);
@@ -80,13 +87,13 @@ public final class Drawing {
 		if (gc.innerGC instanceof NativeGC) {
 			if (SWT.getPlatform().equals("win32")) {
 				// Use double buffering on windows
-				doubleBufferingImage = new Image(gc.getDevice(), bounds.width, bounds.height);
-				originalGC.copyArea(doubleBufferingImage, 0, 0);
+				doubleBufferingImage = new Image(gc.getDevice(), width, height);
+				originalGC.copyArea(doubleBufferingImage, 0, 0); // TODO: really necessary?
 				GC doubleBufferingGC = new GC(doubleBufferingImage);
 				doubleBufferingGC.setForeground(control.getForeground());
 				doubleBufferingGC.setBackground(control.getBackground());
-				doubleBufferingGC.setAntialias(SWT.ON);
-				doubleBufferingGC.fillRectangle(0, 0, bounds.width, bounds.height);
+//				doubleBufferingGC.setAntialias(SWT.ON);
+				doubleBufferingGC.fillRectangle(0, 0, width, height);
 				gc = doubleBufferingGC;
 			}
 		}
