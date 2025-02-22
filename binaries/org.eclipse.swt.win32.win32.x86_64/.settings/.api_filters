@@ -144,4 +144,31 @@
             </message_arguments>
         </filter>
     </resource>
+<<<<<<< HEAD
+=======
+    <resource path="META-INF/MANIFEST.MF">
+        <filter id="926941240">
+            <message_arguments>
+                <message_argument value="3.129.0"/>
+                <message_argument value="3.128.0"/>
+            </message_arguments>
+        </filter>
+    </resource>
+    <resource path="Eclipse SWT/win32/org/eclipse/swt/widgets/NativeBasedCustomControl.java" type="org.eclipse.swt.widgets.NativeBasedCustomControl">
+        <filter id="571473929">
+            <message_arguments>
+                <message_argument value="Control"/>
+                <message_argument value="NativeBasedCustomControl"/>
+            </message_arguments>
+        </filter>
+    </resource>
+    <resource path="Eclipse SWT/win32/org/eclipse/swt/widgets/NativeBasedCustomScrollable.java" type="org.eclipse.swt.widgets.NativeBasedCustomScrollable">
+        <filter id="571473929">
+            <message_arguments>
+                <message_argument value="Scrollable"/>
+                <message_argument value="NativeBasedCustomScrollable"/>
+            </message_arguments>
+        </filter>
+    </resource>
+>>>>>>> f5ad663274 (Extract custom-widget-specific logic from Control/Scrollable)
 </component>
