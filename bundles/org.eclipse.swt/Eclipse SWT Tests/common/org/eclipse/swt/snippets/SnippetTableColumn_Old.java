@@ -34,7 +34,7 @@ public class SnippetTableColumn_Old {
 		final Table_Old table = new Table_Old(shell, SWT.BORDER | SWT.MULTI);
 		table.setHeaderVisible(true);
 		for (int i = 0; i < 4; i++) {
-			TableColumn_Old column = new TableColumn_Old(table, SWT.NONE);
+		    TableColumn_Old column = new TableColumn_Old(table, SWT.BORDER);
 			column.setText("Column " + i);
 			System.out.println(column.getWidth());
 		}
@@ -63,7 +63,7 @@ public class SnippetTableColumn_Old {
 			column.pack();
 		});
 
-		table.setHeaderVisible(false);
+		table.setHeaderVisible(true);
 
 		shell.pack();
 		shell.open();
