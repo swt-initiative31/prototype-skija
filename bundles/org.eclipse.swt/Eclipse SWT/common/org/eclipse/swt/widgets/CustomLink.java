@@ -47,7 +47,7 @@ import java.util.List;
  * @since 3.1
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Link extends CustomControl {
+public class CustomLink extends CustomControl {
 
 	private static final Color DISABLED_COLOR = new Color(160, 160, 160);
 	private static final Color LINK_COLOR = new Color(0, 102, 204);
@@ -111,7 +111,7 @@ public class Link extends CustomControl {
 	 * @see Widget#checkSubclass
 	 * @see Widget#getStyle
 	 */
-	public Link(Composite parent, int style) {
+	public CustomLink(Composite parent, int style) {
 		super(parent, checkStyle(style));
 		this.style |= SWT.DOUBLE_BUFFERED;
 		if ((style & (SWT.CENTER | SWT.RIGHT)) == 0) {

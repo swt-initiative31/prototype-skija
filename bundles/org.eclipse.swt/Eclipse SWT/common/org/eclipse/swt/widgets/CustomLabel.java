@@ -49,9 +49,9 @@ import org.eclipse.swt.graphics.*;
  *      CustomControlExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further
  *      information</a>
- * @see Label#shortenText(GC, String, int)
+ * @see CustomLabel#shortenText(GC, String, int)
  */
-public class Label extends CustomControl {
+public class CustomLabel extends CustomControl {
 
 	private static final Color DISABLED_COLOR = new Color(160, 160, 160);
 	private static final Color SHADOW_IN_COLOR1 = new Color(160, 160, 160);
@@ -131,7 +131,7 @@ public class Label extends CustomControl {
 	 * @see SWT#SHADOW_NONE
 	 * @see #getStyle()
 	 */
-	public Label(Composite parent, int style) {
+	public CustomLabel(Composite parent, int style) {
 		super(parent, checkStyle(style));
 		this.style |= SWT.DOUBLE_BUFFERED;
 		if ((style & (SWT.CENTER | SWT.RIGHT)) == 0) {
@@ -198,7 +198,7 @@ public class Label extends CustomControl {
 			lineWidth = textExtent.x;
 			lineHeight = textExtent.y;
 			if (image != null) {
-				gap = Label.GAP;
+				gap = CustomLabel.GAP;
 			}
 		}
 		if (image != null) {
@@ -428,7 +428,7 @@ public class Label extends CustomControl {
 
 			@Override
 			public void getKeyboardShortcut(AccessibleEvent e) {
-				char mnemonic = _findMnemonic(Label.this.text);
+				char mnemonic = _findMnemonic(CustomLabel.this.text);
 				if (mnemonic != '\0') {
 					e.result = "Alt+" + mnemonic; //$NON-NLS-1$
 				}

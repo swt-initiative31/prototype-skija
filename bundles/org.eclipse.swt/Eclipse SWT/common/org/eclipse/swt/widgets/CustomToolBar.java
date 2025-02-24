@@ -25,7 +25,7 @@ import org.eclipse.swt.widgets.toolbar.*;
  * Instances of this class support the layout of selectable tool bar items.
  * <p>
  * The item children that may be added to instances of this class must be of
- * type <code>ToolItem</code>.
+ * type <code>CustomToolItem</code>.
  * </p>
  * <p>
  * Note that although this class is a subclass of <code>Composite</code>, it
@@ -45,19 +45,19 @@ import org.eclipse.swt.widgets.toolbar.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#toolbar">ToolBar, ToolItem
- *      snippets</a>
+ * @see <a href="http://www.eclipse.org/swt/snippets/#toolbar">ToolBar,
+ *      CustomToolItem snippets</a>
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example:
  *      ControlExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further
  *      information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class ToolBar extends Composite {
+public class CustomToolBar extends Composite {
 
 	/**
-	 * Renderer interface for the {@link ToolBar} widget. All renderers have to
-	 * implement this to work with the ToolBar.
+	 * Renderer interface for the {@link CustomToolBar} widget. All renderers have
+	 * to implement this to work with the ToolBar.
 	 */
 	public interface IToolBarRenderer {
 
@@ -84,8 +84,8 @@ public class ToolBar extends Composite {
 		int rowCount();
 	}
 
-	/** The {@link ToolItem}s contained in the {@link ToolBar} */
-	private final java.util.List<ToolItem> items = new ArrayList<>();
+	/** The {@link CustomToolItem}s contained in the {@link ToolBar} */
+	private final java.util.List<CustomToolItem> items = new ArrayList<>();
 
 	@Deprecated
 	public int itemCount;
@@ -101,7 +101,7 @@ public class ToolBar extends Composite {
 	private final boolean vertical;
 	private final boolean rightToLeft;
 
-	public ToolBar(Composite parent, int style) {
+	public CustomToolBar(Composite parent, int style) {
 		this(parent, style, false);
 	}
 
@@ -144,7 +144,7 @@ public class ToolBar extends Composite {
 	 * @see Widget#checkSubclass()
 	 * @see Widget#getStyle()
 	 */
-	public ToolBar(Composite parent, int style, boolean internal) {
+	public CustomToolBar(Composite parent, int style, boolean internal) {
 		super(parent, checkStyle(style));
 		this.style |= SWT.DOUBLE_BUFFERED;
 
@@ -241,8 +241,8 @@ public class ToolBar extends Composite {
 
 	private void onMouseExit(Event event) {
 		boolean paintRequested = false;
-		List<ToolItem> copy = List.copyOf(items);
-		for (ToolItem item : copy) {
+		List<CustomToolItem> copy = List.copyOf(items);
+		for (CustomToolItem item : copy) {
 			paintRequested |= item.notifyMouseExit();
 		}
 
@@ -253,8 +253,8 @@ public class ToolBar extends Composite {
 
 	private void onMouseMove(Event event) {
 		boolean paintRequested = false;
-		List<ToolItem> copy = List.copyOf(items);
-		for (ToolItem item : copy) {
+		List<CustomToolItem> copy = List.copyOf(items);
+		for (CustomToolItem item : copy) {
 			paintRequested |= item.notifyMouseMove(toPoint(event));
 		}
 
@@ -265,8 +265,8 @@ public class ToolBar extends Composite {
 
 	private void onMouseDown(Event event) {
 		boolean paintRequested = false;
-		List<ToolItem> copy = List.copyOf(items);
-		for (ToolItem item : copy) {
+		List<CustomToolItem> copy = List.copyOf(items);
+		for (CustomToolItem item : copy) {
 			paintRequested |= item.notifyMouseDown(toPoint(event));
 		}
 
@@ -277,8 +277,8 @@ public class ToolBar extends Composite {
 
 	private void onMouseUp(Event event) {
 		boolean paintRequested = false;
-		List<ToolItem> copy = List.copyOf(items);
-		for (ToolItem item : copy) {
+		List<CustomToolItem> copy = List.copyOf(items);
+		for (CustomToolItem item : copy) {
 			paintRequested |= item.notifyMouseUp(toPoint(event));
 		}
 
@@ -357,6 +357,7 @@ public class ToolBar extends Composite {
 		return size;
 	}
 
+	@Override
 	Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
 		checkWidget();
 		Point sizeHint = new Point(wHint, hHint);
@@ -365,7 +366,7 @@ public class ToolBar extends Composite {
 		return DPIUtil.autoScaleUp(size);
 	}
 
-	void createItem(ToolItem item, int index) {
+	void createItem(CustomToolItem item, int index) {
 		items.add(index, item);
 		itemCount = items.size();
 	}
@@ -392,13 +393,13 @@ public class ToolBar extends Composite {
 	 *                                     receiver</li>
 	 *                                     </ul>
 	 */
-	public ToolItem getItem(int index) {
+	public CustomToolItem getItem(int index) {
 		checkRange(index, items.size());
 		checkWidget();
 		return items.get(index);
 	}
 
-	public int getItemIndex(ToolItem item) {
+	public int getItemIndex(CustomToolItem item) {
 		return items.indexOf(item);
 	}
 
@@ -423,9 +424,9 @@ public class ToolBar extends Composite {
 	 *                                     receiver</li>
 	 *                                     </ul>
 	 */
-	public ToolItem getItem(Point point) {
+	public CustomToolItem getItem(Point point) {
 		checkWidget();
-		for (ToolItem item : getItems()) {
+		for (CustomToolItem item : getItems()) {
 			if (item.getBounds().contains(point)) {
 				return item;
 			}
@@ -452,7 +453,7 @@ public class ToolBar extends Composite {
 	}
 
 	/**
-	 * Returns an array of <code>ToolItem</code>s which are the items in the
+	 * Returns an array of <code>CustomToolItem</code>s which are the items in the
 	 * receiver.
 	 * <p>
 	 * Note: This is not the actual structure used by the receiver to maintain its
@@ -469,9 +470,9 @@ public class ToolBar extends Composite {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
-	public ToolItem[] getItems() {
+	public CustomToolItem[] getItems() {
 		checkWidget();
-		return items.toArray(ToolItem[]::new);
+		return items.toArray(CustomToolItem[]::new);
 	}
 
 	/**
@@ -518,7 +519,7 @@ public class ToolBar extends Composite {
 	 *                                     receiver</li>
 	 *                                     </ul>
 	 */
-	public int indexOf(ToolItem item) {
+	public int indexOf(CustomToolItem item) {
 		checkItem(item);
 		checkWidget();
 		return items.indexOf(item);
@@ -530,7 +531,7 @@ public class ToolBar extends Composite {
 		redraw();
 	}
 
-	void radioItemSelected(ToolItem selectedItem) {
+	void radioItemSelected(CustomToolItem selectedItem) {
 		int selectedIndex = getItemIndex(selectedItem);
 		if (selectedIndex < 0) {
 			return;
@@ -542,7 +543,7 @@ public class ToolBar extends Composite {
 
 		// un-select each radio item before the selected one
 		for (int i = selectedIndex - 1; i >= 0; i--) {
-			ToolItem item = getItem(i);
+			CustomToolItem item = getItem(i);
 			if ((item.style & SWT.RADIO) == SWT.RADIO) {
 				item.internalUnselect();
 			} else {
@@ -553,7 +554,7 @@ public class ToolBar extends Composite {
 
 		// un-select each radio item before the selected one
 		for (int i = selectedIndex + 1; i < getItemCount(); i++) {
-			ToolItem item = getItem(i);
+			CustomToolItem item = getItem(i);
 			if ((item.style & SWT.RADIO) == SWT.RADIO) {
 				item.internalUnselect();
 			} else {
@@ -564,14 +565,14 @@ public class ToolBar extends Composite {
 
 	@Override
 	void releaseChildren(boolean destroy) {
-		List<ToolItem> copy = List.copyOf(items);
-		for (ToolItem item : copy) {
+		List<CustomToolItem> copy = List.copyOf(items);
+		for (CustomToolItem item : copy) {
 			item.dispose();
 		}
 	}
 
-	void notifyItemDisposed(ToolItem toolItem) {
-		items.remove(toolItem);
+	void notifyItemDisposed(CustomToolItem CustomToolItem) {
+		items.remove(CustomToolItem);
 		itemCount = items.size();
 	}
 
@@ -581,7 +582,7 @@ public class ToolBar extends Composite {
 		}
 	}
 
-	private void checkItem(ToolItem item) {
+	private void checkItem(CustomToolItem item) {
 		if (item == null) {
 			error(SWT.ERROR_NULL_ARGUMENT);
 		} else if (item.isDisposed()) {
