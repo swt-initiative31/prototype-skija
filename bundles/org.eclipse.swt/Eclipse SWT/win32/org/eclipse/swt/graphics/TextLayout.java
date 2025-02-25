@@ -11,11 +11,11 @@ import io.github.humbleui.skija.paragraph.*;
 import io.github.humbleui.types.*;
 
 /**
- * This is the Skija TextLayout. The performance at scrolling for 1000s of lines
- * in styled text is insufficient.
+ * This is the Skija TextLayout. The performance at scrolling for 1000s of lines in styled text is
+ * insufficient.
  *
- * For this the fastCalculationMode works, but it also has bugs, because the
- * font size calculation from SWT to Skija does not yet work properly.
+ * For this the fastCalculationMode works, but it also has bugs,
+ * because the font size calculation from SWT to Skija does not yet work properly.
  *
  */
 public final class TextLayout extends Resource {
@@ -179,22 +179,8 @@ public final class TextLayout extends Resource {
 		return coordinates;
 	}
 
-	// heuristic that doesn't work properly. This needs improvement drastically.
 	private float getFontSize() {
-
-		if (ascent != -1 && descent != -1) {
-			return (float) ((Math.abs(ascent) + Math.abs(descent)) / 2.0 * 1.5);
-		}
-
-		Font f = getFont();
-
-		if (f == null)
-			f = device.getSystemFont();
-
-		FontData fd = f.getFontData()[0];
-
-		return (float) (fd.getHeightF() * 2.2);
-
+		return getSkijaFont().getSize();
 	}
 
 	void computeRuns(GC gc) {
@@ -293,17 +279,17 @@ public final class TextLayout extends Resource {
 				lineOffsets[1] = 0;
 				lineBounds = new Rectangle[1];
 
-				Font f = getFont();
+				try (var skijaFont = getSkijaFont()) {
+				    var fm = getSkijaFont().getMetrics();
 
-				FontMetrics fm = innerGC.getFontMetrics();
+				    // TODO dummy calculation for the line height. This seems to
+				    // work, no idea whether it is right.
+				    int he = (int) Math.round(Math.abs(fm.getAscent()) + Math.abs(fm.getDescent())
+					    + fm.getLeading() + 0.5);
 
-				// TODO dummy calculation for the line height. This seems to
-				// work, no idea whether it is right.
-				int he = Math.abs(fm.getAscent()) + Math.abs(fm.getDescent())
-						+ fm.getLeading();
+				    lineBounds[0] = new Rectangle(0, 0, 0, he);
 
-				lineBounds[0] = new Rectangle(0, 0, 0, he);
-
+				}
 			}
 		}
 
@@ -504,346 +490,7 @@ public final class TextLayout extends Resource {
 
 	}
 
-	// for (int i = 0; i < lines.length; i++) {
-	//
-	// Rectangle r = lineBounds[i];
-	// gc.drawRectangle(
-	// new Rectangle(x + r.x, y + r.y, r.width, r.height));
-	// gc.fillRectangle(
-	// new Rectangle(x + r.x, y + r.y, r.width, r.height));
-	// gc.drawText(text, x, y);
-	//
-	// }
 
-	// gc.handle.saveGraphicsState();
-	// NSPoint pt = new NSPoint();
-	// pt.x = x;
-	// pt.y = y;
-	// NSRange range = new NSRange();
-	// long numberOfGlyphs = layoutManager.numberOfGlyphs();
-	// if (numberOfGlyphs > 0) {
-	// range.location = 0;
-	// range.length = numberOfGlyphs;
-	// layoutManager.drawBackgroundForGlyphRange(range, pt);
-	// }
-	// boolean hasSelection = selectionStart <= selectionEnd
-	// && selectionStart != -1 && selectionEnd != -1;
-	// if (hasSelection || ((flags & SWT.LAST_LINE_SELECTION) != 0
-	// && (flags & (SWT.FULL_SELECTION
-	// | SWT.DELIMITER_SELECTION)) != 0)) {
-	// if (selectionBackground == null)
-	// selectionBackground = device
-	// .getSystemColor(SWT.COLOR_LIST_SELECTION);
-	// NSColor selectionColor = NSColor.colorWithDeviceRed(
-	// selectionBackground.handle[0],
-	// selectionBackground.handle[1],
-	// selectionBackground.handle[2],
-	// selectionBackground.handle[3]);
-	// NSBezierPath path = NSBezierPath.bezierPath();
-	// NSRect rect = new NSRect();
-	// if (hasSelection) {
-	// range.location = translateOffset(selectionStart);
-	// range.length = translateOffset(
-	// selectionEnd - selectionStart + 1);
-	// long[] rectCount = new long[1];
-	// long pArray = layoutManager.rectArrayForCharacterRange(
-	// range, range, textContainer, rectCount);
-	// for (int k = 0; k < rectCount[0]; k++, pArray += NSRect.sizeof) {
-	// OS.memmove(rect, pArray, NSRect.sizeof);
-	// fixRect(rect);
-	// rect.x += pt.x;
-	// rect.y += pt.y;
-	// if (fixedLineMetrics != null)
-	// rect.height = fixedLineMetrics.height;
-	// rect.height = Math.max(rect.height, ascent + descent);
-	// if ((flags & (SWT.FULL_SELECTION
-	// | SWT.DELIMITER_SELECTION)) != 0
-	// && (/* hasSelection || */ (flags
-	// & SWT.LAST_LINE_SELECTION) != 0)) {
-	// rect.height += spacing;
-	// }
-	// path.appendBezierPathWithRect(rect);
-	// }
-	// }
-	// // TODO draw full selection for wrapped text and delimiter
-	// // selection for hard breaks
-	// if ((flags
-	// & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0
-	// && (/* hasSelection || */ (flags
-	// & SWT.LAST_LINE_SELECTION) != 0)) {
-	// NSRect bounds = lineBounds[lineBounds.length - 1];
-	// rect.x = pt.x + bounds.x + bounds.width;
-	// rect.y = y + bounds.y;
-	// rect.width = (flags & SWT.FULL_SELECTION) != 0
-	// ? 0x7fffffff
-	// : (bounds.height + spacing) / 3;
-	// rect.height = Math.max(bounds.height + spacing,
-	// ascent + descent);
-	// path.appendBezierPathWithRect(rect);
-	// }
-	// selectionColor.setFill();
-	// path.fill();
-	// }
-	// if (numberOfGlyphs > 0) {
-	// range.location = 0;
-	// range.length = numberOfGlyphs;
-	// double[] fg = gc.data.foreground;
-	// boolean defaultFg = fg[0] == 0 && fg[1] == 0 && fg[2] == 0
-	// && fg[3] == 1 && gc.data.alpha == 255;
-	// if (!defaultFg) {
-	// for (int i = 0; i < stylesCount - 1; i++) {
-	// StyleItem run = styles[i];
-	// if (run.style != null && run.style.foreground != null)
-	// continue;
-	// if (run.style != null && run.style.underline
-	// && run.style.underlineStyle == SWT.UNDERLINE_LINK)
-	// continue;
-	// range.location = length != 0
-	// ? translateOffset(run.start)
-	// : 0;
-	// range.length = translateOffset(styles[i + 1].start)
-	// - range.location;
-	// layoutManager.addTemporaryAttribute(
-	// OS.NSForegroundColorAttributeName, gc.data.fg,
-	// range);
-	// }
-	// }
-	// NSPoint ptGlyphs = new NSPoint();
-	// ptGlyphs.x = pt.x;
-	// ptGlyphs.y = pt.y;
-	// if (fixedLineMetrics != null)
-	// ptGlyphs.y += fixedLineMetricsDy;
-	// range.location = 0;
-	// range.length = numberOfGlyphs;
-	// layoutManager.drawGlyphsForGlyphRange(range, ptGlyphs);
-	// if (!defaultFg) {
-	// range.location = 0;
-	// range.length = length;
-	// layoutManager.removeTemporaryAttribute(
-	// OS.NSForegroundColorAttributeName, range);
-	// }
-	// NSPoint point = new NSPoint();
-	// for (int j = 0; j < stylesCount; j++) {
-	// StyleItem run = styles[j];
-	// TextStyle style = run.style;
-	// if (style == null)
-	// continue;
-	// boolean drawUnderline = style.underline
-	// && !isUnderlineSupported(style);
-	// drawUnderline = drawUnderline && (j + 1 == stylesCount
-	// || !style.isAdherentUnderline(styles[j + 1].style));
-	// boolean drawBorder = style.borderStyle != SWT.NONE;
-	// drawBorder = drawBorder && (j + 1 == stylesCount
-	// || !style.isAdherentBorder(styles[j + 1].style));
-	// if (!drawUnderline && !drawBorder)
-	// continue;
-	// int end = j + 1 < stylesCount
-	// ? translateOffset(styles[j + 1].start - 1)
-	// : length;
-	// for (int i = 0; i < lineOffsets.length - 1; i++) {
-	// int lineStart = untranslateOffset(lineOffsets[i]);
-	// int lineEnd = untranslateOffset(lineOffsets[i + 1] - 1);
-	// if (drawUnderline) {
-	// int start = run.start;
-	// for (int k = j; k > 0 && style.isAdherentUnderline(
-	// styles[k - 1].style); k--) {
-	// start = styles[k - 1].start;
-	// }
-	// start = translateOffset(start);
-	// if (!(start > lineEnd || end < lineStart)) {
-	// range.location = Math.max(lineStart, start);
-	// range.length = Math.min(lineEnd, end) + 1
-	// - range.location;
-	// if (range.length > 0) {
-	// long[] rectCount = new long[1];
-	// long pArray = layoutManager
-	// .rectArrayForCharacterRange(range,
-	// range, textContainer,
-	// rectCount);
-	// NSRect rect = new NSRect();
-	// gc.handle.saveGraphicsState();
-	// double baseline = layoutManager.typesetter()
-	// .baselineOffsetInLayoutManager(
-	// layoutManager, lineStart);
-	// double[] color = null;
-	// if (style.underlineColor != null)
-	// color = style.underlineColor.handle;
-	// if (color == null
-	// && style.foreground != null)
-	// color = style.foreground.handle;
-	// if (color != null) {
-	// NSColor.colorWithDeviceRed(color[0],
-	// color[1], color[2], color[3])
-	// .setStroke();
-	// }
-	// for (int k = 0; k < rectCount[0]; k++, pArray += NSRect.sizeof) {
-	// OS.memmove(rect, pArray, NSRect.sizeof);
-	// fixRect(rect);
-	// double underlineX = pt.x + rect.x;
-	// double underlineY = pt.y + rect.y
-	// + rect.height - baseline + 1;
-	// NSBezierPath path = NSBezierPath
-	// .bezierPath();
-	// switch (style.underlineStyle) {
-	// case SWT.UNDERLINE_ERROR : {
-	// path.setLineWidth(2f);
-	// path.setLineCapStyle(
-	// OS.NSRoundLineCapStyle);
-	// path.setLineJoinStyle(
-	// OS.NSRoundLineJoinStyle);
-	// path.setLineDash(
-	// new double[]{1, 3f}, 2,
-	// 0);
-	// point.x = underlineX;
-	// point.y = underlineY + 0.5f;
-	// path.moveToPoint(point);
-	// point.x = underlineX
-	// + rect.width;
-	// point.y = underlineY + 0.5f;
-	// path.lineToPoint(point);
-	// break;
-	// }
-	// case SWT.UNDERLINE_SQUIGGLE : {
-	// gc.handle.setShouldAntialias(
-	// false);
-	// path.setLineWidth(1.0f);
-	// path.setLineCapStyle(
-	// OS.NSButtLineCapStyle);
-	// path.setLineJoinStyle(
-	// OS.NSMiterLineJoinStyle);
-	// double lineBottom = pt.y
-	// + rect.y + rect.height;
-	// float squigglyThickness = 1;
-	// float squigglyHeight = 2
-	// * squigglyThickness;
-	// double squigglyY = Math.min(
-	// underlineY
-	// - squigglyHeight
-	// / 2,
-	// lineBottom
-	// - squigglyHeight
-	// - 1);
-	// float[] points = computePolyline(
-	// (int) underlineX,
-	// (int) squigglyY,
-	// (int) (underlineX
-	// + rect.width),
-	// (int) (squigglyY
-	// + squigglyHeight));
-	// point.x = points[0] + 0.5f;
-	// point.y = points[1] + 0.5f;
-	// path.moveToPoint(point);
-	// for (int p = 2; p < points.length; p += 2) {
-	// point.x = points[p] + 0.5f;
-	// point.y = points[p + 1]
-	// + 0.5f;
-	// path.lineToPoint(point);
-	// }
-	// break;
-	// }
-	// }
-	// path.stroke();
-	// }
-	// gc.handle.restoreGraphicsState();
-	// }
-	// }
-	// }
-	// if (drawBorder) {
-	// int start = run.start;
-	// for (int k = j; k > 0 && style.isAdherentBorder(
-	// styles[k - 1].style); k--) {
-	// start = styles[k - 1].start;
-	// }
-	// start = translateOffset(start);
-	// if (!(start > lineEnd || end < lineStart)) {
-	// range.location = Math.max(lineStart, start);
-	// range.length = Math.min(lineEnd, end) + 1
-	// - range.location;
-	// if (range.length > 0) {
-	// long[] rectCount = new long[1];
-	// long pArray = layoutManager
-	// .rectArrayForCharacterRange(range,
-	// range, textContainer,
-	// rectCount);
-	// NSRect rect = new NSRect();
-	// gc.handle.saveGraphicsState();
-	// double[] color = null;
-	// if (style.borderColor != null)
-	// color = style.borderColor.handle;
-	// if (color == null
-	// && style.foreground != null)
-	// color = style.foreground.handle;
-	// if (color != null) {
-	// NSColor.colorWithDeviceRed(color[0],
-	// color[1], color[2], color[3])
-	// .setStroke();
-	// }
-	// int width = 1;
-	// float[] dashes = null;
-	// switch (style.borderStyle) {
-	// case SWT.BORDER_SOLID :
-	// break;
-	// case SWT.BORDER_DASH :
-	// dashes = width != 0
-	// ? GC.LINE_DASH
-	// : GC.LINE_DASH_ZERO;
-	// break;
-	// case SWT.BORDER_DOT :
-	// dashes = width != 0
-	// ? GC.LINE_DOT
-	// : GC.LINE_DOT_ZERO;
-	// break;
-	// }
-	// double[] lengths = null;
-	// if (dashes != null) {
-	// lengths = new double[dashes.length];
-	// for (int k = 0; k < lengths.length; k++) {
-	// lengths[k] = width == 0
-	// ? dashes[k]
-	// : dashes[k] * width;
-	// }
-	// }
-	// for (int k = 0; k < rectCount[0]; k++, pArray += NSRect.sizeof) {
-	// OS.memmove(rect, pArray, NSRect.sizeof);
-	// fixRect(rect);
-	// rect.x += pt.x + 0.5f;
-	// rect.y += pt.y + 0.5f;
-	// rect.width -= 0.5f;
-	// rect.height -= 0.5f;
-	// NSBezierPath path = NSBezierPath
-	// .bezierPath();
-	// path.setLineDash(lengths,
-	// lengths != null
-	// ? lengths.length
-	// : 0,
-	// 0);
-	// path.appendBezierPathWithRect(rect);
-	// path.stroke();
-	// }
-	// gc.handle.restoreGraphicsState();
-	// }
-	// }
-	// }
-	// }
-	// }
-	// }
-	// gc.handle.restoreGraphicsState();
-	// } finally {
-	// gc.uncheckGC(pool);
-	// }
-
-	// void fixRect(NSRect rect) {
-	// double right = -1;
-	// for (int j = 0; j < lineBounds.length; j++) {
-	// NSRect line = lineBounds[j];
-	// if (rect.y <= line.y && line.y <= rect.y + rect.height) {
-	// right = Math.max(right, line.x + line.width);
-	// }
-	// }
-	// if (right != -1 && rect.x + rect.width > right) {
-	// rect.width = right - rect.x;
-	// }
-	// }
 
 	private synchronized Paragraph createParagraph(int selectionStart,
 			int selectionEnd, Color selectionForeground,
@@ -872,33 +519,20 @@ public final class TextLayout extends Resource {
 
 		FontCollection fc = new FontCollection();
 		fc.setDefaultFontManager(fontMgr);
-		Font f = getFont();
+		var skijaFont = getSkijaFont();
 
-		if (f == null)
-			f = device.getSystemFont();
+		String fontFamily = skijaFont.getTypeface().getFamilyName();
 
-		FontData fd = f.getFontData()[0];
+		io.github.humbleui.skija.paragraph.TextStyle normal = new io.github.humbleui.skija.paragraph.TextStyle() //
+			.setFontSize(getFontSize()) //
+			.setFontFamilies(new String[] { fontFamily }) //
+			.setColor(0xFF000000);
 
-		io.github.humbleui.skija.paragraph.TextStyle normal = new io.github.humbleui.skija.paragraph.TextStyle()
-				.setFontSize(getFontSize())
-				.setFontFamilies(new String[]{fd.getName()})
-				.setColor(0xFF000000);
-
-		io.github.humbleui.skija.paragraph.TextStyle selectionStyle = new io.github.humbleui.skija.paragraph.TextStyle()
-				.setFontSize(getFontSize())
-				.setFontFamilies(new String[]{fd.getName()})
-				.setForeground(new Paint().setColor(SkijaGC
-						.convertSWTColorToSkijaColor(selectionForeground)))
-				.setBackground(new Paint().setColor(SkijaGC
-						.convertSWTColorToSkijaColor(selectionBackground)));
-
-		// io.github.humbleui.skija.paragraph.TextStyle selectionStyle = new
-		// io.github.humbleui.skija.paragraph.TextStyle()
-		// .setFontSize(getFontSize())
-		// .setFontFamilies(new String[]{fd.getName()})
-		// .setColor(0xFFFF0000);
-
-		int offset = 0;
+		io.github.humbleui.skija.paragraph.TextStyle selectionStyle = new io.github.humbleui.skija.paragraph.TextStyle() //
+			.setFontSize(getFontSize()) //
+			.setFontFamilies(new String[] { fontFamily }) //
+			.setForeground(new Paint().setColor(SkijaGC.convertSWTColorToSkijaColor(selectionForeground))) //
+			.setBackground(new Paint().setColor(SkijaGC.convertSWTColorToSkijaColor(selectionBackground)));
 
 		Canvas canvas = surface.getCanvas();
 		canvas.clear(0x00000000);
@@ -925,18 +559,17 @@ public final class TextLayout extends Resource {
 
 				int nextStyleStart = str.length();
 				if (next != null) {
-					nextStyleStart = Math.min(str.length(),
-							styles[j + 1].start);
+				    nextStyleStart = Math.min(str.length(), styles[j + 1].start);
 				}
 
 				if (si.start > nextStyleStart)
 					continue;
 
 				String s = str.substring(si.start, nextStyleStart);
-				if (s != "") {
+				if (!"".equals(s)) {
 					if (hasSelection) {
 
-						var ts = convertToTextStyle(si, fd);
+					    var ts = convertToTextStyle(si, fontFamily);
 
 						for (int i = si.start; i < nextStyleStart; i++) {
 
@@ -983,7 +616,7 @@ public final class TextLayout extends Resource {
 
 					} else {
 
-						var ts = convertToTextStyle(si, fd);
+					    var ts = convertToTextStyle(si, fontFamily);
 						paragraphBuilder.pushStyle(ts);
 
 						addText(paragraphBuilder, tabPlaceholder, s);
@@ -1038,26 +671,20 @@ public final class TextLayout extends Resource {
 	}
 
 	private io.github.humbleui.skija.paragraph.TextStyle convertToTextStyle(
-			StyleItem si, FontData fd) {
+		StyleItem si, String fontFamily) {
 
 		TextStyle ts = si.style;
 
-		// int foreground = SkijaGC.convertSWTColorToSkijaColor(ts.foreground);
-		// int background = SkijaGC.convertSWTColorToSkijaColor(ts.background);
+		 if (ts == null) {
+		     int foreground = SkijaGC.convertSWTColorToSkijaColor(device.getSystemColor(SWT.COLOR_BLACK));
+		     try (Paint foreP = new Paint().setColor(foreground)) {
+		     return new io.github.humbleui.skija.paragraph.TextStyle() //
+			     .setFontSize(getFontSize()) //
+			     .setFontFamilies(new String[] { fontFamily }) //
+			     .setForeground(foreP); //
+		     }
 
-		if (ts == null) {
-
-			int foreground = SkijaGC.convertSWTColorToSkijaColor(
-					device.getSystemColor(SWT.COLOR_BLACK));
-
-			Paint foreP = new Paint().setColor(foreground);
-
-			return new io.github.humbleui.skija.paragraph.TextStyle()
-					.setFontSize(getFontSize())
-					.setFontFamilies(new String[]{fd.getName()})
-					.setForeground(foreP);
-
-		}
+		 }
 
 		int foreground = SkijaGC
 				.convertSWTColorToSkijaColor(ts.foreground != null
@@ -1074,55 +701,20 @@ public final class TextLayout extends Resource {
 		}
 
 		FontStyle fs = FontStyle.NORMAL;
-
-		float fontSize = getFontSize();
+		var fontSize = getFontSize();
 		if (ts.font != null && ts.font.getFontData() != null
-				&& ts.font.getFontData().length >= 1) {
-			fd = ts.font.getFontData()[0];
-			// fontSize = (float) ((fd.getHeightF() * 1.4) + 2);
-
-			fs = ((fd.getStyle() & SWT.NORMAL) != 0) ? FontStyle.NORMAL : null;
-
-			if (fs == null) {
-				fs = (fd.getStyle() & SWT.BOLD) != 0 ? FontStyle.BOLD : null;
-			}
-
-			if ((fd.getStyle() & SWT.ITALIC) != 0) {
-
-				if (fs == null) {
-					fs = FontStyle.ITALIC;
-
-				}
-
-				if (fs == FontStyle.BOLD) {
-					fs = FontStyle.BOLD_ITALIC;
-				}
-
-			}
-
-			if (fs == null)
-				fs = FontStyle.NORMAL;
-
+			&& ts.font.getFontData().length >= 1) {
+		try (var skijaFont = SkijaGC.convertToSkijaFont(ts.font)) {
+			fs = skijaFont.getTypeface().getFontStyle();
+			fontSize = skijaFont.getSize();
 		}
+	}
 
-		// boolean underline = ts.underline;
-		// boolean underline = ts.underline;
-		// boolean overline = false;
-		// boolean strikethrough = ts.strikeout;
-		//
-		// // TODO can we use multiple decoratoins at one TextStyle??
-		// Color underlineCol = ts.underlineColor;
-		// // Color underlineCol = getDevice().getSystemColor(SWT.COLOR_RED);
-		// Color strikethroughCol = ts.strikeoutColor;
-		//
-		// DecorationStyle ds = new DecorationStyle(underline, overline,
-		// strikethrough, false,
-		// SkijaGC.convertSWTColorToSkijaColor(underlineCol),
-		// DecorationLineStyle.SOLID, 1);
-
-		io.github.humbleui.skija.paragraph.TextStyle textSty = new io.github.humbleui.skija.paragraph.TextStyle()
-				.setFontStyle(fs).setFontSize(fontSize)
-				.setFontFamilies(new String[]{fd.getName()})
+		io.github.humbleui.skija.paragraph.TextStyle textSty = //
+			new io.github.humbleui.skija.paragraph.TextStyle() //
+				.setFontStyle(fs) //
+				.setFontSize(fontSize) //
+				.setFontFamilies(new String[] { fontFamily }) //
 				.setForeground(foreP) //
 				.setBackground(backP);
 
@@ -1131,6 +723,27 @@ public final class TextLayout extends Resource {
 
 		return textSty;
 
+	}
+
+	private FontStyle getFontStyle(int style) {
+
+	    var fs = ((style & SWT.NORMAL) != 0) ? FontStyle.NORMAL : null;
+	    if (fs == null) {
+		fs = (style & SWT.BOLD) != 0 ? FontStyle.BOLD : null;
+	    }
+
+	    if ((style & SWT.ITALIC) != 0) {
+		if (fs == null) {
+		    fs = FontStyle.ITALIC;
+		}
+		if (fs == FontStyle.BOLD) {
+		    fs = FontStyle.BOLD_ITALIC;
+		}
+	    }
+	    if (fs == null)
+		fs = FontStyle.NORMAL;
+
+	    return fs;
 	}
 
 	void freeRuns() {
@@ -1306,6 +919,28 @@ public final class TextLayout extends Resource {
 		return new Rectangle(initial.x, initial.y, width, height);
 	}
 
+	private static Float getMin(Float a, Float b) {
+
+	    if (a == null)
+		return b;
+	    if (b == null)
+		return a;
+
+	    return Math.min(a, b);
+
+	}
+
+	private static Float getMax(Float a, Float b) {
+
+	    if (a == null)
+		return b;
+	    if (b == null)
+		return a;
+
+	    return Math.max(a, b);
+
+	}
+
 	/**
 	 * Returns the bounds for the specified range of characters. The bounds is
 	 * the smallest rectangle that encompasses all characters in the range. The
@@ -1333,15 +968,28 @@ public final class TextLayout extends Resource {
 			return new Rectangle(0, 0, 0, 0);
 		}
 
-		Point startTop = getLocation(start, false);
-		Point endTop = getLocation(end, false);
+		if(end < text.length())
+		    end++;
 
-		// TODO: this is only an approximation...
+		TextBox[] tbs = paragraph.getRectsForRange(start, end, RectHeightMode.TIGHT, RectWidthMode.TIGHT);
 
-		Rectangle r = new Rectangle(startTop.x, startTop.y,
-				endTop.x - startTop.x, endTop.y - startTop.y + 20);
+		Float left = null, top = null, bottom = null, right = null;
 
-		return r;
+		for (var t : tbs) {
+
+		    left = getMin(left, t.getRect().getLeft());
+		    right = getMax(right, t.getRect().getRight());
+		    top = getMin(top, t.getRect().getTop());
+		    bottom = getMax(bottom, t.getRect().getBottom());
+
+		}
+
+		if (left == null)
+		    return new Rectangle(0, 0, 0, 0);
+
+		return new Rectangle(left.intValue(), top.intValue(), (int) Math.round(0.5 + right - left),
+			(int) Math.round(0.5 + bottom - top));
+
 	}
 
 	/**
@@ -1386,6 +1034,10 @@ public final class TextLayout extends Resource {
 			return swtFont;
 
 		return innerGC.getFont();
+	}
+
+	private io.github.humbleui.skija.Font getSkijaFont() {
+		return SkijaGC.convertToSkijaFont(getFont());
 	}
 
 	/**
