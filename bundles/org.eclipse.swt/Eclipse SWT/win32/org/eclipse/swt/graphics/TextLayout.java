@@ -14,7 +14,7 @@ import io.github.humbleui.types.*;
  * This is the Skija TextLayout. The performance at scrolling for 1000s of lines in styled text is
  * insufficient.
  *
- * For this the fastCalculationMode works, but it also has bugs, 
+ * For this the fastCalculationMode works, but it also has bugs,
  * because the font size calculation from SWT to Skija does not yet work properly.
  *
  */
@@ -180,8 +180,17 @@ public final class TextLayout extends Resource {
 		return coordinates;
 	}
 
+	private io.github.humbleui.skija.Font getSkijaFont() {
+	    return SkijaGC.convertToSkijaFont(getFont());
+	}
+
 	// heuristic that doesn't work properly. This needs improvement drastically.
 	private float getFontSize() {
+
+	    if (true)
+		try (var skijaFont = getSkijaFont()) {
+		    return skijaFont.getSize();
+		}
 
 		if (this.font != null)
 			return (float) (this.font.getSize() * 1.4) + 2;
