@@ -279,13 +279,14 @@ public final class TextLayout extends Resource {
 				lineOffsets[1] = 0;
 				lineBounds = new Rectangle[1];
 
-				try (var skijaFont = getSkijaFont()) {
-				    var fm = getSkijaFont().getMetrics();
+				Font f = getFont();
 
-				    // TODO dummy calculation for the line height. This seems to
-				    // work, no idea whether it is right.
-				    int he = (int) Math.round(Math.abs(fm.getAscent()) + Math.abs(fm.getDescent())
-					    + fm.getLeading() + 0.5);
+				FontMetrics fm = innerGC.getFontMetrics();
+
+				// TODO dummy calculation for the line height. This seems to
+				// work, no idea whether it is right.
+				int he = Math.abs(fm.getAscent()) + Math.abs(fm.getDescent())
+						+ fm.getLeading();
 
 				    lineBounds[0] = new Rectangle(0, 0, 0, he);
 
