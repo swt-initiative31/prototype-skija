@@ -181,18 +181,20 @@ public final class TextLayout extends Resource {
 
 	private float getFontSize() {
 
-		if (ascent != -1 && descent != -1) {
-			return (float) ((Math.abs(ascent) + Math.abs(descent)) / 2.0 * 1.5);
-		}
+	    return getSkijaFont().getSize();
 
-		Font f = getFont();
-
-		if (f == null)
-			f = device.getSystemFont();
-
-		FontData fd = f.getFontData()[0];
-
-		return (float) (fd.getHeightF() * 2.2);
+//		if (ascent != -1 && descent != -1) {
+//			return (float) ((Math.abs(ascent) + Math.abs(descent)) / 2.0 * 1.5);
+//		}
+//
+//		Font f = getFont();
+//
+//		if (f == null)
+//			f = device.getSystemFont();
+//
+//		FontData fd = f.getFontData()[0];
+//
+//		return (float) (fd.getHeightF() * 2.2);
 	}
 
 	void computeRuns(GC gc) {
