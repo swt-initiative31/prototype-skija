@@ -11,11 +11,11 @@ import io.github.humbleui.skija.paragraph.*;
 import io.github.humbleui.types.*;
 
 /**
- * This is the Skija TextLayout. The performance at scrolling for 1000s of lines in styled text is
- * insufficient.
+ * This is the Skija TextLayout. The performance at scrolling for 1000s of lines
+ * in styled text is insufficient.
  *
- * For this the fastCalculationMode works, but it also has bugs,
- * because the font size calculation from SWT to Skija does not yet work properly.
+ * For this the fastCalculationMode works, but it also has bugs, because the
+ * font size calculation from SWT to Skija does not yet work properly.
  *
  */
 public final class TextLayout extends Resource {
@@ -328,11 +328,7 @@ public final class TextLayout extends Resource {
 	@Override
 	void destroy() {
 		freeRuns();
-
-		if (font != null && !font.isClosed())
-		    font.close();
 		font = null;
-
 		text = null;
 		styles = null;
 		segments = null;
@@ -2723,6 +2719,37 @@ public final class TextLayout extends Resource {
 
 		freeRuns();
 
+		if (true)
+		    return;
+
+		if (font == null)
+		    font = device.getSystemFont();
+
+		if (font != null && font.isDisposed())
+		    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+
+		innerGC.setFont(font);
+		FontData fontData = font.getFontData()[0];
+		FontStyle style = FontStyle.NORMAL;
+		boolean isBold = (fontData.getStyle() & SWT.BOLD) != 0;
+		boolean isItalic = (fontData.getStyle() & SWT.ITALIC) != 0;
+		if (isBold && isItalic) {
+		    style = FontStyle.BOLD_ITALIC;
+		} else if (isBold) {
+		    style = FontStyle.BOLD;
+		} else if (isItalic) {
+		    style = FontStyle.ITALIC;
+		}
+		this.font = new io.github.humbleui.skija.Font(Typeface.makeFromName(fontData.getName(), style));
+		int fontSize = DPIUtil.autoScaleUp(fontData.getHeight());
+		if (SWT.getPlatform().equals("win32")) {
+		    fontSize *= this.font.getSize() / innerGC.getDevice().getSystemFont().getFontData()[0].getHeight();
+		}
+		this.font.setSize(fontSize);
+		this.font.setEdging(FontEdging.SUBPIXEL_ANTI_ALIAS);
+		this.font.setSubpixel(true);
+
+		freeRuns();
 	}
 
 	/**
