@@ -186,24 +186,8 @@ public final class TextLayout extends Resource {
 //			return (float) ((Math.abs(ascent) + Math.abs(descent)) / 2.0 * 1.5);
 //		}
 
-	    if (true) {
-
-		if (ascent != -1 && descent != -1) {
-		    return (float) ((Math.abs(ascent) + Math.abs(descent)) / 2.0 * 1.5);
-		}
-
-		Font f = getFont();
-
-		if (f == null)
-		    f = device.getSystemFont();
-
-		FontData fd = f.getFontData()[0];
-
-		return (float) (fd.getHeightF() * 2.2);
-	    }
-
 		try (var skijaFont = getSkijaFont()) {
-		return skijaFont.getSize();
+			return skijaFont.getSize();
 		}
 	}
 
@@ -304,14 +288,13 @@ public final class TextLayout extends Resource {
 				lineBounds = new Rectangle[1];
 
 				try (var skijaFont = getSkijaFont()) {
-				    var fm = getSkijaFont().getMetrics();
+					var fm = getSkijaFont().getMetrics();
 
-				    // TODO dummy calculation for the line height. This seems to
-				    // work, no idea whether it is right.
-				    int he = (int) (Math.abs(fm.getAscent()) + Math.abs(fm.getDescent())
-					    + fm.getLeading());
+					// TODO dummy calculation for the line height. This seems to
+					// work, no idea whether it is right.
+					int he = (int) (Math.abs(fm.getAscent()) + Math.abs(fm.getDescent()) + fm.getLeading());
 
-				    lineBounds[0] = new Rectangle(0, 0, 0, he);
+					lineBounds[0] = new Rectangle(0, 0, 0, he);
 				}
 			}
 		}
@@ -887,13 +870,15 @@ public final class TextLayout extends Resource {
 		String fontFamily = skijaFont.getTypeface().getFamilyName();
 
 		io.github.humbleui.skija.paragraph.TextStyle normal = new io.github.humbleui.skija.paragraph.TextStyle()
-			.setFontStyle(skijaFont.getTypeface().getFontStyle()).setFontSize(skijaFont.getSize())
-			.setFontFamilies(new String[] { fontFamily })
+				.setFontStyle(skijaFont.getTypeface().getFontStyle())
+				.setFontSize(skijaFont.getSize())
+				.setFontFamilies(new String[] { fontFamily })
 				.setColor(0xFF000000);
 
 		io.github.humbleui.skija.paragraph.TextStyle selectionStyle = new io.github.humbleui.skija.paragraph.TextStyle()
-			.setFontStyle(skijaFont.getTypeface().getFontStyle()).setFontSize(skijaFont.getSize())
-			.setFontFamilies(new String[] { fontFamily })
+				.setFontStyle(skijaFont.getTypeface().getFontStyle())
+				.setFontSize(skijaFont.getSize())
+				.setFontFamilies(new String[] { fontFamily })
 				.setForeground(new Paint().setColor(SkijaGC
 						.convertSWTColorToSkijaColor(selectionForeground)))
 				.setBackground(new Paint().setColor(SkijaGC
@@ -943,7 +928,7 @@ public final class TextLayout extends Resource {
 				if (s != "") {
 					if (hasSelection) {
 
-					    var ts = convertToTextStyle(si, fontFamily);
+						var ts = convertToTextStyle(si, fontFamily);
 
 						for (int i = si.start; i < nextStyleStart; i++) {
 
@@ -990,7 +975,7 @@ public final class TextLayout extends Resource {
 
 					} else {
 
-					    var ts = convertToTextStyle(si, fontFamily);
+						var ts = convertToTextStyle(si, fontFamily);
 						paragraphBuilder.pushStyle(ts);
 
 						addText(paragraphBuilder, tabPlaceholder, s);
@@ -1045,7 +1030,7 @@ public final class TextLayout extends Resource {
 	}
 
 	private io.github.humbleui.skija.paragraph.TextStyle convertToTextStyle(
-		StyleItem si, String fontFamily) {
+			StyleItem si, String fontFamily) {
 
 		TextStyle ts = si.style;
 
@@ -1061,7 +1046,7 @@ public final class TextLayout extends Resource {
 
 			return new io.github.humbleui.skija.paragraph.TextStyle()
 					.setFontSize(getFontSize())
-				.setFontFamilies(new String[] { fontFamily })
+					.setFontFamilies(new String[] { fontFamily })
 					.setForeground(foreP);
 
 		}
@@ -1085,9 +1070,9 @@ public final class TextLayout extends Resource {
 		FontStyle fs = FontStyle.NORMAL;
 		if (ts.font != null && ts.font.getFontData() != null
 				&& ts.font.getFontData().length >= 1) {
-		    try (var skijaFont = SkijaGC.convertToSkijaFont(ts.font)) {
-			fs = skijaFont.getTypeface().getFontStyle();
-			fontSize = skijaFont.getSize();
+			try (var skijaFont = SkijaGC.convertToSkijaFont(ts.font)) {
+				fs = skijaFont.getTypeface().getFontStyle();
+				fontSize = skijaFont.getSize();
 			}
 		}
 
@@ -1108,7 +1093,7 @@ public final class TextLayout extends Resource {
 
 		io.github.humbleui.skija.paragraph.TextStyle textSty = new io.github.humbleui.skija.paragraph.TextStyle()
 				.setFontStyle(fs).setFontSize(fontSize)
-			.setFontFamilies(new String[] { fontFamily })
+				.setFontFamilies(new String[] { fontFamily })
 				.setForeground(foreP) //
 				.setBackground(backP);
 
@@ -1372,7 +1357,7 @@ public final class TextLayout extends Resource {
 	}
 
 	private io.github.humbleui.skija.Font getSkijaFont() {
-	    return SkijaGC.convertToSkijaFont(getFont());
+		return SkijaGC.convertToSkijaFont(getFont());
 	}
 
 	/**
