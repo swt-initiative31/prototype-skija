@@ -180,7 +180,19 @@ public final class TextLayout extends Resource {
 	}
 
 	private float getFontSize() {
-		return getSkijaFont().getSize();
+
+		if (ascent != -1 && descent != -1) {
+			return (float) ((Math.abs(ascent) + Math.abs(descent)) / 2.0 * 1.5);
+		}
+
+		Font f = getFont();
+
+		if (f == null)
+			f = device.getSystemFont();
+
+		FontData fd = f.getFontData()[0];
+
+		return (float) (fd.getHeightF() * 2.2);
 	}
 
 	void computeRuns(GC gc) {
@@ -518,20 +530,25 @@ public final class TextLayout extends Resource {
 
 		FontCollection fc = new FontCollection();
 		fc.setDefaultFontManager(fontMgr);
-		var skijaFont = getSkijaFont();
+		Font f = getFont();
 
-		String fontFamily = skijaFont.getTypeface().getFamilyName();
+		if (f == null)
+			f = device.getSystemFont();
 
-		io.github.humbleui.skija.paragraph.TextStyle normal = new io.github.humbleui.skija.paragraph.TextStyle() //
-			.setFontSize(getFontSize()) //
-			.setFontFamilies(new String[] { fontFamily }) //
-			.setColor(0xFF000000);
+		FontData fd = f.getFontData()[0];
 
-		io.github.humbleui.skija.paragraph.TextStyle selectionStyle = new io.github.humbleui.skija.paragraph.TextStyle() //
-			.setFontSize(getFontSize()) //
-			.setFontFamilies(new String[] { fontFamily }) //
-			.setForeground(new Paint().setColor(SkijaGC.convertSWTColorToSkijaColor(selectionForeground))) //
-			.setBackground(new Paint().setColor(SkijaGC.convertSWTColorToSkijaColor(selectionBackground)));
+		io.github.humbleui.skija.paragraph.TextStyle normal = new io.github.humbleui.skija.paragraph.TextStyle()
+				.setFontSize(getFontSize())
+				.setFontFamilies(new String[]{fd.getName()})
+				.setColor(0xFF000000);
+
+		io.github.humbleui.skija.paragraph.TextStyle selectionStyle = new io.github.humbleui.skija.paragraph.TextStyle()
+				.setFontSize(getFontSize())
+				.setFontFamilies(new String[]{fd.getName()})
+				.setForeground(new Paint().setColor(SkijaGC
+						.convertSWTColorToSkijaColor(selectionForeground)))
+				.setBackground(new Paint().setColor(SkijaGC
+						.convertSWTColorToSkijaColor(selectionBackground)));
 
 		Canvas canvas = surface.getCanvas();
 		canvas.clear(0x00000000);
@@ -568,7 +585,7 @@ public final class TextLayout extends Resource {
 				if (!"".equals(s)) {
 					if (hasSelection) {
 
-					    var ts = convertToTextStyle(si, fontFamily);
+					    var ts = convertToTextStyle(si, fd);
 
 						for (int i = si.start; i < nextStyleStart; i++) {
 
@@ -615,7 +632,7 @@ public final class TextLayout extends Resource {
 
 					} else {
 
-					    var ts = convertToTextStyle(si, fontFamily);
+					    var ts = convertToTextStyle(si, fd);
 						paragraphBuilder.pushStyle(ts);
 
 						addText(paragraphBuilder, tabPlaceholder, s);
@@ -670,59 +687,100 @@ public final class TextLayout extends Resource {
 	}
 
 	private io.github.humbleui.skija.paragraph.TextStyle convertToTextStyle(
-		StyleItem si, String fontFamily) {
+		StyleItem si, FontData fd) {
 
-		TextStyle ts = si.style;
+	TextStyle ts = si.style;
 
-		 if (ts == null) {
-		     int foreground = SkijaGC.convertSWTColorToSkijaColor(device.getSystemColor(SWT.COLOR_BLACK));
-		     try (Paint foreP = new Paint().setColor(foreground)) {
-		     return new io.github.humbleui.skija.paragraph.TextStyle() //
-			     .setFontSize(getFontSize()) //
-			     .setFontFamilies(new String[] { fontFamily }) //
-			     .setForeground(foreP); //
-		     }
+	// int foreground = SkijaGC.convertSWTColorToSkijaColor(ts.foreground);
+	// int background = SkijaGC.convertSWTColorToSkijaColor(ts.background);
 
-		 }
+	if (ts == null) {
 
-		int foreground = SkijaGC
-				.convertSWTColorToSkijaColor(ts.foreground != null
-						? ts.foreground
-						: device.getSystemColor(SWT.COLOR_BLACK));
+		int foreground = SkijaGC.convertSWTColorToSkijaColor(
+				device.getSystemColor(SWT.COLOR_BLACK));
+
 		Paint foreP = new Paint().setColor(foreground);
 
-		Paint backP = null;
+		return new io.github.humbleui.skija.paragraph.TextStyle()
+				.setFontSize(getFontSize())
+				.setFontFamilies(new String[]{fd.getName()})
+				.setForeground(foreP);
 
-		if (ts.background != null) {
-			int background = SkijaGC.convertSWTColorToSkijaColor(ts.background);
-			backP = new Paint().setColor(background);
+	}
 
-		}
+	int foreground = SkijaGC
+			.convertSWTColorToSkijaColor(ts.foreground != null
+					? ts.foreground
+					: device.getSystemColor(SWT.COLOR_BLACK));
+	Paint foreP = new Paint().setColor(foreground);
 
-		FontStyle fs = FontStyle.NORMAL;
-		var fontSize = getFontSize();
-		if (ts.font != null && ts.font.getFontData() != null
+	Paint backP = null;
+
+	if (ts.background != null) {
+		int background = SkijaGC.convertSWTColorToSkijaColor(ts.background);
+		backP = new Paint().setColor(background);
+
+	}
+
+	FontStyle fs = FontStyle.NORMAL;
+
+	float fontSize = getFontSize();
+	if (ts.font != null && ts.font.getFontData() != null
 			&& ts.font.getFontData().length >= 1) {
-		try (var skijaFont = SkijaGC.convertToSkijaFont(ts.font)) {
-			fs = skijaFont.getTypeface().getFontStyle();
-			fontSize = skijaFont.getSize();
+		fd = ts.font.getFontData()[0];
+		// fontSize = (float) ((fd.getHeightF() * 1.4) + 2);
+
+		fs = ((fd.getStyle() & SWT.NORMAL) != 0) ? FontStyle.NORMAL : null;
+
+		if (fs == null) {
+			fs = (fd.getStyle() & SWT.BOLD) != 0 ? FontStyle.BOLD : null;
 		}
+
+		if ((fd.getStyle() & SWT.ITALIC) != 0) {
+
+			if (fs == null) {
+				fs = FontStyle.ITALIC;
+
+			}
+
+			if (fs == FontStyle.BOLD) {
+				fs = FontStyle.BOLD_ITALIC;
+			}
+
+		}
+
+		if (fs == null)
+			fs = FontStyle.NORMAL;
+
 	}
 
-		io.github.humbleui.skija.paragraph.TextStyle textSty = //
-			new io.github.humbleui.skija.paragraph.TextStyle() //
-				.setFontStyle(fs) //
-				.setFontSize(fontSize) //
-				.setFontFamilies(new String[] { fontFamily }) //
-				.setForeground(foreP) //
-				.setBackground(backP);
+	// boolean underline = ts.underline;
+	// boolean underline = ts.underline;
+	// boolean overline = false;
+	// boolean strikethrough = ts.strikeout;
+	//
+	// // TODO can we use multiple decoratoins at one TextStyle??
+	// Color underlineCol = ts.underlineColor;
+	// // Color underlineCol = getDevice().getSystemColor(SWT.COLOR_RED);
+	// Color strikethroughCol = ts.strikeoutColor;
+	//
+	// DecorationStyle ds = new DecorationStyle(underline, overline,
+	// strikethrough, false,
+	// SkijaGC.convertSWTColorToSkijaColor(underlineCol),
+	// DecorationLineStyle.SOLID, 1);
 
-		if (backP != null)
-			textSty = textSty.setBackground(backP);
+	io.github.humbleui.skija.paragraph.TextStyle textSty = new io.github.humbleui.skija.paragraph.TextStyle()
+			.setFontStyle(fs).setFontSize(fontSize)
+			.setFontFamilies(new String[]{fd.getName()})
+			.setForeground(foreP) //
+			.setBackground(backP);
 
-		return textSty;
+	if (backP != null)
+		textSty = textSty.setBackground(backP);
 
-	}
+	return textSty;
+
+}
 
 	private FontStyle getFontStyle(int style) {
 
