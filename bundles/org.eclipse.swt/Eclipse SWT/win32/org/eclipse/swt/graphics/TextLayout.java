@@ -285,14 +285,12 @@ public final class TextLayout extends Resource {
 
 				// TODO dummy calculation for the line height. This seems to
 				// work, no idea whether it is right.
-				int he = Math.abs(fm.getAscent()) + Math.abs(fm.getDescent())
-						+ fm.getLeading();
+				int he = Math.abs(fm.getAscent()) + Math.abs(fm.getDescent()) + fm.getLeading();
 
-				    lineBounds[0] = new Rectangle(0, 0, 0, he);
+				lineBounds[0] = new Rectangle(0, 0, 0, he);
 
 				}
 			}
-		}
 
 		Rectangle b = getBounds();
 
