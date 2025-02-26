@@ -113,7 +113,7 @@ public final class TextLayout extends Resource {
 	alignment = SWT.LEFT;
 	orientation = SWT.LEFT_TO_RIGHT;
 	text = "";
-
+	this.bidi = new Bidi(text, Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
 	styles = new StyleItem[2];
 	styles[0] = new StyleItem();
 	styles[1] = new StyleItem();
