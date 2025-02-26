@@ -72,6 +72,7 @@ public final class TextLayout extends Resource {
     int nativeZoom = DPIUtil.getNativeDeviceZoom();
 
     private Bidi bidi;
+    private List<BidiRun> bidiRuns = new ArrayList<>();
     private static Surface surface;
     private static GC innerGC;
 
@@ -112,7 +113,7 @@ public final class TextLayout extends Resource {
 	alignment = SWT.LEFT;
 	orientation = SWT.LEFT_TO_RIGHT;
 	text = "";
-
+	this.bidi = new Bidi(text, Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
 	styles = new StyleItem[2];
 	styles[0] = new StyleItem();
 	styles[1] = new StyleItem();
@@ -236,6 +237,8 @@ public final class TextLayout extends Resource {
 	Canvas canvas = surface.getCanvas();
 	canvas.clear(0x00000000);
 
+	calculateBidiRuns();
+
 	paragraph = createParagraph(selectionStart, selectionEnd, selectionForeground, selectionBackground);
 
 	this.selectionStart = selectionStart;
@@ -292,7 +295,7 @@ public final class TextLayout extends Resource {
 		    lineOffsets[k + 1] = (int) m.getEndIncludingNewline();
 
 		    lineBounds[k] = new Rectangle((int) m.getLeft(), (int) top, (int) Math.ceil(m.getWidth()),
-			    (int) Math.ceil(m.getHeight()));
+			    (int) m.getHeight());
 		}
 	    } else {
 
@@ -1377,6 +1380,23 @@ public final class TextLayout extends Resource {
 	return linkForeground;
     }
 
+    private synchronized void calculateBidiRuns() {
+
+	bidiRuns.clear();
+
+	for (int k = 0; k < bidi.getRunCount(); k++) {
+
+	    bidiRuns.add(new BidiRun(bidi.getRunStart(k), bidi.getRunLimit(k), bidi.getRunLevel(k)));
+
+	}
+
+    }
+
+    private synchronized BidiRun getBidiRun(int offset) {
+	var bidi = bidiRuns.stream().filter(b -> b.start <= offset && b.limit >= offset).findAny().get();
+	return bidi;
+    }
+
     /**
      * Returns the location for the specified character offset. The
      * <code>trailing</code> argument indicates whether the offset corresponds to
@@ -1408,61 +1428,44 @@ public final class TextLayout extends Resource {
 	    offset = 0;
 	}
 
-	char ch = text.charAt(offset);
-	if (trailing) {
-	    if (0xD800 <= ch && ch <= 0xDBFF) {
-		if (offset + 1 < length) {
-		    ch = text.charAt(offset + 1);
-		    if (0xDC00 <= ch && ch <= 0xDFFF) {
-			offset++;
-		    }
-		}
+	boolean endOfLineMode = offset == text.length();
+
+	if (endOfLineMode) {
+
+	    var run = getBidiRun(offset);
+
+	    if (run.level != 0 && run.start <= offset && offset <= run.limit) {
+		offset = run.limit - offset + run.start;
+		System.out.println("new offset: " + offset);
 	    }
-	} else {
-	    if (0xDC00 <= ch && ch <= 0xDFFF) {
-		if (offset - 1 >= 0) {
-		    ch = text.charAt(offset - 1);
-		    if (0xD800 <= ch && ch <= 0xDBFF) {
-			offset--;
-		    }
-		}
-	    }
+
 	}
 
-	if (offset == text.length()) {
-	    TextBox[] tbs = paragraph.getRectsForRange(offset - 1, offset, RectHeightMode.TIGHT, RectWidthMode.TIGHT);
 
-	    if (offset == 0) {
-		return new Point(0, 0);
-	    }
+	TextBox[] tbs = paragraph.getRectsForRange(offset, offset + 1, RectHeightMode.TIGHT, RectWidthMode.TIGHT);
+
+	    if (tbs == null || tbs.length != 1)
+		throw new IllegalStateException(
+			"Unexpected. getLocation( " + offset + " " + trailing + "  " + Arrays.toString(tbs));
 
 	    TextBox tb = tbs[0];
 
-	    int x = (int) tb.getRect().getRight();
+	    int x = 0;
+
+	    if (tb.getDirection() == Direction.RTL)
+		trailing = !trailing;
+	    if (endOfLineMode)
+		trailing = true;
+
+	    if (trailing)
+		x = (int) Math.ceil(tb.getRect().getRight());
+	    else {
+		x = (int) Math.ceil(tb.getRect().getLeft());
+	    }
 	    int y = (int) tb.getRect().getTop();
 
 	    return new Point(x, y);
 
-	}
-
-	TextBox[] tbs = paragraph.getRectsForRange(offset, offset + 1, RectHeightMode.TIGHT, RectWidthMode.TIGHT);
-
-	if (tbs == null || tbs.length != 1)
-	    throw new IllegalStateException(
-		    "Unexpected. getLocation( " + offset + " " + trailing + "  " + Arrays.toString(tbs));
-
-	TextBox tb = tbs[0];
-
-	int x = 0;
-
-	if (trailing)
-	    x = (int) Math.ceil(tb.getRect().getRight());
-	else {
-	    x = (int) tb.getRect().getLeft();
-	}
-	int y = (int) tb.getRect().getTop();
-
-	return new Point(x, y);
 
     }
 
@@ -1732,6 +1735,8 @@ public final class TextLayout extends Resource {
 	    return 0;
 	}
 
+	boolean setTrailing = trailing != null;
+
 	Rectangle line = null;
 
 	// TODO use binary search.
@@ -1746,9 +1751,11 @@ public final class TextLayout extends Resource {
 
 	if (line == null) {
 	    if (x <= lineBounds[0].x && y <= lineBounds[0].y) {
+		if (setTrailing)
+		    trailing[0] = 0;
 		return 0;
 	    } else {
-		return text.length();
+		return text.length() - 1;
 	    }
 	}
 
@@ -1759,10 +1766,13 @@ public final class TextLayout extends Resource {
 	if (affinity.getAffinity() == Affinity.UPSTREAM) {
 
 	    position = affinity.getPosition() - 1;
-	    if (trailing != null)
+	    if (setTrailing)
 		trailing[0] = 1;
-	} else
+	} else {
 	    position = affinity.getPosition();
+	    if (setTrailing)
+		trailing[0] = 0;
+	}
 
 	return position;
 
@@ -2545,6 +2555,15 @@ public final class TextLayout extends Resource {
 	checkLayout();
 	int mask = SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
 	orientation &= mask;
+
+	if (orientation == 0)
+	    return;
+
+	if ((orientation & SWT.LEFT_TO_RIGHT) != 0)
+	    orientation = SWT.LEFT_TO_RIGHT;
+	else if ((orientation & SWT.RIGHT_TO_LEFT) != 0)
+	    orientation = SWT.RIGHT_TO_LEFT;
+
 	if (this.orientation == orientation)
 	    return;
 	this.orientation = orientation;
@@ -3030,6 +3049,24 @@ public final class TextLayout extends Resource {
 
     public int getLineIndent(int lineIndex) {
 	return 0;
+    }
+
+    private class BidiRun {
+	final int start;
+	final int limit;
+	final int level;
+
+	public BidiRun(int start, int limit, int level) {
+	    this.start = start;
+	    this.limit = limit;
+	    this.level = level;
+	}
+
+	@Override
+	public String toString() {
+	    return "BidiRun [start=" + start + ", limit=" + limit + ", level=" + level + "]";
+	}
+
     }
 
 }
