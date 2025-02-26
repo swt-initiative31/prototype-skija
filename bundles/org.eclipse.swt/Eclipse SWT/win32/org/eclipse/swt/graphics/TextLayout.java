@@ -1429,7 +1429,6 @@ public final class TextLayout extends Resource {
 	}
 
 	boolean endOfLineMode = offset == text.length();
-	boolean isRTL = false;
 
 	if (endOfLineMode) {
 
@@ -1438,7 +1437,6 @@ public final class TextLayout extends Resource {
 	    if (run.level != 0 && run.start <= offset && offset <= run.limit) {
 		offset = run.limit - offset + run.start;
 		System.out.println("new offset: " + offset);
-		isRTL = true;
 	    }
 
 	}
