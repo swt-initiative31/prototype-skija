@@ -63,7 +63,6 @@ public class SnippetSkijaImageDataProvider {
 	    saver.data = new ImageData[] { skiaScale.getImageData(zoom) };
 	    saver.save(AFTER_FILE_SKIA, SWT.IMAGE_PNG);
 	    image = display.getSystemImage(SWT.ICON_WARNING);
-	    ImageUtils.setImageDataProvider(image, skiaScale);
 	    saver.data = new ImageData[] { image.getImageData() };
 	    saver.save(CHANGED_FILE, SWT.IMAGE_PNG);
 	}
@@ -85,7 +84,7 @@ public class SnippetSkijaImageDataProvider {
 
 	    // use SkijaImageDataProvider and create an image
 
-	    Image imgFromSkija = ImageUtils.createGenericImage(new SkijaImageDataProvider(skijaImage));
+	    Image imgFromSkija = new Image(display, new SkijaImageDataProvider(skijaImage));
 
 	    // write to file.
 	    saver.data = new ImageData[] { imgFromSkija.getImageData(zoom) };

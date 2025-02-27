@@ -165,9 +165,7 @@ public class SkijaGC extends GCHandle {
 	@Override
 	public void commit() {
 		io.github.humbleui.skija.Image im = surface.makeImageSnapshot();
-		byte[] imageBytes = EncoderPNG.encode(im).getBytes();
-
-		Image transferImage = new Image(innerGC.getDevice(), new ByteArrayInputStream(imageBytes));
+		Image transferImage = new Image(device, new SkijaImageDataProvider(im));
 
 		Rectangle originalArea = innerGC.getClipping();
 		Rectangle scaledArea = DPIUtil.autoScaleUp(originalArea);
@@ -175,6 +173,7 @@ public class SkijaGC extends GCHandle {
 				0, 0, originalArea.width, originalArea.height);
 		transferImage.dispose();
 		surface.close();
+		im.close();
 	}
 
 	@Override
@@ -392,6 +391,7 @@ public class SkijaGC extends GCHandle {
 				new PaletteData(0xFF0000, 0x00FF00, 0x0000FF));
 		d.data = convertedData;
 		d.alphaData = alphas;
+		d.bytesPerLine = 3 * d.width;
 
 		return d;
 	}
