@@ -16,7 +16,6 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
-import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 
 /**
@@ -139,15 +138,20 @@ public class Label extends CustomControl {
 			align = SWT.LEFT;
 		}
 
-		addPaintListener(this::onPaint);
-
-		addTraverseListener(event -> {
-			if (event.detail == SWT.TRAVERSE_MNEMONIC) {
-				onMnemonic(event);
+		Listener listener = event -> {
+			switch (event.type) {
+				case SWT.Paint -> onPaint(event);
+				case SWT.Traverse -> {
+					if (event.detail == SWT.TRAVERSE_MNEMONIC) {
+						onMnemonic(event);
+					}
+				}
+				case SWT.Dispose -> onDispose(event);
 			}
-		});
-
-		addListener(SWT.Dispose, this::onDispose);
+		};
+		addListener(SWT.Paint, listener);
+		addListener(SWT.Traverse, listener);
+		addListener(SWT.Dispose, listener);
 
 		initAccessible();
 	}
@@ -488,7 +492,7 @@ public class Label extends CustomControl {
 		appToolTipText = null;
 	}
 
-	void onMnemonic(TraverseEvent event) {
+	void onMnemonic(Event event) {
 		char mnemonic = _findMnemonic(text);
 		if (mnemonic == '\0') {
 			return;
@@ -517,7 +521,7 @@ public class Label extends CustomControl {
 		}
 	}
 
-	void onPaint(PaintEvent event) {
+	void onPaint(Event event) {
 		Drawing.drawWithGC(this, event.gc, this::doPaint);
 	}
 
