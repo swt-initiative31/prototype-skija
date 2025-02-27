@@ -1010,12 +1010,14 @@ public class Label extends CustomControl {
 			return;
 		}
 		this.bottomMargin = bottomMargin;
+		invalidateCachedDefaultSize();
 		redraw();
 	}
 
 	@Override
 	public void setFont(Font font) {
 		super.setFont(font);
+		invalidateCachedDefaultSize();
 		redraw();
 	}
 
@@ -1037,6 +1039,7 @@ public class Label extends CustomControl {
 		checkWidget();
 		if (image != this.image) {
 			this.image = image;
+			invalidateCachedDefaultSize();
 			redraw();
 		}
 	}
@@ -1064,6 +1067,7 @@ public class Label extends CustomControl {
 			return;
 		}
 		this.leftMargin = leftMargin;
+		invalidateCachedDefaultSize();
 		redraw();
 	}
 
@@ -1095,6 +1099,7 @@ public class Label extends CustomControl {
 		this.topMargin = Math.max(0, topMargin);
 		this.rightMargin = Math.max(0, rightMargin);
 		this.bottomMargin = Math.max(0, bottomMargin);
+		invalidateCachedDefaultSize();
 		redraw();
 	}
 
@@ -1121,6 +1126,7 @@ public class Label extends CustomControl {
 			return;
 		}
 		this.rightMargin = rightMargin;
+		invalidateCachedDefaultSize();
 		redraw();
 	}
 
@@ -1158,6 +1164,7 @@ public class Label extends CustomControl {
 		}
 		if (!text.equals(this.text)) {
 			this.text = text;
+			invalidateCachedDefaultSize();
 			redraw();
 		}
 	}
@@ -1191,6 +1198,7 @@ public class Label extends CustomControl {
 			return;
 		}
 		this.topMargin = topMargin;
+		invalidateCachedDefaultSize();
 		redraw();
 	}
 

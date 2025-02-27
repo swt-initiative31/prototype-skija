@@ -1138,6 +1138,7 @@ public class Button extends CustomControl {
 			return;
 		}
 		this.image = image;
+		invalidateCachedDefaultSize();
 		redraw();
 	}
 
@@ -1320,6 +1321,7 @@ public class Button extends CustomControl {
 			return;
 		}
 		text = string;
+		invalidateCachedDefaultSize();
 		redraw();
 	}
 
