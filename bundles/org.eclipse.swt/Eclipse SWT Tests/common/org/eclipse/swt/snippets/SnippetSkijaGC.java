@@ -37,7 +37,7 @@ public class SnippetSkijaGC {
 		ImageData img = image1.getImageData();
 
 		byte[] bytes = null;
-		var out = ImageUtils.createGenericImage(new SkijaImageDataProvider(img)).getImageData(400);
+		var out = new SkijaImageDataProvider(img).getImageData(400);
 
 		ImageLoader saver = new ImageLoader();
 
