@@ -167,6 +167,12 @@ public class SkijaGC extends GCHandle {
 		io.github.humbleui.skija.Image im = surface.makeImageSnapshot();
 		Image transferImage = new Image(device, new SkijaImageDataProvider(im));
 
+//		io.github.humbleui.skija.Image im = surface.makeImageSnapshot();
+//		byte[] imageBytes = EncoderPNG.encode(im).getBytes();
+//		Image transferImage = new Image(innerGC.getDevice(), new ByteArrayInputStream(imageBytes));
+
+		
+		
 		Rectangle originalArea = innerGC.getClipping();
 		Rectangle scaledArea = DPIUtil.autoScaleUp(originalArea);
 		innerGC.drawImage(transferImage, 0, 0, scaledArea.width, scaledArea.height, //
