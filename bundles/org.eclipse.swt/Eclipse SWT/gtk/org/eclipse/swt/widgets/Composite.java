@@ -55,6 +55,8 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
 public class Composite extends Scrollable {
+	public static final String KEY_BACKGROUND = "composite.background";
+
 	/**
 	 * the handle to the OS resource
 	 * (Warning: This field is platform dependent)
