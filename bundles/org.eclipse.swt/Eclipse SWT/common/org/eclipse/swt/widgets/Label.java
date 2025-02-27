@@ -53,11 +53,13 @@ import org.eclipse.swt.graphics.*;
  */
 public class Label extends CustomControl {
 
-	private static final Color DISABLED_COLOR = new Color(160, 160, 160);
-	private static final Color SHADOW_IN_COLOR1 = new Color(160, 160, 160);
-	private static final Color SHADOW_IN_COLOR2 = new Color(255, 255, 255);
-	private static final Color SHADOW_OUT_COLOR1 = new Color(227, 227, 227);
-	private static final Color SHADOW_OUT_COLOR2 = new Color(160, 160, 160);
+	static final String KEY_BACKGROUND = "label.background"; //$NON-NLS-1$
+	static final String KEY_FOREGROUND = "label.foreground"; //$NON-NLS-1$
+	static final String KEY_DISABLED = "label.disabled"; //$NON-NLS-1$
+	static final String KEY_SHADOW_IN_2 = "label.shadowIn.light"; //$NON-NLS-1$
+	static final String KEY_SHADOW_IN_1 = "label.shadowIn.dark"; //$NON-NLS-1$
+	static final String KEY_SHADOW_OUT_1 = "label.shadowOut.light"; //$NON-NLS-1$
+	static final String KEY_SHADOW_OUT_2 = "label.shadowOut.dark"; //$NON-NLS-1$
 
 	/** Gap between icon and text */
 	private static final int GAP = 5;
@@ -90,7 +92,6 @@ public class Label extends CustomControl {
 	private Color[] gradientColors;
 	private int[] gradientPercents;
 	private boolean gradientVertical;
-	private Color background;
 
 	private static final int DRAW_FLAGS = SWT.DRAW_MNEMONIC | SWT.DRAW_TAB
 	                                      | SWT.DRAW_TRANSPARENT | SWT.DRAW_DELIMITER;
@@ -412,6 +413,18 @@ public class Label extends CustomControl {
 		return topMargin;
 	}
 
+	@Override
+	public Color getBackground() {
+		checkWidget();
+		return background != null ? background : getColorProvider().getColor(KEY_BACKGROUND);
+	}
+
+	@Override
+	public Color getForeground() {
+		checkWidget();
+		return foreground != null ? foreground : getColorProvider().getColor(KEY_FOREGROUND);
+	}
+
 	private void initAccessible() {
 		Accessible accessible = getAccessible();
 		accessible.addAccessibleListener(new AccessibleAdapter() {
@@ -649,10 +662,12 @@ public class Label extends CustomControl {
 			}
 		}
 
+		final ColorProvider colorProvider = getColorProvider();
+
 		// draw border
 		int style = getStyle();
 		if ((style & SWT.SHADOW_IN) != 0 || (style & SWT.SHADOW_OUT) != 0) {
-			paintBorder(gc, width, height);
+			paintBorder(gc, width, height, colorProvider);
 		}
 
 		/*
@@ -708,7 +723,10 @@ public class Label extends CustomControl {
 		}
 
 		if (lines != null) {
-			gc.setForeground(isEnabled() ? getForeground() : DISABLED_COLOR);
+			gc.setForeground(isEnabled()
+				? getForeground()
+				: colorProvider.getColor(KEY_DISABLED));
+
 			for (String line : lines) {
 				int lineX = x;
 				if (lines.length > 1) {
@@ -731,20 +749,18 @@ public class Label extends CustomControl {
 	/**
 	 * Paint the Label's border.
 	 */
-	private void paintBorder(GC gc, int width, int height) {
-		Display disp = getDisplay();
-
+	private void paintBorder(GC gc, int width, int height, ColorProvider colorProvider) {
 		Color c1 = null;
 		Color c2 = null;
 
 		int style = getStyle();
 		if ((style & SWT.SHADOW_IN) != 0) {
-			c1 = SHADOW_IN_COLOR1;
-			c2 = SHADOW_IN_COLOR2;
+			c1 = colorProvider.getColor(KEY_SHADOW_IN_1);
+			c2 = colorProvider.getColor(KEY_SHADOW_IN_2);
 		}
 		if ((style & SWT.SHADOW_OUT) != 0) {
-			c1 = SHADOW_OUT_COLOR1;
-			c2 = SHADOW_OUT_COLOR2;
+			c1 = colorProvider.getColor(KEY_SHADOW_OUT_1);
+			c2 = colorProvider.getColor(KEY_SHADOW_OUT_2);
 		}
 
 		if (c1 != null && c2 != null) {

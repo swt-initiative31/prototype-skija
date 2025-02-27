@@ -74,15 +74,15 @@ public class Button extends CustomControl {
 	private static final int BOX_SIZE = 12;
 	private static final int SPACING = 4;
 
-	private static final Color HOVER_COLOR = new Color(224, 238, 254);
-	private static final Color TOGGLE_COLOR = new Color(204, 228, 247);
-	private static final Color SELECTION_COLOR = new Color(0, 95, 184);
-	private static final Color TEXT_COLOR = new Color(0, 0, 0);
-	private static final Color DISABLED_COLOR = new Color(160, 160, 160);
-	private static final Color BORDER_COLOR = new Color(160, 160, 160);
-	private static final Color BORDER_DISABLED_COLOR = new Color(192, 192, 192);
-	private static final Color CHECKBOX_GRAYED_COLOR = new Color(192, 192, 192);
-	private static final Color PUSH_BACKGROUND_COLOR = new Color(255, 255, 255);
+	static final String KEY_HOVER = "button.background.hover"; //$NON-NLS-1$
+	static final String KEY_TOGGLE = "button.background.toggle"; //$NON-NLS-1$
+	static final String KEY_SELECTION = "button.background.selection"; //$NON-NLS-1$
+	static final String KEY_TEXT = "button.text"; //$NON-NLS-1$
+	static final String KEY_DISABLE = "button.disable"; //$NON-NLS-1$
+	static final String KEY_OUTLINE = "button.outline"; //$NON-NLS-1$
+	static final String KEY_OUTLINE_DISABLED = "button.outline.disabled"; //$NON-NLS-1$
+	static final String KEY_GRAYED = "button.tristate"; //$NON-NLS-1$
+	static final String KEY_PUSH = "button.background.push"; //$NON-NLS-1$
 
 	private static int DRAW_FLAGS = SWT.DRAW_MNEMONIC | SWT.DRAW_TAB
 			| SWT.DRAW_TRANSPARENT | SWT.DRAW_DELIMITER;
@@ -387,18 +387,20 @@ public class Button extends CustomControl {
 		boolean isPushOrToggleButton = (style & (SWT.PUSH | SWT.TOGGLE)) != 0;
 		int initialAntiAlias = gc.getAntialias();
 
+		final ColorProvider colorProvider = getColorProvider();
+
 		int boxSpace = 0;
 		// Draw check box / radio box / push button border
 		if (isPushOrToggleButton) {
-			drawPushButton(gc, 0, 0, width - 1, height - 1);
+			drawPushButton(gc, 0, 0, width - 1, height - 1, colorProvider);
 		} else {
 			boxSpace = BOX_SIZE + SPACING;
 			int boxLeftOffset = LEFT_MARGIN;
 			int boxTopOffset = (height - 1 - BOX_SIZE) / 2;
 			if ((style & SWT.CHECK) == SWT.CHECK) {
-				drawCheckbox(gc, boxLeftOffset, boxTopOffset);
+				drawCheckbox(gc, boxLeftOffset, boxTopOffset, colorProvider);
 			} else if ((style & SWT.RADIO) == SWT.RADIO) {
-				drawRadioButton(gc, boxLeftOffset, boxTopOffset);
+				drawRadioButton(gc, boxLeftOffset, boxTopOffset, colorProvider);
 			}
 		}
 
@@ -455,7 +457,7 @@ public class Button extends CustomControl {
 
 		// Draw text
 		if (text != null && !text.isEmpty()) {
-			gc.setForeground(isEnabled() ? TEXT_COLOR : DISABLED_COLOR);
+			gc.setForeground(colorProvider.getColor(isEnabled() ? KEY_TEXT : KEY_DISABLE));
 			int textTopOffset = (height - 1 - textHeight) / 2;
 			int textLeftOffset = contentArea.x + imageSpace;
 			gc.drawText(text, textLeftOffset, textTopOffset, DRAW_FLAGS);
@@ -474,7 +476,7 @@ public class Button extends CustomControl {
 		if (isArrowButton()) {
 			Color bg2 = gc.getBackground();
 
-			gc.setBackground(TEXT_COLOR);
+			gc.setBackground(colorProvider.getColor(KEY_TEXT));
 
 			int centerHeight = height / 2;
 			int centerWidth = width / 2;
@@ -527,73 +529,82 @@ public class Button extends CustomControl {
 	}
 
 	private void drawPushButton(GC gc, int x, int y, int w,
-			int h) {
+			int h, ColorProvider colorProvider) {
 		if (isEnabled()) {
 			if ((style & SWT.TOGGLE) != 0 && isChecked()) {
-				gc.setBackground(TOGGLE_COLOR);
+				gc.setBackground(colorProvider.getColor(KEY_TOGGLE));
 			} else if (hasMouseEntered || spaceDown) {
-				gc.setBackground(HOVER_COLOR);
+				gc.setBackground(colorProvider.getColor(KEY_HOVER));
 			} else {
-				gc.setBackground(PUSH_BACKGROUND_COLOR);
+				gc.setBackground(colorProvider.getColor(KEY_PUSH));
 			}
 			gc.fillRoundRectangle(x, y, w, h, 6, 6);
 		}
 
 		if (isEnabled()) {
 			if ((style & SWT.TOGGLE) != 0 && isChecked() || hasMouseEntered) {
-				gc.setForeground(SELECTION_COLOR);
+				gc.setForeground(colorProvider.getColor(KEY_SELECTION));
 			} else {
-				gc.setForeground(BORDER_COLOR);
+				gc.setForeground(colorProvider.getColor(KEY_OUTLINE));
 			}
 		} else {
-			gc.setForeground(BORDER_DISABLED_COLOR);
+			gc.setForeground(colorProvider.getColor(KEY_OUTLINE_DISABLED));
 		}
 
 		// if the button has focus, the border also changes the color
 		Color fg = gc.getForeground();
 		if (hasFocus()) {
-			gc.setForeground(SELECTION_COLOR);
+			gc.setForeground(colorProvider.getColor(KEY_SELECTION));
 		}
 		gc.drawRoundRectangle(x, y, w - 1, h - 1, 6, 6);
 		gc.setForeground(fg);
 	}
 
-	private void drawRadioButton(GC gc, int x, int y) {
+	private void drawRadioButton(GC gc, int x, int y, ColorProvider colorProvider) {
 		if (getSelection()) {
-			gc.setBackground(SELECTION_COLOR);
+			gc.setBackground(colorProvider.getColor(isEnabled() ? KEY_SELECTION : KEY_DISABLE));
 			int partialBoxBorder = 2;
-			gc.fillOval(x + partialBoxBorder, y + partialBoxBorder,
-					BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1);
-		}
-		if (hasMouseEntered) {
-			gc.setBackground(HOVER_COLOR);
-			int partialBoxBorder = getSelection() ? 4 : 0;
 			gc.fillOval(x + partialBoxBorder, y + partialBoxBorder,
 					BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1);
 		}
 		if (!isEnabled()) {
-			gc.setForeground(BORDER_DISABLED_COLOR);
+			gc.setForeground(colorProvider.getColor(KEY_OUTLINE_DISABLED));
+		}
+		else if (hasMouseEntered) {
+			gc.setBackground(colorProvider.getColor(KEY_HOVER));
+			int partialBoxBorder = getSelection() ? 4 : 0;
+			gc.fillOval(x + partialBoxBorder, y + partialBoxBorder,
+					BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1);
 		}
 		gc.drawOval(x, y, BOX_SIZE, BOX_SIZE);
 	}
 
-	private void drawCheckbox(GC gc, int x, int y) {
+	private void drawCheckbox(GC gc, int x, int y, ColorProvider colorProvider) {
 		if (getSelection()) {
-			gc.setBackground(grayed ? CHECKBOX_GRAYED_COLOR : SELECTION_COLOR);
+			if (!isEnabled()) {
+				gc.setBackground(colorProvider.getColor(KEY_DISABLE));
+			} else {
+				gc.setBackground(colorProvider.getColor(grayed ? KEY_GRAYED : KEY_SELECTION));
+			}
 			int partialBoxBorder = 2;
 			gc.fillRoundRectangle(x + partialBoxBorder, y + partialBoxBorder,
 					BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1,
 					BOX_SIZE / 4 - partialBoxBorder / 2,
 					BOX_SIZE / 4 - partialBoxBorder / 2);
-
 		}
-		if (hasMouseEntered) {
-			gc.setBackground(HOVER_COLOR);
-			int partialBoxBorder = getSelection() ? 4 : 0;
-			gc.fillRoundRectangle(x + partialBoxBorder, y + partialBoxBorder,
-					BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1,
-					BOX_SIZE / 4 - partialBoxBorder / 2,
-					BOX_SIZE / 4 - partialBoxBorder / 2);
+
+		if (!isEnabled()) {
+			gc.setForeground(colorProvider.getColor(KEY_DISABLE));
+		} else {
+			if (hasMouseEntered) {
+				gc.setBackground(colorProvider.getColor(KEY_HOVER));
+				int partialBoxBorder = getSelection() ? 4 : 0;
+				gc.fillRoundRectangle(x + partialBoxBorder, y + partialBoxBorder,
+						BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1,
+						BOX_SIZE / 4 - partialBoxBorder / 2,
+						BOX_SIZE / 4 - partialBoxBorder / 2);
+			}
+			gc.setForeground(colorProvider.getColor(KEY_TEXT));
 		}
 		gc.drawRoundRectangle(x, y, BOX_SIZE, BOX_SIZE, 4, 4);
 	}
