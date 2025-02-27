@@ -681,6 +681,7 @@ public class Link extends CustomControl {
 			return;
 		}
 		this.bottomMargin = bottomMargin;
+		invalidateCachedDefaultSize();
 		redraw();
 	}
 
@@ -712,6 +713,7 @@ public class Link extends CustomControl {
 			return;
 		}
 		this.leftMargin = leftMargin;
+		invalidateCachedDefaultSize();
 		redraw();
 	}
 
@@ -738,6 +740,7 @@ public class Link extends CustomControl {
 		this.topMargin = Math.max(0, topMargin);
 		this.rightMargin = Math.max(0, rightMargin);
 		this.bottomMargin = Math.max(0, bottomMargin);
+		invalidateCachedDefaultSize();
 		redraw();
 	}
 
@@ -763,6 +766,7 @@ public class Link extends CustomControl {
 			return;
 		}
 		this.rightMargin = rightMargin;
+		invalidateCachedDefaultSize();
 		redraw();
 	}
 
@@ -814,6 +818,8 @@ public class Link extends CustomControl {
 			error(SWT.ERROR_NULL_ARGUMENT);
 		}
 
+		invalidateCachedDefaultSize();
+
 		parsedText.clear();
 		String[] lines = text.split("\n");
 		for (String line : lines) {
@@ -848,6 +854,7 @@ public class Link extends CustomControl {
 			return;
 		}
 		this.topMargin = topMargin;
+		invalidateCachedDefaultSize();
 		redraw();
 	}
 

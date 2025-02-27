@@ -29,6 +29,8 @@ public abstract class CustomControl extends NativeBasedCustomControl {
 	private int width;
 	private int height;
 
+	private Point cachedDefaultSize;
+
 	protected CustomControl(Composite parent, int style) {
 		super(parent, style);
 	}
@@ -129,9 +131,16 @@ public abstract class CustomControl extends NativeBasedCustomControl {
 	public Point computeSize(int wHint, int hHint, boolean changed) {
 		checkWidget();
 
-		Point defaultSize = computeDefaultSize();
-		int width = wHint == SWT.DEFAULT ? defaultSize.x : wHint;
-		int height = hHint == SWT.DEFAULT ? defaultSize.y : hHint;
+		if (changed || cachedDefaultSize == null) {
+			cachedDefaultSize = computeDefaultSize();
+		}
+
+		final int width = wHint == SWT.DEFAULT ? cachedDefaultSize.x : wHint;
+		final int height = hHint == SWT.DEFAULT ? cachedDefaultSize.y : hHint;
 		return new Point(width, height);
+	}
+
+	protected void invalidateCachedDefaultSize() {
+		cachedDefaultSize = null;
 	}
 }
