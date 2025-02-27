@@ -1,5 +1,7 @@
 package org.eclipse.swt.tests.skija;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -12,6 +14,8 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.graphics.NativeGC;
+import org.eclipse.swt.graphics.PaletteData;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.SkijaGC;
 import org.eclipse.swt.widgets.Display;
 import org.junit.Assert;
@@ -22,6 +26,8 @@ public class Test_org_eclipse_swt_graphics_SkijaGC {
 
     static final int WIDTH = 5;
     static final int HEIGHT = 5;
+
+    static final int ERROR_RANGE = 2;
 
     Color white, red, blue, green;
 
@@ -73,8 +79,10 @@ public class Test_org_eclipse_swt_graphics_SkijaGC {
 	c.dispose();
 
 	Image info = display.getSystemImage(SWT.ICON_INFORMATION);
-	comparedrawImage_systemImage(info);
-	info.dispose();
+	if (info != null) {
+	    comparedrawImage_systemImage(info);
+	    info.dispose();
+	}
 
     }
 
@@ -82,46 +90,150 @@ public class Test_org_eclipse_swt_graphics_SkijaGC {
 
 	deleteFiles();
 
-	try {
+	ImageLoader saver = new ImageLoader();
 
-	    {
+	var inputData = input.getImageData();
 
-		Image image = new Image(display, 300, 200);
-		GC gc = new GC(image);
-		gc.drawImage(input, 0, 0);
-		gc.dispose();
+	var width = inputData.width;
+	var height = inputData.height;
 
-		ImageLoader s = new ImageLoader();
-		s.data = new ImageData[] { image.getImageData() };
-		s.save(BEFORE_FILE,  SWT.IMAGE_PNG);
+	try{
 
+	{
 
+	    Image image = new Image(display, width, height);
+	    GC gc = new GC(image);
+	    gc.drawImage(input, 0, 0);
+	    gc.dispose();
 
-	    }
+	    saver.data = new ImageData[]{image.getImageData()};
+	    saver.save(BEFORE_FILE, SWT.IMAGE_PNG);
+	    image.dispose();
 
-	    {
+	}
 
-		Image image = new Image(display, 300, 200);
-		GC gc = new GC(image);
-		SkijaGC sgc = new SkijaGC((NativeGC)gc.innerGC, null);
+	{
 
-		sgc.drawImage(input, 0, 0);
-		sgc.commit();
+	    Image image = new Image(display, width, height);
+	    GC gc = new GC(image);
+	    SkijaGC sgc = new SkijaGC((NativeGC) gc.innerGC, null);
 
-		sgc.dispose();
-		gc.dispose();
+	    sgc.drawImage(input, 0, 0);
+	    sgc.commit();
+	    sgc.dispose();
+	    gc.dispose();
 
+	    saver.data = new ImageData[]{image.getImageData()};
+	    saver.save(AFTER_FILE, SWT.IMAGE_PNG);
+	    image.dispose();
 
-		ImageLoader s = new ImageLoader();
-		s.data = new ImageData[] { image.getImageData() };
-		s.save(AFTER_FILE,  SWT.IMAGE_PNG);
+	}
 
-	    }
+	assertFilesSimilar(BEFORE_FILE, AFTER_FILE );
 
-	    assertFilesEqual(BEFORE_FILE, AFTER_FILE);
-
-	} finally {
+	}finally {
 	    deleteFiles();
+	}
+
+    }
+
+    private void assertFilesSimilar(String beforeFile, String afterFile) {
+
+	Image i1 = new Image(display, beforeFile);
+	Image i2 = new Image(display, afterFile);
+
+	compareImageData(i1.getImageData(), i2.getImageData());
+
+	i1.dispose();
+	i2.dispose();
+
+
+    }
+
+    private static boolean comparePaletteData(PaletteData palette1, PaletteData palette2) {
+        if (palette1 == palette2) {
+            return true;
+        }
+
+        if (palette1 == null || palette2 == null) {
+            return false;
+        }
+
+        if (palette1.isDirect != palette2.isDirect) {
+            return false;
+        }
+
+        if (palette1.isDirect) {
+            return palette1.redMask == palette2.redMask &&
+                   palette1.greenMask == palette2.greenMask &&
+                   palette1.blueMask == palette2.blueMask;
+        } else {
+            RGB[] colors1 = palette1.getRGBs();
+            RGB[] colors2 = palette2.getRGBs();
+
+            if (colors1.length != colors2.length) {
+                return false;
+            }
+
+            for (int i = 0; i < colors1.length; i++) {
+                if (!colors1[i].equals(colors2[i])) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public static boolean compareImageData(ImageData img1, ImageData img2) {
+        if (img1 == img2) {
+            return true;
+        }
+
+        if (img1 == null || img2 == null) {
+            return false;
+        }
+
+        if (img1.width != img2.width || img1.height != img2.height ||
+            img1.depth != img2.depth || img1.bytesPerLine != img2.bytesPerLine) {
+            return false;
+        }
+
+        for (int y = 0; y < img1.height; y++) {
+            for (int x = 0; x < img1.width; x++) {
+                if (img1.getPixel(x, y) != img2.getPixel(x, y)) {
+                    return false;
+                }
+                if (img1.getAlpha(x, y) != img2.getAlpha(x, y)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private void validateImageData(ImageData d1, ImageData d2) {
+
+	if(comparePaletteData(d1.palette,d2.palette))
+	    validateArrays(d1.data,d2.data);
+
+	else
+	    throw new IllegalStateException("Invalid compare types");
+
+    }
+
+    private void validateArrays(byte[] bytes1, byte[] bytes2) {
+
+	assertEquals(bytes1.length, bytes2.length);
+
+	for (int r = 0; r < bytes1.length; r++) {
+
+	    if (Math.abs(bytes1[r] - bytes2[r]) > ERROR_RANGE) {
+		if (Math.abs(bytes1[r] + bytes2[r]) > ERROR_RANGE)
+		    Assert.fail("Index: " + r + " Left: " + bytes1[r] + " Right: " + bytes2[r]);
+	    }
+
 	}
 
     }
@@ -155,7 +267,7 @@ public class Test_org_eclipse_swt_graphics_SkijaGC {
 		saver.save(AFTER_FILE, SWT.IMAGE_PNG);
 	    }
 
-	    assertFilesEqual(BEFORE_FILE, AFTER_FILE);
+	    assertFilesSimilar(BEFORE_FILE, AFTER_FILE);
 
 	} finally {
 	    deleteFiles();

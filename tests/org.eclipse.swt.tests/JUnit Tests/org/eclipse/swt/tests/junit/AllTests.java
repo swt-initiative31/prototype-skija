@@ -14,6 +14,7 @@
 package org.eclipse.swt.tests.junit;
 
 
+import org.eclipse.swt.tests.skija.AllSkijaTests;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -24,7 +25,8 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
 	AllNonBrowserTests.class,
-	AllBrowserTests.class
+	AllBrowserTests.class,
+	AllSkijaTests.class
 })
 public class AllTests {
 

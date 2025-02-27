@@ -164,22 +164,20 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void commit() {
-		io.github.humbleui.skija.Image im = surface.makeImageSnapshot();
-		Image transferImage = new Image(device, new SkijaImageDataProvider(im));
-
 //		io.github.humbleui.skija.Image im = surface.makeImageSnapshot();
-//		byte[] imageBytes = EncoderPNG.encode(im).getBytes();
-//		Image transferImage = new Image(innerGC.getDevice(), new ByteArrayInputStream(imageBytes));
+//		Image transferImage = new Image(device, new SkijaImageDataProvider(im));
 
-		
-		
-		Rectangle originalArea = innerGC.getClipping();
-		Rectangle scaledArea = DPIUtil.autoScaleUp(originalArea);
-		innerGC.drawImage(transferImage, 0, 0, scaledArea.width, scaledArea.height, //
-				0, 0, originalArea.width, originalArea.height);
-		transferImage.dispose();
-		surface.close();
-		im.close();
+	    io.github.humbleui.skija.Image im = surface.makeImageSnapshot();
+	    byte[] imageBytes = EncoderPNG.encode(im).getBytes();
+	    Image transferImage = new Image(innerGC.getDevice(), new ByteArrayInputStream(imageBytes));
+
+	    Rectangle originalArea = innerGC.getClipping();
+	    Rectangle scaledArea = DPIUtil.autoScaleUp(originalArea);
+	    innerGC.drawImage(transferImage, 0, 0, scaledArea.width, scaledArea.height, //
+		    0, 0, originalArea.width, originalArea.height);
+	    transferImage.dispose();
+	    surface.close();
+	    im.close();
 	}
 
 	@Override
@@ -311,52 +309,38 @@ public class SkijaGC extends GCHandle {
 
 	public static byte[] convertToRGBA(ImageData imageData) {
 		ImageData transparencyData = imageData.getTransparencyMask();
-		byte[] convertedData = new byte[imageData.width * imageData.height * 4];
-		byte defaultAlpha = (byte)255;
-
-		var source = imageData.data;
-		int bytesPerPixel = source.length / (imageData.width * imageData.height);
-
-		var alphaData = imageData.alphaData;
-		if (imageData.alpha != -1) {
-			defaultAlpha = (byte) imageData.alpha;
-		}
-
-		boolean byteSourceContainsAlpha = bytesPerPixel > 3;
-
+		byte[] convertedData = new byte[imageData.data.length];
 		for (int y = 0; y < imageData.height; y++) {
 			for (int x = 0; x < imageData.width; x++) {
+			    byte alpha = (byte) 255;
+
+			    int arrayIndex = x + y * imageData.width;
+			    int index = arrayIndex * 4;
+
+			    if (imageData.alphaData != null && imageData.alphaData.length > arrayIndex) {
+				alpha = imageData.alphaData[arrayIndex];
+			    }else {
+
+				if( imageData.depth == 32 ) {
+				    alpha = imageData.data[index + 3];
+				}
+
+			    }
+
 				int pixel = imageData.getPixel(x, y);
-				int arrayPos = (y * imageData.width + x);
+				byte red = (byte) ((pixel & imageData.palette.redMask) >>> -imageData.palette.redShift);
+				byte green = (byte) ((pixel
+					& imageData.palette.greenMask) >>> -imageData.palette.greenShift);
+				byte blue = (byte) ((pixel
+					& imageData.palette.blueMask) >>> -imageData.palette.blueShift);
 
-				byte r = (byte) ((pixel & imageData.palette.redMask) >>> -imageData.palette.redShift);
-				byte g = (byte) ((pixel & imageData.palette.greenMask) >>> -imageData.palette.greenShift);
-				byte b = (byte) ((pixel & imageData.palette.blueMask) >>> -imageData.palette.blueShift);
-
-				byte a = (byte)255;
-				if (transparencyData != null) {
-					if (transparencyData.getPixel(x, y) != 1) {
-						a = (byte) 0;
-					}
-				}
-
-				var index = arrayPos * 4;
-
-				convertedData[index + 0] = (byte) r;
-				convertedData[index + 1] = (byte) g;
-				convertedData[index + 2] = (byte) b;
-				convertedData[index + 3] = (byte) a;
-
-				if (alphaData != null && alphaData.length > arrayPos) {
-					convertedData[index + 3] = alphaData[arrayPos];
-				} else if (imageData.alpha != -1) {
-					convertedData[index + 3] = defaultAlpha;
-				} else if(!byteSourceContainsAlpha) {
-					convertedData[index + 3] = defaultAlpha;
-				}
+				convertedData[index] = red;
+				convertedData[index + 1] = green;
+				convertedData[index + 2] = blue;
+				convertedData[index + 3] = alpha;
 			}
 		}
-
+		imageData.data = convertedData;
 		return convertedData;
 	}
 
