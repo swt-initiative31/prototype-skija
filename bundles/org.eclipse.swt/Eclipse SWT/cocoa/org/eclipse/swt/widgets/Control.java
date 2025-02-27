@@ -5249,4 +5249,8 @@ static double [] getLighterOrDarkerColor (double [] pixel, double factor, boolea
 static double luma (double[] rgbColor) {
 	return 0.2126f * rgbColor[0] + 0.7152f * rgbColor[1] + 0.0722f * rgbColor[2];
 }
+
+protected ColorProvider getColorProvider() {
+	return getDisplay().getColorProvider();
+}
 }
