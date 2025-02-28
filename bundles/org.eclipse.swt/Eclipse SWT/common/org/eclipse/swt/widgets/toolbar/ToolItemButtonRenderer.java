@@ -174,13 +174,13 @@ public class ToolItemButtonRenderer implements ToolItemRenderer {
 
 	private Color getTextColor() {
 		if (item.isEnabled()) {
-			return getForegourndColor();
+			return getForegroundColor();
 		} else {
 			return bar.getDisplay().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW);
 		}
 	}
 
-	private Color getForegourndColor() {
+	private Color getForegroundColor() {
 		Color color = null;
 		switch (item.getState()) {
 		case IDLE:
@@ -261,8 +261,7 @@ public class ToolItemButtonRenderer implements ToolItemRenderer {
 			textBounds.y++;
 		}
 
-		Blueprint bp = new Blueprint(size, null, textBounds);
-		return bp;
+		return new Blueprint(size, null, textBounds);
 	}
 
 	private Point getTextSize() {

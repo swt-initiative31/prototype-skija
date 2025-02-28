@@ -25,17 +25,17 @@ public class ToolBarLayoutGenerator {
 	private final boolean horizontal;
 	private final boolean wrap;
 	private final boolean shadowOut;
-	private final boolean RTL;
+	private final boolean rtl;
 	private final boolean flat;
 
 	public ToolBarLayoutGenerator(List<ItemRecord> itemRecords, Point availableSize, boolean horizontal, boolean wrap,
-			boolean shadowOut, boolean RTL, boolean flat) {
+			boolean shadowOut, boolean rlt, boolean flat) {
 		this.itemRecords = itemRecords;
 		this.availableSize = availableSize;
 		this.horizontal = horizontal;
 		this.wrap = wrap;
 		this.shadowOut = shadowOut;
-		this.RTL = RTL;
+		this.rtl = rlt;
 		this.flat = flat;
 	}
 
@@ -70,7 +70,7 @@ public class ToolBarLayoutGenerator {
 		row.normalizeHeight();
 		row.setY(offset.y);
 
-		if (RTL) {
+		if (rtl) {
 			row.mirrow();
 		}
 
@@ -113,14 +113,14 @@ public class ToolBarLayoutGenerator {
 				yOffset += 3;
 			}
 
-			if (RTL) {
+			if (rtl) {
 				row.mirrow();
 			}
 		}
 
 		int maxWidth = offset.x;
 		int maxHeight = offset.y;
-		for(Row row : rows) {
+		for (Row row : rows) {
 			maxWidth = Math.max(maxWidth, row.usedSpace.x);
 			maxHeight += row.usedSpace.y;
 		}

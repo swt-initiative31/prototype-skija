@@ -13,12 +13,13 @@
  *******************************************************************************/
 package org.eclipse.swt.widgets.toolbar;
 
-import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 import org.eclipse.swt.widgets.ToolItem.*;
 
 public class ToolItemSeparatorRenderer implements ToolItemRenderer {
+	public static final Color COLOR_SEPARATOR = new Color(Display.getDefault(), 160, 160, 160);
+
 	private static final int EMPTY_WIDTH = 7;
 
 	private final ToolBar bar;
@@ -37,10 +38,10 @@ public class ToolItemSeparatorRenderer implements ToolItemRenderer {
 	public void render(GC gc, Rectangle bounds) {
 		if (bar.isFlat()) {
 			if (bar.isHorizontal()) {
-				gc.setForeground(bar.getDisplay().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
+				gc.setForeground(COLOR_SEPARATOR);
 				gc.drawLine(bounds.x + 2, bounds.y, bounds.x + 2, bounds.y + bounds.height);
 			}else {
-				gc.setForeground(bar.getDisplay().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
+				gc.setForeground(COLOR_SEPARATOR);
 				gc.drawLine(bounds.x, bounds.y + 2, bounds.x + bounds.width, bounds.y + 2);
 
 			}

@@ -27,6 +27,8 @@ import java.util.List;
  * Default renderer for the ToolBar.
  */
 public class ToolBarRenderer implements IToolBarRenderer {
+	public static final Color COLOR_SEPARATOR = new Color(Display.getDefault(), 160, 160, 160);
+
 	private final ToolBar bar;
 	private int rowCount = SWT.DEFAULT;
 
@@ -40,15 +42,15 @@ public class ToolBarRenderer implements IToolBarRenderer {
 		ToolBarLayout layout = computeLayout(size);
 		rowCount = layout.rows().size();
 
-		render(gc, bounds, layout.rows());
+		render(gc, size, layout.rows());
 	}
 
-	private void render(GC gc, Rectangle bounds, List<Row> rows) {
-		gc.fillRectangle(0, 0, bounds.width, bounds.height);
+	private void render(GC gc, Point size, List<Row> rows) {
+		gc.fillRectangle(0, 0, size.x, size.y);
 
 		if (bar.isShadowOut()) {
 			gc.setForeground(new Color(160, 160, 160));
-			gc.drawLine(0, 0, bounds.width, 0);
+			gc.drawLine(0, 0, size.x, 0);
 		}
 
 		for (int i = 0; i < rows.size(); i++) {
@@ -64,7 +66,7 @@ public class ToolBarRenderer implements IToolBarRenderer {
 
 	private void drawHorizontalSeparator(GC gc, Row row) {
 		int pos = row.position + row.usedSpace.y + 3;
-		gc.setForeground(bar.getDisplay().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
+		gc.setForeground(COLOR_SEPARATOR);
 		gc.drawLine(0, pos, row.availableSpace.y, pos);
 	}
 
