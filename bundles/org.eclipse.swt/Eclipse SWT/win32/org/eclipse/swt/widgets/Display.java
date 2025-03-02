@@ -121,6 +121,8 @@ public class Display extends Device implements Executor {
 	 */
 	public MSG msg = new MSG ();
 
+	Window w = null;
+
 	static String APP_NAME = "SWT"; //$NON-NLS-1$
 	static String APP_VERSION = ""; //$NON-NLS-1$
 	String appLocalDir;
@@ -533,6 +535,8 @@ public class Display extends Device implements Executor {
 	/* Skinning support */
 	Widget [] skinList = new Widget [GROW_SIZE];
 	int skinCount;
+
+	long hInstance;
 
 	/* Package Name */
 	static final String PACKAGE_PREFIX = "org.eclipse.swt.widgets."; //$NON-NLS-1$
@@ -2798,7 +2802,7 @@ protected void init () {
 	WindowClassCount++;
 
 	/* Register the SWT window class */
-	long hInstance = OS.GetModuleHandle (null);
+	hInstance = OS.GetModuleHandle(null);
 	WNDCLASS lpWndClass = new WNDCLASS ();
 	lpWndClass.hInstance = hInstance;
 	lpWndClass.lpfnWndProc = windowProc;
@@ -5154,6 +5158,12 @@ void wakeThread () {
 }
 
 long windowProc (long hwnd, long msg, long wParam, long lParam) {
+
+	if (w != null)
+		if (hwnd == w.hwnd) {
+			return w.windowProc(hwnd, msg, wParam, lParam);
+		}
+
 	Control control = getControl(hwnd);
 	if (control != null) {
 		return control.windowProc (hwnd, (int)msg, wParam, lParam);
