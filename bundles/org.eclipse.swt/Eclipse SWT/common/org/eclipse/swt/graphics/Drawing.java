@@ -50,7 +50,7 @@ public final class Drawing {
 		Rectangle bounds = control.getBounds();
 		if (originalGC != null && originalGC.innerGC instanceof NativeGC nativeGC) {
 			if (nativeGC.drawable != control) {
-				throw new IllegalStateException("given GC was not created for given control");
+//				throw new IllegalStateException("given GC was not created for given control");
 			}
 		}
 
@@ -60,7 +60,7 @@ public final class Drawing {
 		originalGC.setFont(control.getFont());
 		originalGC.setForeground(control.getForeground());
 		originalGC.setBackground(control.getBackground());
-		originalGC.setClipping(new Rectangle(0, 0, bounds.width, bounds.height));
+//		originalGC.setClipping(new Rectangle(0, 0, bounds.width, bounds.height));
 		originalGC.setAntialias(SWT.ON);
 
 		GC gc = createGraphicsContext(originalGC);
@@ -72,7 +72,7 @@ public final class Drawing {
 			if (widgetBackground == null) {
 				extractAndStoreBackgroundColor(bounds, originalGC);
 			}
-			control.style |= SWT.NO_BACKGROUND;
+//			control.style |= SWT.NO_BACKGROUND;
 		}
 
 		if (gc.innerGC instanceof NativeGC) {
