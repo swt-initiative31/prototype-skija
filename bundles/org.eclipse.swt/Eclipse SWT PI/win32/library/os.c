@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2024 IBM Corporation and others.
+ * Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -1509,6 +1509,18 @@ JNIEXPORT jboolean JNICALL OS_NATIVE(DuplicateHandle)
 fail:
 	if (arg3 && lparg3) (*env)->ReleaseLongArrayElements(env, arg3, lparg3, 0);
 	OS_NATIVE_EXIT(env, that, DuplicateHandle_FUNC);
+	return rc;
+}
+#endif
+
+#ifndef NO_DwmFlush
+JNIEXPORT jlong JNICALL OS_NATIVE(DwmFlush)
+	(JNIEnv *env, jclass that)
+{
+	jlong rc = 0;
+	OS_NATIVE_ENTER(env, that, DwmFlush_FUNC);
+	rc = (jlong)DwmFlush();
+	OS_NATIVE_EXIT(env, that, DwmFlush_FUNC);
 	return rc;
 }
 #endif
