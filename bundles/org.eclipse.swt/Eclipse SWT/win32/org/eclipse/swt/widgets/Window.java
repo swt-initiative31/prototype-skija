@@ -2,6 +2,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
 
@@ -13,30 +14,39 @@ public class Window {
 	// smooth at 120 FPS, before not really...
 	// with vsync use an FPS over 60 and then is is also smooth.
 	// vsync reduces the FPS to the monitor refresh rate.
-	static final int FPS = 40;
+	static final int FPS = 500;
 	boolean vsync = true;
 
-	static final int WIDTH = 800;
-	static final int HEIGHT = 600;
-
-	// Dont use, was just for testing...
-	boolean directColor = false;
-
-	boolean withSkija = true;
-	private Display d;
-	long hwnd;
-
-	boolean printFrameRate = true;
+	// Set true for frame pre second printing
+	boolean printFrameRate = false;
+	// vars for FPS printing --------------------
 	long lastFrame;
 	int frames;
+	// -------------------------------------------
 
-	// for cirle positioning
+	boolean withSkija = true;
+	// small modifications in Display were necessary to move the callback back to
+	// this window class
+	private Display d;
+	// handle
+	long hwnd;
+
+	// for circle drawing. The positioning
 	private long startTime;
+
+	// DC memory position
+	private long memHdc;
+	private long hBitmap;
+	// surface pointing to memDC
+	private Surface surface;
+
+	// Dont use, was just for testing...
+	// Direct drawing without skija
+	boolean directColor = false;
 
 	public Window() {
 
 		startTime = System.currentTimeMillis();
-
 		d = new Display();
 		d.w = this;
 
@@ -45,10 +55,15 @@ public class Window {
 	public int exec() {
 
 		hwnd = OS.CreateWindowEx(0, d.windowClass, d.windowClass, OS.WS_OVERLAPPEDWINDOW, OS.CW_USEDEFAULT,
-				OS.CW_USEDEFAULT, WIDTH, HEIGHT, 0, 0, d.hInstance, null);
+				OS.CW_USEDEFAULT, 800, 600, 0, 0, d.hInstance, null);
 
 		if (hwnd == 0)
 			throw new IllegalStateException("Did not work...");
+
+		// TIMER: This is just a tool to call the paint method for all view seconds.
+		// Later this can be replaced with a proper event handling and make redraws only
+		// then if they are necessary.
+		OS.SetTimer(hwnd, 1, 1000 / FPS, 0);
 
 		OS.ShowWindow(hwnd, OS.SW_SHOW);
 		OS.UpdateWindow(hwnd);
@@ -69,30 +84,34 @@ public class Window {
 
 	}
 
-	boolean created = false;
-	private long memHdc;
-	private Surface surface;
-
-	boolean lastColor = true;
-
 	public long windowProc(long hwnd, long msg, long wParam, long lParam) {
-		long hBitmap = 0;
-		long pBitmapData = 0;
-
-		if (!created) {
-			setupMemoryDC();
-			created = true;
-		}
 
 		switch ((int) msg) {
+
+		case OS.WM_DESTROY: {
+
+			System.out.println("destroy...");
+
+			closeDC();
+
+			// we have a single window, so we close the Display now in order to quit the
+			// app.
+			d.close();
+
+			break;
+		}
+
 		case OS.WM_CREATE: {
 
+			// Won't be called, because the create happens at the display creation...
 			System.out.println("Create...");
 			break;
 
 		}
 
 		case OS.WM_PAINT: {
+
+			Point size = getSize();
 
 			PAINTSTRUCT ps = new PAINTSTRUCT();
 			long hdc = OS.BeginPaint(hwnd, ps);
@@ -128,14 +147,14 @@ public class Window {
 				try (var paint = new Paint()) {
 					paint.setColor(colorAsRBG);
 
-					surface.getCanvas().drawCircle((int) (position * WIDTH), 100, 100, paint);
+					surface.getCanvas().drawCircle((int) (position * size.x), 100, 100, paint);
 
 				}
 
 				// for vsync use DwmFlush in order to wait until the screen drawing is finished.
 				if (vsync)
 					OS.DwmFlush();
-				OS.BitBlt(hdc, 0, 0, WIDTH, HEIGHT, memHdc, 0, 0, OS.SRCCOPY);
+				OS.BitBlt(hdc, 0, 0, size.x, size.y, memHdc, 0, 0, OS.SRCCOPY);
 			}
 
 			OS.EndPaint(hwnd, ps);
@@ -149,6 +168,10 @@ public class Window {
 			break;
 		case OS.WM_SIZE:
 
+			System.out.println("Setup DC");
+			closeDC();
+			setupMemoryDC();
+
 			break;
 		}
 
@@ -158,6 +181,11 @@ public class Window {
 
 	private void setupMemoryDC() {
 
+		Point s = getSize();
+
+		int width = s.x;
+		int height = s.y;
+
 		if (withSkija) {
 
 			/* Create resources */
@@ -165,34 +193,25 @@ public class Window {
 			memHdc = OS.CreateCompatibleDC(hdc);
 			BITMAPINFOHEADER bmiHeader = new BITMAPINFOHEADER();
 			bmiHeader.biSize = BITMAPINFOHEADER.sizeof;
-			bmiHeader.biWidth = WIDTH;
-			bmiHeader.biHeight = -HEIGHT;
+			bmiHeader.biWidth = width;
+			bmiHeader.biHeight = -height;
 			bmiHeader.biPlanes = 1;
 			bmiHeader.biBitCount = 32;
 			bmiHeader.biCompression = OS.BI_RGB;
-			byte[] bmi = new byte[BITMAPINFOHEADER.sizeof];
+			var bmi = new byte[BITMAPINFOHEADER.sizeof];
 			OS.MoveMemory(bmi, bmiHeader, BITMAPINFOHEADER.sizeof);
 			long[] pBits = new long[1];
-			long hBitmap = OS.CreateDIBSection(hdc, bmi, OS.DIB_RGB_COLORS, pBits, 0, 0);
+			hBitmap = OS.CreateDIBSection(hdc, bmi, OS.DIB_RGB_COLORS, pBits, 0, 0);
 			if (hBitmap == 0)
 				SWT.error(SWT.ERROR_NO_HANDLES);
 
 			OS.SelectObject(memHdc, hBitmap);
 
-			surface = Surface.makeRasterDirect(ImageInfo.makeN32(WIDTH, HEIGHT, ColorAlphaType.PREMUL), pBits[0],
-					4 * WIDTH);
-
-			var canvas = surface.getCanvas();
-
-			Paint paint = new Paint().setColor(0xFF42FFF4);
-			canvas.clear(0xFFFFFFFF);
-			canvas.drawRect(Rect.makeXYWH(100, 100, 200, 200), paint);
+			surface = Surface.makeRasterDirect(ImageInfo.makeN32(width, height, ColorAlphaType.PREMUL), pBits[0],
+					4 * width);
 
 //	      // Gib den HDC zurück
 			OS.ReleaseDC(hwnd, hdc);
-
-			// TIMER
-			OS.SetTimer(hwnd, 1, 1000 / FPS, 0);
 
 			return;
 		}
@@ -202,8 +221,8 @@ public class Window {
 		memHdc = OS.CreateCompatibleDC(hdc);
 		BITMAPINFOHEADER bmiHeader = new BITMAPINFOHEADER();
 		bmiHeader.biSize = BITMAPINFOHEADER.sizeof;
-		bmiHeader.biWidth = WIDTH;
-		bmiHeader.biHeight = -HEIGHT;
+		bmiHeader.biWidth = width;
+		bmiHeader.biHeight = -height;
 		bmiHeader.biPlanes = 1;
 		bmiHeader.biBitCount = 32;
 		bmiHeader.biCompression = OS.BI_RGB;
@@ -240,6 +259,27 @@ public class Window {
 		int color = (red << 16) | (green << 8) | (blue);
 
 		return color;
+	}
+
+	private void closeDC() {
+
+		if (surface != null && !surface.isClosed())
+			surface.close();
+
+		if (memHdc != 0)
+			OS.DeleteDC(memHdc);
+		if (hBitmap != 0)
+			OS.DeleteObject(hBitmap);
+	}
+
+	public Point getSize() {
+		RECT rect = new RECT();
+		OS.GetWindowRect(hwnd, rect);
+
+		int width = rect.right - rect.left;
+		int height = rect.bottom - rect.top;
+
+		return new Point(width, height);
 	}
 
 }
