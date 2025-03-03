@@ -142,10 +142,13 @@ public class Window {
 
 				double position = (double) currentPosTime / (double) 10000;
 
-				int colorAsRBG = 0xFF42FFF4;
+				int colorAsRGB = 0xFF42FFF4;
+				int colorRed = 0xFFFF0000;
+				int colorGreen = 0xFF00FF00;
+				int colorBlue = 0xFF0000FF;
 
 				try (var paint = new Paint()) {
-					paint.setColor(colorAsRBG);
+					paint.setColor(colorBlue);
 
 					surface.getCanvas().drawCircle((int) (position * size.x), 100, 100, paint);
 
