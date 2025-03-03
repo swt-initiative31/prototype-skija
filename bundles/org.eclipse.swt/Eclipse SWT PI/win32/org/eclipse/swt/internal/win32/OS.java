@@ -2496,6 +2496,14 @@ public static final native long CreatePen (int fnPenStyle, int nWidth, int crCol
 /** @param lppt cast=(CONST POINT *) */
 public static final native long CreatePolygonRgn(int[] lppt, int cPoints, int fnPolyFillMode);
 public static final native long CreatePopupMenu ();
+
+/**
+ * windows GDI alternative for vsync.
+ *
+ * @return HRESULT
+ */
+public static final native long DwmFlush();
+
 /**
  * @param lpApplicationName cast=(LPCWSTR)
  * @param lpCommandLine cast=(LPWSTR)

@@ -10,6 +10,12 @@ import io.github.humbleui.types.*;
 
 public class Window {
 
+	// smooth at 120 FPS, before not really...
+	// with vsync use an FPS over 60 and then is is also smooth.
+	// vsync reduces the FPS to the monitor refresh rate.
+	static final int FPS = 40;
+	boolean vsync = true;
+
 	static final int WIDTH = 800;
 	static final int HEIGHT = 600;
 
@@ -19,11 +25,13 @@ public class Window {
 	boolean withSkija = true;
 	private Display d;
 	long hwnd;
-	private long startTime;
 
-	// smooth at 120 FPS, before not really...
-	// check for vsncy alternatives with GDI...
-	static final int FPS = 120;
+	boolean printFrameRate = true;
+	long lastFrame;
+	int frames;
+
+	// for cirle positioning
+	private long startTime;
 
 	public Window() {
 
@@ -65,6 +73,8 @@ public class Window {
 	private long memHdc;
 	private Surface surface;
 
+	boolean lastColor = true;
+
 	public long windowProc(long hwnd, long msg, long wParam, long lParam) {
 		long hBitmap = 0;
 		long pBitmapData = 0;
@@ -84,34 +94,51 @@ public class Window {
 
 		case OS.WM_PAINT: {
 
+			PAINTSTRUCT ps = new PAINTSTRUCT();
+			long hdc = OS.BeginPaint(hwnd, ps);
 
-			synchronized (this) {
-				PAINTSTRUCT ps = new PAINTSTRUCT();
-				long hdc = OS.BeginPaint(hwnd, ps);
+			if (directColor) {
+				long hBrush = OS.CreateSolidBrush(convertRGBToInt(new RGB(255, 0, 0))); // Rot
+				RECT rect = new RECT(100, 100, 400, 300);
+				OS.FillRect(hdc, rect, hBrush);
+				OS.DeleteObject(hBrush); // Brush freigeben
 
-				if (directColor) {
-					long hBrush = OS.CreateSolidBrush(convertRGBToInt(new RGB(255, 0, 0))); // Rot
-					RECT rect = new RECT(100, 100, 400, 300);
-					OS.FillRect(hdc, rect, hBrush);
-					OS.DeleteObject(hBrush); // Brush freigeben
+			} else {
 
-				} else {
+				if (printFrameRate) {
 
-					surface.getCanvas().clear(0xFFFFFFFF);
-
-					long currentPosTime = System.currentTimeMillis() - startTime;
-
-					currentPosTime = currentPosTime % 10000;
-
-					double position = (double) currentPosTime / (double) 10000;
-					surface.getCanvas().drawCircle((int) (position * WIDTH), 100, 100,
-							new Paint().setColor(0xFF000000));
-
-					OS.BitBlt(hdc, 0, 0, WIDTH, HEIGHT, memHdc, 0, 0, OS.SRCCOPY);
+					if (System.currentTimeMillis() - lastFrame > 1000) {
+						System.out.println("Frames: " + frames);
+						frames = 0;
+						lastFrame = System.currentTimeMillis();
+					}
+					frames++;
 				}
 
-				OS.EndPaint(hwnd, ps);
+				surface.getCanvas().clear(0xFFFFFFFF);
+
+				long currentPosTime = System.currentTimeMillis() - startTime;
+
+				currentPosTime = currentPosTime % 10000;
+
+				double position = (double) currentPosTime / (double) 10000;
+
+				int colorAsRBG = 0xFF42FFF4;
+
+				try (var paint = new Paint()) {
+					paint.setColor(colorAsRBG);
+
+					surface.getCanvas().drawCircle((int) (position * WIDTH), 100, 100, paint);
+
+				}
+
+				// for vsync use DwmFlush in order to wait until the screen drawing is finished.
+				if (vsync)
+					OS.DwmFlush();
+				OS.BitBlt(hdc, 0, 0, WIDTH, HEIGHT, memHdc, 0, 0, OS.SRCCOPY);
 			}
+
+			OS.EndPaint(hwnd, ps);
 
 			break;
 
@@ -119,8 +146,12 @@ public class Window {
 
 		case OS.WM_TIMER:
 			OS.InvalidateRect(hwnd, null, false);
+			break;
+		case OS.WM_SIZE:
 
+			break;
 		}
+
 		return OS.DefWindowProc(hwnd, (int) msg, wParam, lParam);
 
 	}
@@ -160,6 +191,7 @@ public class Window {
 //	      // Gib den HDC zurück
 			OS.ReleaseDC(hwnd, hdc);
 
+			// TIMER
 			OS.SetTimer(hwnd, 1, 1000 / FPS, 0);
 
 			return;
@@ -195,7 +227,6 @@ public class Window {
 //
 //      // Bild anzeigen (z.B. im Clientbereich des Fensters)
 		OS.InvalidateRect(hwnd, null, true);
-
 
 	}
 
