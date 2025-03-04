@@ -497,8 +497,13 @@ public class CSimpleText extends NativeBasedCustomScrollable {
 
 	private void drawBackground(Event e) {
 		GC gc = e.gc;
-		gc.fillRectangle(e.x, e.y, e.width - 1, e.height - 1);
-		if ((style & SWT.BORDER) != 0 && getEditable() && isEnabled()) {
+		int height = e.height;
+		final boolean drawLine = (style & SWT.BORDER) != 0 && getEditable() && isEnabled();
+		if (drawLine) {
+			height--;
+		}
+		gc.fillRectangle(e.x, e.y, e.width, height);
+		if (drawLine) {
 			Color foreground = gc.getForeground();
 			gc.setForeground(BORDER_COLOR);
 			gc.drawLine(e.x, e.y + e.height - 1, e.x + e.x + e.width - 1, e.y + e.height - 1);
