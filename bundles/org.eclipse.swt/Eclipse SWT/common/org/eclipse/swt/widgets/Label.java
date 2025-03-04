@@ -171,8 +171,9 @@ public class Label extends CustomControl {
 		}
 		int mask = SWT.SHADOW_IN | SWT.SHADOW_OUT | SWT.SHADOW_NONE
 				| SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
-		style = style & mask;
-		style |= SWT.NO_FOCUS | SWT.DOUBLE_BUFFERED;
+		style &= mask;
+		style |= SWT.NO_FOCUS;
+		style |= SWT.TRANSPARENT;
 		return style;
 	}
 

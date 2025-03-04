@@ -54,11 +54,6 @@ public final class Drawing {
 	 */
 	public static void drawWithGC(Control control, GC originalGC, Consumer<GC> drawOperation) {
 		Rectangle bounds = control.getBounds();
-		if (originalGC != null && originalGC.innerGC instanceof NativeGC nativeGC) {
-			if (nativeGC.drawable != control) {
-				throw new IllegalStateException("given GC was not created for given control");
-			}
-		}
 
 		if (originalGC == null) {
 			originalGC = new GC(control);
@@ -78,7 +73,6 @@ public final class Drawing {
 			if (widgetBackground == null) {
 				extractAndStoreBackgroundColor(bounds, originalGC);
 			}
-			control.style |= SWT.NO_BACKGROUND;
 		}
 
 		if (gc.innerGC instanceof NativeGC) {

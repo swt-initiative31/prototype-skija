@@ -684,6 +684,7 @@ public class Button extends CustomControl {
 	}
 
 	static int checkStyle(int style) {
+		style |= SWT.TRANSPARENT;
 		style = checkBits(style, SWT.PUSH, SWT.ARROW, SWT.CHECK, SWT.RADIO,
 				SWT.TOGGLE, COMMAND_LINK ? SWT.COMMAND : 0);
 		if ((style & (SWT.PUSH | SWT.TOGGLE)) != 0) {

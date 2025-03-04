@@ -190,6 +190,7 @@ public class Scale extends CustomControl {
 			style &= ~SWT.RIGHT_TO_LEFT;
 		}
 
+		style |= SWT.TRANSPARENT;
 		return style;
 	}
 
