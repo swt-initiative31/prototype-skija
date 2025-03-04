@@ -67,7 +67,6 @@ public final class Drawing {
 		originalGC.setFont(control.getFont());
 		originalGC.setForeground(control.getForeground());
 		originalGC.setBackground(control.getBackground());
-		originalGC.setClipping(new Rectangle(0, 0, bounds.width, bounds.height));
 		originalGC.setAntialias(SWT.ON);
 
 		GC gc = createGraphicsContext(originalGC, control);
