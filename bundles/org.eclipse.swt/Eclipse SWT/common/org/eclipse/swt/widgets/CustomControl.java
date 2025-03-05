@@ -96,22 +96,22 @@ public abstract class CustomControl extends NativeBasedCustomControl {
 	@Override
 	public void setBounds(Rectangle rect) {
 		if (rect == null) error (SWT.ERROR_NULL_ARGUMENT);
-		checkWidget();
-		if (rect.x == this.x && rect.y == this.y && rect.width == this.width && rect.height == this.height) {
-			return;
-		}
-
-		this.x = rect.x;
-		this.y = rect.y;
-		this.width = rect.width;
-		this.height = rect.height;
-		super.setBounds(rect);
-		redraw();
+		setBounds(rect.x, rect.y, rect.width, rect.height);
 	}
 
 	@Override
 	public void setBounds(int x, int y, int width, int height) {
-		setBounds(new Rectangle(x, y, width, height));
+		checkWidget();
+		if (x == this.x && y == this.y && width == this.width && height == this.height) {
+			return;
+		}
+
+		this.x = x;
+		this.y = y;
+		this.width = width;
+		this.height = height;
+		super.setBounds(x, y, width, height);
+		redraw();
 	}
 
 	@Override
