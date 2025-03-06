@@ -56,7 +56,7 @@ import org.eclipse.swt.graphics.*;
  */
 public class Button extends CustomControl {
 	String text = "", message = "";
-	Image image, disabledImage;
+	private ImageContainer image;
 	boolean grayed;
 	static /* final */ boolean COMMAND_LINK = false;
 	private boolean checked;
@@ -417,9 +417,9 @@ public class Button extends CustomControl {
 		int imageWidth = 0;
 		int imageHeight = 0;
 		if (image != null) {
-			Rectangle imgB = image.getBounds();
-			imageWidth = imgB.width;
-			imageHeight = imgB.height;
+			Point imgSize = image.getSize();
+			imageWidth = imgSize.x;
+			imageHeight = imgSize.y;
 			imageSpace = imageWidth;
 			if (text != null && !text.isEmpty()) {
 				imageSpace += SPACING;
@@ -439,15 +439,7 @@ public class Button extends CustomControl {
 		if (image != null) {
 			int imageTopOffset = (height - imageHeight) / 2;
 			int imageLeftOffset = contentArea.x;
-			if (!isEnabled()) {
-				if (disabledImage == null) {
-					disabledImage = new Image(getDisplay(), image,
-							SWT.IMAGE_GRAY);
-				}
-				gc.drawImage(disabledImage, imageLeftOffset, imageTopOffset);
-			} else {
-				gc.drawImage(image, imageLeftOffset, imageTopOffset);
-			}
+			image.draw(gc, imageLeftOffset, imageTopOffset, isEnabled());
 		}
 
 		// Draw text
@@ -624,9 +616,9 @@ public class Button extends CustomControl {
 		int imageSpace = 0;
 		int imageHeight = 0;
 		if (image != null) {
-			Rectangle imgB = image.getBounds();
-			imageHeight = imgB.height;
-			imageSpace = imgB.width;
+			Point imgSize = image.getSize();
+			imageHeight = imgSize.y;
+			imageSpace = imgSize.x;
 			if (text != null && !text.isEmpty()) {
 				imageSpace += SPACING;
 			}
@@ -801,7 +793,7 @@ public class Button extends CustomControl {
 	 */
 	public Image getImage() {
 		checkWidget();
-		return image;
+		return image != null ? image.getImage() : null;
 	}
 
 	/**
@@ -960,12 +952,11 @@ public class Button extends CustomControl {
 	@Override
 	void releaseWidget() {
 		super.releaseWidget();
-		if (disabledImage != null) {
-			disabledImage.dispose();
+		if (image != null) {
+			image.disposeDisabled();
+			image = null;
 		}
-		disabledImage = null;
 		text = null;
-		image = null;
 	}
 
 	/**
@@ -1132,12 +1123,25 @@ public class Button extends CustomControl {
 	public void setImage(Image image) {
 		checkWidget();
 		if (image != null && image.isDisposed()) {
-			error(SWT.ERROR_INVALID_ARGUMENT);
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 		if ((style & SWT.ARROW) != 0) {
 			return;
 		}
-		this.image = image;
+
+		if (image == getImage()) {
+			return;
+		}
+
+		if (this.image != null) {
+			this.image.disposeDisabled();
+			this.image = null;
+		}
+
+		if (image != null) {
+			this.image = new ImageContainer(image, display);
+		}
+
 		redraw();
 	}
 

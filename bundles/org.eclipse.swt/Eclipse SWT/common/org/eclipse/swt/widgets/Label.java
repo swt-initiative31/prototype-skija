@@ -76,7 +76,7 @@ public class Label extends CustomControl {
 	/** the current text */
 	private String text;
 	/** the current icon */
-	private Image image;
+	private ImageContainer image;
 	// The tooltip is used for two purposes - the application can set
 	// a tooltip or the tooltip can be used to display the full text when the
 	// the text has been truncated due to the label being too short.
@@ -202,9 +202,9 @@ public class Label extends CustomControl {
 			}
 		}
 		if (image != null) {
-			Rectangle imgB = image.getBounds();
-			imageWidth = imgB.width;
-			imageHeight = imgB.height;
+			Point imgSize = image.getSize();
+			imageWidth = imgSize.x;
+			imageHeight = imgSize.y;
 		}
 
 		int width = leftMargin + imageWidth + gap + lineWidth
@@ -301,7 +301,7 @@ public class Label extends CustomControl {
 		 * the widget.
 		 */
 		// checkWidget();
-		return image;
+		return image != null ? image.getImage() : null;
 	}
 
 	/**
@@ -341,13 +341,13 @@ public class Label extends CustomControl {
 	/**
 	 * Compute the minimum size.
 	 */
-	private Point getTotalSize(GC gc, Image image, String text) {
+	private Point getTotalSize(GC gc, ImageContainer image, String text) {
 		Point size = new Point(0, 0);
 
 		if (image != null) {
-			Rectangle r = image.getBounds();
-			size.x += r.width;
-			size.y += r.height;
+			Point is = image.getSize();
+			size.x += is.x;
+			size.y += is.y;
 		}
 
 		if (text != null && text.length() > 0) {
@@ -482,7 +482,10 @@ public class Label extends CustomControl {
 		gradientPercents = null;
 		backgroundImage = null;
 		text = null;
-		image = null;
+		if (image != null) {
+			image.disposeDisabled();
+			image = null;
+		}
 		appToolTipText = null;
 	}
 
@@ -530,7 +533,7 @@ public class Label extends CustomControl {
 
 		boolean shortenText = false;
 		String t = text;
-		Image img = image;
+		ImageContainer img = image;
 		int availableWidth = Math.max(0,
 				width - (leftMargin + rightMargin));
 		Point extent = getTotalSize(gc, img, t);
@@ -661,12 +664,13 @@ public class Label extends CustomControl {
 		 * the text height, draw image starting from top margin. Else draw text
 		 * starting from top margin.
 		 */
-		Rectangle imageRect = null;
+		int imageWidth = 0;
 		int lineHeight = 0, textHeight = 0, imageHeight = 0;
 
 		if (img != null) {
-			imageRect = img.getBounds();
-			imageHeight = imageRect.height;
+			Point imageSize = img.getSize();
+			imageWidth = imageSize.x;
+			imageHeight = imageSize.y;
 		}
 		if (lines != null) {
 			lineHeight = gc.getFontMetrics().getHeight();
@@ -694,10 +698,10 @@ public class Label extends CustomControl {
 
 		// draw the image
 		if (img != null) {
-			gc.drawImage(img, 0, 0, imageRect.width, imageHeight, x, imageY,
-					imageRect.width, imageHeight);
-			x += imageRect.width + GAP;
-			extent.x -= imageRect.width + GAP;
+			img.draw(gc, 0, 0, imageWidth, imageHeight, x, imageY,
+					imageWidth, imageHeight, isEnabled());
+			x += imageWidth + GAP;
+			extent.x -= imageWidth + GAP;
 		}
 
 		// draw the text
@@ -1039,10 +1043,18 @@ public class Label extends CustomControl {
 	 */
 	public void setImage(Image image) {
 		checkWidget();
-		if (image != this.image) {
-			this.image = image;
-			redraw();
+		if (image == getImage()) {
+			return;
 		}
+
+		if (this.image != null) {
+			this.image.disposeDisabled();
+			this.image = null;
+		}
+		if (image != null) {
+			this.image = new ImageContainer(image, display);
+		}
+		redraw();
 	}
 
 	/**
