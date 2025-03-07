@@ -557,6 +557,7 @@ public class Display extends Device implements Executor {
 		CommonWidgetsDPIChangeHandlers.registerCommonHandlers();
 	}
 
+	private ColorProvider colorProvider;
 
 /*
 * TEMPORARY CODE.
@@ -595,6 +596,8 @@ public Display () {
  */
 public Display (DeviceData data) {
 	super (data);
+
+	colorProvider = DefaultColorProvider.createLightInstance();
 }
 
 Control _getFocusControl () {
@@ -5394,5 +5397,21 @@ private void runWithProperDPIAwareness(Runnable operation) {
 	} else {
 		operation.run();
 	}
+}
+
+/**
+ * Returns the color provider used for custom-drawn controls.
+ * @return a non-null instance of the color provider
+ */
+public ColorProvider getColorProvider() {
+	return colorProvider;
+}
+
+/**
+ * Sets the color provider used for custom-drawn controls.
+ * @param colorProvider a non-null color provider
+ */
+public void setColorProvider(ColorProvider colorProvider) {
+	this.colorProvider = Objects.requireNonNull(colorProvider);
 }
 }
