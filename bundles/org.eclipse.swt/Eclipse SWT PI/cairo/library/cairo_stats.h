@@ -136,6 +136,7 @@ typedef enum {
 	cairo_1surface_1flush_FUNC,
 	cairo_1surface_1get_1content_FUNC,
 	cairo_1surface_1get_1device_1scale_FUNC,
+	cairo_1surface_1get_1reference_1count_FUNC,
 	cairo_1surface_1get_1type_FUNC,
 	cairo_1surface_1mark_1dirty_FUNC,
 	cairo_1surface_1reference_FUNC,

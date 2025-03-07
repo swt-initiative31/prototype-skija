@@ -14,6 +14,9 @@
 package org.eclipse.swt.widgets;
 
 
+import java.util.*;
+import java.util.concurrent.locks.*;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
@@ -145,6 +148,10 @@ public class Shell extends Decorations {
 	static long lastStart = System.currentTimeMillis();
 
 	static int draws = 0;
+
+	private final Lock lock = new ReentrantLock();
+
+	Map<Long, Long> cairoSurfaceCleanup = new HashMap<>();
 
 	protected long bytesPointer;
 	protected Pixmap p;
@@ -323,7 +330,11 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
 		@Override
 		public void controlResized(ControlEvent e) {
 
+			lock.lock();
+
 			setupSurface(e);
+
+			lock.unlock();
 
 		}
 
@@ -331,7 +342,7 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
 
 	this.addPaintListener(e -> {
 
-		synchronized (this) {
+		lock.lock();
 
 			if (this.pointer == 0)
 				return;
@@ -388,29 +399,27 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
 				transferImage.dispose();
 
 			}
-		}
+
+		lock.unlock();
 
 	});
 }
 
 void setupSurface(ControlEvent e) {
 
-	synchronized (this) {
 
-		if (cairoSurface != 0) {
-			Cairo.cairo_surface_flush(cairoSurface);
-			Cairo.cairo_destroy(cairoSurface);
-			cairoSurface = 0;
-		}
+	if (surface != null && !surface.isClosed())
+		surface.close();
 
-		if (surface != null && !surface.isClosed())
-			surface.close();
+	if (p != null && !p.isClosed())
+		p.close();
 
-		if (p != null && !p.isClosed())
-			p.close();
-
-		if (this.pointer != 0)
-			C.free(this.pointer);
+	if (this.pointer != 0) {
+		Cairo.cairo_surface_destroy(cairoSurface);
+		cairoSurface = 0;
+		C.free(this.pointer);
+		this.pointer = 0;
+	}
 
 		var s = Shell.this.getSize();
 		int width = s.x;
@@ -424,11 +433,31 @@ void setupSurface(ControlEvent e) {
 		this.p = Pixmap.make(info, this.pointer, 4 * width);
 		surface = Surface.makeRasterDirect(p);
 
+		System.out.println("CairoSurface: create " + System.currentTimeMillis());
 		cairoSurface = Cairo.cairo_image_surface_create_for_data(this.pointer, Cairo.CAIRO_FORMAT_ARGB32, width, height,
 				4 * width);
-	}
 }
 
+private void cleanupOldCairoSurface() {
+
+	long current = System.currentTimeMillis();
+
+	java.util.List<Long> remove = new ArrayList<>();
+
+	for (var e : cairoSurfaceCleanup.entrySet()) {
+
+		if (current - e.getKey() > 100) {
+			Cairo.cairo_destroy(e.getKey());
+
+			remove.add(e.getKey());
+
+		}
+
+	}
+
+	remove.forEach(e -> cairoSurfaceCleanup.remove(remove));
+
+}
 /**
  * Constructs a new instance of this class given only its
  * parent. It is created with style <code>SWT.DIALOG_TRIM</code>.

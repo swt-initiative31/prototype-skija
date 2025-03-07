@@ -119,6 +119,8 @@ public static final native long cairo_create(long target);
 public static final native long cairo_image_surface_create_for_data(long data, int format, int width, int height,
 		int stride);
 
+public static final native int cairo_surface_get_reference_count(long surface);
+
 /** @param cr cast=(cairo_t *) */
 public static final native void cairo_curve_to(long cr, double x1, double y1, double x2, double y2, double x3, double y3);
 /** @param cr cast=(cairo_t *) */

@@ -1284,6 +1284,18 @@ fail:
 }
 #endif
 
+#ifndef NO_cairo_1surface_1get_1reference_1count
+JNIEXPORT jint JNICALL Cairo_NATIVE(cairo_1surface_1get_1reference_1count)
+	(JNIEnv *env, jclass that, jlong arg0)
+{
+	jint rc = 0;
+	Cairo_NATIVE_ENTER(env, that, cairo_1surface_1get_1reference_1count_FUNC);
+	rc = (jint)cairo_surface_get_reference_count(arg0);
+	Cairo_NATIVE_EXIT(env, that, cairo_1surface_1get_1reference_1count_FUNC);
+	return rc;
+}
+#endif
+
 #ifndef NO_cairo_1surface_1get_1type
 JNIEXPORT jint JNICALL Cairo_NATIVE(cairo_1surface_1get_1type)
 	(JNIEnv *env, jclass that, jlong arg0)
