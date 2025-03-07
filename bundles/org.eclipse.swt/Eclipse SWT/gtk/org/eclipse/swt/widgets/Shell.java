@@ -17,11 +17,14 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.graphics.Region;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
+
+import io.github.humbleui.skija.*;
 
 /**
  * Instances of this class represent the "windows"
@@ -133,6 +136,18 @@ public class Shell extends Decorations {
 	boolean ignoreFocusOut, ignoreFocusIn;
 	boolean ignoreFocusOutAfterGrab, grabbedFocus;
 	Region originalRegion;
+
+	private long cairoSurface;
+	private Surface surface;
+
+	static long startTime = System.currentTimeMillis();
+	static long lastStart = System.currentTimeMillis();
+
+	static int draws = 0;
+
+	protected long bytesPointer;
+	protected Pixmap p;
+	private long pointer;
 
 	static final int MAXIMUM_TRIM = 128;
 	static final int BORDER = 3;
@@ -298,6 +313,115 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
 	}
 	reskinWidget();
 	createWidget (0);
+
+	// TODO make sure this works really really reliable, take care of the memory
+	// handling!!
+	this.addControlListener(new ControlAdapter() {
+
+		@Override
+		public void controlResized(ControlEvent e) {
+
+			setupSurface(e);
+
+		}
+
+	});
+
+	this.addPaintListener(e -> {
+
+		synchronized (this) {
+
+			if (this.pointer == 0)
+				return;
+
+			var b = this.getBounds();
+			int width = b.width;
+
+			if (System.currentTimeMillis() - lastStart > 1000) {
+				System.out.println("Frames: " + draws);
+				lastStart = System.currentTimeMillis();
+				draws = 0;
+			}
+			draws++;
+
+			if (surface != null) {
+
+				surface.getCanvas().clear(0xFFFFFFFF);
+
+				long currentPosTime = System.currentTimeMillis() - startTime;
+
+				currentPosTime = currentPosTime % 10000;
+
+				double position = (double) currentPosTime / (double) 10000;
+
+				int colorAsRGB = 0xFF42FFF4;
+				int colorRed = 0xFFFF0000;
+				int colorGreen = 0xFF00FF00;
+				int colorBlue = 0xFF0000FF;
+
+				try (var paint = new Paint()) {
+					paint.setColor(colorRed);
+
+					surface.getCanvas().drawCircle((int) (position * width), 100, 100, paint);
+
+				}
+
+			}
+
+			var cairo = e.gc.getGCData().cairo;
+
+			Cairo.cairo_set_source_surface(cairo, cairoSurface, 0, 0);
+			Cairo.cairo_paint(cairo);
+			Cairo.cairo_surface_flush(cairoSurface);
+			Cairo.cairo_surface_flush(cairo);
+
+//	io.github.humbleui.skija.Image im = surface.makeImageSnapshot();
+//	byte[] imageBytes = EncoderPNG.encode(im).getBytes();
+//
+//	Image transferImage = new Image(getDisplay(), new ByteArrayInputStream(imageBytes));
+//
+//	e.gc.drawImage(transferImage, 0, 0);
+//	im.close();
+//	transferImage.dispose();
+		}
+
+	});
+}
+
+void setupSurface(ControlEvent e) {
+
+	synchronized (this) {
+
+		if (cairoSurface != 0) {
+			Cairo.cairo_surface_flush(cairoSurface);
+			Cairo.cairo_destroy(cairoSurface);
+			cairoSurface = 0;
+		}
+
+		if (surface != null && !surface.isClosed())
+			surface.close();
+
+		if (p != null && !p.isClosed())
+			p.close();
+
+		if (this.pointer != 0)
+			C.free(this.pointer);
+
+		var s = Shell.this.getSize();
+		int width = s.x;
+		int height = s.y;
+
+		int size = width * height * 4;
+		this.pointer = C.malloc(size);
+
+		var info = ImageInfo.makeN32(width, height, ColorAlphaType.UNPREMUL);
+//this.buffer = ByteBuffer.allocateDirect(size);
+		this.p = Pixmap.make(info, this.pointer, 4 * width);
+		surface = Surface.makeRasterDirect(p);
+
+		cairoSurface = Cairo.cairo_image_surface_create_for_data(this.pointer, Cairo.CAIRO_FORMAT_ARGB32, width, height,
+				4 * width);
+	}
 }
 
 /**
