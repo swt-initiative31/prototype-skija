@@ -55,38 +55,14 @@ import org.eclipse.swt.graphics.*;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class Button extends CustomControl {
-	String text = "", message = "";
-	Image image, disabledImage;
-	boolean grayed;
+	String message = "";
 	static /* final */ boolean COMMAND_LINK = false;
-	private boolean checked;
-	private boolean hasMouseEntered;
-
-	/** Left and right margins */
-	private static final int LEFT_MARGIN = 2;
-	private static final int RIGHT_MARGIN = 2;
-	private static final int TOP_MARGIN = 0;
-	private static final int BOTTOM_MARGIN = 0;
-	private static final int BOX_SIZE = 12;
-	private static final int SPACING = 4;
-
-	private static final Color HOVER_COLOR = new Color(224, 238, 254);
-	private static final Color TOGGLE_COLOR = new Color(204, 228, 247);
-	private static final Color SELECTION_COLOR = new Color(0, 95, 184);
-	private static final Color TEXT_COLOR = new Color(0, 0, 0);
-	private static final Color DISABLED_COLOR = new Color(160, 160, 160);
-	private static final Color BORDER_COLOR = new Color(160, 160, 160);
-	private static final Color BORDER_DISABLED_COLOR = new Color(192, 192, 192);
-	private static final Color CHECKBOX_GRAYED_COLOR = new Color(192, 192, 192);
-	private static final Color PUSH_BACKGROUND_COLOR = new Color(255, 255, 255);
-
-	private static final int DRAW_FLAGS = SWT.DRAW_MNEMONIC | SWT.DRAW_TAB
-			| SWT.DRAW_TRANSPARENT | SWT.DRAW_DELIMITER;
 
 	private Accessible acc;
 	private AccessibleAdapter accAdapter;
-	private boolean spaceDown;
 	private boolean defaultButton;
+
+	private final ButtonRenderer renderer;
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style
@@ -135,6 +111,8 @@ public class Button extends CustomControl {
 	public Button(Composite parent, int style) {
 		super(parent, checkStyle(style));
 		this.style |= SWT.DOUBLE_BUFFERED;
+
+		renderer = new WindowsButtonRenderer(this);
 
 		Listener listener = event -> {
 			switch (event.type) {
@@ -310,14 +288,14 @@ public class Button extends CustomControl {
 
 	private void onKeyDown(Event event) {
 		if (event.character == SWT.SPACE) {
-			this.spaceDown = true;
+			renderer.setPressed(true);
 			redraw();
 		}
 	}
 
 	private void onKeyUp(Event event) {
 		if (event.character == SWT.SPACE) {
-			this.spaceDown = false;
+			renderer.setPressed(true);
 			handleSelection();
 			redraw();
 		}
@@ -331,7 +309,7 @@ public class Button extends CustomControl {
 		if (!isVisible()) {
 			return;
 		}
-		Drawing.drawWithGC(this, event.gc, this::doPaint);
+		Drawing.drawWithGC(this, event.gc, renderer::paint);
 	}
 
 	private void onDispose(Event event) {
@@ -349,7 +327,7 @@ public class Button extends CustomControl {
 			forceFocus();
 			selectRadio();
 		} else {
-			setSelection(!checked);
+			setSelection(!renderer.isSelected());
 		}
 		sendSelectionEvent(SWT.Selection);
 	}
@@ -363,156 +341,13 @@ public class Button extends CustomControl {
 	}
 
 	private void onMouseEnter() {
-		if (!hasMouseEntered) {
-			hasMouseEntered = true;
-			redraw();
-		}
-	}
-
-	private void onMouseExit() {
-		hasMouseEntered = false;
+		renderer.setHover(true);
 		redraw();
 	}
 
-	private void doPaint(GC gc) {
-		Point size = getSize();
-		final int width = size.x;
-		final int height = size.y;
-
-		boolean isRightAligned = (style & SWT.RIGHT) != 0;
-		boolean isCentered = (style & SWT.CENTER) != 0;
-		boolean isPushOrToggleButton = (style & (SWT.PUSH | SWT.TOGGLE)) != 0;
-		int initialAntiAlias = gc.getAntialias();
-
-		int boxSpace = 0;
-		// Draw check box / radio box / push button border
-		if (isPushOrToggleButton) {
-			drawPushButton(gc, 0, 0, width - 1, height - 1);
-		} else {
-			boxSpace = BOX_SIZE + SPACING;
-			int boxLeftOffset = LEFT_MARGIN;
-			int boxTopOffset = (height - 1 - BOX_SIZE) / 2;
-			if ((style & SWT.CHECK) == SWT.CHECK) {
-				drawCheckbox(gc, boxLeftOffset, boxTopOffset);
-			} else if ((style & SWT.RADIO) == SWT.RADIO) {
-				drawRadioButton(gc, boxLeftOffset, boxTopOffset);
-			}
-		}
-
-		gc.setAntialias(initialAntiAlias);
-		gc.setAdvanced(false);
-
-		// Calculate area for button content (image + text)
-		int horizontalSpaceForContent = width - RIGHT_MARGIN - LEFT_MARGIN
-				- boxSpace;
-		int textWidth = 0;
-		int textHeight = 0;
-		if (text != null && !text.isEmpty()) {
-			gc.setFont(getFont());
-			Point textExtent = gc.textExtent(text, DRAW_FLAGS);
-			textWidth = textExtent.x;
-			textHeight = textExtent.y;
-		}
-		int imageSpace = 0;
-		int imageWidth = 0;
-		int imageHeight = 0;
-		if (image != null) {
-			Rectangle imgB = image.getBounds();
-			imageWidth = imgB.width;
-			imageHeight = imgB.height;
-			imageSpace = imageWidth;
-			if (text != null && !text.isEmpty()) {
-				imageSpace += SPACING;
-			}
-		}
-		Rectangle contentArea = new Rectangle(LEFT_MARGIN + boxSpace,
-				TOP_MARGIN, imageSpace + textWidth,
-				height - TOP_MARGIN - BOTTOM_MARGIN);
-		if (isRightAligned) {
-			contentArea.x += horizontalSpaceForContent - contentArea.width;
-		} else if (isCentered) {
-			contentArea.x += (horizontalSpaceForContent - contentArea.width)
-					/ 2;
-		}
-
-		// Draw image
-		if (image != null) {
-			int imageTopOffset = (height - imageHeight) / 2;
-			int imageLeftOffset = contentArea.x;
-			if (!isEnabled()) {
-				if (disabledImage == null) {
-					disabledImage = new Image(getDisplay(), image,
-							SWT.IMAGE_GRAY);
-				}
-				gc.drawImage(disabledImage, imageLeftOffset, imageTopOffset);
-			} else {
-				gc.drawImage(image, imageLeftOffset, imageTopOffset);
-			}
-		}
-
-		// Draw text
-		if (text != null && !text.isEmpty()) {
-			gc.setForeground(isEnabled() ? TEXT_COLOR : DISABLED_COLOR);
-			int textTopOffset = (height - 1 - textHeight) / 2;
-			int textLeftOffset = contentArea.x + imageSpace;
-			gc.drawText(text, textLeftOffset, textTopOffset, DRAW_FLAGS);
-		}
-		if (hasFocus()) {
-			if (((style & SWT.RADIO) | (style & SWT.CHECK)) != 0) {
-				int textTopOffset = (height - 1 - textHeight) / 2;
-				int textLeftOffset = contentArea.x + imageSpace;
-				gc.drawFocus(textLeftOffset - 2, textTopOffset, textWidth + 4,
-						textHeight);
-			} else {
-				gc.drawFocus(3, 3, width - 7, height - 7);
-			}
-		}
-
-		if (isArrowButton()) {
-			Color bg2 = gc.getBackground();
-
-			gc.setBackground(TEXT_COLOR);
-
-			int centerHeight = height / 2;
-			int centerWidth = width / 2;
-			if (hasBorder()) {
-				// border ruins center position...
-				centerHeight -= 2;
-				centerWidth -= 2;
-			}
-
-			// TODO: in the next version use a bezier path
-
-			int[] curve = null;
-
-			if ((style & SWT.DOWN) != 0) {
-				curve = new int[]{centerWidth, centerHeight + 5,
-						centerWidth - 5, centerHeight - 5, centerWidth + 5,
-						centerHeight - 5};
-
-			} else if ((style & SWT.LEFT) != 0) {
-				curve = new int[]{centerWidth - 5, centerHeight,
-						centerWidth + 5, centerHeight + 5, centerWidth + 5,
-						centerHeight - 5};
-
-			} else if ((style & SWT.RIGHT) != 0) {
-				curve = new int[]{centerWidth + 5, centerHeight,
-						centerWidth - 5, centerHeight - 5, centerWidth - 5,
-						centerHeight + 5};
-
-			} else {
-				curve = new int[]{centerWidth, centerHeight - 5,
-						centerWidth - 5, centerHeight + 5, centerWidth + 5,
-						centerHeight + 5};
-			}
-
-			gc.fillPolygon(curve);
-			gc.setBackground(bg2);
-		}
-	}
-
-	private boolean isArrowButton() {
-		return (style & SWT.ARROW) != 0;
+	private void onMouseExit() {
+		renderer.setHover(false);
+		redraw();
 	}
 
 	private boolean isRadioButton() {
@@ -523,127 +358,9 @@ public class Button extends CustomControl {
 		return (style & SWT.CHECK) != 0;
 	}
 
-	private void drawPushButton(GC gc, int x, int y, int w,
-			int h) {
-		if (isEnabled()) {
-			if ((style & SWT.TOGGLE) != 0 && isChecked()) {
-				gc.setBackground(TOGGLE_COLOR);
-			} else if (hasMouseEntered || spaceDown) {
-				gc.setBackground(HOVER_COLOR);
-			} else {
-				gc.setBackground(PUSH_BACKGROUND_COLOR);
-			}
-			gc.fillRoundRectangle(x, y, w, h, 6, 6);
-		}
-
-		if (isEnabled()) {
-			if ((style & SWT.TOGGLE) != 0 && isChecked() || hasMouseEntered) {
-				gc.setForeground(SELECTION_COLOR);
-			} else {
-				gc.setForeground(BORDER_COLOR);
-			}
-		} else {
-			gc.setForeground(BORDER_DISABLED_COLOR);
-		}
-
-		// if the button has focus, the border also changes the color
-		Color fg = gc.getForeground();
-		if (hasFocus()) {
-			gc.setForeground(SELECTION_COLOR);
-		}
-		gc.drawRoundRectangle(x, y, w - 1, h - 1, 6, 6);
-		gc.setForeground(fg);
-	}
-
-	private void drawRadioButton(GC gc, int x, int y) {
-		if (getSelection()) {
-			gc.setBackground(isEnabled() ? SELECTION_COLOR : DISABLED_COLOR);
-			int partialBoxBorder = 2;
-			gc.fillOval(x + partialBoxBorder, y + partialBoxBorder,
-					BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1);
-		}
-
-		if (!isEnabled()) {
-			gc.setForeground(BORDER_DISABLED_COLOR);
-		}
-		else if (hasMouseEntered) {
-			gc.setBackground(HOVER_COLOR);
-			int partialBoxBorder = getSelection() ? 4 : 0;
-			gc.fillOval(x + partialBoxBorder, y + partialBoxBorder,
-					BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1);
-		}
-		gc.drawOval(x, y, BOX_SIZE, BOX_SIZE);
-	}
-
-	private void drawCheckbox(GC gc, int x, int y) {
-		if (getSelection()) {
-			gc.setBackground(isEnabled()
-					? grayed ? CHECKBOX_GRAYED_COLOR : SELECTION_COLOR
-					: DISABLED_COLOR);
-			int partialBoxBorder = 2;
-			gc.fillRoundRectangle(x + partialBoxBorder, y + partialBoxBorder,
-					BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1,
-					BOX_SIZE / 4 - partialBoxBorder / 2,
-					BOX_SIZE / 4 - partialBoxBorder / 2);
-		}
-
-		if (!isEnabled()) {
-			gc.setForeground(BORDER_DISABLED_COLOR);
-		}
-		else if (hasMouseEntered) {
-			gc.setBackground(HOVER_COLOR);
-			int partialBoxBorder = getSelection() ? 4 : 0;
-			gc.fillRoundRectangle(x + partialBoxBorder, y + partialBoxBorder,
-					BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1,
-					BOX_SIZE / 4 - partialBoxBorder / 2,
-					BOX_SIZE / 4 - partialBoxBorder / 2);
-		}
-		gc.drawRoundRectangle(x, y, BOX_SIZE, BOX_SIZE, 4, 4);
-	}
-
 	@Override
 	protected Point computeDefaultSize() {
-		if (isArrowButton()) {
-			int borderWidth = hasBorder() ? 8 : 0;
-			int width = 14 + borderWidth;
-			int height = 14 + borderWidth;
-			return new Point(width, height);
-		}
-
-		int textWidth = 0;
-		int textHeight = 0;
-		int boxSpace = 0;
-		if ((style & (SWT.PUSH | SWT.TOGGLE)) == 0) {
-			boxSpace = BOX_SIZE + SPACING;
-		}
-		if (text != null && !text.isEmpty()) {
-			Point textExtent = Drawing.getTextExtent(this, text, DRAW_FLAGS);
-			textWidth = textExtent.x + 1;
-			textHeight = textExtent.y;
-		}
-		int imageSpace = 0;
-		int imageHeight = 0;
-		if (image != null) {
-			Rectangle imgB = image.getBounds();
-			imageHeight = imgB.height;
-			imageSpace = imgB.width;
-			if (text != null && !text.isEmpty()) {
-				imageSpace += SPACING;
-			}
-		}
-
-		int width = LEFT_MARGIN + boxSpace + imageSpace + textWidth + 1
-				+ RIGHT_MARGIN;
-		int height = TOP_MARGIN
-				+ Math.max(boxSpace, Math.max(textHeight, imageHeight))
-				+ BOTTOM_MARGIN;
-
-		if ((style & (SWT.PUSH | SWT.TOGGLE)) != 0) {
-			width += 12;
-			height += 10;
-		}
-
-		return new Point(width, height);
+		return renderer.computeDefaultSize();
 	}
 
 	/**
@@ -783,7 +500,7 @@ public class Button extends CustomControl {
 		if (!isCheckButton()) {
 			return false;
 		}
-		return grayed;
+		return renderer.isGrayed();
 	}
 
 	/**
@@ -801,7 +518,7 @@ public class Button extends CustomControl {
 	 */
 	public Image getImage() {
 		checkWidget();
-		return image;
+		return renderer.getImage();
 	}
 
 	/**
@@ -855,7 +572,7 @@ public class Button extends CustomControl {
 		if ((style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0) {
 			return false;
 		}
-		return isChecked();
+		return renderer.isSelected();
 	}
 
 	/**
@@ -877,7 +594,7 @@ public class Button extends CustomControl {
 		if ((style & SWT.ARROW) != 0) {
 			return "";
 		}
-		return text;
+		return renderer.getText();
 	}
 
 	@Override
@@ -960,12 +677,8 @@ public class Button extends CustomControl {
 	@Override
 	void releaseWidget() {
 		super.releaseWidget();
-		if (disabledImage != null) {
-			disabledImage.dispose();
-		}
-		disabledImage = null;
-		text = null;
-		image = null;
+		renderer.setImage(null);
+		renderer.setText(null);
 	}
 
 	/**
@@ -1087,7 +800,7 @@ public class Button extends CustomControl {
 		 * button in WM_SETFOCUS. The fix is to not assign focus to an
 		 * unselected radio button.
 		 */
-		if (isRadioButton() && !isChecked()) {
+		if (isRadioButton() && !renderer.isSelected()) {
 			return false;
 		}
 		boolean b = super.setFocus();
@@ -1137,7 +850,8 @@ public class Button extends CustomControl {
 		if ((style & SWT.ARROW) != 0) {
 			return;
 		}
-		this.image = image;
+
+		renderer.setImage(image);
 		redraw();
 	}
 
@@ -1163,7 +877,7 @@ public class Button extends CustomControl {
 		if ((style & SWT.CHECK) == 0) {
 			return;
 		}
-		this.grayed = grayed;
+		renderer.setGrayed(grayed);
 	}
 
 	/**
@@ -1227,7 +941,7 @@ public class Button extends CustomControl {
 	 */
 	public void setSelection(boolean selected) {
 		checkWidget();
-		this.checked = selected;
+		renderer.setSelected(selected);
 		redraw();
 	}
 
@@ -1319,11 +1033,7 @@ public class Button extends CustomControl {
 		if ((style & SWT.ARROW) != 0) {
 			return;
 		}
-		text = string;
+		renderer.setText(string);
 		redraw();
-	}
-
-	private boolean isChecked() {
-		return checked;
 	}
 }
