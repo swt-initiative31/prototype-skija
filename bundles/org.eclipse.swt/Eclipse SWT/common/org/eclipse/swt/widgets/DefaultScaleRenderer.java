@@ -17,11 +17,13 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 
 class DefaultScaleRenderer implements ScaleRenderer {
-	private static final Color IDLE_COLOR = new Color(0, 95, 184);
-	private static final Color HOVER_COLOR = new Color(0, 0, 0);
-	private static final Color DRAG_COLOR = new Color(204, 204, 204);
-	private static final Color LINE_COLOR = new Color(160, 160, 160);
-	private static final Color DISABLED_COLOR = new Color(160, 160, 160);
+
+	static final String KEY_HANDLE_IDLE = "scale.handle.background"; //$NON-NLS-1$
+	static final String KEY_HANDLE_HOVER = "scale.handle.background.hover"; //$NON-NLS-1$
+	static final String KEY_HANDLE_DRAG = "scale.handle.background.drag"; //$NON-NLS-1$
+	static final String KEY_HANDLE_OUTLINE = "scale.handle.outline"; //$NON-NLS-1$
+	static final String KEY_DISABLED = "scale.disabled"; //$NON-NLS-1$
+	static final String KEY_NOTCH = "scale.notch.foreground"; //$NON-NLS-1$
 
 	private final Scale scale;
 
@@ -59,12 +61,12 @@ class DefaultScaleRenderer implements ScaleRenderer {
 			lastNotch = bar.x + bar.width - 5;
 		}
 
-		gc.fillRectangle(bar);
-		gc.setForeground(LINE_COLOR);
+		final ColorProvider colorProvider = scale.getColorProvider();
+		gc.setForeground(colorProvider.getColor(KEY_HANDLE_OUTLINE));
 		gc.drawRectangle(bar);
 
 		// prepare for line drawing
-		gc.setForeground(LINE_COLOR);
+		gc.setForeground(colorProvider.getColor(KEY_NOTCH));
 		gc.setLineWidth(1);
 
 		// draw first and last notch
@@ -77,7 +79,7 @@ class DefaultScaleRenderer implements ScaleRenderer {
 		ppu = totalPixel / units;
 		drawCenterNotches(gc, firstNotch, lastNotch, units, unitPerPage);
 
-		drawHandle(gc, effectiveValue);
+		drawHandle(gc, effectiveValue, colorProvider);
 	}
 
 	private void drawCenterNotches(GC gc, int firstNotchPos, int lastNotchPos, int units, int unitPerPage) {
@@ -94,18 +96,18 @@ class DefaultScaleRenderer implements ScaleRenderer {
 		}
 	}
 
-	private void drawHandle(GC gc, int value) {
-		// draw handle
-		Color handleColor;
+	private void drawHandle(GC gc, int value, ColorProvider colorProvider) {
+		final String colorKey;
 		if (scale.isEnabled()) {
-			handleColor = switch (scale.getHandleState()) {
-				case IDLE -> IDLE_COLOR;
-				case HOVER -> HOVER_COLOR;
-				case DRAG -> DRAG_COLOR;
+			colorKey = switch (scale.getHandleState()) {
+				case IDLE -> KEY_HANDLE_IDLE;
+				case HOVER -> KEY_HANDLE_HOVER;
+				case DRAG -> KEY_HANDLE_DRAG;
 			};
 		} else {
-			handleColor = DISABLED_COLOR;
+			colorKey = KEY_DISABLED;
 		}
+		Color handleColor = colorProvider.getColor(colorKey);
 		gc.setBackground(handleColor);
 		handleBounds = calculateHandleBounds(value);
 		gc.fillRectangle(handleBounds);
