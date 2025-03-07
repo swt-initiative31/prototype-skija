@@ -17,6 +17,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Region;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
@@ -153,6 +154,7 @@ public class Shell extends Decorations {
 	static final int BORDER = 3;
 
 	static final double SHELL_TO_MONITOR_RATIO = 0.625; // Fractional: 5 / 8
+	private static final boolean directDrawing = true;
 
 /**
  * Constructs a new instance of this class. This is equivalent
@@ -368,21 +370,24 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
 
 			}
 
-			var cairo = e.gc.getGCData().cairo;
+			if (this.directDrawing) {
+				var cairo = e.gc.getGCData().cairo;
+				Cairo.cairo_set_source_surface(cairo, cairoSurface, 0, 0);
+				Cairo.cairo_paint(cairo);
+				Cairo.cairo_surface_flush(cairoSurface);
+				Cairo.cairo_surface_flush(cairo);
+			}
+			else {
+				io.github.humbleui.skija.Image im = surface.makeImageSnapshot();
+				byte[] imageBytes = EncoderPNG.encode(im).getBytes();
 
-			Cairo.cairo_set_source_surface(cairo, cairoSurface, 0, 0);
-			Cairo.cairo_paint(cairo);
-			Cairo.cairo_surface_flush(cairoSurface);
-			Cairo.cairo_surface_flush(cairo);
+				var transferImage = new Image(getDisplay(), new java.io.ByteArrayInputStream(imageBytes));
 
-//	io.github.humbleui.skija.Image im = surface.makeImageSnapshot();
-//	byte[] imageBytes = EncoderPNG.encode(im).getBytes();
-//
-//	Image transferImage = new Image(getDisplay(), new ByteArrayInputStream(imageBytes));
-//
-//	e.gc.drawImage(transferImage, 0, 0);
-//	im.close();
-//	transferImage.dispose();
+				e.gc.drawImage(transferImage, 0, 0);
+				im.close();
+				transferImage.dispose();
+
+			}
 		}
 
 	});
