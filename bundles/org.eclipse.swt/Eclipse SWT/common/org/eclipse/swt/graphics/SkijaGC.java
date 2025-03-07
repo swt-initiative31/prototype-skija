@@ -14,6 +14,7 @@ package org.eclipse.swt.graphics;
 import java.io.*;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.*;
 import java.util.function.*;
 
 import org.eclipse.swt.*;
@@ -26,6 +27,8 @@ import io.github.humbleui.skija.Font;
 import io.github.humbleui.types.*;
 
 public class SkijaGC extends GCHandle {
+
+	private static final Map<FontData, Font> FONT_CACHE = new ConcurrentHashMap<>();
 
 	public static SkijaGC createDefaultInstance(NativeGC gc) {
 		return new SkijaGC(gc, gc.drawable, false);
@@ -796,17 +799,19 @@ public class SkijaGC extends GCHandle {
 
 	static Font convertToSkijaFont(org.eclipse.swt.graphics.Font font) {
 		FontData fontData = font.getFontData()[0];
-		FontStyle style = FontStyle.NORMAL;
-		boolean isBold = (fontData.getStyle() & SWT.BOLD) != 0;
-		boolean isItalic = (fontData.getStyle() & SWT.ITALIC) != 0;
-		if (isBold && isItalic) {
-			style = FontStyle.BOLD_ITALIC;
-		} else if (isBold) {
-			style = FontStyle.BOLD;
-		} else if (isItalic) {
-			style = FontStyle.ITALIC;
-		}
-		Font skijaFont = new Font(Typeface.makeFromName(fontData.getName(), style));
+		Font skijaFont = FONT_CACHE.computeIfAbsent(fontData, data -> {
+			FontStyle style = FontStyle.NORMAL;
+			boolean isBold = (fontData.getStyle() & SWT.BOLD) != 0;
+			boolean isItalic = (fontData.getStyle() & SWT.ITALIC) != 0;
+			if (isBold && isItalic) {
+				style = FontStyle.BOLD_ITALIC;
+			} else if (isBold) {
+				style = FontStyle.BOLD;
+			} else if (isItalic) {
+				style = FontStyle.ITALIC;
+			}
+			return new Font(Typeface.makeFromName(fontData.getName(), style));
+		});
 		int fontSize = DPIUtil.scaleUp(fontData.getHeight(), DPIUtil.getNativeDeviceZoom());
 		if (SWT.getPlatform().equals("win32")) {
 			fontSize *= skijaFont.getSize() / Display.getDefault().getSystemFont().getFontData()[0].getHeight();
