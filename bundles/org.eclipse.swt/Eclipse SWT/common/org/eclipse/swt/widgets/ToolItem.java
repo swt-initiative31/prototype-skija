@@ -956,8 +956,8 @@ public class ToolItem extends Item {
 		MouseState newState;
 		if (renderer.isOnButton(location)) {
 			if (mouseState == MouseState.DOWN) {
-				sendEvent(SWT.Selection, new Event());
 				internalSelect();
+				sendEvent(SWT.Selection, new Event());
 			}
 			newState = MouseState.HOVER;
 		} else {
