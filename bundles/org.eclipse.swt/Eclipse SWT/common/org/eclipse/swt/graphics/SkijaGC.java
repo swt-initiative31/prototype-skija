@@ -13,7 +13,6 @@ package org.eclipse.swt.graphics;
 
 import java.io.*;
 import java.util.*;
-import java.util.List;
 import java.util.function.*;
 
 import org.eclipse.swt.*;
@@ -631,20 +630,30 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void drawPolygon(int[] pointArray) {
-		performDrawLine(paint -> surface.getCanvas().drawPolygon(convertToFloat(pointArray), paint));
+		performDrawLine(paint -> surface.getCanvas().drawPath(toClosedPath(pointArray), paint));
 	}
 
 	@Override
 	public void drawPolyline(int[] pointArray) {
-		performDrawLine(paint -> surface.getCanvas().drawLines(convertToFloat(pointArray), paint));
+		performDrawLine(paint -> surface.getCanvas().drawPath(toOpenPath(pointArray), paint));
 	}
 
-	private static float[] convertToFloat(int[] array) {
-		float[] arrayAsFloat = new float[array.length];
-		for (int i = 0; i < array.length; i++) {
-			arrayAsFloat[i] = array[i];
+	private io.github.humbleui.skija.Path toOpenPath(int[] pointArray) {
+		io.github.humbleui.skija.Path path = new io.github.humbleui.skija.Path();
+		if (pointArray.length < 2) {
+			return path;
 		}
-		return arrayAsFloat;
+		path.moveTo(pointArray[0], pointArray[1]);
+		for (int i = 2; i + 1 < pointArray.length; i += 2) {
+			path.lineTo(pointArray[i], pointArray[i + 1]);
+		}
+		return path;
+	}
+
+	private io.github.humbleui.skija.Path toClosedPath(int[] pointArray) {
+		io.github.humbleui.skija.Path path = toOpenPath(pointArray);
+		path.closePath();
+		return path;
 	}
 
 	@Override
@@ -753,16 +762,7 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void fillPolygon(int[] pointArray) {
-		List<io.github.humbleui.types.Point> ps = new ArrayList<>();
-
-		for (int i = 0; i < pointArray.length; i += 2) {
-			int x = DPIUtil.autoScaleUp(pointArray[i]);
-			int y = DPIUtil.autoScaleUp(pointArray[i + 1]);
-			ps.add(new io.github.humbleui.types.Point(x, y));
-		}
-
-		performDrawFilled(paint -> surface.getCanvas().drawTriangles(ps.toArray(new io.github.humbleui.types.Point[0]),
-				null, paint));
+		performDrawFilled(paint -> surface.getCanvas().drawPath(toClosedPath(pointArray), paint));
 	}
 
 	@Override
