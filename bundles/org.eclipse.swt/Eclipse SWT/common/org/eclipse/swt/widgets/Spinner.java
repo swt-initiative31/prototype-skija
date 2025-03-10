@@ -168,6 +168,12 @@ public Spinner (Composite parent, int style) {
 private void createText() {
 	textView = new Text(this, style);
 	textView.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, true));
+
+	textView.addListener(SWT.MouseVerticalWheel, this::step);
+}
+
+private void step(Event e) {
+	setSelection(getSelection() + e.count);
 }
 
 private void createButtons() {
@@ -428,7 +434,8 @@ public int getSelection() {
 	int val = Integer.MIN_VALUE;
 
 	try {
-		val = Integer.parseInt(textView.getText());
+		val = Integer.parseInt(
+				textView.getText().replace("" + DecimalFormatSymbols.getInstance().getDecimalSeparator(), ""));
 	} catch (NumberFormatException e) {
 	}
 	return val;
