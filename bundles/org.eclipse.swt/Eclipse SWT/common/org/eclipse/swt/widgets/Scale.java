@@ -41,8 +41,6 @@ import org.eclipse.swt.graphics.*;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class Scale extends CustomControl {
-	private static final int PREFERRED_WIDTH = 170;
-	private static final int PREFERRED_HEIGHT = 42;
 
 	private int minimum = 0;
 	private int maximum = 100;
@@ -53,7 +51,7 @@ public class Scale extends CustomControl {
 	private final boolean horizontal;
 	private final int orientation;
 
-	private final IScaleRenderer renderer;
+	private final ScaleRenderer renderer;
 
 	/** The state of the handle */
 	public enum HandleState {
@@ -61,51 +59,6 @@ public class Scale extends CustomControl {
 	}
 
 	private HandleState handleState = HandleState.IDLE;
-
-	/**
-	 * Interface for all scale renderer
-	 */
-	public interface IScaleRenderer {
-		/**
-		 * Maps the point to a scale value
-		 *
-		 * @param point The point containing the pixels relative to the scale
-		 * @return The scale value that corresponds to the point
-		 */
-		int handlePosToValue(Point point);
-
-		/**
-		 * Indicates if the given position is within the rendered handle.
-		 *
-		 * @param position The position to check.
-		 * @return True if the position is within the bounds of the handle.
-		 */
-		boolean isWithinHandle(Point position);
-
-		/**
-		 * Indicates if the given position before the rendered handle.
-		 *
-		 * @param position The position to check.
-		 * @return True if the position is before the bounds of the handle.
-		 */
-		boolean isAfterHandle(Point position);
-
-		/**
-		 * Indicates if the given position after the rendered handle.
-		 *
-		 * @param position The position to check.
-		 * @return True if the position is after the bounds of the handle.
-		 */
-		boolean isBeforeHandle(Point position);
-
-		/**
-		 * Renders the handle.
-		 *
-		 * @param gc
-		 * @param size
-		 */
-		void render(GC gc, Point size);
-	}
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style value
@@ -173,7 +126,8 @@ public class Scale extends CustomControl {
 		// re-add the horizontal/vertical flags
 		super.style |= horizontal ? SWT.HORIZONTAL : SWT.VERTICAL;
 
-		renderer = new ScaleRenderer(this);
+		final RendererFactory rendererFactory = parent.getDisplay().getRendererFactory();
+		renderer = rendererFactory.createScaleRenderer(this);
 	}
 
 
@@ -349,22 +303,12 @@ public class Scale extends CustomControl {
 			return;
 		}
 
-		Drawing.drawWithGC(this, event.gc, gc -> renderer.render(gc, size));
+		Drawing.drawWithGC(this, event.gc, gc -> renderer.paint(gc, size.x, size.y));
 	}
 
 	@Override
 	protected Point computeDefaultSize() {
-		int width;
-		int height;
-		if (isVertical()) {
-			width = PREFERRED_HEIGHT;
-			height = PREFERRED_WIDTH;
-		} else {
-			width = PREFERRED_WIDTH;
-			height = PREFERRED_HEIGHT;
-		}
-
-		return new Point(width, height);
+		return renderer.computeDefaultSize();
 	}
 
 	/**

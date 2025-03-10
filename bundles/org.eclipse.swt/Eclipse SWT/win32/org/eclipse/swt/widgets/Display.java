@@ -557,6 +557,7 @@ public class Display extends Device implements Executor {
 		CommonWidgetsDPIChangeHandlers.registerCommonHandlers();
 	}
 
+	private RendererFactory rendererFactory;
 
 /*
 * TEMPORARY CODE.
@@ -595,6 +596,8 @@ public Display () {
  */
 public Display (DeviceData data) {
 	super (data);
+
+	rendererFactory = new WindowsRendererFactory();
 }
 
 Control _getFocusControl () {
@@ -5394,5 +5397,14 @@ private void runWithProperDPIAwareness(Runnable operation) {
 	} else {
 		operation.run();
 	}
+}
+
+public RendererFactory getRendererFactory() {
+	return rendererFactory;
+}
+
+public void setRendererFactory(RendererFactory rendererFactory) {
+	if (rendererFactory == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+	this.rendererFactory = rendererFactory;
 }
 }

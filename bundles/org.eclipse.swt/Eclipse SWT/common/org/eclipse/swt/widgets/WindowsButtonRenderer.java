@@ -1,0 +1,165 @@
+package org.eclipse.swt.widgets;
+
+import org.eclipse.swt.*;
+import org.eclipse.swt.graphics.*;
+
+public class WindowsButtonRenderer extends ButtonRenderer {
+
+	private static final Color HOVER_COLOR = new Color(224, 238, 254);
+	private static final Color TOGGLE_COLOR = new Color(204, 228, 247);
+	private static final Color SELECTION_COLOR = new Color(0, 95, 184);
+	private static final Color TEXT_COLOR = new Color(0, 0, 0);
+	private static final Color DISABLED_COLOR = new Color(160, 160, 160);
+	private static final Color BORDER_COLOR = new Color(160, 160, 160);
+	private static final Color BORDER_DISABLED_COLOR = new Color(192, 192, 192);
+	private static final Color PUSH_BACKGROUND_COLOR = new Color(255, 255, 255);
+
+	/**
+	 * Left and right margins
+	 */
+	private static final int LEFT_MARGIN = 2;
+	private static final int RIGHT_MARGIN = 2;
+	private static final int TOP_MARGIN = 0;
+	private static final int BOTTOM_MARGIN = 0;
+	private static final int SPACING = 4;
+
+	private static final int DRAW_FLAGS = SWT.DRAW_MNEMONIC | SWT.DRAW_TAB
+			| SWT.DRAW_TRANSPARENT | SWT.DRAW_DELIMITER;
+
+
+	public WindowsButtonRenderer(Button button) {
+		super(button);
+	}
+
+	public Point computeDefaultSize() {
+		final String text = getText();
+		final Image image = getImage();
+
+		int textWidth = 0;
+		int textHeight = 0;
+		int boxSpace = 0;
+		if (text != null && !text.isEmpty()) {
+			Point textExtent = getTextExtent(text, DRAW_FLAGS);
+			textWidth = textExtent.x + 1;
+			textHeight = textExtent.y;
+		}
+		int imageSpace = 0;
+		int imageHeight = 0;
+		if (image != null) {
+			Rectangle imgB = image.getBounds();
+			imageHeight = imgB.height;
+			imageSpace = imgB.width;
+			if (text != null && !text.isEmpty()) {
+				imageSpace += SPACING;
+			}
+		}
+
+		int width = LEFT_MARGIN + boxSpace + imageSpace + textWidth + 1
+				+ RIGHT_MARGIN;
+		int height = TOP_MARGIN
+				+ Math.max(boxSpace, Math.max(textHeight, imageHeight))
+				+ BOTTOM_MARGIN;
+
+		width += 12;
+		height += 10;
+
+		return new Point(width, height);
+	}
+
+	@Override
+	protected void paint(GC gc, int width, int height) {
+		final int style = getStyle();
+		final String text = getText();
+		final Image image = getImage();
+
+		boolean isRightAligned = (style & SWT.RIGHT) != 0;
+		boolean isCentered = (style & SWT.CENTER) != 0;
+		int initialAntiAlias = gc.getAntialias();
+
+		int boxSpace = 0;
+		drawPushButton(gc, width - 1, height - 1);
+
+		gc.setAntialias(initialAntiAlias);
+		gc.setAdvanced(false);
+
+		// Calculate area for button content (image + text)
+		int horizontalSpaceForContent = width - RIGHT_MARGIN - LEFT_MARGIN
+				- boxSpace;
+		int textWidth = 0;
+		int textHeight = 0;
+		if (text != null && !text.isEmpty()) {
+			Point textExtent = gc.textExtent(text, DRAW_FLAGS);
+			textWidth = textExtent.x;
+			textHeight = textExtent.y;
+		}
+		int imageSpace = 0;
+		int imageHeight = 0;
+		if (image != null) {
+			Rectangle imgB = image.getBounds();
+			imageHeight = imgB.height;
+			imageSpace = imgB.width;
+			if (text != null && !text.isEmpty()) {
+				imageSpace += SPACING;
+			}
+		}
+		Rectangle contentArea = new Rectangle(LEFT_MARGIN + boxSpace,
+				TOP_MARGIN, imageSpace + textWidth,
+				height - TOP_MARGIN - BOTTOM_MARGIN);
+		if (isRightAligned) {
+			contentArea.x += horizontalSpaceForContent - contentArea.width;
+		} else if (isCentered) {
+			contentArea.x += (horizontalSpaceForContent - contentArea.width)
+					/ 2;
+		}
+
+		// Draw image
+		if (image != null) {
+			int imageTopOffset = (height - imageHeight) / 2;
+			int imageLeftOffset = contentArea.x;
+			drawImage(gc, imageLeftOffset, imageTopOffset);
+		}
+
+		// Draw text
+		if (text != null && !text.isEmpty()) {
+			gc.setForeground(isEnabled() ? TEXT_COLOR : DISABLED_COLOR);
+			int textTopOffset = (height - 1 - textHeight) / 2;
+			int textLeftOffset = contentArea.x + imageSpace;
+			gc.drawText(text, textLeftOffset, textTopOffset, DRAW_FLAGS);
+		}
+		if (hasFocus()) {
+			gc.drawFocus(3, 3, width - 7, height - 7);
+		}
+	}
+
+	private void drawPushButton(GC gc, int w, int h) {
+		final boolean isToggle = (getStyle() & SWT.TOGGLE) != 0;
+		if (isEnabled()) {
+			if (isToggle && isSelected()) {
+				gc.setBackground(TOGGLE_COLOR);
+			} else if (isHover() || isPressed()) {
+				gc.setBackground(HOVER_COLOR);
+			} else {
+				gc.setBackground(PUSH_BACKGROUND_COLOR);
+			}
+			gc.fillRoundRectangle(0, 0, w, h, 6, 6);
+		}
+
+		if (isEnabled()) {
+			if (isToggle && isSelected() || isHover()) {
+				gc.setForeground(SELECTION_COLOR);
+			} else {
+				gc.setForeground(BORDER_COLOR);
+			}
+		} else {
+			gc.setForeground(BORDER_DISABLED_COLOR);
+		}
+
+		// if the button has focus, the border also changes the color
+		Color fg = gc.getForeground();
+		if (hasFocus()) {
+			gc.setForeground(SELECTION_COLOR);
+		}
+		gc.drawRoundRectangle(0, 0, w - 1, h - 1, 6, 6);
+		gc.setForeground(fg);
+	}
+}
