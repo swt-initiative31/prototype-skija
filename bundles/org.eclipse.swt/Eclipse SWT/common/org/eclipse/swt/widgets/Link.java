@@ -100,7 +100,8 @@ public class Link extends CustomControl {
 			align = SWT.LEFT;
 		}
 
-		renderer = new BasicLinkRenderer(this);
+		final RendererFactory rendererFactory = parent.getDisplay().getRendererFactory();
+		renderer = rendererFactory.createLinkRenderer(this);
 		renderer.setAlign(align);
 
 		final Listener listener = event -> {

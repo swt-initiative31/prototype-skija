@@ -112,13 +112,14 @@ public class Button extends CustomControl {
 		super(parent, checkStyle(style));
 		this.style |= SWT.DOUBLE_BUFFERED;
 
+		final RendererFactory rendererFactory = parent.getDisplay().getRendererFactory();
 		renderer = (this.style & SWT.CHECK) != 0
-				? new WindowsCheckboxRenderer(this)
+				? rendererFactory.createCheckboxRenderer(this)
 				: (this.style & SWT.RADIO) != 0
-				? new WindowsRadioButtonRenderer(this)
+				? rendererFactory.createRadioButtonRenderer(this)
 				: (this.style & SWT.ARROW) != 0
-				? new WindowsArrowButtonRenderer(this)
-				: new WindowsButtonRenderer(this);
+				? rendererFactory.createArrowButtonRenderer(this)
+				: rendererFactory.createPushToggleButtonRenderer(this);
 
 		Listener listener = event -> {
 			switch (event.type) {
