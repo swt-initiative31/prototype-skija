@@ -112,7 +112,13 @@ public class Button extends CustomControl {
 		super(parent, checkStyle(style));
 		this.style |= SWT.DOUBLE_BUFFERED;
 
-		renderer = new WindowsButtonRenderer(this);
+		renderer = (this.style & SWT.CHECK) != 0
+				? new WindowsCheckboxRenderer(this)
+				: (this.style & SWT.RADIO) != 0
+				? new WindowsRadioButtonRenderer(this)
+				: (this.style & SWT.ARROW) != 0
+				? new WindowsArrowButtonRenderer(this)
+				: new WindowsButtonRenderer(this);
 
 		Listener listener = event -> {
 			switch (event.type) {
@@ -497,10 +503,8 @@ public class Button extends CustomControl {
 	 */
 	public boolean getGrayed() {
 		checkWidget();
-		if (!isCheckButton()) {
-			return false;
-		}
-		return renderer.isGrayed();
+		return renderer instanceof CheckboxRenderer cr
+				&& cr.isGrayed();
 	}
 
 	/**
@@ -874,10 +878,10 @@ public class Button extends CustomControl {
 	 */
 	public void setGrayed(boolean grayed) {
 		checkWidget();
-		if ((style & SWT.CHECK) == 0) {
-			return;
+
+		if (renderer instanceof CheckboxRenderer cr) {
+			cr.setGrayed(grayed);
 		}
-		renderer.setGrayed(grayed);
 	}
 
 	/**
