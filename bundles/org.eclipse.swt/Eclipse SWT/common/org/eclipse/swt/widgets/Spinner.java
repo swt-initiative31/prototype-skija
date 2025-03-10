@@ -18,6 +18,7 @@ import java.text.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.layout.*;
 
 /**
  * Instances of this class are selectable user interface
@@ -50,13 +51,33 @@ public class Spinner extends Composite {
 
 		private final Button arrowUp, arrowDown;
 
-		public ButtonView(Composite parent2, int style) {
+		public ButtonView(Spinner parent2, int style) {
 			super(parent2, style);
-			int arrowStyle = SWT.ARROW | SWT.DOWN;
+			int arrowStyle = SWT.ARROW;
 			if ((style & SWT.FLAT) != 0)
 				arrowStyle |= SWT.FLAT;
-			arrowUp = new Button(this, arrowStyle);
-			arrowDown = new Button(this, arrowStyle);
+
+			setLayout(new GridLayout(1, false));
+
+			arrowUp = new Button(this, arrowStyle | SWT.UP);
+			arrowUp.addListener(SWT.Selection, event -> increment());
+
+			arrowDown = new Button(this, arrowStyle | SWT.DOWN);
+			arrowDown.addListener(SWT.Selection, event -> decrement());
+		}
+
+		private void increment() {
+			Spinner spinner = (Spinner) getParent();
+			step(spinner, spinner.getIncrement());
+		}
+
+		private void decrement() {
+			Spinner spinner = (Spinner) getParent();
+			step(spinner, -spinner.getIncrement());
+		}
+
+		private void step(Spinner spinner, int i) {
+			spinner.setSelection(spinner.getSelection() + i);
 		}
 
 		@Override
@@ -66,19 +87,9 @@ public class Spinner extends Composite {
 		}
 
 		@Override
-		public void deregister() {
-			arrowUp.deregister();
-			arrowDown.deregister();
-		}
-
-		@Override
 		public void releaseHandle() {
 			arrowUp.releaseHandle();
 			arrowDown.releaseHandle();
-		}
-
-		public void setDoubleValue(int value) {
-			System.out.println("NOT implemented yet - Spinner.ButtonView.setDoubleValue()");
 		}
 
 	}
@@ -143,13 +154,20 @@ public class Spinner extends Composite {
 public Spinner (Composite parent, int style) {
 	super (parent, checkStyle (style));
 
+	GridLayout layout = new GridLayout(2, false);
+	layout.marginWidth = 0;
+	layout.marginHeight = 0;
+	setLayout(layout); // 2 columns, no equal width
+
 	createText();
 	createButtons();
+
 	internalLayout(false); // TODO (visjee) should the parameter be true? It currently plays no role
 }
 
 private void createText() {
 	textView = new Text(this, style);
+	textView.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, true));
 }
 
 private void createButtons() {
@@ -311,9 +329,6 @@ void enableWidget (boolean enabled) {
 @Override
 void deregister () {
 	super.deregister ();
-	if (textView != null) {
-		textView.deregister();
-	}
 
 	if (buttonView != null) {
 		buttonView.deregister();
@@ -540,12 +555,6 @@ void releaseHandle () {
 	textView = null;
 }
 
-@Override
-void releaseWidget () {
-	super.releaseWidget ();
-	if (textView != null) textView.releaseWidget();
-}
-
 /**
  * Removes the listener from the collection of listeners who will
  * be notified when the receiver's text is modified.
@@ -644,7 +653,7 @@ public void setDigits (int value) {
 	if (value < 0) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (value == digits) return;
 	digits = value;
-	setSelection(getSelection(), false, true, false);
+	setSelection(getSelection(), true, false);
 }
 
 /**
@@ -684,7 +693,8 @@ public void setMaximum (int value) {
 	if (value < min) return;
 	int pos = getSelection();
 	this.maxValue = value;
-	if (pos > value) setSelection (value, true, true, false);
+	if (pos > value)
+		setSelection(value, true, false);
 }
 
 /**
@@ -706,7 +716,8 @@ public void setMinimum (int value) {
 	if (value > max) return;
 	int pos = getSelection();
 	this.minValue = value;
-	if (pos < value) setSelection (value, true, true, false);
+	if (pos < value)
+		setSelection(value, true, false);
 }
 
 /**
@@ -745,13 +756,10 @@ public void setSelection (int value) {
 	int min = getMinimum();
 	int max = getMaximum();
 	value = Math.min (Math.max (min, value), max);
-	setSelection (value, true, true, false);
+	setSelection(value, true, false);
 }
 
-void setSelection (int value, boolean setPos, boolean setText, boolean notify) {
-	if (setPos) {
-		buttonView.setDoubleValue(value);
-	}
+void setSelection(int value, boolean setText, boolean notify) {
 	if (setText) {
 		String string = String.valueOf (value);
 		if (digits > 0) {
@@ -845,7 +853,7 @@ public void setValues (int selection, int minimum, int maximum, int digits, int 
 	this.setIncrement(increment);
 	this.setMaximum(maximum);
 	this.setMinimum(minimum);
-	setSelection (selection, true, true, false);
+	setSelection(selection, true, false);
 }
 
 String verifyText(String string, int start, int end) {
