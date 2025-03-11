@@ -2009,6 +2009,14 @@ CustomBridge getCustomBridge() {
 	return Objects.requireNonNull(customBridge);
 }
 
+@Override
+void fillBackground(long hDC, int pixel, RECT rect) {
+	if (customBridge != null) {
+		return;
+	}
+	super.fillBackground(hDC, pixel, rect);
+}
+
 void addCustomChild(CustomControl customControl) {
 	if (customBridge == null) {
 		customBridge = new CustomBridge(this);

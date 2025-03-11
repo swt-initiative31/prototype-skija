@@ -65,7 +65,9 @@ public class SkijaGC extends GCHandle {
 			surface = createMeasureSurface();
 		} else {
 			surface = createDrawingSurface();
-			initializeWithParentBackground();
+			if (!(drawable instanceof Shell)) {
+				initializeWithParentBackground();
+			}
 		}
 		initFont();
 	}
