@@ -538,6 +538,7 @@ public class Display extends Device implements Executor {
 	}
 
 	/* Skinning support */
+	private RendererFactory rendererFactory;
 	Widget [] skinList = new Widget [GROW_SIZE];
 	int skinCount;
 
@@ -562,7 +563,6 @@ public class Display extends Device implements Executor {
 	static {
 		CommonWidgetsDPIChangeHandlers.registerCommonHandlers();
 	}
-
 
 /*
 * TEMPORARY CODE.
@@ -601,6 +601,8 @@ public Display () {
  */
 public Display (DeviceData data) {
 	super (data);
+
+	rendererFactory = new DefaultRendererFactory();
 }
 
 Control _getFocusControl () {
@@ -5429,5 +5431,14 @@ private void runWithProperDPIAwareness(Runnable operation) {
 	} else {
 		operation.run();
 	}
+}
+
+public RendererFactory getRendererFactory() {
+	return rendererFactory;
+}
+
+public void setRendererFactory(RendererFactory rendererFactory) {
+	if (rendererFactory == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+	this.rendererFactory = rendererFactory;
 }
 }
