@@ -73,6 +73,9 @@ public class SkijaGC extends GCHandle {
 			var imageBounds = image.getBounds();
 			size.x = imageBounds.width;
 			size.y = imageBounds.height;
+		} else if (drawable instanceof Scrollable scrollable) {
+			final Rectangle clientArea = scrollable.getClientArea();
+			size = new Point(clientArea.width, clientArea.height);
 		} else if (drawable instanceof Control control) {
 			size = control.getSize();
 		} else if (drawable instanceof Device device) {
