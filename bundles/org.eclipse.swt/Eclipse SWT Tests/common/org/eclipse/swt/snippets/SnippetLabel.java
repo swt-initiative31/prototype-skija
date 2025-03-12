@@ -21,11 +21,11 @@ public class SnippetLabel {
 
 		label.setBackground(display.getSystemColor(SWT.COLOR_CYAN));
 
-		label.setText("Test...");
+		label.setText("Test...\nasb\ndef");
 		Rectangle clientArea = shell.getClientArea ();
 		label.setLocation (clientArea.x, clientArea.y);
 		label.setImage (image);
-		label.pack ();
+		label.setSize(300, 300);
 		shell.pack ();
 		shell.open ();
 		while (!shell.isDisposed ()) {
