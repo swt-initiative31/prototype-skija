@@ -14,16 +14,12 @@
  *******************************************************************************/
 package org.eclipse.swt.widgets;
 
-import java.util.*;
-import java.util.regex.*;
-import java.util.regex.Pattern;
-
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 
-import java.util.List;
+import java.util.Objects;
 
 /**
  * Instances of this class represent a selectable user interface object that
@@ -49,11 +45,9 @@ import java.util.List;
  */
 public class Link extends CustomControl {
 
-	private static final Color DISABLED_COLOR = new Color(160, 160, 160);
-	private static final Color LINK_COLOR = new Color(0, 102, 204);
-
-	/** Left and right margins */
 	private static final int DEFAULT_MARGIN = 3;
+
+	private final LinkRenderer renderer;
 
 	/** the alignment. Either CENTER, RIGHT, LEFT. Default is LEFT */
 	private int align;
@@ -65,18 +59,6 @@ public class Link extends CustomControl {
 	private String text = "";
 
 	private boolean ignoreDispose;
-
-	private Image backgroundImage;
-
-	private Color background;
-
-	private Color linkColor;
-
-	private static final int DRAW_FLAGS = SWT.DRAW_MNEMONIC | SWT.DRAW_TAB | SWT.DRAW_TRANSPARENT | SWT.DRAW_DELIMITER;
-
-	private final Set<TextSegment> links = new HashSet<>();
-	private TextSegment prevHoverLink;
-	private final Map<String, List<TextSegment>> parsedText = new HashMap<>();
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style value
@@ -126,6 +108,9 @@ public class Link extends CustomControl {
 			align = SWT.LEFT;
 		}
 
+		final RendererFactory rendererFactory = parent.getDisplay().getRendererFactory();
+		renderer = rendererFactory.createLinkRenderer(this);
+
 		final Listener listener = event -> {
 			switch (event.type) {
 				case SWT.Paint -> onPaint(event);
@@ -143,16 +128,12 @@ public class Link extends CustomControl {
 	}
 
 	private void onMouseUp(Event e) {
-		int x = e.x;
-		int y = e.y;
 		if ((e.stateMask & SWT.BUTTON1) != 0) {
-			for (TextSegment link : links) {
-				if (link.rect.contains(x, y)) {
-					Event event = new Event();
-					event.text = link.linkData != null ? link.linkData : link.text;
-					sendSelectionEvent(SWT.Selection, event, true);
-				}
-			}
+			renderer.onMouseUp(e.x, e.y, link -> {
+				Event event = new Event();
+				event.text = link;
+				sendSelectionEvent(SWT.Selection, event, true);
+			});
 		}
 	}
 
@@ -179,40 +160,8 @@ public class Link extends CustomControl {
 	}
 
 	@Override
-	public Point computeSize(int wHint, int hHint) {
-		return computeSize(wHint, hHint, true);
-	}
-
-	@Override
 	protected Point computeDefaultSize() {
-		int lineWidth = 0;
-		int lineHeight = 0;
-
-		int leftMargin = this.leftMargin;
-		int topMargin = this.topMargin;
-
-		if (!text.isEmpty()) {
-			String[] lines = text.split("\n");
-			for (String line : lines) {
-				Point textExtent = Drawing.executeOnGC(this, gc -> {
-					gc.setFont(getFont());
-					return getLineExtent(gc, parseTextSegments(line));
-				});
-				lineWidth = Math.max(textExtent.x, lineWidth);
-				lineHeight = textExtent.y;
-			}
-		}
-
-		int width = leftMargin + lineWidth + this.rightMargin;
-
-		// Height must be multiple of lines.
-		int newlineCount = (int) text.chars().filter(ch -> ch == '\n').count();
-		if (text.contains("\n")) {
-			lineHeight *= (newlineCount + 1);
-		}
-
-		int height = topMargin + lineHeight + this.bottomMargin;
-		return new Point(width, height);
+		return renderer.computeDefaultSize();
 	}
 
 	/**
@@ -324,7 +273,7 @@ public class Link extends CustomControl {
 		accessible.addAccessibleListener(new AccessibleAdapter() {
 			@Override
 			public void getName(AccessibleEvent e) {
-				e.result = getParsedText();
+				e.result = renderer.getParsedText();
 			}
 		});
 
@@ -382,18 +331,6 @@ public class Link extends CustomControl {
 		});
 	}
 
-	private String getParsedText() {
-		StringBuilder sb = new StringBuilder();
-		String[] lines = text.split("\n");
-		for (String line : lines) {
-			List<TextSegment> segments = parseTextSegments(line);
-			for (TextSegment segment : segments) {
-				sb.append(segment.text);
-			}
-		}
-		return sb.toString();
-	}
-
 	private void onDispose(Event event) {
 		/* make this handler run after other dispose listeners */
 		if (ignoreDispose) {
@@ -404,193 +341,24 @@ public class Link extends CustomControl {
 		notifyListeners(event.type, event);
 		event.type = SWT.NONE;
 
-		backgroundImage = null;
-		text = "";
+		renderer.dispose();
 	}
 
 	private void onMouseMove(Event event) {
-		int x = event.x;
-		int y = event.y;
-
-		if (prevHoverLink != null && prevHoverLink.rect.contains(x, y)) {
+		if (renderer.onMouseOver(event.x, event.y)) {
 			setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
-			return;
 		}
-
-		for (TextSegment link : links) {
-			if (link.rect.contains(x, y)) {
-				setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
-				prevHoverLink = link;
-				return;
-			}
+		else {
+			setCursor(null);
 		}
-		setCursor(null);
 	}
 
 	private void onPaint(Event event) {
-		Drawing.drawWithGC(this, event.gc, this::doPaint);
-	}
-
-	private void doPaint(GC gc) {
-		Rectangle rect = getBounds();
-
-		if (rect.width == 0 || rect.height == 0) {
+		final Point size = getSize();
+		if (size.x == 0 || size.y == 0) {
 			return;
 		}
-		if (text.isEmpty()) {
-			return;
-		}
-
-		drawBackground(gc, rect);
-
-		Color linkColor = getLinkForeground();
-
-		links.clear();
-
-		int x = leftMargin;
-		int lineY = topMargin;
-
-		for (String line : parsedText.keySet()) {
-			List<TextSegment> segments = parsedText.get(line);
-			int lineX = x;
-			if (align == SWT.CENTER) {
-				int lineWidth = getLineExtent(gc, segments).x;
-				if (rect.width > lineWidth) {
-					lineX = Math.max(x, (rect.width - lineWidth) / 2);
-				}
-			}
-			if (align == SWT.RIGHT) {
-				int lineWidth = getLineExtent(gc, segments).x;
-				lineX = Math.max(x, rect.x + rect.width - rightMargin - lineWidth);
-			}
-
-			Point baseExtent = gc.textExtent("a", DRAW_FLAGS);
-
-			for (TextSegment segment : segments) {
-				Point extent = gc.textExtent(segment.text, DRAW_FLAGS);
-				int noOfTrailSpaces = countTrailingSpaces(segment.text);
-				if (noOfTrailSpaces > 0) {
-					extent.x = extent.x + noOfTrailSpaces * baseExtent.x;
-				}
-
-				if (isEnabled()) {
-					gc.setForeground(segment.isLink ? linkColor : getForeground());
-				} else {
-					gc.setForeground(DISABLED_COLOR);
-				}
-				gc.drawText(segment.text, lineX, lineY, DRAW_FLAGS);
-
-				if (segment.isLink) {
-					int underlineY = lineY + extent.y - 2;
-					gc.drawLine(lineX, underlineY, lineX + extent.x, underlineY);
-					// remember bounds of links
-					segment.rect = new Rectangle(lineX, lineY, extent.x, extent.y);
-					links.add(segment);
-				}
-
-				lineX += extent.x;
-			}
-			lineY += gc.getFontMetrics().getHeight();
-		}
-	}
-
-	private Point getLineExtent(GC gc, List<TextSegment> segments) {
-		StringBuilder sb = new StringBuilder();
-		for (TextSegment textSegment : segments) {
-			sb.append(textSegment.text);
-		}
-		return gc.textExtent(sb.toString(), DRAW_FLAGS);
-	}
-
-	private void drawBackground(GC gc, Rectangle rect) {
-		// draw a background image behind the text
-		try {
-			if (backgroundImage != null) {
-				// draw a background image behind the text
-				Rectangle imageRect = backgroundImage.getBounds();
-				// tile image to fill space
-				gc.setBackground(getBackground());
-				gc.fillRectangle(rect);
-				int xPos = 0;
-				while (xPos < rect.width) {
-					int yPos = 0;
-					while (yPos < rect.height) {
-						gc.drawImage(backgroundImage, xPos, yPos);
-						yPos += imageRect.height;
-					}
-					xPos += imageRect.width;
-				}
-			} else {
-				if (background != null && background.getAlpha() > 0) {
-					gc.setBackground(getBackground());
-					gc.fillRectangle(rect);
-				}
-			}
-		} catch (SWTException e) {
-			if ((getStyle() & SWT.DOUBLE_BUFFERED) == 0) {
-				gc.setBackground(getBackground());
-				gc.fillRectangle(rect);
-			}
-		}
-	}
-
-	private int countTrailingSpaces(String text) {
-		int count = 0;
-		for (int i = text.length() - 1; i >= 0 && text.charAt(i) == ' '; i--) {
-			count++;
-		}
-		return count;
-	}
-
-	private List<TextSegment> parseTextSegments(String input) {
-		List<TextSegment> segments = new ArrayList<>();
-		Pattern pattern = Pattern.compile("(.*?)<a(?: href=\"(.*?)\")?>(.*?)</a>([\\s.,]*)", Pattern.CASE_INSENSITIVE);
-		Matcher matcher = pattern.matcher(input);
-
-		int lastEnd = 0;
-
-		while (matcher.find()) {
-			// Extract normal text before <a> tag
-			String normalText = matcher.group(1);
-			if (!normalText.isEmpty()) {
-				segments.add(new TextSegment(normalText, false, null, null));
-			}
-
-			// Extract href attribute (if present) and linked text inside <a> tag
-			String href = matcher.group(2); // href="..." value (can be null)
-			String linkText = matcher.group(3); // The actual clickable text
-			segments.add(new TextSegment(linkText, true, href, null));
-
-			// Capture trailing spaces and punctuation (important for handling ", "
-			// correctly)
-			String trailingText = matcher.group(4);
-			if (!trailingText.isEmpty()) {
-				segments.add(new TextSegment(trailingText, false, null, null));
-			}
-
-			lastEnd = matcher.end();
-		}
-
-		// Add any remaining text after the last <a> tag
-		if (lastEnd < input.length()) {
-			String remainingText = input.substring(lastEnd);
-			segments.add(new TextSegment(remainingText, false, null, null));
-		}
-
-		return segments;
-	}
-
-	private static class TextSegment {
-		String text, linkData;
-		boolean isLink;
-		Rectangle rect;
-
-		TextSegment(String text, boolean isLink, String linkData, Rectangle rect) {
-			this.text = text;
-			this.isLink = isLink;
-			this.linkData = linkData;
-			this.rect = rect;
-		}
+		Drawing.drawWithGC(this, event.gc, gc -> renderer.paint(gc, size.x, size.y));
 	}
 
 	/**
@@ -623,12 +391,11 @@ public class Link extends CustomControl {
 	@Override
 	public void setBackground(Color color) {
 		super.setBackground(color);
-		if (color == null || color.equals(background)) {
+		if (color == null || color.equals(renderer.getBackground())) {
 			return;
 		}
 
-		background = color;
-		backgroundImage = null;
+		renderer.setBackground(color);
 		redraw();
 	}
 
@@ -649,10 +416,11 @@ public class Link extends CustomControl {
 	public void setBackgroundImage(Image image) {
 		checkWidget();
 		// background color takes the priority.
-		if (background != null || image == backgroundImage) {
+		if (renderer.getBackground() != null || image == renderer.getBackgroundImage()) {
 			return;
 		}
-		backgroundImage = image;
+
+		renderer.setBackgroundImage(image);
 		redraw();
 	}
 
@@ -811,14 +579,9 @@ public class Link extends CustomControl {
 			error(SWT.ERROR_NULL_ARGUMENT);
 		}
 
-		parsedText.clear();
-		String[] lines = text.split("\n");
-		for (String line : lines) {
-			parsedText.put(line, parseTextSegments(line));
-		}
-
 		if (!text.equals(this.text)) {
 			this.text = text;
+			renderer.setText(text);
 			redraw();
 		}
 	}
@@ -874,18 +637,15 @@ public class Link extends CustomControl {
 	 */
 	public void setLinkForeground(Color color) {
 		checkWidget();
-		if (color != null) {
-			if (color.isDisposed()) {
-				error(SWT.ERROR_INVALID_ARGUMENT);
-			}
-			if (color.equals(linkColor)) {
-				return;
-			}
-		} else if (linkColor == null) {
+		if (color != null && color.isDisposed()) {
+			error(SWT.ERROR_INVALID_ARGUMENT);
+		}
+
+		if (Objects.equals(color, renderer.getLinkForeground())) {
 			return;
 		}
 
-		linkColor = color;
+		renderer.setLinkForeground(color);
 		if (getEnabled()) {
 			redraw();
 		}
@@ -907,7 +667,7 @@ public class Link extends CustomControl {
 	 */
 	public Color getLinkForeground() {
 		checkWidget();
-		return linkColor != null ? linkColor : LINK_COLOR;
+		return renderer.getLinkForeground();
 	}
 
 	/**
