@@ -34,12 +34,12 @@ public class SkijaGC extends GCHandle {
 		return new SkijaGC(gc, gc.drawable, false);
 	}
 
-	public static SkijaGC createDefaultInstance(NativeGC gc, Control control) {
-		return new SkijaGC(gc, control, false);
+	public static SkijaGC createDefaultInstance(NativeGC gc, Drawable drawable) {
+		return new SkijaGC(gc, drawable, false);
 	}
 
-	public static SkijaGC createMeasureInstance(NativeGC gc, Control control) {
-		return new SkijaGC(gc, control, true);
+	public static SkijaGC createMeasureInstance(NativeGC gc, Drawable drawable) {
+		return new SkijaGC(gc, drawable, true);
 	}
 
 	private final Surface surface;

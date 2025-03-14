@@ -24,7 +24,7 @@ public final class Drawing {
 		return createGraphicsContext(originalGC, control, false);
 	}
 
-	private static GC createGraphicsContext(GC originalGC, Control control, boolean onlyForMeasuring) {
+	private static GC createGraphicsContext(GC originalGC, Drawable drawable, boolean onlyForMeasuring) {
 		if (!SWT.USE_SKIJA) {
 			return originalGC;
 		}
@@ -36,8 +36,8 @@ public final class Drawing {
 		GC gc = new GC();
 
 		gc.innerGC = onlyForMeasuring
-				? SkijaGC.createMeasureInstance(originalNativeGC, control)
-				: SkijaGC.createDefaultInstance(originalNativeGC, control);
+				? SkijaGC.createMeasureInstance(originalNativeGC, drawable)
+				: SkijaGC.createDefaultInstance(originalNativeGC, drawable);
 
 		return gc;
 	}
@@ -107,8 +107,11 @@ public final class Drawing {
 		}
 	}
 
-	public static Point getTextExtent(CustomControl control, String text, int drawFlags) {
-		return measure(control, gc -> gc.textExtent(text, drawFlags));
+	public static Point getTextExtent(Control control, String text, int drawFlags) {
+		return measure(control, gc -> {
+			gc.setFont(control.getFont());
+			return gc.textExtent(text, drawFlags);
+		});
 	}
 
 	/**
@@ -116,15 +119,14 @@ public final class Drawing {
 	 * generated and disposed. The type of GC depends on global configuration.
 	 *
 	 * @param <T>       the type of result of the operation
-	 * @param control   the control to execute the operation on
+	 * @param drawable  the drawable to execute the operation on
 	 * @param operation the operation to execute
 	 * @return the result of the given operation
 	 */
-	public static <T> T measure(CustomControl control, Function<GC, T> operation) {
-		GC originalGC = new GC(control);
-		GC gc = createGraphicsContext(originalGC, control, true);
+	public static <T> T measure(Drawable drawable, Function<GC, T> operation) {
+		GC originalGC = new GC(drawable);
+		GC gc = createGraphicsContext(originalGC, drawable, true);
 		try {
-			gc.setFont(control.getFont());
 			return operation.apply(gc);
 		} finally {
 			gc.dispose();
