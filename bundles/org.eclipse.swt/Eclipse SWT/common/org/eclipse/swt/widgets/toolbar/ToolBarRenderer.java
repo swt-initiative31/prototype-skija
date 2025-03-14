@@ -26,7 +26,15 @@ import org.eclipse.swt.widgets.toolbar.ToolBarLayout.*;
  * Default renderer for the ToolBar.
  */
 public class ToolBarRenderer implements IToolBarRenderer {
-	public static final Color COLOR_SEPARATOR = new Color(Display.getDefault(), 160, 160, 160);
+
+	public static final String COLOR_BACKGROUND = "toolbar.background";
+	public static final String COLOR_FOREGROUND = "toolbar.foreground";
+	public static final String COLOR_SEPARATOR = "toolbar.separator";
+	public static final String COLOR_SHADOW_OUT = "toolbar.shadowOut";
+	public static final String COLOR_HOVER_BACKGROUND = "toolbar.background.hover";
+	public static final String COLOR_HOVER_BORDER = "toolbar.border.hover";
+	public static final String COLOR_SELECTION_BACKGROUND = "toolbar.background.selection";
+	public static final String COLOR_SELECTION_BORDER = "toolbar.selection.border";
 
 	private final ToolBar bar;
 	private int rowCount = SWT.DEFAULT;
@@ -45,8 +53,12 @@ public class ToolBarRenderer implements IToolBarRenderer {
 	}
 
 	private void render(GC gc, Point size, List<Row> rows) {
+		final ColorProvider colorProvider = bar.getDisplay().getColorProvider();
+		gc.setBackground(bar.getBackground());
+		gc.fillRectangle(0, 0, size.x, size.y);
+
 		if (bar.isShadowOut()) {
-			gc.setForeground(new Color(160, 160, 160));
+			gc.setForeground(colorProvider.getColor(COLOR_SHADOW_OUT));
 			gc.drawLine(0, 0, size.x, 0);
 		}
 
@@ -56,14 +68,14 @@ public class ToolBarRenderer implements IToolBarRenderer {
 				bar.getItem(itemRecord.index()).render(gc, itemRecord.bounds());
 			}
 			if (row.hasRowSeparator) {
-				drawHorizontalSeparator(gc, row);
+				drawHorizontalSeparator(gc, row, colorProvider);
 			}
 		}
 	}
 
-	private void drawHorizontalSeparator(GC gc, Row row) {
+	private void drawHorizontalSeparator(GC gc, Row row, ColorProvider colorProvider) {
 		int pos = row.position + row.usedSpace.y + 3;
-		gc.setForeground(COLOR_SEPARATOR);
+		gc.setForeground(colorProvider.getColor(COLOR_SEPARATOR));
 		gc.drawLine(0, pos, row.availableSpace.y, pos);
 	}
 
