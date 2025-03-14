@@ -76,7 +76,9 @@ public class Link extends CustomControl {
 
 	private final Set<TextSegment> links = new HashSet<>();
 	private TextSegment prevHoverLink;
-	private final Map<String, List<TextSegment>> parsedText = new HashMap<>();
+	private final List<List<TextSegment>> parsedText = new ArrayList<>();
+	private String anchorTag;
+	private String displayText = "";
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style value
@@ -191,26 +193,19 @@ public class Link extends CustomControl {
 		int leftMargin = this.leftMargin;
 		int topMargin = this.topMargin;
 
-		if (!text.isEmpty()) {
-			String[] lines = text.split("\n");
+		if (!displayText.isEmpty()) {
+			String[] lines = displayText.split("\n", -1);
 			for (String line : lines) {
 				Point textExtent = Drawing.executeOnGC(this, gc -> {
 					gc.setFont(getFont());
-					return getLineExtent(gc, parseTextSegments(line));
+					return gc.textExtent(line, DRAW_FLAGS);
 				});
 				lineWidth = Math.max(textExtent.x, lineWidth);
-				lineHeight = textExtent.y;
+				lineHeight = lineHeight + textExtent.y;
 			}
 		}
 
 		int width = leftMargin + lineWidth + this.rightMargin;
-
-		// Height must be multiple of lines.
-		int newlineCount = (int) text.chars().filter(ch -> ch == '\n').count();
-		if (text.contains("\n")) {
-			lineHeight *= (newlineCount + 1);
-		}
-
 		int height = topMargin + lineHeight + this.bottomMargin;
 		return new Point(width, height);
 	}
@@ -324,7 +319,7 @@ public class Link extends CustomControl {
 		accessible.addAccessibleListener(new AccessibleAdapter() {
 			@Override
 			public void getName(AccessibleEvent e) {
-				e.result = getParsedText();
+				e.result = displayText;
 			}
 		});
 
@@ -382,18 +377,6 @@ public class Link extends CustomControl {
 		});
 	}
 
-	private String getParsedText() {
-		StringBuilder sb = new StringBuilder();
-		String[] lines = text.split("\n");
-		for (String line : lines) {
-			List<TextSegment> segments = parseTextSegments(line);
-			for (TextSegment segment : segments) {
-				sb.append(segment.text);
-			}
-		}
-		return sb.toString();
-	}
-
 	private void onDispose(Event event) {
 		/* make this handler run after other dispose listeners */
 		if (ignoreDispose) {
@@ -441,6 +424,11 @@ public class Link extends CustomControl {
 			return;
 		}
 
+		// Fill background
+		if (getBackground() != null) {
+			gc.fillRectangle(0, 0, rect.width, rect.height);
+		}
+
 		drawBackground(gc, rect);
 
 		Color linkColor = getLinkForeground();
@@ -450,8 +438,7 @@ public class Link extends CustomControl {
 		int x = leftMargin;
 		int lineY = topMargin;
 
-		for (String line : parsedText.keySet()) {
-			List<TextSegment> segments = parsedText.get(line);
+		for (List<TextSegment> segments : parsedText) {
 			int lineX = x;
 			if (align == SWT.CENTER) {
 				int lineWidth = getLineExtent(gc, segments).x;
@@ -544,7 +531,8 @@ public class Link extends CustomControl {
 
 	private List<TextSegment> parseTextSegments(String input) {
 		List<TextSegment> segments = new ArrayList<>();
-		Pattern pattern = Pattern.compile("(.*?)<a(?: href=\"(.*?)\")?>(.*?)</a>([\\s.,]*)", Pattern.CASE_INSENSITIVE);
+		Pattern pattern = Pattern.compile("(.*?)<a\\s+(?:href=\"(.*?)\")?>(.*?)</a>([\\s.,]*)",
+				Pattern.CASE_INSENSITIVE);
 		Matcher matcher = pattern.matcher(input);
 
 		int lastEnd = 0;
@@ -811,16 +799,116 @@ public class Link extends CustomControl {
 			error(SWT.ERROR_NULL_ARGUMENT);
 		}
 
-		parsedText.clear();
-		String[] lines = text.split("\n");
-		for (String line : lines) {
-			parsedText.put(line, parseTextSegments(line));
+		if (this.text.equals(text))
+			return;
+
+		this.text = text;
+
+		parsedText.clear(); // Reset parsedText before processing
+		String[] lines = text.split("\n", -1); // Preserve empty lines
+
+		for (int i = 0; i < lines.length; i++) {
+			String line = lines[i];
+			if (!line.contains("<a")) {
+				parsedText.add(parseTextSegments(line));
+				continue;
+			}
+			if (line.contains("<a") && line.contains("</a>")) {
+				parsedText.add(parseTextSegments(line));
+				continue;
+			}
+			// this means we have newline(\n) inside <a>..</a>
+			if (line.contains("<a") && !line.contains("</a>")) {
+				if (!isValidAnchorTag(line)) {
+					parsedText.add(parseTextSegments(line));
+					continue;
+				}
+
+				List<String> anchorLines = new ArrayList<>();
+				anchorLines.add(line);
+				// here we need to prepare
+				boolean multiLineAnchor = false;
+				int j = i + 1;
+				while (j < lines.length) {
+					String nextLine = lines[j];
+
+					// A new anchor tag before the end of current. It means current is invalid
+					// anchor
+					if (nextLine.contains("<a")) {
+						break;
+					}
+
+					anchorLines.add(nextLine);
+					// We found the valid multi-line anchor tag.
+					if (nextLine.contains("</a>")) {
+						multiLineAnchor = true;
+						break;
+					}
+					j++;
+				}
+
+				// process multi-line anchor tag.
+				if (multiLineAnchor) {
+					for (String string : anchorLines) {
+						if (string.contains("<a")) {
+							parsedText.add(parseTextSegments(string.concat("</a>")));
+							continue;
+						}
+						if (string.contains("</a>")) {
+							parsedText.add(parseTextSegments(anchorTag.concat(string)));
+							continue;
+						}
+						parsedText.add(parseTextSegments(string));
+					}
+
+					i = j;
+					continue;
+				}
+				parsedText.add(parseTextSegments(line));
+			}
 		}
 
-		if (!text.equals(this.text)) {
-			this.text = text;
-			redraw();
+		StringBuilder sb = new StringBuilder();
+		boolean firstLine = true;
+		for (List<TextSegment> segments : parsedText) {
+			if (!firstLine) {
+				sb.append("\n");
+			}
+			firstLine = false;
+
+			for (TextSegment segment : segments) {
+				sb.append(segment.text);
+			}
 		}
+
+		displayText = sb.toString();
+
+		redraw();
+	}
+
+	private boolean isValidAnchorTag(String line) {
+		// Regex pattern to match a valid <a> tag with optional href="..."
+		Pattern pattern = Pattern.compile("<a(\\s+href=\"[^\"]*\")?\\s*>", Pattern.CASE_INSENSITIVE);
+
+		Matcher matcher = pattern.matcher(line);
+
+		while (matcher.find()) {
+			// Extract the full <a ...> tag
+			anchorTag = matcher.group();
+
+			// Check if `href=` exists
+			int hrefIndex = anchorTag.indexOf("href=");
+			if (hrefIndex != -1) {
+				String beforeHref = anchorTag.substring(2, hrefIndex).trim(); // Extract between "<a" and "href="
+				if (!beforeHref.isEmpty()) {
+					return false; // Extra words found before href, making it invalid
+				}
+			}
+
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
