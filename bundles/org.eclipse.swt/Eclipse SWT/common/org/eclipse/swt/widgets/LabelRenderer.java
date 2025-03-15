@@ -18,6 +18,13 @@ import org.eclipse.swt.graphics.*;
 
 public abstract class LabelRenderer extends ControlRenderer {
 
+	protected static final String COLOR_BACKGROUND = "label.background"; //$NON-NLS-1$
+	protected static final String COLOR_FOREGROUND = "label.foreground"; //$NON-NLS-1$
+	protected static final String COLOR_SHADOW_IN1 = "label.shadowIn1"; //$NON-NLS-1$
+	protected static final String COLOR_SHADOW_IN2 = "label.shadowIn2"; //$NON-NLS-1$
+	protected static final String COLOR_SHADOW_OUT1 = "label.shadowOut1"; //$NON-NLS-1$
+	protected static final String COLOR_SHADOW_OUT2 = "label.shadowOut2"; //$NON-NLS-1$
+
 	/** a string inserted in the middle of text that has been shortened */
 	private static final String ELLIPSIS = "..."; //$NON-NLS-1$ // could use
 	// the ellipsis glyph on
@@ -44,7 +51,6 @@ public abstract class LabelRenderer extends ControlRenderer {
 	private int[] gradientPercents;
 	private boolean gradientVertical;
 	private Color background;
-	private Color foreground;
 
 	private int leftMargin = DEFAULT_MARGIN;
 	private int topMargin = DEFAULT_MARGIN;
@@ -133,7 +139,7 @@ public abstract class LabelRenderer extends ControlRenderer {
 	}
 
 	public Color getBackground() {
-		return background;
+		return background != null ? background : getColor(COLOR_BACKGROUND);
 	}
 
 	public void setBackground(Color color) {
@@ -157,11 +163,7 @@ public abstract class LabelRenderer extends ControlRenderer {
 	}
 
 	public Color getForeground() {
-		return foreground;
-	}
-
-	public void setForeground(Color foreground) {
-		this.foreground = foreground;
+		return label.getForeground();
 	}
 
 	public Color[] getGradientColors() {
