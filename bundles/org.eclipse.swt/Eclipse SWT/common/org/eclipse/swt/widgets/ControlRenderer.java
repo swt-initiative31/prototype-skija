@@ -20,6 +20,8 @@ import java.util.function.Function;
 
 public abstract class ControlRenderer {
 
+	protected static final String COLOR_DISABLED = "disabled"; //$NON-NLS-1$
+
 	protected abstract void paint(GC gc, int width, int height);
 
 	private final Control control;
@@ -47,6 +49,10 @@ public abstract class ControlRenderer {
 
 	protected final int getStyle() {
 		return control.getStyle();
+	}
+
+	protected final Color getColor(String key) {
+		return control.getColorProvider().getColor(key);
 	}
 
 	protected final boolean hasBorder() {

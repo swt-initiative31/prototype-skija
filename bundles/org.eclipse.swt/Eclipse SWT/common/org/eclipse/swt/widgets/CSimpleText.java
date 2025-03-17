@@ -7,13 +7,12 @@ import org.eclipse.swt.graphics.*;
 
 public class CSimpleText extends NativeBasedCustomScrollable {
 
-	private static final Color DISABLED_COLOR = new Color(160, 160, 160);
-	private static final Color TEXT_COLOR = new Color(0, 0, 0);
-	private static final Color BACKGROUND_COLOR = new Color(255, 255, 255);
-	private static final Color BORDER_COLOR = new Color(128, 128, 128);
-	private static final Color READONLY_BACKGROUND_COLOR = new Color(227, 227, 227);
-	private static final Color SELECTION_BACKGROUND_COLOR = new Color(0, 120, 215);
-	private static final Color SELECTION_TEXT_COLOR = new Color(255, 255, 255);
+	static final String COLOR_FOREGROUND = "text.foreground"; //$NON-NLS-1$
+	static final String COLOR_BACKGROUND = "text.background"; //$NON-NLS-1$
+	static final String COLOR_BORDER = "text.border"; //$NON-NLS-1$
+	static final String COLOR_BACKGROUND_READONLY = "text.background.readonly"; //$NON-NLS-1$
+	static final String COLOR_SELECTION_BACKGROUND = "text.selection.background"; //$NON-NLS-1$
+	static final String COLOR_SELECTION_FOREGROUND = "text.selection.foreground"; //$NON-NLS-1$
 
 	public static final int LIMIT = 0x7FFFFFFF;
 	public static final String DELIMITER = CSimpleTextModel.DELIMITER;
@@ -369,38 +368,42 @@ public class CSimpleText extends NativeBasedCustomScrollable {
 
 	@Override
 	public Color getBackground() {
-		return backgroundColor != null ? backgroundColor : BACKGROUND_COLOR;
+		return backgroundColor != null ? backgroundColor : getColorProvider().getColor(COLOR_BACKGROUND);
 	}
 
 	@Override
 	public void setBackground(Color color) {
+		if (color != null && color.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
 		backgroundColor = color;
-		super.setBackground(color);
+		redraw();
+
 	}
 
 	@Override
 	public Color getForeground() {
-		return foregroundColor != null ? foregroundColor : TEXT_COLOR;
+		return foregroundColor != null ? foregroundColor : getColorProvider().getColor(COLOR_FOREGROUND);
 	}
 
 	@Override
 	public void setForeground(Color color) {
+		if (color != null && color.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
 		foregroundColor = color;
-		super.setForeground(color);
+		redraw();
 	}
 
 	private void paintControl(Event e) {
+		final ColorProvider colorProvider = getColorProvider();
 		Rectangle visibleArea = getVisibleArea();
 		Drawing.drawWithGC(this, e.gc, gc -> {
 			gc.setFont(getFont());
 			gc.setForeground(getForeground());
 			gc.setBackground(getBackground());
 			if (!isEnabled()) {
-				gc.setForeground(DISABLED_COLOR);
+				gc.setForeground(getColorProvider().getColor(ControlRenderer.COLOR_DISABLED));
 			}
 			if (backgroundColor != null) {
 				if (!isEnabled() || ((style & SWT.BORDER) == 1 && !getEditable())) {
-					gc.setBackground(READONLY_BACKGROUND_COLOR);
+					gc.setBackground(colorProvider.getColor(COLOR_BACKGROUND_READONLY));
 				}
 				if ((style & SWT.BORDER) == 0 && !getEditable()) {
 					gc.setBackground(getParent().getBackground());
@@ -432,8 +435,9 @@ public class CSimpleText extends NativeBasedCustomScrollable {
 
 			Color oldForeground = gc.getForeground();
 			Color oldBackground = gc.getBackground();
-			gc.setForeground(SELECTION_TEXT_COLOR);
-			gc.setBackground(SELECTION_BACKGROUND_COLOR);
+			final ColorProvider colorProvider = getColorProvider();
+			gc.setForeground(colorProvider.getColor(COLOR_SELECTION_FOREGROUND));
+			gc.setBackground(colorProvider.getColor(COLOR_SELECTION_BACKGROUND));
 			for (int i = startLocation.line; i <= endLocation.line; i++) {
 				TextLocation location = new TextLocation(i, 0);
 				String text = textLines[i];
@@ -501,7 +505,8 @@ public class CSimpleText extends NativeBasedCustomScrollable {
 		gc.fillRectangle(clientArea.x, clientArea.y, clientArea.width, height);
 		if (drawLine) {
 			Color prevBackground = gc.getBackground();
-			gc.setBackground(isFocusControl() ? SELECTION_BACKGROUND_COLOR : BORDER_COLOR);
+			final ColorProvider colorProvider = getColorProvider();
+			gc.setBackground(colorProvider.getColor(isFocusControl() ? COLOR_SELECTION_BACKGROUND : COLOR_BORDER));
 			gc.fillRectangle(clientArea.x, clientArea.y + height, clientArea.width, 1);
 			gc.setBackground(prevBackground);
 		}

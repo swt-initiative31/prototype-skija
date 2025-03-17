@@ -50,6 +50,8 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
 public class Composite extends Scrollable {
+	public static final String COLOR_BACKGROUND = "composite.background";
+
 	Layout layout;
 	WINDOWPOS [] lpwp;
 	Control [] tabList;
