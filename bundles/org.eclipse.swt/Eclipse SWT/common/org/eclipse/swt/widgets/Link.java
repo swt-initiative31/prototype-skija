@@ -47,7 +47,9 @@ import org.eclipse.swt.widgets.LinkRenderer.*;
  */
 public class Link extends CustomControl {
 
-	private static final Color LINK_COLOR = new Color(0, 102, 204);
+	public static final String COLOR_LINK = "link.link";
+	public static final String COLOR_FOREGROUND = "link.text";
+	public static final String COLOR_BACKGROUND = "link.background";
 
 	/** Left and right margins */
 	private static final int DEFAULT_MARGIN = 3;
@@ -404,6 +406,16 @@ public class Link extends CustomControl {
 		return text;
 	}
 
+	@Override
+	public Color getForeground() {
+		return foreground != null ? foreground : getColorProvider().getColor(COLOR_FOREGROUND);
+	}
+
+	@Override
+	public Color getBackground() {
+		return background != null ? background : getColorProvider().getColor(COLOR_BACKGROUND);
+	}
+
 	/**
 	 * Sets the link foreground color to the color specified by the argument, or to
 	 * the default system color for the link if the argument is null.
@@ -431,10 +443,7 @@ public class Link extends CustomControl {
 	public void setLinkForeground(Color color) {
 		checkWidget();
 
-		if (color == null) {
-			return;
-		}
-		if (color.equals(linkColor)) {
+		if (Objects.equals(color, linkColor)) {
 			return;
 		}
 
@@ -460,7 +469,7 @@ public class Link extends CustomControl {
 	 */
 	public Color getLinkForeground() {
 		checkWidget();
-		return linkColor != null ? linkColor : LINK_COLOR;
+		return linkColor != null ? linkColor : getColorProvider().getColor(COLOR_LINK);
 	}
 
 	/**
@@ -487,7 +496,6 @@ public class Link extends CustomControl {
 		}
 		this.leftMargin = leftMargin;
 		redraw();
-
 	}
 
 	/**
@@ -526,7 +534,6 @@ public class Link extends CustomControl {
 		}
 		this.rightMargin = rightMargin;
 		redraw();
-
 	}
 
 	/**
@@ -601,7 +608,6 @@ public class Link extends CustomControl {
 		}
 		this.bottomMargin = bottomMargin;
 		redraw();
-
 	}
 
 	/**

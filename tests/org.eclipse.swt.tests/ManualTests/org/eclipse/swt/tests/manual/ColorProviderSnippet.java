@@ -90,6 +90,21 @@ public class ColorProviderSnippet {
 			slider.setEnabled(enabled);
 		});
 
+		final Button darkChkBx = new Button(shell, SWT.CHECK);
+		darkChkBx.setText("dark");
+		darkChkBx.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
+		darkChkBx.addListener(SWT.Selection, e -> {
+			final ColorProvider colorProvider = darkChkBx.getSelection()
+					? DefaultColorProvider.createDarkInstance()
+					: DefaultColorProvider.createLightInstance();
+			display.setColorProvider(colorProvider);
+			shell.setBackground(colorProvider.getColor(Composite.COLOR_BACKGROUND));
+			shell.redraw();
+			for (Control child : shell.getChildren()) {
+				child.redraw();
+			}
+		});
+
 		final Point size = shell.computeSize(SWT.DEFAULT, SWT.DEFAULT);
 		size.x = Math.max(size.x, 300);
 		shell.setSize(size);
