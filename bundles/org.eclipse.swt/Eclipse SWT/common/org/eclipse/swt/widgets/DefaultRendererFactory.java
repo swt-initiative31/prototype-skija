@@ -43,4 +43,9 @@ public class DefaultRendererFactory implements RendererFactory {
 	public LabelRenderer createLabelRenderer(Label label) {
 		return new BasicLabelRenderer(label);
 	}
+
+	@Override
+	public SliderRenderer createSliderRenderer(Slider slider) {
+		return new DefaultSliderRenderer(slider);
+	}
 }
