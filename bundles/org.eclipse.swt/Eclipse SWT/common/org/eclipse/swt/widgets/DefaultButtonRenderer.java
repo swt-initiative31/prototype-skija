@@ -46,8 +46,8 @@ public class DefaultButtonRenderer extends ButtonRenderer {
 	}
 
 	public Point computeDefaultSize() {
-		final String text = getText();
-		final Image image = getImage();
+		final String text = state.getText();
+		final Image image = state.getImage();
 
 		int textWidth = 0;
 		int textHeight = 0;
@@ -83,8 +83,8 @@ public class DefaultButtonRenderer extends ButtonRenderer {
 	@Override
 	protected void paint(GC gc, int width, int height) {
 		final int style = getStyle();
-		final String text = getText();
-		final Image image = getImage();
+		final String text = state.getText();
+		final Image image = state.getImageForDrawing();
 
 		boolean isRightAligned = (style & SWT.RIGHT) != 0;
 		boolean isCentered = (style & SWT.CENTER) != 0;
@@ -126,7 +126,7 @@ public class DefaultButtonRenderer extends ButtonRenderer {
 					/ 2;
 		}
 
-		boolean shiftDownRight = isPressed() || isSelected();
+		boolean shiftDownRight = state.isPressed() || state.isSelected();
 		// Draw image
 		if (image != null) {
 			int imageTopOffset = (height - imageHeight) / 2;
@@ -135,7 +135,7 @@ public class DefaultButtonRenderer extends ButtonRenderer {
 				imageTopOffset++;
 				imageLeftOffset++;
 			}
-			drawImage(gc, imageLeftOffset, imageTopOffset);
+			gc.drawImage(image, imageLeftOffset, imageTopOffset);
 		}
 
 		// Draw text
@@ -157,11 +157,11 @@ public class DefaultButtonRenderer extends ButtonRenderer {
 	private void drawPushButton(GC gc, int w, int h) {
 		final boolean isToggle = (getStyle() & SWT.TOGGLE) != 0;
 		if (isEnabled()) {
-			if (isToggle && isSelected()) {
+			if (isToggle && state.isSelected()) {
 				gc.setBackground(TOGGLE_COLOR);
-			} else if (isPressed()) {
+			} else if (state.isPressed()) {
 				gc.setBackground(TOGGLE_COLOR);
-			} else if (isHover()) {
+			} else if (state.isHover()) {
 				gc.setBackground(HOVER_COLOR);
 			} else {
 				gc.setBackground(PUSH_BACKGROUND_COLOR);
@@ -170,7 +170,7 @@ public class DefaultButtonRenderer extends ButtonRenderer {
 		}
 
 		if (isEnabled()) {
-			if (isToggle && isSelected() || isHover()) {
+			if (isToggle && state.isSelected() || state.isHover()) {
 				gc.setForeground(SELECTION_COLOR);
 			} else {
 				gc.setForeground(BORDER_COLOR);

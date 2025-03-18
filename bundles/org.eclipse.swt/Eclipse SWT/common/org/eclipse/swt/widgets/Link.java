@@ -54,6 +54,7 @@ public class Link extends CustomControl {
 
 	/** Left and right margins */
 	private static final int DEFAULT_MARGIN = 3;
+	private final LinkState controlState;
 
 	/** the alignment. Either CENTER, RIGHT, LEFT. Default is LEFT */
 	private int align;
@@ -118,6 +119,8 @@ public class Link extends CustomControl {
 			style |= SWT.LEFT;
 		}
 
+		controlState = new LinkState(this);
+
 		if ((style & SWT.CENTER) != 0) {
 			align = SWT.CENTER;
 		} else if ((style & SWT.RIGHT) != 0) {
@@ -140,6 +143,11 @@ public class Link extends CustomControl {
 		addListener(SWT.Dispose, listener);
 
 		initAccessible();
+	}
+
+	@Override
+	protected ControlState getControlState() {
+		return controlState;
 	}
 
 	private void onMouseUp(Event e) {

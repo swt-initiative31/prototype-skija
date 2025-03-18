@@ -37,17 +37,17 @@ public class BasicLabelRenderer extends LabelRenderer {
 
 	@Override
 	public Point computeDefaultSize() {
-		final String text = getText();
-		final Image image = getImage();
+		final String text = state.getText();
+		final Image image = state.getImage();
 
 		int lineWidth = 0;
 		int lineHeight = 0;
 
-		int leftMargin = getLeftMargin();
+		int leftMargin = state.getLeftMargin();
 		int imageWidth = 0;
 		int imageHeight = 0;
 		int gap = 0;
-		int topMargin = getTopMargin();
+		int topMargin = state.getTopMargin();
 
 		if (text != null && !text.isEmpty()) {
 			Point textExtent = getTextExtent(text, DRAW_FLAGS);
@@ -64,17 +64,17 @@ public class BasicLabelRenderer extends LabelRenderer {
 		}
 
 		int width = leftMargin + imageWidth + gap + lineWidth
-					+ getRightMargin();
+					+ state.getRightMargin();
 		int height = topMargin + Math.max(lineHeight, imageHeight)
-					 + getBottomMargin();
+					 + state.getBottomMargin();
 
 		return new Point(width, height);
 	}
 
 	@Override
 	protected void paint(GC gc, int width, int height) {
-		String text = getText();
-		Image image = getImage();
+		String text = state.getText();
+		Image image = state.getImageForDrawing();
 		if ((text == null || text.isEmpty()) && image == null) {
 			return;
 		}
@@ -83,7 +83,7 @@ public class BasicLabelRenderer extends LabelRenderer {
 		String t = text;
 		Image img = image;
 		int availableWidth = Math.max(0,
-				width - (getLeftMargin() + getRightMargin()));
+				width - (state.getLeftMargin() + state.getRightMargin()));
 		Point extent = getTotalSize(gc, img, t);
 		if (extent.x > availableWidth) {
 			img = null;
@@ -116,26 +116,29 @@ public class BasicLabelRenderer extends LabelRenderer {
 		}
 
 		// determine horizontal position
-		int x = getLeftMargin();
-		final int align = getAlign();
+		int x = state.getLeftMargin();
+		final int align = state.getAlign();
 		if (align == SWT.CENTER) {
 			x = (width - extent.x) / 2;
 		}
 		else if (align == SWT.RIGHT) {
-			x = width - getRightMargin() - extent.x;
+			x = width - state.getRightMargin() - extent.x;
 		}
 
 		// draw a background image behind the text
 		try {
-			final Image backgroundImage = getBackgroundImage();
-			final Color[] gradientColors = getGradientColors();
-			final int[] gradientPercents = getGradientPercents();
+			final Image backgroundImage = state.getBackgroundImage();
+			final Color[] gradientColors = state.getGradientColors();
+			final int[] gradientPercents = state.getGradientPercents();
 			if (backgroundImage != null) {
 				// draw a background image behind the text
 				Rectangle imageRect = backgroundImage.getBounds();
 				// tile image to fill space
-				gc.setBackground(getBackground());
-				gc.fillRectangle(0, 0, width, height);
+				final Color background = state.getBackground();
+				if (background != null) {
+					gc.setBackground(background);
+					gc.fillRectangle(0, 0, width, height);
+				}
 				int xPos = 0;
 				while (xPos < width) {
 					int yPos = 0;
@@ -154,7 +157,7 @@ public class BasicLabelRenderer extends LabelRenderer {
 					}
 					gc.fillRectangle(0, 0, width, height);
 				} else {
-					final boolean gradientVertical = isGradientVertical();
+					final boolean gradientVertical = state.isGradientVertical();
 					final Color oldForeground = gc.getForeground();
 					Color lastColor = gradientColors[0];
 					if (lastColor == null) {
@@ -183,26 +186,33 @@ public class BasicLabelRenderer extends LabelRenderer {
 						}
 					}
 					if (gradientVertical && pos < height) {
-						gc.setBackground(getBackground());
-						gc.fillRectangle(0, pos, width, height - pos);
+						final Color background = state.getBackground();
+						if (background != null) {
+							gc.setBackground(background);
+							gc.fillRectangle(0, pos, width, height - pos);
+						}
 					}
 					if (!gradientVertical && pos < width) {
-						gc.setBackground(getBackground());
-						gc.fillRectangle(pos, 0, width - pos, height);
+						final Color background = state.getBackground();
+						if (background != null) {
+							gc.setBackground(background);
+							gc.fillRectangle(pos, 0, width - pos, height);
+						}
 					}
 					gc.setForeground(oldForeground);
 				}
 				gc.setBackground(oldBackground);
 			} else {
-				final Color background = getBackground();
+				final Color background = state.getBackground();
 				if (background != null && background.getAlpha() > 0) {
-					gc.setBackground(getBackground());
+					gc.setBackground(background);
 					gc.fillRectangle(0, 0, width, height);
 				}
 			}
 		} catch (SWTException e) {
-			if ((getStyle() & SWT.DOUBLE_BUFFERED) == 0) {
-				gc.setBackground(getBackground());
+			final Color background = state.getBackground();
+			if (background != null && (getStyle() & SWT.DOUBLE_BUFFERED) == 0) {
+				gc.setBackground(background);
 				gc.fillRectangle(0, 0, width, height);
 			}
 		}
@@ -232,18 +242,18 @@ public class BasicLabelRenderer extends LabelRenderer {
 
 		int imageY, midPoint;
 		if (imageHeight > textHeight) {
-			if (getTopMargin() == DEFAULT_MARGIN && getBottomMargin() == DEFAULT_MARGIN) {
+			if (state.getTopMargin() == LabelState.DEFAULT_MARGIN && state.getBottomMargin() == LabelState.DEFAULT_MARGIN) {
 				imageY = 0;
 			} else {
-				imageY = getTopMargin();
+				imageY = state.getTopMargin();
 			}
 			midPoint = imageY + imageHeight / 2;
 		} else {
 			int lineY;
-			if (getTopMargin() == DEFAULT_MARGIN && getBottomMargin() == DEFAULT_MARGIN) {
+			if (state.getTopMargin() == LabelState.DEFAULT_MARGIN && state.getBottomMargin() == LabelState.DEFAULT_MARGIN) {
 				lineY = (textHeight - imageHeight) / 2;
 			} else {
-				lineY = getTopMargin();
+				lineY = state.getTopMargin();
 			}
 			midPoint = lineY + textHeight / 2;
 			imageY = midPoint - imageHeight / 2;
@@ -259,14 +269,20 @@ public class BasicLabelRenderer extends LabelRenderer {
 
 		// draw the text
 		// we draw the label at the top.
-		int lineY = getTopMargin();
+		int lineY = state.getTopMargin();
 
 		if (textHeight < imageHeight) {
 			lineY = (imageHeight - textHeight) / 2;
 		}
 
 		if (lines != null) {
-			gc.setForeground(isEnabled() ? getForeground() : DISABLED_COLOR);
+			Color foreground;
+			if (isEnabled()) {
+				foreground = getForegroundOrDefault();
+			} else {
+				foreground = DISABLED_COLOR;
+			}
+			gc.setForeground(foreground);
 			for (String line : lines) {
 				int lineX = x;
 				if (lines.length > 1) {
@@ -277,7 +293,7 @@ public class BasicLabelRenderer extends LabelRenderer {
 					if (align == SWT.RIGHT) {
 						int lineWidth = gc.textExtent(line, DRAW_FLAGS).x;
 						lineX = Math.max(x,
-								width - getRightMargin() - lineWidth);
+								width - state.getRightMargin() - lineWidth);
 					}
 				}
 				gc.drawText(line, lineX, lineY, DRAW_FLAGS);

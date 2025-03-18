@@ -26,11 +26,9 @@ public abstract class LabelRenderer extends ControlRenderer {
 	// some platforms "\u2026"
 
 	private final Label label;
+	protected final LabelState state;
 
-	protected static final int DEFAULT_MARGIN = 3;
 
-	private String text;
-	private Image image;
 	// The tooltip is used for two purposes - the application can set
 	// a tooltip or the tooltip can be used to display the full text when the
 	// the text has been truncated due to the label being too short.
@@ -38,79 +36,11 @@ public abstract class LabelRenderer extends ControlRenderer {
 	// Control.tooltiptext
 	// contains whatever tooltip is currently being displayed.
 	private String toolTipText;
-	/** the alignment. Either CENTER, RIGHT, LEFT. Default is LEFT */
-	private int align = SWT.LEFT;
-
-	private Image backgroundImage;
-	private Color[] gradientColors;
-	private int[] gradientPercents;
-	private boolean gradientVertical;
-	private Color background;
-	private Color foreground;
-
-	private int leftMargin = DEFAULT_MARGIN;
-	private int topMargin = DEFAULT_MARGIN;
-	private int rightMargin = DEFAULT_MARGIN;
-	private int bottomMargin = DEFAULT_MARGIN;
 
 	protected LabelRenderer(Label label) {
 		super(label);
 		this.label = label;
-	}
-
-	public String getText() {
-		return text;
-	}
-
-	public void setText(String text) {
-		this.text = text;
-	}
-
-	public Image getImage() {
-		return image;
-	}
-
-	public void setImage(Image image) {
-		this.image = image;
-	}
-
-	public int getLeftMargin() {
-		return leftMargin;
-	}
-
-	public void setLeftMargin(int leftMargin) {
-		this.leftMargin = leftMargin;
-	}
-
-	public int getTopMargin() {
-		return topMargin;
-	}
-
-	public void setTopMargin(int topMargin) {
-		this.topMargin = topMargin;
-	}
-
-	public int getRightMargin() {
-		return rightMargin;
-	}
-
-	public void setRightMargin(int rightMargin) {
-		this.rightMargin = rightMargin;
-	}
-
-	public int getBottomMargin() {
-		return bottomMargin;
-	}
-
-	public void setBottomMargin(int bottomMargin) {
-		this.bottomMargin = bottomMargin;
-	}
-
-	public void setMargins(int leftMargin, int topMargin, int rightMargin, int bottomMargin) {
-		this.leftMargin = Math.max(0, leftMargin);
-		this.topMargin = Math.max(0, topMargin);
-		this.rightMargin = Math.max(0, rightMargin);
-		this.bottomMargin = Math.max(0, bottomMargin);
+		state = label.getControlState();
 	}
 
 	public String getToolTipText() {
@@ -126,143 +56,7 @@ public abstract class LabelRenderer extends ControlRenderer {
 	}
 
 	public void dispose() {
-		gradientColors = null;
-		gradientPercents = null;
-		backgroundImage = null;
-		text = null;
-		setImage(null);
 		toolTipText = null;
-	}
-
-	public Color getBackground() {
-		return background;
-	}
-
-	public void setBackground(Color color) {
-		// Are these settings the same as before?
-		if (backgroundImage == null && gradientColors == null
-			&& gradientPercents == null) {
-			if (color == null) {
-				if (background == null) {
-					return;
-				}
-			} else {
-				if (color.equals(background)) {
-					return;
-				}
-			}
-		}
-		background = color;
-		backgroundImage = null;
-		gradientColors = null;
-		gradientPercents = null;
-	}
-
-	public Color getForeground() {
-		return foreground;
-	}
-
-	public void setForeground(Color foreground) {
-		this.foreground = foreground;
-	}
-
-	public Color[] getGradientColors() {
-		return gradientColors;
-	}
-
-	public int[] getGradientPercents() {
-		return gradientPercents;
-	}
-
-	public boolean isGradientVertical() {
-		return gradientVertical;
-	}
-
-	public void setBackground(Color[] colors, int[] percents, boolean vertical) {
-		if (colors != null) {
-			if (percents == null || percents.length != colors.length - 1) {
-				SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-			}
-			if (label.getDisplay().getDepth() < 15) {
-				// Don't use gradients on low color displays
-				colors = new Color[]{colors[colors.length - 1]};
-				percents = new int[]{};
-			}
-			for (int i = 0; i < percents.length; i++) {
-				if (percents[i] < 0 || percents[i] > 100) {
-					SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-				}
-				if (i > 0 && percents[i] < percents[i - 1]) {
-					SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-				}
-			}
-		}
-
-		// Are these settings the same as before?
-		final Color background = getBackground();
-		if (backgroundImage == null) {
-			if ((gradientColors != null) && (colors != null)
-				&& (gradientColors.length == colors.length)) {
-				boolean same = false;
-				for (int i = 0; i < gradientColors.length; i++) {
-					same = (gradientColors[i] == colors[i])
-						   || ((gradientColors[i] == null)
-							   && (colors[i] == background))
-						   || ((gradientColors[i] == background)
-							   && (colors[i] == null));
-					if (!same) {
-						break;
-					}
-				}
-				if (same) {
-					for (int i = 0; i < gradientPercents.length; i++) {
-						same = gradientPercents[i] == percents[i];
-						if (!same) {
-							break;
-						}
-					}
-				}
-				if (same && this.gradientVertical == vertical)
-					return;
-			}
-		} else {
-			backgroundImage = null;
-		}
-		// Store the new settings
-		if (colors == null) {
-			gradientColors = null;
-			gradientPercents = null;
-			gradientVertical = false;
-		} else {
-			gradientColors = new Color[colors.length];
-			for (int i = 0; i < colors.length; ++i)
-				gradientColors[i] = (colors[i] != null)
-						? colors[i]
-						: background;
-			gradientPercents = new int[percents.length];
-			System.arraycopy(percents, 0, gradientPercents, 0, percents.length);
-			gradientVertical = vertical;
-		}
-	}
-
-	public Image getBackgroundImage() {
-		return backgroundImage;
-	}
-
-	public void setBackgroundImage(Image image) {
-		if (image != null) {
-			gradientColors = null;
-			gradientPercents = null;
-		}
-		backgroundImage = image;
-	}
-
-	public int getAlign() {
-		return align;
-	}
-
-	public void setAlign(int align) {
-		this.align = align;
 	}
 
 	/**
@@ -315,6 +109,16 @@ public abstract class LabelRenderer extends ControlRenderer {
 				  + t.substring(validateOffset(layout, l - mid), l);
 		layout.dispose();
 		return result;
+	}
+
+	public Color getBackgroundOrDefault() {
+		final Color background = state.getBackground();
+		return background != null ? background : new Color(240, 240, 240);
+	}
+
+	public Color getForegroundOrDefault() {
+		final Color foreground = state.getForeground();
+		return foreground != null ? foreground : new Color(0, 0, 0);
 	}
 
 	private int validateOffset(TextLayout layout, int offset) {

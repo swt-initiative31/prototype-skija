@@ -55,16 +55,14 @@ import org.eclipse.swt.graphics.*;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class Button extends CustomControl {
-	private String text = "", message = "";
-	private Image image;
-	private boolean checked;
-	private boolean grayed;
+	private String message = "";
 	static /* final */ boolean COMMAND_LINK = false;
 
 	private Accessible acc;
 	private AccessibleAdapter accAdapter;
 	private boolean defaultButton;
 
+	private final ButtonState buttonState;
 	private final ButtonRenderer renderer;
 
 	/**
@@ -115,6 +113,8 @@ public class Button extends CustomControl {
 		super(parent, checkStyle(style));
 		this.style |= SWT.DOUBLE_BUFFERED;
 
+		this.buttonState = new ButtonState(this);
+
 		final RendererFactory rendererFactory = parent.getDisplay().getRendererFactory();
 		renderer = (this.style & SWT.CHECK) != 0
 				? rendererFactory.createCheckboxRenderer(this)
@@ -156,6 +156,11 @@ public class Button extends CustomControl {
 		addListener(SWT.MouseExit, listener);
 
 		initializeAccessible();
+	}
+
+	@Override
+	protected ButtonState getControlState() {
+		return buttonState;
 	}
 
 	/**
@@ -298,14 +303,14 @@ public class Button extends CustomControl {
 
 	private void onKeyDown(Event event) {
 		if (event.character == SWT.SPACE) {
-			renderer.setPressed(true);
+			buttonState.setPressed(true);
 			redraw();
 		}
 	}
 
 	private void onKeyUp(Event event) {
 		if (event.character == SWT.SPACE) {
-			renderer.setPressed(true);
+			buttonState.setPressed(true);
 			handleSelection();
 			redraw();
 		}
@@ -328,7 +333,7 @@ public class Button extends CustomControl {
 
 	private void onMouseDown(Event e) {
 		if (e.button == 1) {
-			renderer.setPressed(true);
+			buttonState.setPressed(true);
 			redraw();
 		}
 	}
@@ -340,14 +345,14 @@ public class Button extends CustomControl {
 			forceFocus();
 			selectRadio();
 		} else if ((style & SWT.PUSH) == 0 && (style & (SWT.TOGGLE | SWT.CHECK)) != 0) {
-			setSelection(!renderer.isSelected());
+			setSelection(!buttonState.isSelected());
 		}
 		sendSelectionEvent(SWT.Selection);
 	}
 
 	private void onMouseUp(Event e) {
 		if (e.button == 1) {
-			renderer.setPressed(false);
+			buttonState.setPressed(false);
 			handleSelection();
 		} else {
 			redraw();
@@ -355,12 +360,12 @@ public class Button extends CustomControl {
 	}
 
 	private void onMouseEnter() {
-		renderer.setHover(true);
+		buttonState.setHover(true);
 		redraw();
 	}
 
 	private void onMouseExit() {
-		renderer.setHover(false);
+		buttonState.setHover(false);
 		redraw();
 	}
 
@@ -514,7 +519,7 @@ public class Button extends CustomControl {
 		if (!isCheckButton()) {
 			return false;
 		}
-		return grayed;
+		return buttonState.isGrayed();
 	}
 
 	/**
@@ -532,7 +537,7 @@ public class Button extends CustomControl {
 	 */
 	public Image getImage() {
 		checkWidget();
-		return image;
+		return buttonState.getImage();
 	}
 
 	/**
@@ -586,7 +591,7 @@ public class Button extends CustomControl {
 		if ((style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0) {
 			return false;
 		}
-		return isChecked();
+		return buttonState.isSelected();
 	}
 
 	/**
@@ -608,7 +613,7 @@ public class Button extends CustomControl {
 		if ((style & SWT.ARROW) != 0) {
 			return "";
 		}
-		return text;
+		return buttonState.getText();
 	}
 
 	@Override
@@ -691,9 +696,7 @@ public class Button extends CustomControl {
 	@Override
 	void releaseWidget() {
 		super.releaseWidget();
-		renderer.invalidateImage();
-		text = null;
-		image = null;
+		buttonState.dispose();
 	}
 
 	/**
@@ -815,7 +818,7 @@ public class Button extends CustomControl {
 		 * button in WM_SETFOCUS. The fix is to not assign focus to an
 		 * unselected radio button.
 		 */
-		if (isRadioButton() && !isChecked()) {
+		if (isRadioButton() && !buttonState.isSelected()) {
 			return false;
 		}
 		boolean b = super.setFocus();
@@ -865,9 +868,8 @@ public class Button extends CustomControl {
 		if ((style & SWT.ARROW) != 0) {
 			return;
 		}
-		this.image = image;
-		renderer.invalidateImage();
-		redraw();
+
+		buttonState.setImage(image);
 	}
 
 	/**
@@ -892,7 +894,7 @@ public class Button extends CustomControl {
 		if ((style & SWT.CHECK) == 0) {
 			return;
 		}
-		this.grayed = grayed;
+		buttonState.setGrayed(grayed);
 	}
 
 	/**
@@ -956,8 +958,7 @@ public class Button extends CustomControl {
 	 */
 	public void setSelection(boolean selected) {
 		checkWidget();
-		this.checked = selected;
-		redraw();
+		buttonState.setSelected(selected);
 	}
 
 	@Override
@@ -1048,11 +1049,6 @@ public class Button extends CustomControl {
 		if ((style & SWT.ARROW) != 0) {
 			return;
 		}
-		text = string;
-		redraw();
-	}
-
-	private boolean isChecked() {
-		return checked;
+		buttonState.setText(string);
 	}
 }

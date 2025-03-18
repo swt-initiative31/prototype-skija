@@ -51,6 +51,7 @@ public class Scale extends CustomControl {
 	private final boolean horizontal;
 	private final int orientation;
 
+	private final ScaleState scaleState;
 	private final ScaleRenderer renderer;
 
 	/** The state of the handle */
@@ -99,6 +100,8 @@ public class Scale extends CustomControl {
 		super(parent, checkStyle(style));
 		this.style |= SWT.DOUBLE_BUFFERED;
 
+		scaleState = new ScaleState(this);
+
 		Listener listener = event -> {
 			switch (event.type) {
 				case SWT.KeyDown -> onKeyDown(event);
@@ -130,6 +133,10 @@ public class Scale extends CustomControl {
 		renderer = rendererFactory.createScaleRenderer(this);
 	}
 
+	@Override
+	protected ControlState getControlState() {
+		return scaleState;
+	}
 
 	private static int checkStyle(int style) {
 		// Do not propagate this flags to the super class
