@@ -13,8 +13,6 @@
  *******************************************************************************/
 package org.eclipse.swt.widgets;
 
-import org.eclipse.swt.*;
-import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 
 public class DefaultSliderRenderer extends SliderRenderer {
@@ -26,16 +24,12 @@ public class DefaultSliderRenderer extends SliderRenderer {
 	private static final Color TRACK_COLOR = new Color(211, 211, 211, 100);
 	private static final Color THUMB_HOVER_COLOR = new Color(135, 206, 235);
 
-	private Rectangle trackRectangle;
-	private boolean isDragging;
-	private Rectangle thumbRectangle;
 	private boolean drawTrack;
 
+	private Rectangle trackRectangle;
+	private Rectangle thumbRectangle;
+	private boolean isDragging;
 	private boolean thumbHovered;
-	private int dragOffset;
-	private int drawWidth;
-	private int drawHeight;
-	private int thumbPosition;
 
 	protected DefaultSliderRenderer(Slider slider) {
 		super(slider);
@@ -43,14 +37,11 @@ public class DefaultSliderRenderer extends SliderRenderer {
 
 	@Override
 	protected void paint(GC gc, int width, int height) {
-		int value = getSelection();
-		int min = getMinimum();
-		int max = getMaximum();
-		int thumb = getThumb();
+		int value = slider.getSelection();
+		int min = slider.getMinimum();
+		int max = slider.getMaximum();
+		int thumb = slider.getThumb();
 		int range = max - min;
-
-		this.drawWidth = width;
-		this.drawHeight = height;
 
 		// Fill background
 		if (slider.getBackground() != null) {
@@ -119,175 +110,6 @@ public class DefaultSliderRenderer extends SliderRenderer {
 	}
 
 	@Override
-	public void onMouseDown(Event event) {
-		if (event.button != 1)
-			return;
-
-		// Drag of the thumb.
-		if (thumbRectangle != null && thumbRectangle.contains(event.x, event.y)) {
-			isDragging = true;
-			dragOffset = (slider.isHorizontal()) ? event.x - thumbRectangle.x : event.y - thumbRectangle.y;
-			return;
-		}
-
-		// Click on the track. i.e page increment/decrement
-		if (trackRectangle != null && trackRectangle.contains(event.x, event.y)) {
-			int pageIncrement = getPageIncrement();
-			int oldSelection = getSelection();
-			int newSelection;
-
-			if (slider.isHorizontal()) {
-				if (event.x < thumbRectangle.x) {
-					newSelection = Math.max(getMinimum(), oldSelection - pageIncrement);
-				} else {
-					newSelection = Math.min(getMaximum() - getThumb(), oldSelection + pageIncrement);
-				}
-			} else {
-				if (event.y < thumbRectangle.y) {
-					newSelection = Math.max(getMinimum(), oldSelection - pageIncrement);
-				} else {
-					newSelection = Math.min(getMaximum() - getThumb(), oldSelection + pageIncrement);
-				}
-			}
-
-			slider.setSelection(newSelection);
-			slider.redraw();
-		}
-	}
-
-	@Override
-	public void onMouseUp(Event event) {
-		if (isDragging) {
-			isDragging = false;
-			updateValueFromThumbPosition();
-			slider.redraw();
-		}
-	}
-
-	private void updateValueFromThumbPosition() {
-		int min = getMinimum();
-		int max = getMaximum();
-		int thumb = getThumb();
-		int range = max - min;
-
-		if (slider.isHorizontal()) {
-			int trackWidth = this.drawWidth - 4 - thumbRectangle.width;
-			int relativeX = Math.min(trackWidth, Math.max(0, thumbPosition - 2));
-			int newValue = min + (relativeX * (range - thumb)) / trackWidth;
-
-			slider.setSelection(newValue);
-		} else {
-			int trackHeight = this.drawHeight - 4 - thumbRectangle.height;
-			int relativeY = Math.min(trackHeight, Math.max(0, thumbPosition - 2));
-			int newValue = min + (relativeY * (range - thumb)) / trackHeight;
-
-			slider.setSelection(newValue);
-		}
-	}
-
-	@Override
-	public void onMouseMove(Event event) {
-		if (thumbRectangle == null) {
-			return;
-		}
-
-		boolean isThumbHovered = thumbRectangle.contains(event.x, event.y);
-		if (isThumbHovered != thumbHovered) {
-			thumbHovered = isThumbHovered;
-			slider.redraw();
-		}
-
-		if (isDragging) {
-			int newPos;
-			int min = getMinimum();
-			int max = getMaximum();
-			int thumb = getThumb();
-			int range = max - min;
-			int newValue;
-
-			if (slider.isHorizontal()) {
-				newPos = event.x - dragOffset;
-
-				int minX = 2;
-				int maxX = drawWidth - thumbRectangle.width - 2;
-				newPos = Math.max(minX, Math.min(newPos, maxX));
-
-				thumbRectangle.x = newPos;
-				thumbPosition = newPos;
-
-				int trackWidth = drawWidth - 4 - thumbRectangle.width;
-				int relativeX = thumbPosition - 2;
-				newValue = min + Math.round((relativeX * (float) (range - thumb)) / trackWidth);
-			} else {
-				newPos = event.y - dragOffset;
-
-				int minY = 2;
-				int maxY = drawHeight - thumbRectangle.height - 2;
-				newPos = Math.max(minY, Math.min(newPos, maxY));
-
-				thumbRectangle.y = newPos;
-				thumbPosition = newPos;
-
-				int trackHeight = drawHeight - 4 - thumbRectangle.height;
-				int relativeY = thumbPosition - 2;
-				newValue = min + Math.round((relativeY * (float) (range - thumb)) / trackHeight);
-			}
-
-			newValue = Math.max(min, Math.min(newValue, max - thumb));
-
-			if (newValue != getSelection()) {
-				slider.setSelection(newValue);
-			}
-			slider.redraw();
-		}
-	}
-
-	@Override
-	public void onKeyDown(Event event) {
-		KeyEvent keyEvent = new KeyEvent(event);
-		switch (keyEvent.keyCode) {
-		case SWT.ARROW_DOWN, SWT.ARROW_LEFT -> increment(-1);
-		case SWT.ARROW_RIGHT, SWT.ARROW_UP -> increment(1);
-		case SWT.PAGE_DOWN -> pageIncrement(-1);
-		case SWT.PAGE_UP -> pageIncrement(1);
-		case SWT.HOME -> slider.setSelection(getMinimum());
-		case SWT.END -> slider.setSelection(getMaximum());
-		}
-	}
-
-	@Override
-	public void onMouseVerticalWheel(Event event) {
-		if (event.count > 0) {
-			increment(1);
-		} else if (event.count < 0) {
-			increment(-1);
-		}
-	}
-
-	@Override
-	public void onMouseHorizontalWheel(Event event) {
-		if (event.count < 0) {
-			increment(1);
-		} else if (event.count > 0) {
-			increment(-1);
-		}
-	}
-
-	private void increment(int count) {
-		int delta = getIncrement() * count;
-		int newValue = SliderRenderer.minMax(getMinimum(), getSelection() + delta, getMaximum());
-		slider.setSelection(newValue);
-		slider.redraw();
-	}
-
-	private void pageIncrement(int count) {
-		int delta = getPageIncrement() * count;
-		int newValue = SliderRenderer.minMax(getMinimum(), getSelection() + delta, getMaximum());
-		slider.setSelection(newValue);
-		slider.redraw();
-	}
-
-	@Override
 	public Point computeDefaultSize() {
 		int width;
 		int height;
@@ -305,5 +127,37 @@ public class DefaultSliderRenderer extends SliderRenderer {
 	@Override
 	public void setDrawTrack(boolean drawTrack) {
 		this.drawTrack = drawTrack;
+	}
+
+	@Override
+	public Rectangle getThumbRectangle() {
+		return this.thumbRectangle;
+	}
+
+	@Override
+	public Rectangle getTrackRectangle() {
+		return this.trackRectangle;
+	}
+
+	@Override
+	public void setDragging(boolean dragging) {
+		this.isDragging = dragging;
+
+	}
+
+	@Override
+	public void setHovered(boolean thumbHovered) {
+		this.thumbHovered = thumbHovered;
+
+	}
+
+	@Override
+	public boolean getDragging() {
+		return isDragging;
+	}
+
+	@Override
+	public boolean getHovered() {
+		return thumbHovered;
 	}
 }
