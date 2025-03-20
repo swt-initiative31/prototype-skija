@@ -19,12 +19,6 @@ import org.eclipse.swt.graphics.*;
 
 public class DefaultRadioButtonRenderer extends ButtonRenderer {
 
-	private static final Color HOVER_COLOR = new Color(224, 238, 254);
-	private static final Color SELECTION_COLOR = new Color(0, 95, 184);
-	private static final Color TEXT_COLOR = new Color(0, 0, 0);
-	private static final Color DISABLED_COLOR = new Color(160, 160, 160);
-	private static final Color BORDER_DISABLED_COLOR = new Color(192, 192, 192);
-
 	/**
 	 * Left and right margins
 	 */
@@ -134,7 +128,7 @@ public class DefaultRadioButtonRenderer extends ButtonRenderer {
 
 		// Draw text
 		if (text != null && !text.isEmpty()) {
-			gc.setForeground(isEnabled() ? TEXT_COLOR : DISABLED_COLOR);
+			gc.setForeground(getColor(isEnabled() ? COLOR_FOREGROUND : COLOR_DISABLED));
 			int textTopOffset = (height - 1 - textHeight) / 2;
 			int textLeftOffset = contentArea.x + imageSpace;
 			gc.drawText(text, textLeftOffset, textTopOffset, DRAW_FLAGS);
@@ -149,19 +143,22 @@ public class DefaultRadioButtonRenderer extends ButtonRenderer {
 
 	private void drawRadioButton(GC gc, int x, int y) {
 		if (isSelected()) {
-			gc.setBackground(isEnabled() ? SELECTION_COLOR : DISABLED_COLOR);
+			gc.setBackground(getColor(isEnabled() ? COLOR_SELECTION : COLOR_DISABLED));
 			int partialBoxBorder = 2;
 			gc.fillOval(x + partialBoxBorder, y + partialBoxBorder,
 					BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1);
 		}
 
 		if (!isEnabled()) {
-			gc.setForeground(BORDER_DISABLED_COLOR);
-		} else if (isHover()) {
-			gc.setBackground(HOVER_COLOR);
-			int partialBoxBorder = isSelected() ? 4 : 0;
-			gc.fillOval(x + partialBoxBorder, y + partialBoxBorder,
-					BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1);
+			gc.setForeground(getColor(COLOR_BOX_DISABLED));
+		} else {
+			gc.setForeground(getColor(COLOR_BOX));
+			if (isHover()) {
+				gc.setBackground(getColor(COLOR_HOVER));
+				int partialBoxBorder = isSelected() ? 4 : 0;
+				gc.fillOval(x + partialBoxBorder, y + partialBoxBorder,
+						BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1);
+			}
 		}
 		gc.drawOval(x, y, BOX_SIZE, BOX_SIZE);
 	}

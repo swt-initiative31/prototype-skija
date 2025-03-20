@@ -19,15 +19,6 @@ import org.eclipse.swt.graphics.*;
 
 public class DefaultButtonRenderer extends ButtonRenderer {
 
-	private static final Color HOVER_COLOR = new Color(224, 238, 254);
-	private static final Color TOGGLE_COLOR = new Color(204, 228, 247);
-	private static final Color SELECTION_COLOR = new Color(0, 95, 184);
-	private static final Color TEXT_COLOR = new Color(0, 0, 0);
-	private static final Color DISABLED_COLOR = new Color(160, 160, 160);
-	private static final Color BORDER_COLOR = new Color(160, 160, 160);
-	private static final Color BORDER_DISABLED_COLOR = new Color(192, 192, 192);
-	private static final Color PUSH_BACKGROUND_COLOR = new Color(255, 255, 255);
-
 	/**
 	 * Left and right margins
 	 */
@@ -140,7 +131,7 @@ public class DefaultButtonRenderer extends ButtonRenderer {
 
 		// Draw text
 		if (text != null && !text.isEmpty()) {
-			gc.setForeground(isEnabled() ? TEXT_COLOR : DISABLED_COLOR);
+			gc.setForeground(getColor(isEnabled() ? COLOR_FOREGROUND : COLOR_DISABLED));
 			int textTopOffset = (height - 1 - textHeight) / 2;
 			int textLeftOffset = contentArea.x + imageSpace;
 			if (shiftDownRight) {
@@ -158,32 +149,36 @@ public class DefaultButtonRenderer extends ButtonRenderer {
 	private void drawPushButton(GC gc, int w, int h) {
 		final boolean isToggle = (getStyle() & SWT.TOGGLE) != 0;
 		if (isEnabled()) {
+			final String key;
 			if (isToggle && isSelected()) {
-				gc.setBackground(TOGGLE_COLOR);
+				key = COLOR_TOGGLE;
 			} else if (isPressed()) {
-				gc.setBackground(TOGGLE_COLOR);
+				key = COLOR_TOGGLE;
 			} else if (isHover()) {
-				gc.setBackground(HOVER_COLOR);
+				key = COLOR_HOVER;
 			} else {
-				gc.setBackground(PUSH_BACKGROUND_COLOR);
+				key = COLOR_PUSH;
 			}
+			gc.setBackground(getColor(key));
 			gc.fillRoundRectangle(0, 0, w, h, 6, 6);
 		}
 
+		final String key;
 		if (isEnabled()) {
-			if (isToggle && isSelected() || isHover()) {
-				gc.setForeground(SELECTION_COLOR);
-			} else {
-				gc.setForeground(BORDER_COLOR);
-			}
+			key = isToggle && isSelected() || isHover()
+					? COLOR_SELECTION
+					: COLOR_OUTLINE;
 		} else {
-			gc.setForeground(BORDER_DISABLED_COLOR);
+			key = COLOR_OUTLINE_DISABLED;
 		}
+		Color fg = getColor(key);
 
 		// if the button has focus, the border also changes the color
-		Color fg = gc.getForeground();
 		if (hasFocus()) {
-			gc.setForeground(SELECTION_COLOR);
+			gc.setForeground(getColor(COLOR_SELECTION));
+		}
+		else {
+			gc.setForeground(fg);
 		}
 		gc.drawRoundRectangle(0, 0, w - 1, h - 1, 6, 6);
 		gc.setForeground(fg);
