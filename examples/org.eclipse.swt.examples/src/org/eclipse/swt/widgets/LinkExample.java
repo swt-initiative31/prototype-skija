@@ -45,16 +45,10 @@ public class LinkExample {
 		String labelText = "Link clicked: ";
 
 		Link link = new Link(composite, SWT.NONE);
-		String lkText = "The SWT component is designed to provide <a href=\"efficientData\"> efficient</a>, <a>portable</a> <a href=\"native\">access to the user-interface \n facilities of the operating systems</a> on which it is implemented.";
-		link.setText(lkText);
+		link.setText("The SWT component is designed to provide <a href=\"efficientData\"> efficient </a>, <a>portable</a> <a href=\"native\">access to the user-interface \n facilities of the operating systems</a> on which it is implemented.");
 		link.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		link.setBackground(colorWhite);
-		link.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				label.setText(labelText + e.text);
-			}
-		});
+		link.addListener(SWT.Selection, e -> label.setText(labelText + e.text));
 
 		label = new Label(composite, SWT.NONE);
 		label.setText(labelText);
@@ -70,5 +64,4 @@ public class LinkExample {
 		colorWhite.dispose();
 		display.dispose();
 	}
-
 }
