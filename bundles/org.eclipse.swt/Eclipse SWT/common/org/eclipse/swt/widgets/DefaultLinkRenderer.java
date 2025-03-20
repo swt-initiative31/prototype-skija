@@ -55,7 +55,7 @@ public class DefaultLinkRenderer extends LinkRenderer {
 			}
 			if (link.getAlignment() == SWT.RIGHT) {
 				int lineWidth = getLineExtent(gc, segments).x;
-				lineX = Math.max(x, 0 + width - link.getRightMargin() - lineWidth);
+				lineX = Math.max(x, width - link.getRightMargin() - lineWidth);
 			}
 
 			Point baseExtent = gc.textExtent("a", DRAW_FLAGS);
