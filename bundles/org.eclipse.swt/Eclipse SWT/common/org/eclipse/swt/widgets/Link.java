@@ -385,12 +385,8 @@ public class Link extends CustomControl {
 	 */
 	public void setText(String text) {
 		checkWidget();
-		if (text == null) {
-			error(SWT.ERROR_NULL_ARGUMENT);
-		}
-
-		if (this.text.equals(text))
-			return;
+		if (text == null) error(SWT.ERROR_NULL_ARGUMENT);
+		if (this.text.equals(text)) return;
 
 		this.text = text;
 
