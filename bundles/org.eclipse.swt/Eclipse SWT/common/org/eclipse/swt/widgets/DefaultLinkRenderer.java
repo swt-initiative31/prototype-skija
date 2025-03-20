@@ -68,13 +68,13 @@ public class DefaultLinkRenderer extends LinkRenderer {
 				}
 
 				if (isEnabled()) {
-					gc.setForeground(segment.isLink ? linkColor : link.getForeground());
+					gc.setForeground(segment.isLink() ? linkColor : link.getForeground());
 				} else {
 					gc.setForeground(gc.getDevice().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
 				}
 				gc.drawText(segment.text, lineX, lineY, DRAW_FLAGS);
 
-				if (segment.isLink) {
+				if (segment.isLink()) {
 					int underlineY = lineY + extent.y - 2;
 					gc.drawLine(lineX, underlineY, lineX + extent.x, underlineY);
 					// remember bounds of links

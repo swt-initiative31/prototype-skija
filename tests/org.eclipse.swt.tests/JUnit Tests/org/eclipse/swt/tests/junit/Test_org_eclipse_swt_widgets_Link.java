@@ -210,15 +210,15 @@ public void testparseLinkText() {
 	int numberOfLines = expDisplayText.split("\n", -1).length;
 	assertEquals("Incorrect number of segments: ", numberOfLines, parsedText.size());
 
-	assertTrue("First line second segment must be a link: ", parsedText.get(0).get(1).isLink);
+	assertTrue("First line second segment must be a link: ", parsedText.get(0).get(1).isLink());
 	assertEquals("First line incorrect link display text: ", "click here", parsedText.get(0).get(1).text);
 	assertEquals("First line incorrect link data: ", "targetLink", parsedText.get(0).get(1).linkData);
 
-	assertTrue("Fifth line second segment must be a link: ", parsedText.get(4).get(1).isLink);
+	assertTrue("Fifth line second segment must be a link: ", parsedText.get(4).get(1).isLink());
 	assertEquals("Fifth line incorrect link display text: ", "targetline1", parsedText.get(4).get(1).text);
 	assertEquals("Fifth line incorrect link data: ", "targetLink1", parsedText.get(4).get(1).linkData);
 
-	assertTrue("Seventh line first segment must be a link: ", parsedText.get(6).get(0).isLink);
+	assertTrue("Seventh line first segment must be a link: ", parsedText.get(6).get(0).isLink());
 	assertEquals("Seventh line incorrect link display text: ", "targetline2", parsedText.get(6).get(0).text);
 	assertEquals("Seventh line incorrect link data: ", "targetLink1", parsedText.get(6).get(0).linkData);
 }

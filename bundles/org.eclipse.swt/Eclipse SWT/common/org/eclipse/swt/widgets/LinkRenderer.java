@@ -22,19 +22,22 @@ import org.eclipse.swt.graphics.*;
 public abstract class LinkRenderer extends ControlRenderer {
 	protected static final int DRAW_FLAGS = SWT.DRAW_MNEMONIC | SWT.DRAW_TAB | SWT.DRAW_TRANSPARENT
 			| SWT.DRAW_DELIMITER;
+
 	protected final List<List<TextSegment>> parsedText = new ArrayList<>();
 	protected Link link;
 
 	public static class TextSegment {
-		public String text, linkData;
-		Rectangle rect;
-		public boolean isLink;
+		public final String text;
+		public final String linkData;
+		public Rectangle rect;
 
-		TextSegment(String text, boolean isLink, String linkData, Rectangle rect) {
+		private TextSegment(String text, String linkData) {
 			this.text = text;
-			this.isLink = isLink;
 			this.linkData = linkData;
-			this.rect = rect;
+		}
+
+		public boolean isLink() {
+			return linkData != null;
 		}
 	}
 
@@ -64,7 +67,7 @@ public abstract class LinkRenderer extends ControlRenderer {
 
 	        if (c == '<' && text.startsWith("<a", i)) {
 	            if (buffer.length() > 0) {
-	                currentLineSegments.add(new TextSegment(buffer.toString(), false, null, null));
+	                currentLineSegments.add(new TextSegment(buffer.toString(), null));
 	                buffer.setLength(0);
 	            }
 	            inAnchor = true;
@@ -82,7 +85,7 @@ public abstract class LinkRenderer extends ControlRenderer {
 	        }
 
 	        if (inAnchor && text.startsWith("</a>", i)) {
-	            currentLineSegments.add(new TextSegment(linkBuffer.toString(), true, href, null));
+	            currentLineSegments.add(new TextSegment(linkBuffer.toString(), href));
 	            linkBuffer.setLength(0);
 	            inAnchor = false;
 	            i += 3;
@@ -91,11 +94,11 @@ public abstract class LinkRenderer extends ControlRenderer {
 
 	        if (c == '\n') {
 	            if (buffer.length() > 0) {
-	                currentLineSegments.add(new TextSegment(buffer.toString(), false, null, null));
+	                currentLineSegments.add(new TextSegment(buffer.toString(), null));
 	                buffer.setLength(0);
 	            }
 	            if (linkBuffer.length() > 0) {
-	                currentLineSegments.add(new TextSegment(linkBuffer.toString(), true, href, null));
+	                currentLineSegments.add(new TextSegment(linkBuffer.toString(), href));
 	                linkBuffer.setLength(0);
 	            }
 	            parsedText.add(currentLineSegments);
@@ -111,10 +114,10 @@ public abstract class LinkRenderer extends ControlRenderer {
 	    }
 
 	    if (buffer.length() > 0) {
-	        currentLineSegments.add(new TextSegment(buffer.toString(), false, null, null));
+	        currentLineSegments.add(new TextSegment(buffer.toString(), null));
 	    }
 	    if (linkBuffer.length() > 0) {
-	        currentLineSegments.add(new TextSegment(linkBuffer.toString(), true, href, null));
+	        currentLineSegments.add(new TextSegment(linkBuffer.toString(), href));
 	    }
 	    if (!currentLineSegments.isEmpty()) {
 	        parsedText.add(currentLineSegments);
