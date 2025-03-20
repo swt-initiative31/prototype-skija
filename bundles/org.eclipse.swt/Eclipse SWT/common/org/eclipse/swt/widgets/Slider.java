@@ -93,7 +93,7 @@ public class Slider extends CustomControl {
 	private Rectangle trackRectangle;
 	private Rectangle thumbRectangle;
 
-	private SliderRenderer renderer;
+	private final SliderRenderer renderer;
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style value
@@ -216,7 +216,6 @@ public class Slider extends CustomControl {
 		} else if (event.count > 0) {
 			increment(-1);
 		}
-
 	}
 
 	private void increment(int count) {
@@ -259,13 +258,14 @@ public class Slider extends CustomControl {
 	}
 
 	private void onMouseDown(Event event) {
-		if (event.button != 1)
+		if (event.button != 1) {
 			return;
+		}
 
 		// Drag of the thumb.
 		if (thumbRectangle != null && thumbRectangle.contains(event.x, event.y)) {
 			renderer.setDragging(true);
-			dragOffset = (isHorizontal()) ? event.x - thumbRectangle.x : event.y - thumbRectangle.y;
+			dragOffset = isHorizontal() ? event.x - thumbRectangle.x : event.y - thumbRectangle.y;
 			return;
 		}
 
@@ -273,8 +273,8 @@ public class Slider extends CustomControl {
 		if (trackRectangle != null && trackRectangle.contains(event.x, event.y)) {
 			int pageIncrement = getPageIncrement();
 			int oldSelection = getSelection();
-			int newSelection;
 
+			int newSelection;
 			if (isHorizontal()) {
 				if (event.x < thumbRectangle.x) {
 					newSelection = Math.max(getMinimum(), oldSelection - pageIncrement);
@@ -301,7 +301,6 @@ public class Slider extends CustomControl {
 			updateValueFromThumbPosition();
 			redraw();
 		}
-
 	}
 
 	private void updateValueFromThumbPosition() {
@@ -310,19 +309,17 @@ public class Slider extends CustomControl {
 		int thumb = getThumb();
 		int range = max - min;
 
+		int newValue;
 		if (isHorizontal()) {
 			int trackWidth = this.drawWidth - 4 - thumbRectangle.width;
 			int relativeX = Math.min(trackWidth, Math.max(0, thumbPosition - 2));
-			int newValue = min + (relativeX * (range - thumb)) / trackWidth;
-
-			setSelection(newValue);
+			newValue = min + (relativeX * (range - thumb)) / trackWidth;
 		} else {
 			int trackHeight = this.drawHeight - 4 - thumbRectangle.height;
 			int relativeY = Math.min(trackHeight, Math.max(0, thumbPosition - 2));
-			int newValue = min + (relativeY * (range - thumb)) / trackHeight;
-
-			setSelection(newValue);
+			newValue = min + (relativeY * (range - thumb)) / trackHeight;
 		}
+		setSelection(newValue);
 	}
 
 	private void onMouseMove(Event event) {
@@ -443,13 +440,10 @@ public class Slider extends CustomControl {
 	 */
 	public void removeSelectionListener(SelectionListener listener) {
 		checkWidget();
-		if (listener == null) {
-			error(SWT.ERROR_NULL_ARGUMENT);
-		}
-		if (eventTable == null)
-			return;
-		eventTable.unhook(SWT.Selection, listener);
-		eventTable.unhook(SWT.DefaultSelection, listener);
+		if (listener == null) error(SWT.ERROR_NULL_ARGUMENT);
+
+		removeListener(SWT.Selection, listener);
+		removeListener(SWT.DefaultSelection, listener);
 	}
 
 	/**
@@ -467,8 +461,7 @@ public class Slider extends CustomControl {
 	 *                         </ul>
 	 */
 	public int getIncrement() {
-		checkWidget();
-		return this.increment;
+		return increment;
 	}
 
 	/**
@@ -485,8 +478,7 @@ public class Slider extends CustomControl {
 	 *                         </ul>
 	 */
 	public int getMaximum() {
-		checkWidget();
-		return this.maximum;
+		return maximum;
 	}
 
 	/**
@@ -503,8 +495,7 @@ public class Slider extends CustomControl {
 	 *                         </ul>
 	 */
 	public int getMinimum() {
-		checkWidget();
-		return this.minimum;
+		return minimum;
 	}
 
 	/**
@@ -522,8 +513,7 @@ public class Slider extends CustomControl {
 	 *                         </ul>
 	 */
 	public int getPageIncrement() {
-		checkWidget();
-		return this.pageIncrement;
+		return pageIncrement;
 	}
 
 	/**
@@ -540,8 +530,7 @@ public class Slider extends CustomControl {
 	 *                         </ul>
 	 */
 	public int getSelection() {
-		checkWidget();
-		return this.selection;
+		return selection;
 	}
 
 	/**
@@ -558,8 +547,7 @@ public class Slider extends CustomControl {
 	 *                         </ul>
 	 */
 	public int getThumb() {
-		checkWidget();
-		return this.thumb;
+		return thumb;
 	}
 
 	/**
@@ -581,7 +569,6 @@ public class Slider extends CustomControl {
 		checkWidget();
 		this.increment = Math.max(1, increment);
 		redraw();
-
 	}
 
 	/**
@@ -605,18 +592,16 @@ public class Slider extends CustomControl {
 	}
 
 	private void setMaximum(int max, boolean redraw) {
-		int min = getMinimum();
-
-		if (max <= min) {
+		if (max <= minimum) {
 			return;
 		}
 
 		this.maximum = max;
 
-		this.thumb = Math.min(this.thumb, this.maximum - min);
+		this.thumb = Math.min(this.thumb, this.maximum - minimum);
 
 		this.selection = Math.min(this.selection, this.maximum - this.thumb);
-		this.selection = Math.max(this.selection, min);
+		this.selection = Math.max(this.selection, minimum);
 		if (redraw) {
 			redraw();
 		}
@@ -658,7 +643,7 @@ public class Slider extends CustomControl {
 			return true;
 		}
 
-		if (minimum <= (this.maximum - this.thumb) && minimum >= this.selection) {
+		if (minimum <= this.maximum - this.thumb && minimum >= this.selection) {
 			this.minimum = minimum;
 			this.selection = minimum;
 			return true;
@@ -669,7 +654,7 @@ public class Slider extends CustomControl {
 			return true;
 		}
 
-		if (minimum > (this.maximum - this.thumb) && minimum >= this.selection) {
+		if (minimum > this.maximum - this.thumb && minimum >= this.selection) {
 			this.minimum = minimum;
 			this.selection = minimum;
 			this.thumb = this.maximum - this.minimum;

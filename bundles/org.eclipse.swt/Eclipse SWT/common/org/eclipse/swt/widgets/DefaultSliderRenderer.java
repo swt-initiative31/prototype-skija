@@ -44,8 +44,8 @@ public class DefaultSliderRenderer extends SliderRenderer {
 		int range = max - min;
 
 		// Fill background
-		if (slider.getBackground() != null) {
-			Color background = slider.getBackground();
+		Color background = slider.getBackground();
+		if (background != null) {
 			gc.setBackground(background);
 			gc.fillRectangle(0, 0, width, height);
 		}
@@ -131,12 +131,12 @@ public class DefaultSliderRenderer extends SliderRenderer {
 
 	@Override
 	public Rectangle getThumbRectangle() {
-		return this.thumbRectangle;
+		return thumbRectangle;
 	}
 
 	@Override
 	public Rectangle getTrackRectangle() {
-		return this.trackRectangle;
+		return trackRectangle;
 	}
 
 	@Override

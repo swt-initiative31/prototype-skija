@@ -17,7 +17,7 @@ import org.eclipse.swt.graphics.*;
 
 public abstract class SliderRenderer extends ControlRenderer {
 
-	protected Slider slider;
+	protected final Slider slider;
 
 	protected SliderRenderer(Slider slider) {
 		super(slider);
