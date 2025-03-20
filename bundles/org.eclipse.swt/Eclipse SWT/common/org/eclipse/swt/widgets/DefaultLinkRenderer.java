@@ -58,14 +58,8 @@ public class DefaultLinkRenderer extends LinkRenderer {
 				lineX = Math.max(x, width - link.getRightMargin() - lineWidth);
 			}
 
-			Point baseExtent = gc.textExtent("a", DRAW_FLAGS);
-
 			for (TextSegment segment : segments) {
 				Point extent = gc.textExtent(segment.text, DRAW_FLAGS);
-				int noOfTrailSpaces = countTrailingSpaces(segment.text);
-				if (noOfTrailSpaces > 0) {
-					extent.x = extent.x + noOfTrailSpaces * baseExtent.x;
-				}
 
 				if (isEnabled()) {
 					gc.setForeground(segment.isLink() ? linkColor : link.getForeground());
@@ -128,14 +122,6 @@ public class DefaultLinkRenderer extends LinkRenderer {
 			sb.append(textSegment.text);
 		}
 		return gc.textExtent(sb.toString(), DRAW_FLAGS);
-	}
-
-	private int countTrailingSpaces(String text) {
-		int count = 0;
-		for (int i = text.length() - 1; i >= 0 && text.charAt(i) == ' '; i--) {
-			count++;
-		}
-		return count;
 	}
 
 	@Override
