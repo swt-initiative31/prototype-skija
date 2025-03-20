@@ -333,8 +333,11 @@ public class Link extends CustomControl {
 	}
 
 	private void onPaint(Event event) {
-		Rectangle drawArea = getBounds();
-		Drawing.drawWithGC(this, event.gc, gc -> renderer.paint(gc, drawArea.width, drawArea.height));
+		final Point size = getSize();
+		if (size.x == 0 || size.y == 0) {
+			return;
+		}
+		Drawing.drawWithGC(this, event.gc, gc -> renderer.paint(gc, size.x, size.y));
 		links = renderer.getLinks();
 	}
 

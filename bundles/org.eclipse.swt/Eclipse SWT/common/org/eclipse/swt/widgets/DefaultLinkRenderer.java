@@ -29,9 +29,6 @@ public class DefaultLinkRenderer extends LinkRenderer {
 
 	@Override
 	protected void paint(GC gc, int width, int height) {
-		if (width == 0 || height == 0) {
-			return;
-		}
 		if (link.getText().isEmpty() || parsedText.isEmpty()) {
 			return;
 		}
