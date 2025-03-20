@@ -68,7 +68,7 @@ public class Link extends CustomControl {
 	private String displayText = "";
 
 	private Color linkColor;
-	private LinkRenderer renderer;
+	private final LinkRenderer renderer;
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style value
