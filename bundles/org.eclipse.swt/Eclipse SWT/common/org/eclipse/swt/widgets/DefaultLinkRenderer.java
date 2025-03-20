@@ -169,4 +169,13 @@ public class DefaultLinkRenderer extends LinkRenderer {
 		return new Point(width, height);
 	}
 
+	@Override
+	public boolean isOverLink(int x, int y) {
+		for (TextSegment link : links) {
+			if (link.rect.contains(x, y)) {
+				return true;
+			}
+		}
+		return false;
+	}
 }

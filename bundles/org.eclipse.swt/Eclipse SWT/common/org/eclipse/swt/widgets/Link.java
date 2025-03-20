@@ -64,7 +64,6 @@ public class Link extends CustomControl {
 	private boolean ignoreDispose;
 
 	private Set<TextSegment> links;;
-	private TextSegment prevHoverLink;
 	private String displayText = "";
 
 	private Color linkColor;
@@ -314,22 +313,12 @@ public class Link extends CustomControl {
 			return;
 		}
 
-		int x = event.x;
-		int y = event.y;
-
-		if (prevHoverLink != null && prevHoverLink.rect.contains(x, y)) {
+		if (renderer.isOverLink(event.x, event.y)) {
 			setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
-			return;
 		}
-
-		for (TextSegment link : links) {
-			if (link.rect.contains(x, y)) {
-				setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
-				prevHoverLink = link;
-				return;
-			}
+		else {
+			setCursor(null);
 		}
-		setCursor(null);
 	}
 
 	private void onPaint(Event event) {

@@ -20,6 +20,8 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 
 public abstract class LinkRenderer extends ControlRenderer {
+	public abstract boolean isOverLink(int x, int y);
+
 	protected static final int DRAW_FLAGS = SWT.DRAW_MNEMONIC | SWT.DRAW_TAB | SWT.DRAW_TRANSPARENT
 			| SWT.DRAW_DELIMITER;
 
