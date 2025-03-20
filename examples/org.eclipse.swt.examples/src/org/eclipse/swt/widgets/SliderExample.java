@@ -63,12 +63,7 @@ public class SliderExample {
 		value.setText(string);
 		value.setLayoutData(gd);
 
-		horSlider.addListener(SWT.Selection, new Listener() {
-			@Override
-			public void handleEvent(Event event) {
-				value.setText(string + horSlider.getSelection());
-			}
-		});
+		horSlider.addListener(SWT.Selection, event -> value.setText(string + horSlider.getSelection()));
 
 		Composite vertiSlidComp = new Composite(shell, SWT.BORDER);
 		vertiSlidComp.setLayout(shellLayout);
@@ -85,18 +80,13 @@ public class SliderExample {
 		vertiSlider.setPageIncrement(pageIncrement);
 		vertiSlider.setThumb(thumb);
 		vertiSlider.setSelection(selection);
-		vertiSlider.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		vertiSlider.setLayoutData(new GridData(SWT.CENTER, SWT.FILL, true, true));
 
 		Label custSlidValue = new Label(vertiSlidComp, SWT.NONE);
 		custSlidValue.setText(string);
 		custSlidValue.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 
-		vertiSlider.addListener(SWT.Selection, new Listener() {
-			@Override
-			public void handleEvent(Event event) {
-				custSlidValue.setText(string + vertiSlider.getSelection());
-			}
-		});
+		vertiSlider.addListener(SWT.Selection, event -> custSlidValue.setText(string + vertiSlider.getSelection()));
 
 		shell.open();
 		while (!shell.isDisposed()) {
