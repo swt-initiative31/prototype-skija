@@ -27,4 +27,6 @@ public interface RendererFactory {
 	ScaleRenderer createScaleRenderer(Scale scale);
 
 	SliderRenderer createSliderRenderer(Slider slider);
+
+	LinkRenderer createLinkRenderer(Link link);
 }

@@ -48,4 +48,9 @@ public class DefaultRendererFactory implements RendererFactory {
 	public SliderRenderer createSliderRenderer(Slider slider) {
 		return new DefaultSliderRenderer(slider);
 	}
+
+	@Override
+	public LinkRenderer createLinkRenderer(Link link) {
+		return new DefaultLinkRenderer(link);
+	}
 }
