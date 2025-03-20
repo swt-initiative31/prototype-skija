@@ -57,42 +57,46 @@ public abstract class LinkRenderer extends ControlRenderer {
 	 *                   which are drawn as hyperlink on Link widget.
 	 */
 	public void parseLinkText(String text) {
+		parsedText.clear();
+
 	    List<TextSegment> currentLineSegments = new ArrayList<>();
 	    StringBuilder buffer = new StringBuilder();
 	    StringBuilder linkBuffer = new StringBuilder();
 	    String href = null;
 	    boolean inAnchor = false;
-	    boolean inHref = false;
 
-	    for (int i = 0; i < text.length(); i++) {
+		for (int i = 0; i < text.length(); i++) {
 	        char c = text.charAt(i);
 
-	        if (c == '<' && text.startsWith("<a", i)) {
-	            if (buffer.length() > 0) {
-	                currentLineSegments.add(new TextSegment(buffer.toString(), null));
-	                buffer.setLength(0);
-	            }
-	            inAnchor = true;
-	            href = null;
-	            int hrefStart = text.indexOf("href=\"", i);
-	            if (hrefStart != -1 && hrefStart < text.indexOf(">", i)) {
-	                int hrefEnd = text.indexOf("\"", hrefStart + 6);
-	                if (hrefEnd != -1) {
-	                    href = text.substring(hrefStart + 6, hrefEnd);
-	                    i = hrefEnd;
-	                }
-	            }
-	            i = text.indexOf(">", i);
-	            continue;
-	        }
+			if (c == '<') {
+				if (text.startsWith("<a", i)) {
+					if (buffer.length() > 0) {
+						currentLineSegments.add(new TextSegment(buffer.toString(), null));
+						buffer.setLength(0);
+					}
+					inAnchor = true;
+					href = null;
+					int hrefStart = text.indexOf("href=\"", i);
+					if (hrefStart != -1 && hrefStart < text.indexOf(">", i)) {
+						int hrefEnd = text.indexOf("\"", hrefStart + 6);
+						if (hrefEnd != -1) {
+							href = text.substring(hrefStart + 6, hrefEnd);
+							i = hrefEnd;
+						}
+					}
+					i = text.indexOf(">", i);
+					continue;
+				}
 
-	        if (inAnchor && text.startsWith("</a>", i)) {
-	            currentLineSegments.add(new TextSegment(linkBuffer.toString(), href));
-	            linkBuffer.setLength(0);
-	            inAnchor = false;
-	            i += 3;
-	            continue;
-	        }
+				if (inAnchor && text.startsWith("</a>", i)) {
+					final String linkText = linkBuffer.toString();
+					currentLineSegments.add(new TextSegment(linkText, href != null ? href : linkText));
+					linkBuffer.setLength(0);
+					inAnchor = false;
+					i += 3;
+					continue;
+				}
+			}
 
 	        if (c == '\n') {
 	            if (buffer.length() > 0) {
@@ -124,11 +128,10 @@ public abstract class LinkRenderer extends ControlRenderer {
 	    if (!currentLineSegments.isEmpty()) {
 	        parsedText.add(currentLineSegments);
 	    }
-
 	}
 
 	/**
-	 * Rettunrs the display text that can be displayed on Link widget.
+	 * Returns the display text that can be displayed on Link widget.
 	 *
 	 * @return displayText The text that is displayed on Link widget.
 	 */
