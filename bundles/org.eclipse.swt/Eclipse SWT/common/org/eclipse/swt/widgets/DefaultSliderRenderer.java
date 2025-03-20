@@ -17,11 +17,12 @@ import org.eclipse.swt.graphics.*;
 
 public class DefaultSliderRenderer extends SliderRenderer {
 	private static final int PREFERRED_WIDTH = 170;
-	private static final int PREFERRED_HEIGHT = 10;
+	private static final int PREFERRED_HEIGHT = 18;
 
-	private static final Color DRAG_COLOR = new Color(204, 204, 204);
-	private static final Color LINE_COLOR = new Color(160, 160, 160);
-	private static final Color TRACK_COLOR = new Color(211, 211, 211, 100);
+	private static final Color TRACK_BACKGROUND = new Color(64, 64, 64, 35);
+	private static final Color TRACK_FOREGROUND = new Color(64, 64, 64, 70);
+	private static final Color THUMB_BACKGROUND = new Color(64, 64, 64, 50);
+	private static final Color THUMB_FOREGROUND = new Color(64, 64, 64, 100);
 	private static final Color THUMB_HOVER_COLOR = new Color(135, 206, 235);
 
 	private boolean drawTrack;
@@ -49,60 +50,60 @@ public class DefaultSliderRenderer extends SliderRenderer {
 			gc.setBackground(background);
 			gc.fillRectangle(0, 0, width, height);
 		}
-		gc.setBackground(LINE_COLOR);
+		gc.setForeground(TRACK_FOREGROUND);
 
 		if (slider.isVertical()) {
-			int trackX = (width - 7) / 2 + 1;
+			int trackX = (width - 7) / 2;
 			int trackY = 2;
 			int trackWidth = 7;
 			int trackHeight = height - 4;
 			trackRectangle = new Rectangle(trackX, trackY, trackWidth, trackHeight);
 
 			int thumbHeight = Math.max(10, (thumb * (height - 4)) / range);
-			int thumbWidth = 7;
+			int thumbWidth = trackWidth;
 
 			int adjustedRange = range - thumb;
 			int thumbY = trackY + ((height - thumbHeight - 4) * (value - min)) / adjustedRange;
 			if (!isDragging) {
 				thumbRectangle = new Rectangle(trackX, thumbY, thumbWidth, thumbHeight);
 			}
-			gc.fillRectangle(0, 0, 1, height);
+			gc.drawLine(0, 0, 0, height);
 		} else {
 			int trackX = 2;
-			int trackY = (height - 7) / 2 + 1;
+			int trackY = (height - 7) / 2;
 			int trackWidth = width - 4;
 			int trackHeight = 7;
 			trackRectangle = new Rectangle(trackX, trackY, trackWidth, trackHeight);
 
 			int thumbWidth = Math.max(10, (thumb * (width - 4)) / range);
-			int thumbHeight = 7;
+			int thumbHeight = trackHeight;
 
 			int adjustedRange = range - thumb;
 			int thumbX = trackX + ((width - thumbWidth - 4) * (value - min)) / adjustedRange;
 			if (!isDragging) {
 				thumbRectangle = new Rectangle(thumbX, trackY, thumbWidth, thumbHeight);
 			}
-			gc.fillRectangle(0, 0, width, 1);
+			gc.drawLine(0, 0, width, 0);
 		}
 
 		// Draw the track
 		if (drawTrack) {
-			gc.fillRoundRectangle(trackRectangle.x, trackRectangle.y, trackRectangle.width, trackRectangle.height, 10,
+			gc.setBackground(TRACK_BACKGROUND);
+			gc.drawRoundRectangle(trackRectangle.x, trackRectangle.y, trackRectangle.width, trackRectangle.height, 10,
 					10);
-			gc.setBackground(TRACK_COLOR);
-			gc.fillRoundRectangle(trackRectangle.x + 1, trackRectangle.y + 1, trackRectangle.width - 2, trackRectangle.height - 2, 10,
+			gc.fillRoundRectangle(trackRectangle.x, trackRectangle.y, trackRectangle.width, trackRectangle.height, 10,
 					10);
 		}
 
 		// Draw the thumb
-		gc.setBackground(LINE_COLOR);
-		gc.fillRoundRectangle(thumbRectangle.x, thumbRectangle.y, thumbRectangle.width, thumbRectangle.height, 10, 10);
 		if (thumbHovered || isDragging) {
 			gc.setBackground(THUMB_HOVER_COLOR);
 		} else {
-			gc.setBackground(DRAG_COLOR);
+			gc.setBackground(THUMB_BACKGROUND);
 		}
-		gc.fillRoundRectangle(thumbRectangle.x + 1, thumbRectangle.y + 1, thumbRectangle.width - 2, thumbRectangle.height - 2, 8, 8);
+		gc.setForeground(THUMB_FOREGROUND);
+		gc.drawRoundRectangle(thumbRectangle.x, thumbRectangle.y, thumbRectangle.width, thumbRectangle.height, 10, 10);
+		gc.fillRoundRectangle(thumbRectangle.x, thumbRectangle.y, thumbRectangle.width, thumbRectangle.height, 10, 10);
 	}
 
 	@Override
@@ -142,7 +143,7 @@ public class DefaultSliderRenderer extends SliderRenderer {
 	}
 
 	@Override
-	public void setHovered(boolean thumbHovered) {
+	public void setThumbHovered(boolean thumbHovered) {
 		this.thumbHovered = thumbHovered;
 
 	}

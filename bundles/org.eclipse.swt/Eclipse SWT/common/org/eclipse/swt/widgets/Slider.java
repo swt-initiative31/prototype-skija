@@ -199,6 +199,7 @@ public class Slider extends CustomControl {
 
 	private void onMouseExit() {
 		renderer.setDrawTrack(false);
+		renderer.setThumbHovered(false);
 		redraw();
 	}
 
@@ -329,7 +330,7 @@ public class Slider extends CustomControl {
 
 		boolean isThumbHovered = thumbRectangle.contains(event.x, event.y);
 		if (isThumbHovered != renderer.getHovered()) {
-			renderer.setHovered(isThumbHovered);
+			renderer.setThumbHovered(isThumbHovered);
 			redraw();
 		}
 

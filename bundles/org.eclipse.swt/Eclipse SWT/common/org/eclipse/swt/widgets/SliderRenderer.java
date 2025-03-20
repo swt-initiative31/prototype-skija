@@ -34,7 +34,7 @@ public abstract class SliderRenderer extends ControlRenderer {
 
 	public abstract void setDragging(boolean isDragging);
 
-	public abstract void setHovered(boolean isHovered);
+	public abstract void setThumbHovered(boolean isHovered);
 
 	public abstract boolean getDragging();
 
