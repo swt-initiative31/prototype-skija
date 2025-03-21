@@ -19,7 +19,7 @@ import org.eclipse.swt.internal.*;
 
 public class SkijaFontMetrics extends FontMetricsHandle {
 
-	private io.github.humbleui.skija.FontMetrics metrics;
+	private final io.github.humbleui.skija.FontMetrics metrics;
 
 	SkijaFontMetrics(io.github.humbleui.skija.FontMetrics metrics) {
 		this.metrics = metrics;
@@ -28,27 +28,27 @@ public class SkijaFontMetrics extends FontMetricsHandle {
 	@Override
 	public int getAscent() {
 		// in skija, these are negative usually.
-		return Math.abs((int) this.metrics.getAscent());
+		return Math.abs(Math.round(DPIUtil.autoScaleDown(metrics.getAscent())));
 	}
 
 	@Override
 	public int getDescent() {
-		return (int) this.metrics.getDescent();
+		return Math.round(DPIUtil.autoScaleDown(metrics.getDescent()));
 	}
 
 	@Override
 	public int getHeight() {
-		return (int) this.metrics.getHeight();
+		return Math.round(DPIUtil.autoScaleDown(metrics.getHeight()));
 	}
 
 	@Override
 	public int getLeading() {
-		return (int) this.metrics.getLeading();
+		return Math.round(DPIUtil.autoScaleDown(metrics.getLeading()));
 	}
 
 	@Override
 	public int getAverageCharWidth() {
-		return (int) this.metrics.getAvgCharWidth();
+		return Math.round(DPIUtil.autoScaleDown(metrics.getAvgCharWidth()));
 	}
 
 	@Override
@@ -58,20 +58,21 @@ public class SkijaFontMetrics extends FontMetricsHandle {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (obj == null) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
+		}
 		SkijaFontMetrics other = (SkijaFontMetrics) obj;
 		return Objects.equals(metrics, other.metrics);
 	}
 
 	@Override
 	public double getAverageCharacterWidth() {
-		return this.metrics.getAvgCharWidth();
-
+		return metrics.getAvgCharWidth();
 	}
-
 }
