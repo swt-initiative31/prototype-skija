@@ -45,8 +45,8 @@ public class DefaultCheckboxRenderer extends ButtonRenderer {
 	}
 
 	public Point computeDefaultSize() {
-		final String text = getText();
-		final Image image = getImage();
+		final String text = state.getText();
+		final Image image = state.getImage();
 
 		int textWidth = 0;
 		int textHeight = 0;
@@ -79,8 +79,8 @@ public class DefaultCheckboxRenderer extends ButtonRenderer {
 	@Override
 	protected void paint(GC gc, int width, int height) {
 		final int style = getStyle();
-		final String text = getText();
-		final Image image = getImage();
+		final String text = state.getText();
+		final Image image = state.getImageForDrawing();
 
 		boolean isRightAligned = (style & SWT.RIGHT) != 0;
 		boolean isCentered = (style & SWT.CENTER) != 0;
@@ -130,7 +130,7 @@ public class DefaultCheckboxRenderer extends ButtonRenderer {
 		if (image != null) {
 			int imageTopOffset = (height - imageHeight) / 2;
 			int imageLeftOffset = contentArea.x;
-			drawImage(gc, imageLeftOffset, imageTopOffset);
+			gc.drawImage(image, imageLeftOffset, imageTopOffset);
 		}
 
 		// Draw text
@@ -149,9 +149,9 @@ public class DefaultCheckboxRenderer extends ButtonRenderer {
 	}
 
 	private void drawCheckbox(GC gc, int x, int y) {
-		if (isSelected()) {
+		if (state.isSelected()) {
 			gc.setBackground(isEnabled()
-					? isGrayed() ? CHECKBOX_GRAYED_COLOR : SELECTION_COLOR
+					? state.isGrayed() ? CHECKBOX_GRAYED_COLOR : SELECTION_COLOR
 					: DISABLED_COLOR);
 			int partialBoxBorder = 2;
 			gc.fillRoundRectangle(x + partialBoxBorder, y + partialBoxBorder,
@@ -162,9 +162,9 @@ public class DefaultCheckboxRenderer extends ButtonRenderer {
 
 		if (!isEnabled()) {
 			gc.setForeground(BORDER_DISABLED_COLOR);
-		} else if (isHover()) {
+		} else if (state.isHover()) {
 			gc.setBackground(HOVER_COLOR);
-			int partialBoxBorder = isSelected() ? 4 : 0;
+			int partialBoxBorder = state.isSelected() ? 4 : 0;
 			gc.fillRoundRectangle(x + partialBoxBorder, y + partialBoxBorder,
 					BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1,
 					BOX_SIZE / 4 - partialBoxBorder / 2,

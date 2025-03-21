@@ -53,6 +53,7 @@ import org.eclipse.swt.graphics.*;
 public class Label extends CustomControl {
 
 	private final LabelRenderer renderer;
+	private final LabelState labelState;
 
 	private boolean ignoreDispose;
 
@@ -98,6 +99,9 @@ public class Label extends CustomControl {
 		if ((style & (SWT.CENTER | SWT.RIGHT)) == 0) {
 			style |= SWT.LEFT;
 		}
+
+		labelState = new LabelState(this);
+
 		final int align;
 		if ((style & SWT.CENTER) != 0) {
 			align = SWT.CENTER;
@@ -106,11 +110,10 @@ public class Label extends CustomControl {
 		} else {
 			align = SWT.LEFT;
 		}
+		labelState.setAlign(align);
 
 		final RendererFactory rendererFactory = parent.getDisplay().getRendererFactory();
 		renderer = rendererFactory.createLabelRenderer(this);
-		renderer.setAlign(align);
-		renderer.setForeground(getForeground());
 
 		final Listener listener = event -> {
 			switch (event.type) {
@@ -128,6 +131,11 @@ public class Label extends CustomControl {
 		addListener(SWT.Dispose, listener);
 
 		initAccessible();
+	}
+
+	@Override
+	protected LabelState getControlState() {
+		return labelState;
 	}
 
 	/**
@@ -194,7 +202,7 @@ public class Label extends CustomControl {
 		 * the widget.
 		 */
 		// checkWidget();
-		return renderer.getAlign();
+		return labelState.getAlign();
 	}
 
 	/**
@@ -211,7 +219,7 @@ public class Label extends CustomControl {
 		 * the widget.
 		 */
 		// checkWidget();
-		return renderer.getBottomMargin();
+		return labelState.getBottomMargin();
 	}
 
 	/**
@@ -226,7 +234,7 @@ public class Label extends CustomControl {
 		 * the widget.
 		 */
 		// checkWidget();
-		return renderer.getImage();
+		return labelState.getImage();
 	}
 
 	/**
@@ -243,7 +251,7 @@ public class Label extends CustomControl {
 		 * the widget.
 		 */
 		// checkWidget();
-		return renderer.getLeftMargin();
+		return labelState.getLeftMargin();
 	}
 
 	/**
@@ -260,13 +268,13 @@ public class Label extends CustomControl {
 		 * the widget.
 		 */
 		// checkWidget();
-		return renderer.getRightMargin();
+		return labelState.getRightMargin();
 	}
 
 	@Override
 	public int getStyle() {
 		int style = super.getStyle();
-		switch (renderer.getAlign()) {
+		switch (labelState.getAlign()) {
 		case SWT.RIGHT -> style |= SWT.RIGHT;
 		case SWT.CENTER -> style |= SWT.CENTER;
 		case SWT.LEFT -> style |= SWT.LEFT;
@@ -286,7 +294,7 @@ public class Label extends CustomControl {
 		 * the widget.
 		 */
 		// checkWidget();
-		final String text = renderer.getText();
+		final String text = labelState.getText();
 		return text != null ? text : "";
 	}
 
@@ -310,7 +318,7 @@ public class Label extends CustomControl {
 		 * the widget.
 		 */
 		// checkWidget();
-		return renderer.getTopMargin();
+		return labelState.getTopMargin();
 	}
 
 	private void initAccessible() {
@@ -328,7 +336,7 @@ public class Label extends CustomControl {
 
 			@Override
 			public void getKeyboardShortcut(AccessibleEvent e) {
-				char mnemonic = _findMnemonic(renderer.getText());
+				char mnemonic = _findMnemonic(labelState.getText());
 				if (mnemonic != '\0') {
 					e.result = "Alt+" + mnemonic; //$NON-NLS-1$
 				}
@@ -379,10 +387,11 @@ public class Label extends CustomControl {
 		event.type = SWT.NONE;
 
 		renderer.dispose();
+		labelState.dispose();
 	}
 
 	private void onMnemonic(Event event) {
-		char mnemonic = _findMnemonic(renderer.getText());
+		char mnemonic = _findMnemonic(labelState.getText());
 		if (mnemonic == '\0') {
 			return;
 		}
@@ -437,24 +446,29 @@ public class Label extends CustomControl {
 		if (align != SWT.LEFT && align != SWT.RIGHT && align != SWT.CENTER) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
-		if (renderer.getAlign() != align) {
-			renderer.setAlign(align);
-			redraw();
-		}
+		labelState.setAlign(align);
+	}
+
+	@Override
+	public Color getBackground() {
+		return renderer.getBackgroundOrDefault();
 	}
 
 	@Override
 	public void setBackground(Color color) {
 		super.setBackground(color);
-		renderer.setBackground(color);
-		redraw();
+		labelState.setBackground(color);
+	}
+
+	@Override
+	public Color getForeground() {
+		return renderer.getForegroundOrDefault();
 	}
 
 	@Override
 	public void setForeground(Color color) {
 		super.setForeground(color);
-		renderer.setForeground(getForeground());
-		redraw();
+		labelState.setForeground(color);
 	}
 
 	/**
@@ -544,8 +558,7 @@ public class Label extends CustomControl {
 	public void setBackground(Color[] colors, int[] percents,
 			boolean vertical) {
 		checkWidget();
-		renderer.setBackground(colors, percents, vertical);
-		redraw();
+		labelState.setBackground(colors, percents, vertical);
 	}
 
 	/**
@@ -565,12 +578,7 @@ public class Label extends CustomControl {
 	@Override
 	public void setBackgroundImage(Image image) {
 		checkWidget();
-		if (image == renderer.getBackgroundImage()) {
-			return;
-		}
-		renderer.setBackgroundImage(image);
-		redraw();
-
+		labelState.setBackgroundImage(image);
 	}
 
 	/**
@@ -592,11 +600,10 @@ public class Label extends CustomControl {
 	 */
 	public void setBottomMargin(int bottomMargin) {
 		checkWidget();
-		if (renderer.getBottomMargin() == bottomMargin || bottomMargin < 0) {
+		if (bottomMargin < 0) {
 			return;
 		}
-		renderer.setBottomMargin(bottomMargin);
-		redraw();
+		labelState.setBottomMargin(bottomMargin);
 	}
 
 	@Override
@@ -621,10 +628,7 @@ public class Label extends CustomControl {
 	 */
 	public void setImage(Image image) {
 		checkWidget();
-		if (image != renderer.getImage()) {
-			renderer.setImage(image);
-			redraw();
-		}
+		labelState.setImage(image);
 	}
 
 	/**
@@ -646,11 +650,10 @@ public class Label extends CustomControl {
 	 */
 	public void setLeftMargin(int leftMargin) {
 		checkWidget();
-		if (renderer.getLeftMargin() == leftMargin || leftMargin < 0) {
+		if (leftMargin < 0) {
 			return;
 		}
-		renderer.setLeftMargin(leftMargin);
-		redraw();
+		labelState.setLeftMargin(leftMargin);
 	}
 
 	/**
@@ -677,8 +680,7 @@ public class Label extends CustomControl {
 	public void setMargins(int leftMargin, int topMargin, int rightMargin,
 			int bottomMargin) {
 		checkWidget();
-		renderer.setMargins(leftMargin, topMargin, rightMargin, bottomMargin);
-		redraw();
+		labelState.setMargins(leftMargin, topMargin, rightMargin, bottomMargin);
 	}
 
 	/**
@@ -700,12 +702,11 @@ public class Label extends CustomControl {
 	 */
 	public void setRightMargin(int rightMargin) {
 		checkWidget();
-		if (renderer.getRightMargin() == rightMargin || rightMargin < 0) {
+		if (rightMargin < 0) {
 			return;
 		}
 
-		renderer.setRightMargin(rightMargin);
-		redraw();
+		labelState.setRightMargin(rightMargin);
 	}
 
 	/**
@@ -740,10 +741,7 @@ public class Label extends CustomControl {
 		if (text == null) {
 			text = ""; //$NON-NLS-1$
 		}
-		if (!text.equals(renderer.getText())) {
-			renderer.setText(text);
-			redraw();
-		}
+		labelState.setText(text);
 	}
 
 	@Override
@@ -775,11 +773,10 @@ public class Label extends CustomControl {
 	 */
 	public void setTopMargin(int topMargin) {
 		checkWidget();
-		if (renderer.getTopMargin() == topMargin || topMargin < 0) {
+		if (topMargin < 0) {
 			return;
 		}
 
-		renderer.setTopMargin(topMargin);
-		redraw();
+		labelState.setTopMargin(topMargin);
 	}
 }
