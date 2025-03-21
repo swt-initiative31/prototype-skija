@@ -19,25 +19,25 @@ import java.util.List;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import org.eclipse.swt.widgets.ToolBar.*;
 import org.eclipse.swt.widgets.toolbar.ToolBarLayout.*;
 
 /**
  * Default renderer for the ToolBar.
  */
-public class ToolBarRenderer implements IToolBarRenderer {
+public class DefaultToolBarRenderer extends ToolBarRenderer {
 	public static final Color COLOR_SEPARATOR = new Color(Display.getDefault(), 160, 160, 160);
 
 	private final ToolBar bar;
 	private int rowCount = SWT.DEFAULT;
 
-	public ToolBarRenderer(ToolBar toolbar) {
+	public DefaultToolBarRenderer(ToolBar toolbar) {
+		super(toolbar);
 		this.bar = toolbar;
 	}
 
 	@Override
-	public void render(GC gc, Rectangle bounds) {
-		Point size = new Point(bounds.width, bounds.height);
+	public void paint(GC gc, int width, int height) {
+		Point size = new Point(width, height);
 		ToolBarLayout layout = computeLayout(size);
 		rowCount = layout.rows().size();
 
@@ -50,10 +50,10 @@ public class ToolBarRenderer implements IToolBarRenderer {
 			gc.drawLine(0, 0, size.x, 0);
 		}
 
-		for (int i = 0; i < rows.size(); i++) {
-			Row row = rows.get(i);
+		for (Row row : rows) {
 			for (ItemRecord itemRecord : row.items) {
-				bar.getItem(itemRecord.index()).render(gc, itemRecord.bounds());
+				final ToolItem item = bar.getItem(itemRecord.index());
+				item.render(gc, itemRecord.bounds());
 			}
 			if (row.hasRowSeparator) {
 				drawHorizontalSeparator(gc, row);
@@ -72,8 +72,8 @@ public class ToolBarRenderer implements IToolBarRenderer {
 		List<ItemRecord> itemRecords = new ArrayList<>();
 		for (int i = 0; i < bar.getItemCount(); i++) {
 			ToolItem item = bar.getItem(i);
-			Point preferedSize = item.getSize();
-			Rectangle initialBounds = new Rectangle(0, 0, preferedSize.x, preferedSize.y);
+			Point preferredSize = item.getSize();
+			Rectangle initialBounds = new Rectangle(0, 0, preferredSize.x, preferredSize.y);
 			ItemRecord itemRecord = new ItemRecord(i, initialBounds, item.isSeparator());
 			itemRecords.add(itemRecord);
 		}
@@ -86,8 +86,8 @@ public class ToolBarRenderer implements IToolBarRenderer {
 
 
 	@Override
-	public Point computeSize(Point size) {
-		ToolBarLayout layout = computeLayout(size);
+	public Point computeSize(int widthHint, int heightHint) {
+		ToolBarLayout layout = computeLayout(new Point(widthHint, heightHint));
 
 		Point computedSize = layout.size();
 		if (bar.isBorder()) {
@@ -96,12 +96,12 @@ public class ToolBarRenderer implements IToolBarRenderer {
 		}
 
 		Point finalSize = new Point(computedSize.x, computedSize.y);
-		if (size.x > 0) {
-			finalSize.x = size.x;
+		if (widthHint > 0) {
+			finalSize.x = widthHint;
 		}
 
-		if (size.y > 0) {
-			finalSize.y = size.y;
+		if (heightHint > 0) {
+			finalSize.y = heightHint;
 		}
 
 		return finalSize;
@@ -111,8 +111,7 @@ public class ToolBarRenderer implements IToolBarRenderer {
 	@Override
 	public int rowCount() {
 		if (rowCount == SWT.DEFAULT) {
-			Rectangle bounds = bar.getBounds();
-			Point size = new Point(bounds.x, bounds.y);
+			Point size = getSize();
 			rowCount = computeLayout(size).rows().size();
 		}
 		return rowCount;

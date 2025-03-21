@@ -18,7 +18,6 @@ import java.util.List;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.*;
 import org.eclipse.swt.widgets.toolbar.*;
 
 /**
@@ -55,35 +54,6 @@ import org.eclipse.swt.widgets.toolbar.*;
  */
 public class ToolBar extends Composite {
 
-	/**
-	 * Renderer interface for the {@link ToolBar} widget. All renderers have to
-	 * implement this to work with the ToolBar.
-	 */
-	public interface IToolBarRenderer {
-
-		/**
-		 * Renders the handle.
-		 *
-		 * @param gc     GC to render with.
-		 * @param bounds Bounds of the rendering. x and y are always 0.
-		 */
-		void render(GC gc, Rectangle bounds);
-
-		/**
-		 * Computes the size of the rendered ToolBar.
-		 *
-		 * @return The size as {@link Point}
-		 */
-		Point computeSize(Point size);
-
-		/**
-		 * Returns the row count of the rendered widget.
-		 *
-		 * @return The row count.
-		 */
-		int rowCount();
-	}
-
 	/** The {@link ToolItem}s contained in the {@link ToolBar} */
 	private final java.util.List<ToolItem> items = new ArrayList<>();
 
@@ -91,7 +61,7 @@ public class ToolBar extends Composite {
 	public int itemCount;
 
 	/** The renderer used to render to {@link ToolBar}. */
-	private final IToolBarRenderer renderer;
+	private final ToolBarRenderer renderer;
 
 	private final boolean flat;
 	private final boolean wrap;
@@ -148,7 +118,7 @@ public class ToolBar extends Composite {
 		super(parent, checkStyle(style));
 		this.style |= SWT.DOUBLE_BUFFERED;
 
-		renderer = new ToolBarRenderer(this);
+		renderer = new DefaultToolBarRenderer(this);
 
 		Listener listener = event -> {
 			if (isDisposed()) {
@@ -301,12 +271,12 @@ public class ToolBar extends Composite {
 			return;
 		}
 
-		Rectangle bounds = getBounds();
-		if (bounds.width == 0 && bounds.height == 0) {
+		final Point size = getSize();
+		if (size.x == 0 || size.y == 0) {
 			return;
 		}
 
-		Drawing.drawWithGC(this, event.gc, gc -> renderer.render(gc, bounds));
+		Drawing.drawWithGC(this, event.gc, gc -> renderer.paint(gc, size.x, size.y));
 	}
 
 	/**
@@ -351,18 +321,7 @@ public class ToolBar extends Composite {
 	@Override
 	public Point computeSize(int wHint, int hHint, boolean changed) {
 		checkWidget();
-		Point sizeHint = new Point(wHint, hHint);
-		Point size = renderer.computeSize(sizeHint);
-
-		return size;
-	}
-
-	Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-		checkWidget();
-		Point sizeHint = new Point(wHint, hHint);
-		Point size = renderer.computeSize(sizeHint);
-
-		return DPIUtil.autoScaleUp(size);
+		return renderer.computeSize(wHint, hHint);
 	}
 
 	void createItem(ToolItem item, int index) {
