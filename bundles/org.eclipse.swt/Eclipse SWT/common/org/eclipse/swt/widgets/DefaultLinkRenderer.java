@@ -45,6 +45,7 @@ public class DefaultLinkRenderer extends LinkRenderer {
 		int x = link.getLeftMargin();
 		int lineY = link.getTopMargin();
 
+		final int lineHeight = gc.getFontMetrics().getHeight();
 		for (List<TextSegment> segments : parsedText) {
 			int lineX = x;
 			if (link.getAlignment() == SWT.CENTER) {
@@ -78,7 +79,7 @@ public class DefaultLinkRenderer extends LinkRenderer {
 
 				lineX += extent.x;
 			}
-			lineY += gc.getFontMetrics().getHeight();
+			lineY += lineHeight;
 		}
 	}
 
