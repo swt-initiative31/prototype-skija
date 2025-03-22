@@ -19,7 +19,7 @@ import java.util.List;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import org.eclipse.swt.widgets.ToolBar.*;
+import org.eclipse.swt.widgets.CustomToolBar.*;
 import org.eclipse.swt.widgets.toolbar.ToolBarLayout.*;
 
 /**
@@ -28,10 +28,10 @@ import org.eclipse.swt.widgets.toolbar.ToolBarLayout.*;
 public class ToolBarRenderer implements IToolBarRenderer {
 	public static final Color COLOR_SEPARATOR = new Color(Display.getDefault(), 160, 160, 160);
 
-	private final ToolBar bar;
+	private final CustomToolBar bar;
 	private int rowCount = SWT.DEFAULT;
 
-	public ToolBarRenderer(ToolBar toolbar) {
+	public ToolBarRenderer(CustomToolBar toolbar) {
 		this.bar = toolbar;
 	}
 
@@ -71,7 +71,7 @@ public class ToolBarRenderer implements IToolBarRenderer {
 		// Collect all item sizes
 		List<ItemRecord> itemRecords = new ArrayList<>();
 		for (int i = 0; i < bar.getItemCount(); i++) {
-			ToolItem item = bar.getItem(i);
+			CustomToolItem item = bar.getItem(i);
 			Point preferedSize = item.getSize();
 			Rectangle initialBounds = new Rectangle(0, 0, preferedSize.x, preferedSize.y);
 			ItemRecord itemRecord = new ItemRecord(i, initialBounds, item.isSeparator());

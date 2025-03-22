@@ -75,7 +75,7 @@ import org.eclipse.swt.graphics.*;
  *      information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Slider extends CustomControl {
+public class CustomSlider extends CustomControl {
 	private final boolean horizontal;
 
 	private int selection;
@@ -130,7 +130,7 @@ public class Slider extends CustomControl {
 	 * @see Widget#checkSubclass
 	 * @see Widget#getStyle
 	 */
-	public Slider(Composite parent, int style) {
+	public CustomSlider(Composite parent, int style) {
 		super(parent, checkStyle(style));
 		this.style |= SWT.DOUBLE_BUFFERED;
 

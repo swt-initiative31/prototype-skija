@@ -50,7 +50,7 @@ import org.eclipse.swt.graphics.*;
  *      information</a>
  * @see LabelRenderer#shortenText(GC, String, int, int)
  */
-public class Label extends CustomControl {
+public class CustomLabel extends CustomControl {
 
 	private final LabelRenderer renderer;
 
@@ -92,7 +92,7 @@ public class Label extends CustomControl {
 	 * @see SWT#SHADOW_NONE
 	 * @see #getStyle()
 	 */
-	public Label(Composite parent, int style) {
+	public CustomLabel(Composite parent, int style) {
 		super(parent, checkStyle(style));
 		this.style |= SWT.DOUBLE_BUFFERED;
 		if ((style & (SWT.CENTER | SWT.RIGHT)) == 0) {

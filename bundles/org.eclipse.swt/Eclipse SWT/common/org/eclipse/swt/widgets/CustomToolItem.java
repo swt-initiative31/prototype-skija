@@ -41,17 +41,17 @@ import org.eclipse.swt.widgets.toolbar.*;
  *      information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class ToolItem extends Item {
+public class CustomToolItem extends Item {
 	/**
-	 * The renderer interface for the {@link ToolItem}.
+	 * The renderer interface for the {@link CustomToolItem}.
 	 *
-	 * All {@link ToolItem} renderers have to implement this interface to work with
+	 * All {@link CustomToolItem} renderers have to implement this interface to work with
 	 * the ToolItem.
 	 */
 	public interface ToolItemRenderer {
 
 		/**
-		 * Renders the {@link ToolItem}.
+		 * Renders the {@link CustomToolItem}.
 		 *
 		 * @param gc     GC to render with.
 		 * @param bounds Bounds of the rendering. x and y are always 0.
@@ -59,7 +59,7 @@ public class ToolItem extends Item {
 		void render(GC gc, Rectangle bounds);
 
 		/**
-		 * Returns the size of the rendered {@link ToolItem}.
+		 * Returns the size of the rendered {@link CustomToolItem}.
 		 *
 		 * @return The size as a {@link Point}.
 		 */
@@ -67,7 +67,7 @@ public class ToolItem extends Item {
 
 		/**
 		 * Sets the with of the separator. Only relevant for a separator
-		 * {@link ToolItem}.
+		 * {@link CustomToolItem}.
 		 *
 		 * @param width The width in pixel.
 		 */
@@ -76,7 +76,7 @@ public class ToolItem extends Item {
 
 		/**
 		 * Indicates if the given location is on the button area of the
-		 * {@link ToolItem}.
+		 * {@link CustomToolItem}.
 		 *
 		 * @param location The location to check.
 		 * @return true if on the button are, false otherwise.
@@ -86,7 +86,7 @@ public class ToolItem extends Item {
 		}
 
 		/**
-		 * Indicates the popup location if the given location is on the arrow area of the {@link ToolItem}.
+		 * Indicates the popup location if the given location is on the arrow area of the {@link CustomToolItem}.
 		 *
 		 * @param location The location to check.
 		 * @return the popup location (bottom-left corner of the main button), if the specified location is over the arrow, null otherwise.
@@ -97,7 +97,7 @@ public class ToolItem extends Item {
 	}
 
 	/**
-	 * The mouse state of the {@link ToolItem}
+	 * The mouse state of the {@link CustomToolItem}
 	 */
 	public enum MouseState {
 		IDLE, HOVER, DOWN
@@ -105,7 +105,7 @@ public class ToolItem extends Item {
 
 	private final ToolItemRenderer renderer;
 
-	private ToolBar parent;
+	private CustomToolBar parent;
 	private Control control;
 	private String toolTipText;
 	private boolean enabled = true;
@@ -160,7 +160,7 @@ public class ToolItem extends Item {
 	 * @see Widget#checkSubclass
 	 * @see Widget#getStyle
 	 */
-	public ToolItem(ToolBar parent, int style) {
+	public CustomToolItem(CustomToolBar parent, int style) {
 		super(checkParent(parent), checkStyle(style));
 		this.parent = parent;
 		this.renderer = createRenderer();
@@ -211,7 +211,7 @@ public class ToolItem extends Item {
 	 * @see Widget#checkSubclass
 	 * @see Widget#getStyle
 	 */
-	public ToolItem(ToolBar parent, int style, int index) {
+	public CustomToolItem(CustomToolBar parent, int style, int index) {
 		super(checkParent(parent), checkStyle(style));
 		this.parent = parent;
 		this.renderer = createRenderer();
@@ -228,7 +228,7 @@ public class ToolItem extends Item {
 		};
 	}
 
-	private static ToolBar checkParent(ToolBar parent) {
+	private static CustomToolBar checkParent(CustomToolBar parent) {
 		if (parent == null) {
 			throw new IllegalArgumentException();
 		}
@@ -460,7 +460,7 @@ public class ToolItem extends Item {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
-	public ToolBar getParent() {
+	public CustomToolBar getParent() {
 		checkWidget();
 		return parent;
 	}
@@ -530,7 +530,7 @@ public class ToolItem extends Item {
 	}
 
 	/**
-	 * Returns the rendered size of the {@link ToolItem}.
+	 * Returns the rendered size of the {@link CustomToolItem}.
 	 *
 	 * @return The size as {@link Point}.
 	 */
@@ -869,7 +869,7 @@ public class ToolItem extends Item {
 	}
 
 	/**
-	 * Notifies the item that the mouse has moved within the {@link ToolBar}.
+	 * Notifies the item that the mouse has moved within the {@link CustomToolBar}.
 	 *
 	 * @param location The location of the mouse.
 	 * @return true if this changed the state of the item somehow.
@@ -886,7 +886,7 @@ public class ToolItem extends Item {
 	}
 
 	/**
-	 * Notifies the item that the mouse has moved out of the {@link ToolBar}.
+	 * Notifies the item that the mouse has moved out of the {@link CustomToolBar}.
 	 *
 	 * @return true if this changed the state of the item somehow.
 	 */
@@ -895,7 +895,7 @@ public class ToolItem extends Item {
 	}
 
 	/**
-	 * Notifies the item that the mouse was pressed down within the {@link ToolBar}.
+	 * Notifies the item that the mouse was pressed down within the {@link CustomToolBar}.
 	 *
 	 * @param location The location of the mouse.
 	 * @return true if this changed the state of the item somehow.
@@ -931,7 +931,7 @@ public class ToolItem extends Item {
 	}
 
 	/**
-	 * Notifies the item that the mouse was pressed up within the {@link ToolBar}.
+	 * Notifies the item that the mouse was pressed up within the {@link CustomToolBar}.
 	 *
 	 * @param location The location of the mouse.
 	 * @return true if this changed the state of the item somehow.

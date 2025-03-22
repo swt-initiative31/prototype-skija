@@ -14,19 +14,19 @@
 package org.eclipse.swt.widgets;
 
 public interface RendererFactory {
-	ButtonRenderer createCheckboxRenderer(Button button);
+	ButtonRenderer createCheckboxRenderer(CustomButton button);
 
-	ButtonRenderer createRadioButtonRenderer(Button button);
+	ButtonRenderer createRadioButtonRenderer(CustomButton button);
 
-	ButtonRenderer createArrowButtonRenderer(Button button);
+	ButtonRenderer createArrowButtonRenderer(CustomButton button);
 
-	ButtonRenderer createPushToggleButtonRenderer(Button button);
+	ButtonRenderer createPushToggleButtonRenderer(CustomButton button);
 
-	LabelRenderer createLabelRenderer(Label label);
+	LabelRenderer createLabelRenderer(CustomLabel label);
 
-	ScaleRenderer createScaleRenderer(Scale scale);
+	ScaleRenderer createScaleRenderer(CustomScale scale);
 
-	SliderRenderer createSliderRenderer(Slider slider);
+	SliderRenderer createSliderRenderer(CustomSlider slider);
 
-	LinkRenderer createLinkRenderer(Link link);
+	LinkRenderer createLinkRenderer(CustomLink link);
 }
