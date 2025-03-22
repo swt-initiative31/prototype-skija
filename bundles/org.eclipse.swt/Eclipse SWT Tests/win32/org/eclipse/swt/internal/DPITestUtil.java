@@ -22,7 +22,7 @@ public final class DPITestUtil {
 
 	public static void changeDPIZoom (Shell shell, int nativeZoom) {
 		DPIUtil.setDeviceZoom(nativeZoom);
-		float scalingFactor = 1f * DPIUtil.getZoomForAutoscaleProperty(nativeZoom) / DPIUtil.getZoomForAutoscaleProperty(shell.nativeZoom);
+		float scalingFactor = 1f * DPIUtil.getZoomForAutoscaleProperty(nativeZoom) / DPIUtil.getZoomForAutoscaleProperty(Widget.checkNative(shell).nativeZoom);
 		DPIZoomChangeRegistry.applyChange(shell, nativeZoom, scalingFactor);
 	}
 

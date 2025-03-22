@@ -106,7 +106,7 @@ public class TableDropTargetEffect extends DropTargetEffect {
 	@Override
 	public void dragLeave(DropTargetEvent event) {
 		Table table = (Table) control;
-		long handle = table.handle;
+		long handle = Widget.checkNative(table).handle;
 		GTK.gtk_tree_view_set_drag_dest_row(handle, 0, GTK.GTK_TREE_VIEW_DROP_BEFORE);
 
 		scrollBeginTime = 0;
@@ -133,7 +133,7 @@ public class TableDropTargetEffect extends DropTargetEffect {
 	@Override
 	public void dragOver(DropTargetEvent event) {
 		Table table = (Table) control;
-		long handle = table.handle;
+		long handle = Widget.checkNative(table).handle;
 		int effect = checkEffect(event.feedback);
 		Point coordinates = new Point(event.x, event.y);
 		coordinates = DPIUtil.autoScaleUp(table.toControl(coordinates));

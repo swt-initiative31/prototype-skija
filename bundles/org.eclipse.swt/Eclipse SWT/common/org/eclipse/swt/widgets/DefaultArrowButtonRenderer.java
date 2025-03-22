@@ -22,7 +22,7 @@ public class DefaultArrowButtonRenderer extends ButtonRenderer {
 	private static final Color DISABLED_COLOR = new Color(160, 160, 160);
 	private static final Color TEXT_COLOR = new Color(0, 0, 0);
 
-	public DefaultArrowButtonRenderer(Button button) {
+	public DefaultArrowButtonRenderer(CustomButton button) {
 		super(button);
 	}
 

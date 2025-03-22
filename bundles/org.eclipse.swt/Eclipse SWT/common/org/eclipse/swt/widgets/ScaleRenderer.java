@@ -54,9 +54,9 @@ public abstract class ScaleRenderer extends ControlRenderer {
 	 */
 	public abstract boolean isBeforeHandle(Point position);
 
-	private final Scale scale;
+	private final CustomScale scale;
 
-	protected ScaleRenderer(Scale scale) {
+	protected ScaleRenderer(CustomScale scale) {
 		super(scale);
 		this.scale = scale;
 	}
@@ -81,7 +81,7 @@ public abstract class ScaleRenderer extends ControlRenderer {
 		return scale.isHorizontal();
 	}
 
-	protected Scale.HandleState getHandleState() {
+	protected CustomScale.HandleState getHandleState() {
 		return scale.getHandleState();
 	}
 

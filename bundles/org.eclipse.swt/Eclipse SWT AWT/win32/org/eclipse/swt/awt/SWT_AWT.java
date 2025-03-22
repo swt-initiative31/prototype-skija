@@ -116,7 +116,7 @@ public static Frame getFrame (Composite parent) {
  * be added to the frame as the root of all components.
  * </p>
  *
- * @param parent the parent <code>Composite</code> of the new <code>java.awt.Frame</code>
+ * @param parentWrapper the parent <code>Composite</code> of the new <code>java.awt.Frame</code>
  * @return a <code>java.awt.Frame</code> to be the parent of the embedded AWT components
  *
  * @exception IllegalArgumentException <ul>
@@ -126,7 +126,8 @@ public static Frame getFrame (Composite parent) {
  *
  * @since 3.0
  */
-public static Frame new_Frame (final Composite parent) {
+public static Frame new_Frame (final Composite parentWrapper) {
+	NativeComposite parent = Widget.checkNative(parentWrapper);
 	if (parent == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	if ((parent.getStyle () & SWT.EMBEDDED) == 0) {
 		SWT.error (SWT.ERROR_INVALID_ARGUMENT);
@@ -207,7 +208,7 @@ public static Frame new_Frame (final Composite parent) {
 				break;
 		}
 	};
-	Shell shell = parent.getShell ();
+	NativeShell shell = parent.getShell ();
 	shell.addListener (SWT.Deiconify, shellListener);
 	shell.addListener (SWT.Iconify, shellListener);
 
@@ -219,7 +220,7 @@ public static Frame new_Frame (final Composite parent) {
 	Listener listener = e -> {
 		switch (e.type) {
 			case SWT.Dispose:
-				Shell shell1 = parent.getShell ();
+				NativeShell shell1 = parent.getShell ();
 				shell1.removeListener (SWT.Deiconify, shellListener);
 				shell1.removeListener (SWT.Iconify, shellListener);
 				parent.setVisible(false);
@@ -287,7 +288,7 @@ public static Shell new_Shell (final Display display, final Canvas parent) {
 	}
 	if (handle == 0) SWT.error (SWT.ERROR_INVALID_ARGUMENT, null, " [peer not created]");
 
-	final Shell shell = Shell.win32_new (display, handle);
+	final Shell shell = NativeShell.win32_new (display, handle);
 	final ComponentListener listener = new ComponentAdapter () {
 		@Override
 		public void componentResized (ComponentEvent e) {

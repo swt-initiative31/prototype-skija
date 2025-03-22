@@ -40,7 +40,7 @@ public class DefaultCheckboxRenderer extends ButtonRenderer {
 			| SWT.DRAW_TRANSPARENT | SWT.DRAW_DELIMITER;
 
 
-	public DefaultCheckboxRenderer(Button button) {
+	public DefaultCheckboxRenderer(CustomButton button) {
 		super(button);
 	}
 

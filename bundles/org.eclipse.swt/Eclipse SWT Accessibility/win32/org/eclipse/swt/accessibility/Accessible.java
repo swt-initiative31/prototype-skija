@@ -37,7 +37,7 @@ import org.eclipse.swt.widgets.*;
  * accessible control listener to implement accessibility for a
  * custom control.
  *
- * @see Control#getAccessible
+ * @see NativeControl#getAccessible
  * @see AccessibleListener
  * @see AccessibleEvent
  * @see AccessibleControlListener
@@ -78,7 +78,7 @@ public class Accessible {
 	Object[] variants;
 	Accessible parent;
 	List<Accessible> children = new ArrayList<>();
-	Control control;
+	NativeControl control;
 	int uniqueID = -1;
 	int [] tableChange; // type, rowStart, rowCount, columnStart, columnCount
 	Object [] textDeleted; // type, start, end, text
@@ -102,7 +102,7 @@ public class Accessible {
 	 * </ul>
 	 *
 	 * @see #dispose
-	 * @see Control#getAccessible
+	 * @see NativeControl#getAccessible
 	 *
 	 * @since 3.6
 	 */
@@ -121,7 +121,7 @@ public class Accessible {
 	protected Accessible() {
 	}
 
-	Accessible(Control control) {
+	Accessible(NativeControl control) {
 		this.control = control;
 		long[] ppvObject = new long[1];
 		/* CreateStdAccessibleObject([in] hwnd, [in] idObject, [in] riidInterface, [out] ppvObject).
@@ -549,7 +549,7 @@ public class Accessible {
 	 *
 	 * @noreference This method is not intended to be referenced by clients.
 	 */
-	public static Accessible internal_new_Accessible(Control control) {
+	public static Accessible internal_new_Accessible(NativeControl control) {
 		return new Accessible(control);
 	}
 
@@ -895,7 +895,7 @@ public class Accessible {
 	 * @since 3.0
 	 */
 	public Control getControl() {
-		return control;
+		return control.getWrapper();
 	}
 
 	/**
@@ -1632,7 +1632,7 @@ public class Accessible {
 				accessibleHyperlinkListenersSize() > 0 || accessibleTableListenersSize() > 0 ||
 				accessibleTableCellListenersSize() > 0 || accessibleTextExtendedListenersSize() > 0 ||
 				accessibleValueListenersSize() > 0 || accessibleControlListenersSize() > 0 || getRelationCount() > 0
-				|| (control instanceof Button && ((control.getStyle() & SWT.RADIO) != 0)) || (control instanceof Composite)) {
+				|| (control.getWrapper() instanceof Button && ((control.getStyle() & SWT.RADIO) != 0)) || (control instanceof NativeComposite)) {
 				if (objIServiceProvider == null) createIServiceProvider();
 				OS.MoveMemory(ppvObject, new long[] { objIServiceProvider.getAddress() }, C.PTR_SIZEOF);
 				AddRef();
@@ -1829,7 +1829,7 @@ public class Accessible {
 					accessibleHyperlinkListenersSize() > 0 || accessibleTableListenersSize() > 0 ||
 					accessibleTableCellListenersSize() > 0 || accessibleTextExtendedListenersSize() > 0 ||
 					accessibleValueListenersSize() > 0 || accessibleControlListenersSize() > 0 || getRelationCount() > 0
-					|| (control instanceof Button && ((control.getStyle() & SWT.RADIO) != 0)) || (control instanceof Composite)) {
+					|| (control.getWrapper() instanceof Button && ((control.getStyle() & SWT.RADIO) != 0)) || (control instanceof NativeComposite)) {
 				// NOTE: IAccessible2 vtable is shared with IAccessible
 				if (objIAccessible == null) createIAccessible();
 				OS.MoveMemory(ppvObject, new long[] { objIAccessible.getAddress() }, C.PTR_SIZEOF);
@@ -2121,8 +2121,8 @@ public class Accessible {
 			/* Get the default child from the OS. */
 			code = iaccessible.get_accChild(varChild, ppdispChild);
 			if (code == COM.E_INVALIDARG) code = COM.S_FALSE; // proxy doesn't know about app childID
-			if (code == COM.S_OK && control instanceof ToolBar) {
-				ToolBar toolBar = (ToolBar) control;
+			if (code == COM.S_OK && control.getWrapper() instanceof ToolBar) {
+				ToolBar toolBar = (ToolBar) control.getWrapper();
 				final ToolItem item = toolBar.getItem(childID);
 				if (item != null && (item.getStyle() & SWT.DROP_DOWN) != 0) {
 					long[] addr = new long[1];
@@ -2281,7 +2281,7 @@ public class Accessible {
 			code = iaccessible.get_accDescription(varChild, pszDescription);
 			if (code == COM.E_INVALIDARG) code = COM.S_FALSE; // proxy doesn't know about app childID
 			// TEMPORARY CODE - process tree even if there are no apps listening
-			if (accessibleListenersSize() == 0 && !(control instanceof Tree)) {
+			if (accessibleListenersSize() == 0 && !(control instanceof NativeTree)) {
 				if (DEBUG) print(this + ".IAccessible::get_accDescription(" + v.lVal + ") returning super" + hresult(code));
 				return code;
 			}
@@ -2306,16 +2306,16 @@ public class Accessible {
 		 * so we need to create the description using the tree column
 		 * header text and tree item text. */
 		if (v.lVal != COM.CHILDID_SELF) {
-			if (control instanceof Tree) {
-				Tree tree = (Tree) control;
+			if (control instanceof NativeTree) {
+				NativeTree tree = (NativeTree) control;
 				int columnCount = tree.getColumnCount ();
 				if (columnCount > 1) {
 					long hwnd = control.handle, hItem = 0;
 					hItem = OS.SendMessage (hwnd, OS.TVM_MAPACCIDTOHTREEITEM, v.lVal, 0);
 					Widget widget = tree.getDisplay ().findWidget (hwnd, hItem);
 					event.result = "";
-					if (widget instanceof TreeItem) {
-						TreeItem item = (TreeItem) widget;
+					if (Widget.checkNative(widget) instanceof NativeTreeItem nativeTreeItem) {
+						NativeTreeItem item = nativeTreeItem;
 						for (int i = 1; i < columnCount; i++) {
 							if (tree.isDisposed() || item.isDisposed()) {
 								event.result = "";
@@ -2457,7 +2457,7 @@ public class Accessible {
 			code = iaccessible.get_accKeyboardShortcut(varChild, pszKeyboardShortcut);
 			if (code == COM.E_INVALIDARG) code = COM.S_FALSE; // proxy doesn't know about app childID
 			/* Process TabFolder even if there are no apps listening. */
-			if (accessibleListenersSize() == 0 && !(control instanceof TabFolder)) return code;
+			if (accessibleListenersSize() == 0 && !(control instanceof NativeTabFolder)) return code;
 			if (code == COM.S_OK) {
 				long[] pKeyboardShortcut = new long[1];
 				OS.MoveMemory(pKeyboardShortcut, pszKeyboardShortcut, C.PTR_SIZEOF);
@@ -2474,7 +2474,7 @@ public class Accessible {
 		event.childID = osToChildID(v.lVal);
 		event.result = osKeyboardShortcut;
 		/* SWT TabFolders use Ctrl+PageDown to switch pages (not Ctrl+Tab). */
-		if (v.lVal == COM.CHILDID_SELF && control instanceof TabFolder) {
+		if (v.lVal == COM.CHILDID_SELF && control instanceof NativeTabFolder) {
 			event.result = SWT.getMessage ("SWT_SwitchPage_Shortcut"); //$NON-NLS-1$
 		}
 		for (int i = 0; i < accessibleListenersSize(); i++) {
@@ -2509,7 +2509,7 @@ public class Accessible {
 			}
 			if (code == COM.E_INVALIDARG) code = COM.S_FALSE; // proxy doesn't know about app childID
 			/* Process Text even if there are no apps listening. */
-			if (accessibleListenersSize() == 0 && !(control instanceof Text)) {
+			if (accessibleListenersSize() == 0 && !(control.getWrapper() instanceof Text)) {
 				if (DEBUG) print(this + ".IAccessible::get_accName(" + v.lVal + ") returning name=" + osName + " from super" + hresult(code));
 				return code;
 			}
@@ -2524,8 +2524,8 @@ public class Accessible {
 		* accessible name, however it is not. The fix is to return the message
 		* text here as the accName (unless there is a preceding label).
 		*/
-		if (control instanceof Text && (control.getStyle() & SWT.SEARCH) != 0 && osName == null) {
-			event.result = ((Text) control).getMessage();
+		if (control.getWrapper() instanceof Text && (control.getStyle() & SWT.SEARCH) != 0 && osName == null) {
+			event.result = ((Text) control.getWrapper()).getMessage();
 		}
 		for (int i = 0; i < accessibleListenersSize(); i++) {
 			AccessibleListener listener = accessibleListeners.get(i);
@@ -2580,7 +2580,7 @@ public class Accessible {
 		// TEMPORARY CODE
 		/* Currently our checkbox table and tree are emulated using state mask images,
 		 * so we need to specify 'checkbox' role for the items. */
-		if (control instanceof Tree || control instanceof Table) {
+		if (control instanceof NativeTree || control instanceof NativeTable) {
 			if (v.lVal != COM.CHILDID_SELF && (control.getStyle() & SWT.CHECK) != 0) event.detail = ACC.ROLE_CHECKBUTTON;
 		}
 		for (int i = 0; i < accessibleControlListenersSize(); i++) {
@@ -2674,7 +2674,7 @@ public class Accessible {
 		/* Currently our checkbox table and tree are emulated using state mask
 		 * images, so we need to determine if the item state is 'checked'. */
 		if (v.lVal != COM.CHILDID_SELF) {
-			if (control instanceof Tree && (control.getStyle() & SWT.CHECK) != 0) {
+			if (control instanceof NativeTree && (control.getStyle() & SWT.CHECK) != 0) {
 				long hwnd = control.handle;
 				TVITEM tvItem = new TVITEM ();
 				tvItem.mask = OS.TVIF_HANDLE | OS.TVIF_STATE;
@@ -2684,11 +2684,11 @@ public class Accessible {
 				boolean checked = (result != 0) && (((tvItem.state >> 12) & 1) == 0);
 				if (checked) event.detail |= ACC.STATE_CHECKED;
 				grayed = tvItem.state >> 12 > 2;
-			} else if (control instanceof Table && (control.getStyle() & SWT.CHECK) != 0) {
-				Table table = (Table) control;
+			} else if (control instanceof NativeTable && (control.getStyle() & SWT.CHECK) != 0) {
+				NativeTable table = (NativeTable) control;
 				int index = event.childID;
 				if (0 <= index && index < table.getItemCount()) {
-					TableItem item = table.getItem(index);
+					NativeTableItem item = table.getItem(index);
 					if (item.getChecked()) event.detail |= ACC.STATE_CHECKED;
 					if (item.getGrayed()) grayed = true;
 				}
@@ -2730,7 +2730,7 @@ public class Accessible {
 			}
 			if (code == COM.E_INVALIDARG) code = COM.DISP_E_MEMBERNOTFOUND; // proxy doesn't know about app childID
 			/* Process Text even if there are no apps listening. */
-			if (accessibleControlListenersSize() == 0 && !(control instanceof Text)) {
+			if (accessibleControlListenersSize() == 0 && !(control.getWrapper() instanceof Text)) {
 				if (DEBUG) print(this + ".IAccessible::get_accValue(" + v.lVal + ") returning value=" + osValue + " from super" + hresult(code));
 				return code;
 			}
@@ -2745,8 +2745,9 @@ public class Accessible {
 		* accessible value when the control does not have focus, however it
 		* is not. The fix is to return the message text here as the accValue.
 		*/
-		if (control instanceof Text && (control.getStyle() & SWT.SEARCH) != 0 && !control.isFocusControl()) {
-			event.result = ((Text) control).getMessage();
+		if (control.getWrapper() instanceof Text && (control.getStyle() & SWT.SEARCH) != 0
+				&& !control.isFocusControl()) {
+			event.result = ((Text) control.getWrapper()).getMessage();
 		}
 		for (int i = 0; i < accessibleControlListenersSize(); i++) {
 			AccessibleControlListener listener = accessibleControlListeners.get(i);
@@ -3042,12 +3043,12 @@ public class Accessible {
 		int positionInGroup = (event.groupIndex != -1) ? event.groupIndex : 0;
 		if (similarItemsInGroup == 0 && positionInGroup == 0) {
 			/* Determine position and count for radio buttons. */
-			if (control instanceof Button && ((control.getStyle() & SWT.RADIO) != 0)) {
+			if (control.getWrapper() instanceof Button && ((control.getStyle() & SWT.RADIO) != 0)) {
 				positionInGroup = 1;
 				similarItemsInGroup = 1;
 				for (Control child : control.getParent().getChildren()) {
 					if (child instanceof Button && ((child.getStyle() & SWT.RADIO) != 0)) {
-						if (child == control) positionInGroup = similarItemsInGroup;
+						if (Widget.checkNative(child) == control) positionInGroup = similarItemsInGroup;
 						else similarItemsInGroup++;
 					}
 				}
@@ -4915,7 +4916,7 @@ public class Accessible {
 		if (childID == ACC.CHILDID_SELF) return COM.CHILDID_SELF;
 		/* ChildIDs are 1-based indices. */
 		int osChildID = childID + 1;
-		if (control instanceof Tree) {
+		if (control instanceof NativeTree) {
 			osChildID = (int)OS.SendMessage (control.handle, OS.TVM_MAPHTREEITEMTOACCID, childID, 0);
 		}
 		checkUniqueID(osChildID);
@@ -4932,7 +4933,7 @@ public class Accessible {
 		* take 1-based childIDs for tree items prior to Windows XP.
 		* All other childIDs are 1-based indices.
 		*/
-		if (!(control instanceof Tree)) return osChildID - 1;
+		if (!(control instanceof NativeTree)) return osChildID - 1;
 		return (int)OS.SendMessage (control.handle, OS.TVM_MAPACCIDTOHTREEITEM, osChildID, 0);
 	}
 

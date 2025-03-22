@@ -23,7 +23,7 @@ public class DefaultLinkRenderer extends LinkRenderer {
 
 	private final Set<TextSegment> links = new HashSet<>();
 
-	public DefaultLinkRenderer(Link link) {
+	public DefaultLinkRenderer(CustomLink link) {
 		super(link);
 	}
 
@@ -141,7 +141,7 @@ public class DefaultLinkRenderer extends LinkRenderer {
 		if (!displayText.isEmpty()) {
 			String[] lines = displayText.split("\n", -1);
 			for (String line : lines) {
-				Point textExtent = Drawing.executeOnGC(link, gc -> {
+				Point textExtent = Drawing.executeOnGC(link.getWrapper(), gc -> {
 					gc.setFont(link.getFont());
 					return gc.textExtent(line, DRAW_FLAGS);
 				});

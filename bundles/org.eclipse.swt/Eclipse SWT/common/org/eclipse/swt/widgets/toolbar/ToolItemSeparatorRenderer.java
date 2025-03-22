@@ -15,17 +15,17 @@ package org.eclipse.swt.widgets.toolbar;
 
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import org.eclipse.swt.widgets.ToolItem.*;
+import org.eclipse.swt.widgets.CustomToolItem.*;
 
 public class ToolItemSeparatorRenderer implements ToolItemRenderer {
 	public static final Color COLOR_SEPARATOR = new Color(Display.getDefault(), 160, 160, 160);
 
 	private static final int EMPTY_WIDTH = 7;
 
-	private final ToolBar bar;
+	private final CustomToolBar bar;
 	private int separatorWidth = -1;
 
-	public ToolItemSeparatorRenderer(ToolBar bar) {
+	public ToolItemSeparatorRenderer(CustomToolBar bar) {
 		this.bar = bar;
 	}
 

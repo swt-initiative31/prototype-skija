@@ -30,7 +30,7 @@ public abstract class CustomControl extends NativeBasedCustomControl {
 	private int height;
 
 	protected CustomControl(Composite parent, int style) {
-		super(parent, style);
+		super(Widget.checkNative(parent), style);
 	}
 
 	@Override
