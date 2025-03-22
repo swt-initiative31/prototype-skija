@@ -26,7 +26,7 @@ public abstract class LinkRenderer extends ControlRenderer {
 			| SWT.DRAW_DELIMITER;
 
 	protected final List<List<TextSegment>> parsedText = new ArrayList<>();
-	protected Link link;
+	protected CustomLink link;
 
 	public static class TextSegment {
 		public final String text;
@@ -43,7 +43,7 @@ public abstract class LinkRenderer extends ControlRenderer {
 		}
 	}
 
-	protected LinkRenderer(Link control) {
+	protected LinkRenderer(CustomLink control) {
 		super(control);
 		this.link = control;
 	}

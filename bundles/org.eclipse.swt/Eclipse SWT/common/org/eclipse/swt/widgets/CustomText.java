@@ -57,7 +57,7 @@ import org.eclipse.swt.graphics.*;
  *      information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Text extends NativeBasedCustomScrollable {
+public class CustomText extends NativeBasedCustomScrollable {
 
 	private static final Color DISABLED_COLOR = new Color(160, 160, 160);
 	private static final Color TEXT_COLOR = new Color(0, 0, 0);
@@ -128,7 +128,7 @@ public class Text extends NativeBasedCustomScrollable {
 	 * @see Widget#checkSubclass
 	 * @see Widget#getStyle
 	 */
-	public Text(Composite parent, int style) {
+	public CustomText(Composite parent, int style) {
 		super(parent, checkStyle(style) & ~SWT.BORDER);
 		this.style = style;
 		model = new TextModel();
@@ -182,16 +182,16 @@ public class Text extends NativeBasedCustomScrollable {
 	private void addListeners() {
 		final Listener listener = event -> {
 			switch (event.type) {
-			case SWT.Paint -> Text.this.paintControl(event);
-			case SWT.MouseMove -> Text.this.onMouseMove(event);
-			case SWT.MouseDown -> Text.this.onMouseDown(event);
-			case SWT.MouseUp -> Text.this.onMouseUp(event);
-			case SWT.MouseWheel -> Text.this.onMouseWheel(event);
-			case SWT.KeyDown -> Text.this.keyPressed(event);
-			case SWT.FocusIn -> Text.this.focusGained(event);
-			case SWT.FocusOut -> Text.this.focusLost(event);
-			case SWT.Gesture -> Text.this.onGesture(event);
-			case SWT.Dispose -> Text.this.widgetDisposed(event);
+			case SWT.Paint -> CustomText.this.paintControl(event);
+			case SWT.MouseMove -> CustomText.this.onMouseMove(event);
+			case SWT.MouseDown -> CustomText.this.onMouseDown(event);
+			case SWT.MouseUp -> CustomText.this.onMouseUp(event);
+			case SWT.MouseWheel -> CustomText.this.onMouseWheel(event);
+			case SWT.KeyDown -> CustomText.this.keyPressed(event);
+			case SWT.FocusIn -> CustomText.this.focusGained(event);
+			case SWT.FocusOut -> CustomText.this.focusLost(event);
+			case SWT.Gesture -> CustomText.this.onGesture(event);
+			case SWT.Dispose -> CustomText.this.widgetDisposed(event);
 			}
 		};
 		addListener(SWT.Paint, listener);
@@ -207,22 +207,22 @@ public class Text extends NativeBasedCustomScrollable {
 
 		ScrollBar horizontalBar = getHorizontalBar();
 		if (horizontalBar != null) {
-			horizontalBar.addListener(SWT.Selection, Text.this::scrollBarSelectionChanged);
+			horizontalBar.addListener(SWT.Selection, CustomText.this::scrollBarSelectionChanged);
 		}
 		ScrollBar verticalBar = getVerticalBar();
 		if (verticalBar != null) {
-			verticalBar.addListener(SWT.Selection, Text.this::scrollBarSelectionChanged);
+			verticalBar.addListener(SWT.Selection, CustomText.this::scrollBarSelectionChanged);
 		}
 
 		model.addModelChangedListner(new ITextModelChangedListener() {
 			@Override
 			public void textModified() {
-				Text.this.textModified();
+				CustomText.this.textModified();
 			}
 
 			@Override
 			public void selectionChanged() {
-				Text.this.selectionChanged();
+				CustomText.this.selectionChanged();
 			}
 		});
 	}

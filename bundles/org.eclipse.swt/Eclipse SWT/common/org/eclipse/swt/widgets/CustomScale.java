@@ -40,7 +40,7 @@ import org.eclipse.swt.graphics.*;
  *      information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Scale extends CustomControl {
+public class CustomScale extends CustomControl {
 
 	private int minimum = 0;
 	private int maximum = 100;
@@ -95,7 +95,7 @@ public class Scale extends CustomControl {
 	 * @see Widget#checkSubclass
 	 * @see Widget#getStyle
 	 */
-	public Scale(Composite parent, int style) {
+	public CustomScale(Composite parent, int style) {
 		super(parent, checkStyle(style));
 		this.style |= SWT.DOUBLE_BUFFERED;
 

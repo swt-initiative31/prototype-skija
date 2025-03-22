@@ -23,7 +23,7 @@ public class DefaultLinkRenderer extends LinkRenderer {
 
 	private final Set<TextSegment> links = new HashSet<>();
 
-	public DefaultLinkRenderer(Link link) {
+	public DefaultLinkRenderer(CustomLink link) {
 		super(link);
 	}
 

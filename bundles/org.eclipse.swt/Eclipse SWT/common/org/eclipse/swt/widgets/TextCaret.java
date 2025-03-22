@@ -35,7 +35,7 @@ import org.eclipse.swt.graphics.*;
  */
 class TextCaret extends Widget {
 	static TextCaret currentCaret;;
-	Text parent;
+	CustomText parent;
 	int x, y, width, height;
 	boolean isVisible, isShowing;
 	int blinkRate;
@@ -97,7 +97,7 @@ class TextCaret extends Widget {
 	 * @see Widget#checkSubclass
 	 * @see Widget#getStyle
 	 */
-	public TextCaret(Text parent, int style) {
+	public TextCaret(CustomText parent, int style) {
 		super(parent, style);
 		this.parent = parent;
 		init();
@@ -238,7 +238,7 @@ class TextCaret extends Widget {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
-	public Text getParent() {
+	public CustomText getParent() {
 		checkWidget();
 		return parent;
 	}

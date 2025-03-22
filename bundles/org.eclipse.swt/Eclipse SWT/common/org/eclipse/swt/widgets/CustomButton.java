@@ -54,7 +54,7 @@ import org.eclipse.swt.graphics.*;
  *      information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Button extends CustomControl {
+public class CustomButton extends CustomControl {
 	private String text = "", message = "";
 	private Image image;
 	private boolean checked;
@@ -111,7 +111,7 @@ public class Button extends CustomControl {
 	 * @see Widget#checkSubclass
 	 * @see Widget#getStyle
 	 */
-	public Button(Composite parent, int style) {
+	public CustomButton(Composite parent, int style) {
 		super(parent, checkStyle(style));
 		this.style |= SWT.DOUBLE_BUFFERED;
 
@@ -167,7 +167,7 @@ public class Button extends CustomControl {
 	void initializeAccessible() {
 		acc = getAccessible();
 
-		Button current = this;
+		CustomButton current = this;
 
 		accAdapter = new AccessibleAdapter() {
 			@Override
@@ -207,9 +207,9 @@ public class Button extends CustomControl {
 		return (style & SWT.PUSH) != 0;
 	}
 
-	private String createRadioButtonText(Button button) {
+	private String createRadioButtonText(CustomButton button) {
 		StringBuilder b = new StringBuilder();
-		Button[] radioGroup = getRadioGroup();
+		CustomButton[] radioGroup = getRadioGroup();
 
 		int index = Arrays.asList(radioGroup).indexOf(button) + 1;
 		int all = radioGroup.length;
@@ -225,7 +225,7 @@ public class Button extends CustomControl {
 		return b.toString();
 	}
 
-	private String createPushButtonText(Button button) {
+	private String createPushButtonText(CustomButton button) {
 		return button.getText() + " button.\r\n To activate press space bar.";
 	}
 
@@ -258,22 +258,22 @@ public class Button extends CustomControl {
 
 	// TODO maybe this can be improved with a cache.
 	// But this cache must be handled somehow on the parent element.
-	private Button[] getRadioGroup() {
+	private CustomButton[] getRadioGroup() {
 		if ((style & SWT.RADIO) == 0) {
 			return null;
 		}
 
 		Control[] children = parent._getChildren();
 
-		ArrayList<Button> radioGroup = new ArrayList<>();
+		ArrayList<CustomButton> radioGroup = new ArrayList<>();
 		for (int k = 0; k < children.length; k++) {
-			if (children[k] instanceof Button b
+			if (children[k] instanceof CustomButton b
 					&& (children[k].getStyle() & SWT.RADIO) != 0) {
 				radioGroup.add(b);
 			}
 		}
 
-		return radioGroup.toArray(new Button[0]);
+		return radioGroup.toArray(new CustomButton[0]);
 	}
 
 	@Override
@@ -973,7 +973,7 @@ public class Button extends CustomControl {
 	}
 
 	void selectRadio() {
-		for (Button b : getRadioGroup()) {
+		for (CustomButton b : getRadioGroup()) {
 			if (b != this) {
 				b.setSelection(false);
 				b.redraw();
@@ -986,7 +986,7 @@ public class Button extends CustomControl {
 	}
 
 	void selectRadio(boolean withFocus) {
-		for (Button b : getRadioGroup()) {
+		for (CustomButton b : getRadioGroup()) {
 			if (b != this) {
 				b.setSelection(false);
 				b.redraw();

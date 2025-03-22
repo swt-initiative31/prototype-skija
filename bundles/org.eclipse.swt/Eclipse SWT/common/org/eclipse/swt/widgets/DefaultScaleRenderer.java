@@ -36,7 +36,7 @@ public class DefaultScaleRenderer extends ScaleRenderer {
 	private Rectangle handleBounds;
 	private Rectangle bar;
 
-	public DefaultScaleRenderer(Scale scale) {
+	public DefaultScaleRenderer(CustomScale scale) {
 		super(scale);
 	}
 
