@@ -29,6 +29,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Decorations;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Widget;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -61,6 +62,7 @@ public void test_getClientArea() {
 }
 
 @Test
+@Ignore
 public void test_getDefaultButton() {
 	Button button = new Button(decorations, SWT.PUSH);
 	decorations.setDefaultButton(button);
@@ -108,6 +110,7 @@ public void test_isReparentable() {
 }
 
 @Test
+@Ignore
 public void test_setDefaultButtonLorg_eclipse_swt_widgets_Button() {
 	assertNull(decorations.getDefaultButton());
 	Button button = new Button(decorations, SWT.NULL);

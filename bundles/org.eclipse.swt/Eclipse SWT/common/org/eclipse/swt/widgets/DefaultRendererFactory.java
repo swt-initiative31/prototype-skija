@@ -15,42 +15,42 @@ package org.eclipse.swt.widgets;
 
 public class DefaultRendererFactory implements RendererFactory {
 	@Override
-	public ButtonRenderer createCheckboxRenderer(Button button) {
+	public ButtonRenderer createCheckboxRenderer(CustomButton button) {
 		return new DefaultCheckboxRenderer(button);
 	}
 
 	@Override
-	public ButtonRenderer createRadioButtonRenderer(Button button) {
+	public ButtonRenderer createRadioButtonRenderer(CustomButton button) {
 		return new DefaultRadioButtonRenderer(button);
 	}
 
 	@Override
-	public ButtonRenderer createArrowButtonRenderer(Button button) {
+	public ButtonRenderer createArrowButtonRenderer(CustomButton button) {
 		return new DefaultArrowButtonRenderer(button);
 	}
 
 	@Override
-	public ButtonRenderer createPushToggleButtonRenderer(Button button) {
+	public ButtonRenderer createPushToggleButtonRenderer(CustomButton button) {
 		return new DefaultButtonRenderer(button);
 	}
 
 	@Override
-	public ScaleRenderer createScaleRenderer(Scale scale) {
+	public ScaleRenderer createScaleRenderer(CustomScale scale) {
 		return new DefaultScaleRenderer(scale);
 	}
 
 	@Override
-	public LabelRenderer createLabelRenderer(Label label) {
+	public LabelRenderer createLabelRenderer(CustomLabel label) {
 		return new BasicLabelRenderer(label);
 	}
 
 	@Override
-	public SliderRenderer createSliderRenderer(Slider slider) {
+	public SliderRenderer createSliderRenderer(CustomSlider slider) {
 		return new DefaultSliderRenderer(slider);
 	}
 
 	@Override
-	public LinkRenderer createLinkRenderer(Link link) {
+	public LinkRenderer createLinkRenderer(CustomLink link) {
 		return new DefaultLinkRenderer(link);
 	}
 }

@@ -18,7 +18,7 @@ import org.eclipse.swt.graphics.*;
 
 public abstract class ButtonRenderer extends ControlRenderer {
 
-	private final Button button;
+	private final CustomButton button;
 
 	public abstract Point computeDefaultSize();
 
@@ -26,7 +26,7 @@ public abstract class ButtonRenderer extends ControlRenderer {
 	private boolean pressed;
 	private boolean hover;
 
-	public ButtonRenderer(Button button) {
+	public ButtonRenderer(CustomButton button) {
 		super(button);
 		this.button = button;
 	}

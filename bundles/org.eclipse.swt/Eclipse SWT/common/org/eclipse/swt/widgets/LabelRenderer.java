@@ -25,7 +25,7 @@ public abstract class LabelRenderer extends ControlRenderer {
 	// the ellipsis glyph on
 	// some platforms "\u2026"
 
-	private final Label label;
+	private final CustomLabel label;
 
 	protected static final int DEFAULT_MARGIN = 3;
 
@@ -53,7 +53,7 @@ public abstract class LabelRenderer extends ControlRenderer {
 	private int rightMargin = DEFAULT_MARGIN;
 	private int bottomMargin = DEFAULT_MARGIN;
 
-	protected LabelRenderer(Label label) {
+	protected LabelRenderer(CustomLabel label) {
 		super(label);
 		this.label = label;
 	}

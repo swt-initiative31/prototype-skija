@@ -16,7 +16,7 @@ package org.eclipse.swt.widgets.toolbar;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import org.eclipse.swt.widgets.ToolItem.*;
+import org.eclipse.swt.widgets.CustomToolItem.*;
 
 public class ToolItemDropDownRenderer implements ToolItemRenderer {
 	private static final int ARROW_PADDING = 4;
@@ -25,14 +25,14 @@ public class ToolItemDropDownRenderer implements ToolItemRenderer {
 
 	private static final int ARROW_SECTION_WIDTH = ARROW_PADDING * 2 + ARROW_WIDTH;
 
-	private final ToolBar bar;
-	private final ToolItem item;
+	private final CustomToolBar bar;
+	private final CustomToolItem item;
 	private final ToolItemButtonRenderer buttonRenderer;
 
 	private Rectangle button = new Rectangle(0, 0, 0, 0);
 	private Rectangle arrow = new Rectangle(0, 0, 0, 0);
 
-	public ToolItemDropDownRenderer(ToolBar bar, ToolItem item) {
+	public ToolItemDropDownRenderer(CustomToolBar bar, CustomToolItem item) {
 		this.bar = bar;
 		this.item = item;
 		this.buttonRenderer = new ToolItemButtonRenderer(bar, item);

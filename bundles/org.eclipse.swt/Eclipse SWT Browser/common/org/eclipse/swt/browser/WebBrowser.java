@@ -21,6 +21,8 @@ import org.eclipse.swt.widgets.*;
 
 abstract class WebBrowser {
 	Browser browser;
+	NativeBrowser nativeBrowser;
+
 	Map<Integer, BrowserFunction> functions = new HashMap<> ();
 	AuthenticationListener[] authenticationListeners = new AuthenticationListener[0];
 	CloseWindowListener[] closeWindowListeners = new CloseWindowListener[0];

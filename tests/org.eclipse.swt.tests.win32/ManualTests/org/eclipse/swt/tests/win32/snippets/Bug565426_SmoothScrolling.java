@@ -23,13 +23,14 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.NativeScrollable;
 import org.eclipse.swt.widgets.ScrollBar;
-import org.eclipse.swt.widgets.Scrollable;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Widget;
 
 @SuppressWarnings("restriction")
 public class Bug565426_SmoothScrolling {
-	static void simulateScroll(Scrollable control, boolean vertical, int wheelDelta) {
+	static void simulateScroll(NativeScrollable control, boolean vertical, int wheelDelta) {
 		long wParam = wheelDelta << 16;
 
 		if (vertical)
@@ -109,19 +110,19 @@ public class Bug565426_SmoothScrolling {
 
 			button = new Button(buttonsComposite, SWT.PUSH);
 			button.setText("Horz -20 points");
-			button.addListener(SWT.Selection, e -> simulateScroll(drawArea, false, -20));
+			button.addListener(SWT.Selection, e -> simulateScroll(Widget.checkNative(drawArea), false, -20));
 
 			button = new Button(buttonsComposite, SWT.PUSH);
 			button.setText("Horz +20 points");
-			button.addListener(SWT.Selection, e -> simulateScroll(drawArea, false, +20));
+			button.addListener(SWT.Selection, e -> simulateScroll(Widget.checkNative(drawArea), false, +20));
 
 			button = new Button(buttonsComposite, SWT.PUSH);
 			button.setText("Vert -20 points");
-			button.addListener(SWT.Selection, e -> simulateScroll(drawArea, true,  -20));
+			button.addListener(SWT.Selection, e -> simulateScroll(Widget.checkNative(drawArea), true,  -20));
 
 			button = new Button(buttonsComposite, SWT.PUSH);
 			button.setText("Vert +20 points");
-			button.addListener(SWT.Selection, e -> simulateScroll(drawArea, true,  +20));
+			button.addListener(SWT.Selection, e -> simulateScroll(Widget.checkNative(drawArea), true,  +20));
 		}
 
 		shell.setSize(600, 500);

@@ -28,7 +28,7 @@ class TreeTableCommon {
 		 * in versions smaller than 2.2.4 if the model is NULL.  The fix is
 		 * to give a valid pointer instead.
 		 */
-		long handle = control.handle;
+		long handle = Widget.checkNative(control).handle;
 		long selection = GTK.gtk_tree_view_get_selection (handle);
 		long [] model =  null;
 		long list = GTK.gtk_tree_selection_get_selected_rows (selection, model);

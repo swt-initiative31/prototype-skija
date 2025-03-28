@@ -16,7 +16,7 @@ package org.eclipse.swt.widgets.toolbar;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import org.eclipse.swt.widgets.ToolItem.*;
+import org.eclipse.swt.widgets.CustomToolItem.*;
 
 public class ToolItemButtonRenderer implements ToolItemRenderer {
 	private static final int DRAW_FLAGS = SWT.DRAW_MNEMONIC;
@@ -31,8 +31,8 @@ public class ToolItemButtonRenderer implements ToolItemRenderer {
 	/* If no color is set, this is used as fallback. */
 	private static final RGB DEFAULT_RGB = new RGB(225, 241, 255);
 
-	private final ToolBar bar;
-	private final ToolItem item;
+	private final CustomToolBar bar;
+	private final CustomToolItem item;
 
 	private Image generatedDisabledImage;
 	private Rectangle bounds = new Rectangle(0, 0, 0, 0);
@@ -54,7 +54,7 @@ public class ToolItemButtonRenderer implements ToolItemRenderer {
 	private static record Blueprint(Point size, Rectangle image, Rectangle text) {
 	}
 
-	public ToolItemButtonRenderer(ToolBar bar, ToolItem item) {
+	public ToolItemButtonRenderer(CustomToolBar bar, CustomToolItem item) {
 		this.bar = bar;
 		this.item = item;
 	}
@@ -265,7 +265,7 @@ public class ToolItemButtonRenderer implements ToolItemRenderer {
 	}
 
 	private Point getTextSize() {
-		return Drawing.executeOnGC(bar, this::doMesureText);
+		return Drawing.executeOnGC(bar.getWrapper(), this::doMesureText);
 	}
 
 	private Point doMesureText(GC gc) {

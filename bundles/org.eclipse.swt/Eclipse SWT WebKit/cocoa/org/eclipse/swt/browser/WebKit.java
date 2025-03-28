@@ -191,21 +191,21 @@ public void create (Composite parent, int style) {
 	* Override the default event mechanism to not send key events so
 	* that the browser can send them by listening to the DOM instead.
 	*/
-	browser.setData(WEBKIT_EVENTS_FIX_KEY);
+	nativeBrowser.setData(WEBKIT_EVENTS_FIX_KEY);
 
 	WebView webView = (WebView)new WebView().alloc();
 	if (webView == null) SWT.error(SWT.ERROR_NO_HANDLES);
-	webView.initWithFrame(browser.view.frame(), null, null);
+	webView.initWithFrame(nativeBrowser.view.frame(), null, null);
 	webView.setAutoresizingMask(OS.NSViewWidthSizable | OS.NSViewHeightSizable);
 	if (webView.respondsToSelector(OS.sel__setDashboardBehavior)) {
 		OS.objc_msgSend(webView.id, OS.sel__setDashboardBehavior, 2, 1);
 	}
 	final SWTWebViewDelegate delegate = (SWTWebViewDelegate)new SWTWebViewDelegate().alloc().init();
-	Display display = browser.getDisplay();
-	display.setData(ADD_WIDGET_KEY, new Object[] {delegate, browser});
+	Display display = nativeBrowser.getDisplay();
+	display.setData(ADD_WIDGET_KEY, new Object[] {delegate, nativeBrowser});
 	this.delegate = delegate;
 	this.webView = webView;
-	browser.view.addSubview(webView);
+	nativeBrowser.view.addSubview(webView);
 
 	Listener listener = e -> {
 		switch (e.type) {
@@ -225,7 +225,7 @@ public void create (Composite parent, int style) {
 				/* Browser could have been disposed by one of the Dispose listeners */
 				if (!browser.isDisposed()) {
 					/* invoke onbeforeunload handlers */
-					if (!browser.isClosing) {
+					if (!nativeBrowser.isClosing) {
 						close (false);
 					}
 
@@ -257,9 +257,9 @@ public void create (Composite parent, int style) {
 			}
 		}
 	};
-	browser.addListener(SWT.Dispose, listener);
-	browser.addListener(SWT.KeyDown, listener); /* needed for tabbing into the Browser */
-	browser.addListener(SWT.FocusIn, listener);
+	nativeBrowser.addListener(SWT.Dispose, listener);
+	nativeBrowser.addListener(SWT.KeyDown, listener); /* needed for tabbing into the Browser */
+	nativeBrowser.addListener(SWT.FocusIn, listener);
 
 	webView.setFrameLoadDelegate(delegate);
 	webView.setResourceLoadDelegate(delegate);
@@ -292,9 +292,9 @@ static long browserProc(long id, long sel, long arg0) {
 
 	Display d = Display.getCurrent();
 	if (d == null || d.isDisposed()) return 0;
-	Widget widget = d.findWidget(id);
+	NativeWidget widget = d.findWidget(id);
 	if (widget == null) return 0;
-	WebKit webKit = (WebKit)((Browser)widget).webBrowser;
+	WebKit webKit = (WebKit)((NativeBrowser)widget).webBrowser;
 	if (sel == OS.sel_webViewShow_) {
 		webKit.webViewShow(arg0);
 	} else if (sel == OS.sel_webViewClose_) {
@@ -312,9 +312,9 @@ static long browserProc(long id, long sel, long arg0) {
 static long browserProc(long id, long sel, long arg0, long arg1) {
 	Display d = Display.getCurrent();
 	if (d == null || d.isDisposed()) return 0;
-	Widget widget = d.findWidget(id);
+	NativeWidget widget = d.findWidget(id);
 	if (widget == null) return 0;
-	WebKit webKit = (WebKit)((Browser)widget).webBrowser;
+	WebKit webKit = (WebKit)((NativeBrowser)widget).webBrowser;
 	if (sel == OS.sel_webView_didChangeLocationWithinPageForFrame_) {
 		webKit.webView_didChangeLocationWithinPageForFrame(arg0, arg1);
 	} else if (sel == OS.sel_webView_didFinishLoadForFrame_) {
@@ -356,9 +356,9 @@ static long browserProc(long id, long sel, long arg0, long arg1) {
 static long browserProc(long id, long sel, long arg0, long arg1, long arg2) {
 	Display d = Display.getCurrent();
 	if (d == null || d.isDisposed()) return 0;
-	Widget widget = d.findWidget(id);
+	NativeWidget widget = d.findWidget(id);
 	if (widget == null) return 0;
-	WebKit webKit = (WebKit)((Browser)widget).webBrowser;
+	WebKit webKit = (WebKit)((NativeBrowser)widget).webBrowser;
 	if (sel == OS.sel_webView_didFailProvisionalLoadWithError_forFrame_) {
 		webKit.webView_didFailProvisionalLoadWithError_forFrame(arg0, arg1, arg2);
 	} else if (sel == OS.sel_webView_didReceiveTitle_forFrame_) {
@@ -388,9 +388,9 @@ static long browserProc(long id, long sel, long arg0, long arg1, long arg2) {
 static long browserProc(long id, long sel, long arg0, long arg1, long arg2, long arg3) {
 	Display d = Display.getCurrent();
 	if (d == null || d.isDisposed()) return 0;
-	Widget widget = d.findWidget(id);
+	NativeWidget widget = d.findWidget(id);
 	if (widget == null) return 0;
-	WebKit webKit = (WebKit)((Browser)widget).webBrowser;
+	WebKit webKit = (WebKit)((NativeBrowser)widget).webBrowser;
 	if (sel == OS.sel_webView_resource_didFailLoadingWithError_fromDataSource_) {
 		webKit.webView_resource_didFailLoadingWithError_fromDataSource(arg0, arg1, arg2, arg3);
 	} else if (sel == OS.sel_webView_resource_didReceiveAuthenticationChallenge_fromDataSource_) {
@@ -407,9 +407,9 @@ static long browserProc(long id, long sel, long arg0, long arg1, long arg2, long
 static long browserProc(long id, long sel, long arg0, long arg1, long arg2, long arg3, long arg4) {
 	Display d = Display.getCurrent();
 	if (d == null || d.isDisposed()) return 0;
-	Widget widget = d.findWidget(id);
+	NativeWidget widget = d.findWidget(id);
 	if (widget == null) return 0;
-	WebKit webKit = (WebKit)((Browser)widget).webBrowser;
+	WebKit webKit = (WebKit)((NativeBrowser)widget).webBrowser;
 	if (sel == OS.sel_webView_resource_willSendRequest_redirectResponse_fromDataSource_) {
 		return webKit.webView_resource_willSendRequest_redirectResponse_fromDataSource(arg0, arg1, arg2, arg3, arg4);
 	} else if (sel == OS.sel_webView_decidePolicyForMIMEType_request_frame_decisionListener_) {
@@ -715,7 +715,7 @@ void webView_didFailProvisionalLoadWithError_forFrame(long sender, long error, l
 						panel.setAlternateButtonTitle(NSString.stringWith(Compatibility.getMessage("SWT_Cancel"))); //$NON-NLS-1$
 						panel.setShowsHelp(true);
 						failingURL.retain();
-						NSWindow window = browser.getShell().view.window();
+						NSWindow window = nativeBrowser.getShell().view.window();
 						panel.beginSheetForWindow(window, delegate, OS.sel_createPanelDidEnd, failingURL.id, trustRef[0], NSString.stringWith(message));
 						success = true;
 					}
@@ -1199,9 +1199,9 @@ long webView_createWebViewWithRequest(long sender, long request) {
 		}
 	}
 	WebView result = null;
-	Browser browser = null;
-	if (newEvent.browser != null && newEvent.browser.webBrowser instanceof WebKit) {
-		browser = newEvent.browser;
+	NativeBrowser browser = null;
+	if (newEvent.browser != null && newEvent.browser.getWrappedWidget().webBrowser instanceof WebKit) {
+		browser = newEvent.browser.getWrappedWidget();
 	}
 	if (browser != null && !browser.isDisposed()) {
 		result = ((WebKit)browser.webBrowser).webView;

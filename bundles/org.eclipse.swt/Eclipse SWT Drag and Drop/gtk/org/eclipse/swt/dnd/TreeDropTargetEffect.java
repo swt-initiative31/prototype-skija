@@ -116,7 +116,7 @@ public class TreeDropTargetEffect extends DropTargetEffect {
 	@Override
 	public void dragLeave(DropTargetEvent event) {
 		Tree tree = (Tree) control;
-		long handle = tree.handle;
+		long handle = Widget.checkNative(tree).handle;
 		GTK.gtk_tree_view_set_drag_dest_row(handle, 0, GTK.GTK_TREE_VIEW_DROP_BEFORE);
 
 		scrollBeginTime = 0;
@@ -148,7 +148,7 @@ public class TreeDropTargetEffect extends DropTargetEffect {
 		Tree tree = (Tree) control;
 		int effect = checkEffect(event.feedback);
 
-		long handle = tree.handle;
+		long handle = Widget.checkNative(tree).handle;
 		Point coordinates = new Point(event.x, event.y);
 		coordinates = DPIUtil.autoScaleUp(tree.toControl(coordinates));
 		long [] path = new long [1];

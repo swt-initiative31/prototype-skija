@@ -15,9 +15,9 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
 
-abstract class NativeBasedCustomControl extends Control {
+abstract class NativeBasedCustomControl extends NativeControl {
 
-	protected NativeBasedCustomControl(Composite parent, int style) {
+	protected NativeBasedCustomControl(NativeComposite parent, int style) {
 		super(parent, style);
 	}
 
@@ -115,7 +115,7 @@ abstract class NativeBasedCustomControl extends Control {
 					GCData data = new GCData();
 					data.device = display;
 					data.foreground = getForegroundPixel();
-					Control control = findBackgroundControl();
+					NativeControl control = findBackgroundControl();
 					if (control == null)
 						control = this;
 					data.background = control.getBackgroundPixel();
