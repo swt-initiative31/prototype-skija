@@ -58,4 +58,9 @@ class DefaultRendererFactory implements RendererFactory {
 	public TabFolderRenderer createTabFolderRenderer(TabFolder tabFolder) {
 		return new DefaultTabFolderRenderer(tabFolder);
 	}
+	
+	@Override
+	public SashRenderer createSashRenderer(Sash sash) {
+		return new DefaultSashRenderer(sash);
+	}
 }
