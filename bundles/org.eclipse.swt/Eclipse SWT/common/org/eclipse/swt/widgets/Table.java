@@ -2480,7 +2480,6 @@ public class Table extends Composite implements ICustomWidget {
 
 			for (TableColumn c : columns) {
 
-				System.out.println(c.getWidth());
 				c.setLocation(new Point(currentWidth + 1, 1)); // +1 for one
 																// next to the
 																// current
@@ -2498,10 +2497,8 @@ public class Table extends Composite implements ICustomWidget {
 			int currentHeight = 1 + tableColumnsHeight + 1;
 			currentWidth = 1;
 			for (TableItem it : items) {
-
 				it.setLocation(new Point(currentWidth, currentHeight));
 				currentHeight += it.getBounds().height + 2;
-
 			}
 
 		}

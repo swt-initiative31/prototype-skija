@@ -1062,7 +1062,7 @@ public class TableColumn extends Item {
 	private void setHeight(int height) {
 
 		checkWidget();
-		setHeightInPixels(DPIUtil.scaleUp(width, getZoom()));
+		setHeightInPixels(DPIUtil.scaleUp(height, getZoom()));
 
 	}
 
