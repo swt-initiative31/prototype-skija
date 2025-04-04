@@ -1145,6 +1145,11 @@ public class TableColumn extends Item {
 		if (index > 0) {
 			newX = getParent().getColumn(0).getLocation().x + (index * shiftAmount);
 		}
+
+		// handle Horizontal Bar
+		if (getParent().horizontalBar != null) {
+			newX -= getParent().horizontalBar.getSelection();
+		}
 		Point newLocation = new Point(newX, currentLocation.y);
 
 		Rectangle b = new Rectangle(newLocation.x, newLocation.y, getWidth(), getHeight());

@@ -238,6 +238,11 @@ public class TableItem extends Item {
 
 		b.y = b.y - upShift;
 
+		// handle Horizontal Bar
+		if (getParent().horizontalBar != null) {
+			b.x -= getParent().horizontalBar.getSelection();
+		}
+
 		GC gc = event.gc;
 		gc.setClipping(b);
 		Color bgBefore = gc.getBackground();
@@ -266,7 +271,7 @@ public class TableItem extends Item {
 			if (i > 0) {
 				itemX += i * parent.getColumnWidth();
 			}
-			System.out.println("TableItem.paint: " + getText() + " " + itemX + " " + itemY);
+//			System.out.println("TableItem.paint: " + getText() + " " + itemX + " " + itemY);
 			gc.drawText(text, itemX, itemY);
 		}
 

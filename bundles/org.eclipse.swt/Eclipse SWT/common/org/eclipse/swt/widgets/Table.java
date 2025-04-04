@@ -314,6 +314,9 @@ public class Table extends Composite implements ICustomWidget {
 		if (getVerticalBar() != null) {
 			getVerticalBar().addListener(SWT.Selection, event -> onScrollBar(event));
 		}
+		if (getHorizontalBar() != null) {
+			getHorizontalBar().addListener(SWT.Selection, event -> onScrollBar(event));
+		}
 
 		initializeAccessible();
 
@@ -436,7 +439,46 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	private void onResize() {
+		updateScrollBarWithTextSize();
 		redraw();
+	}
+
+	private void updateScrollBarWithTextSize() {
+		ScrollBar vBar = getVerticalBar();
+
+		if (vBar != null) {
+			vBar.setMinimum(0);
+			if (getItemCount() > 0)
+				vBar.setMaximum(getItemCount() - 1);
+			else
+				vBar.setMaximum(0);
+
+			Rectangle ca = getClientArea();
+
+			int height = ca.height;
+
+			int h = getTableItemHeight() + 1;
+
+			vBar.setIncrement(1);
+			if (h != 0) {
+
+				System.out.println("Thumb: " + (height / h));
+
+				if (height % h == 0)
+					vBar.setThumb(height / h);
+				else
+					vBar.setThumb((height / h) - 1);
+			}
+		}
+
+		ScrollBar hBar = getHorizontalBar();
+		int totalColumnWidth = getTotalColumnWidth();
+		if (hBar != null && totalColumnWidth > 0) {
+			hBar.setMaximum(totalColumnWidth / 25);
+			hBar.setMinimum(0);
+			hBar.setThumb(1);
+		}
+
 	}
 
 	private void onDispose(Event event) {
@@ -496,6 +538,7 @@ public class Table extends Composite implements ICustomWidget {
 		}
 
 		recalculatePositions();
+		updateScrollBarWithTextSize();
 
 		GC gc = event.gc;
 		if (gc == null) {
@@ -523,35 +566,6 @@ public class Table extends Composite implements ICustomWidget {
 		GC gc = e.gc;
 
 		gc.setClipping(bounds);
-
-		// setting the bars here? Maybe somewhere else is also possible. Don't
-		// know.
-		ScrollBar vBar = getVerticalBar();
-
-		if (vBar != null) {
-			vBar.setMinimum(0);
-			if (getItemCount() > 0)
-				vBar.setMaximum(getItemCount() - 1);
-			else
-				vBar.setMaximum(0);
-
-			Rectangle ca = getClientArea();
-
-			int height = ca.height;
-
-			int h = getTableItemHeight() + 1;
-
-			vBar.setIncrement(1);
-			if (h != 0) {
-
-				System.out.println("Thumb: " + (height / h));
-
-				if (height % h == 0)
-					vBar.setThumb(height / h);
-				else
-					vBar.setThumb((height / h) - 1);
-			}
-		}
 
 		boolean drawColumns = headerVisible && (columns != null && columns.length > 0);
 
@@ -2269,6 +2283,8 @@ public class Table extends Composite implements ICustomWidget {
 
 		recalculatePositions();
 
+		updateScrollBarWithTextSize();
+
 		redraw();
 
 		// if (!(0 <= index && index <= columnCount)) error
@@ -2455,7 +2471,7 @@ public class Table extends Composite implements ICustomWidget {
 			columnWidth = column.getWidth();
 			totalWidth += columnWidth;
 		}
-		System.out.println("Total Width: " + totalWidth + ", Col Width: " + columnWidth);
+//		System.out.println("Total Width: " + totalWidth + ", Col Width: " + columnWidth);
 		return totalWidth;
 	}
 
@@ -2576,6 +2592,7 @@ public class Table extends Composite implements ICustomWidget {
 			// and one by border
 		}
 
+		updateScrollBarWithTextSize();
 		redraw();
 
 		// int count = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
@@ -6004,7 +6021,7 @@ public class Table extends Composite implements ICustomWidget {
 
 		super.pack();
 		recalculatePositions();
-
+		updateScrollBarWithTextSize();
 	}
 
 	/**
