@@ -252,13 +252,23 @@ public class TableItem extends Item {
 			gc.drawRectangle(b);
 
 		} else if (getParent().mouseHoverElement == this) {
-
 			gc.setBackground(getParent().getDisplay().getSystemColor(SWT.COLOR_YELLOW));
 			gc.fillRectangle(b);
 
 		}
 
-		gc.drawText(getText(), b.x + 1, b.y + 1);
+		Table parent = getParent();
+		TableColumn[] columns = parent.getColumns();
+		for (int i = 0; i < columns.length; i++) {
+			String text = getText(i);
+			int itemX = b.x + 1;
+			int itemY = b.y + 1;
+			if (i > 0) {
+				itemX += i * parent.getColumnWidth();
+			}
+			System.out.println("TableItem.paint: " + getText() + " " + itemX + " " + itemY);
+			gc.drawText(text, itemX, itemY);
+		}
 
 		gc.setBackground(bgBefore);
 
@@ -581,7 +591,7 @@ public class TableItem extends Item {
 		int width = leftMargin + imageWidth + GAP + lineWidth + this.rightMargin;
 		int height = topMargin + Math.max(lineHeight, imageHeight) + this.bottomMargin;
 
-		computedSize = new Point(width, height);
+		computedSize = new Point(getParent().getTotalColumnWidth(), height);
 
 		return computedSize;
 	}

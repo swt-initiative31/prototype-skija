@@ -2448,6 +2448,24 @@ public class Table extends Composite implements ICustomWidget {
 		// }
 	}
 
+	protected int getTotalColumnWidth() {
+		int totalWidth = 0;
+		int columnWidth = 0;
+		for (TableColumn column : columns) {
+			columnWidth = column.getWidth();
+			totalWidth += columnWidth;
+		}
+		System.out.println("Total Width: " + totalWidth + ", Col Width: " + columnWidth);
+		return totalWidth;
+	}
+
+	protected int getColumnWidth() {
+		if (columns.length > 0) {
+			return columns[0].getWidth();
+		}
+		return 0;
+	}
+
 	private void recalculatePositions() {
 
 		// Columns left to right
@@ -2488,7 +2506,30 @@ public class Table extends Composite implements ICustomWidget {
 
 		}
 
+//		int columnCount = getColumnCount();
+//		int itemCount = getItemCount();
+//
+//		for (int col = 0; col < columnCount; col++) {
+//			TableColumn column = getColumn(col);
+//			for (int row = 0; row < itemCount; row++) {
+//				TableItem item = getItem(row);
+//				item.getWidth();
+//				if (item != null && !item.isDisposed()) {
+//					// Calculate the new location for the item in the current column
+//					Point newLocation = calculateNewLocation(row, col, item.getHeight(), column.getWidth());
+//					item.setLocation(newLocation);
+//				}
+//			}
+//		}
+
 	}
+
+//	Point calculateNewLocation(int row, int col, int rowHeight, int columnWidth) {
+//		// Implement your logic to calculate the new location based on row and column
+//		int x = col * columnWidth; // Example calculation
+//		int y = row * rowHeight; // Example calculation
+//		return new Point(x, y);
+//	}
 
 	private void calculateHeaderBounds() {
 
