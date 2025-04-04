@@ -206,7 +206,8 @@ public class Display extends Device implements Executor {
 	long oldCursorSetProc;
 	Callback cursorSetCallback;
 
-	NativeCombo currentCombo;
+	static { SWT.todoSkija(); }
+	//NativeCombo currentCombo;
 
 	// the following Callbacks are never freed
 	static Callback windowCallback2, windowCallback3, windowCallback4, windowCallback5, windowCallback6;
@@ -5639,7 +5640,8 @@ long applicationNextEventMatchingMask (long id, long sel, long mask, long expira
 		super_struct.super_class = OS.objc_msgSend(id, OS.sel_superclass);
 		long result = OS.objc_msgSendSuper(super_struct, sel, mask, expiration, mode, dequeue != 0);
 		if (result != 0) {
-			if (dequeue != 0 && currentCombo != null && !currentCombo.isDisposed()) {
+			SWT.todoSkija();
+			if (dequeue != 0 && /*currentCombo != null && !currentCombo.isDisposed()*/false) {
 				NSEvent nsEvent = new NSEvent(result);
 				if (nsEvent.type() == OS.NSKeyDown) {
 					// TODO: replace with platform independent event.

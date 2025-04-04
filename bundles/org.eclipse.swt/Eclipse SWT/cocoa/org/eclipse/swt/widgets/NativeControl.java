@@ -5353,11 +5353,4 @@ static double [] getLighterOrDarkerColor (double [] pixel, double factor, boolea
 static double luma (double[] rgbColor) {
 	return 0.2126f * rgbColor[0] + 0.7152f * rgbColor[1] + 0.0722f * rgbColor[2];
 }
-
-<<<<<<< HEAD:bundles/org.eclipse.swt/Eclipse SWT/cocoa/org/eclipse/swt/widgets/Control.java
-=======
-@Override
-public abstract Control getWrapper();
-
->>>>>>> fa1cdeec5f (Introduce widget facade and adapt Win32 native widgets accordingly):bundles/org.eclipse.swt/Eclipse SWT/cocoa/org/eclipse/swt/widgets/NativeControl.java
 }

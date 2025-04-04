@@ -485,14 +485,8 @@ public void setDefaultButton(Button button) {
 	}
 	if (button == defaultButton) return;
 	defaultButton = button;
-<<<<<<< HEAD:bundles/org.eclipse.swt/Eclipse SWT/cocoa/org/eclipse/swt/widgets/Decorations.java
 //	NSButtonCell cell = null;
 //	if (defaultButton != null && (defaultButton.style & SWT.PUSH) != 0) {
-=======
-	// TODO Facade readd
-//	NSButtonCell cell = null;
-//	if (defaultButton != null && (defaultButton.getStyle() & SWT.PUSH) != 0) {
->>>>>>> fa1cdeec5f (Introduce widget facade and adapt Win32 native widgets accordingly):bundles/org.eclipse.swt/Eclipse SWT/cocoa/org/eclipse/swt/widgets/NativeDecorations.java
 //		cell = new NSButtonCell (((NSButton)defaultButton.view).cell ());
 //	}
 //	view.window().setDefaultButtonCell (cell);
