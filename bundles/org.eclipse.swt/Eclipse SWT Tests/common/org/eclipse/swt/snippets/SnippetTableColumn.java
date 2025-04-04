@@ -42,7 +42,7 @@ public class SnippetTableColumn {
 		for (int i = 0; i < 12; i++) {
 			TableItem item = new TableItem(table, SWT.NONE);
 			for (int j = 0; j < columns.length; j++) {
-				item.setText(j, "Item " + i);
+				item.setText(j, "Item " + i + j);
 			}
 		}
 		for (TableColumn col : columns)
