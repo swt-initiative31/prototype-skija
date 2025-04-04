@@ -716,7 +716,8 @@ public void setTransfer(Transfer... transferAgents){
 		}
 
 		int actions = opToOsOp(getStyle());
-		if (control instanceof NativeCombo) {
+		SWT.todoSkija();
+		if (/*control instanceof NativeCombo*/false) {
 			if ((control.getStyle() & SWT.READ_ONLY) == 0) {
 				long entryHandle = GTK3.gtk_bin_get_child (control.handle);
 				if (entryHandle != 0) {

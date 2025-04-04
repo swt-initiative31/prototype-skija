@@ -16,13 +16,13 @@ import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
 
-abstract class NativeBasedCustomControl extends Control {
+abstract class NativeBasedCustomControl extends NativeControl {
 
 	long scrolledHandle;
 	long imHandle, socketHandle;
 	static final String NO_INPUT_METHOD = "org.eclipse.swt.internal.gtk.noInputMethod"; //$NON-NLS-1$
 
-	protected NativeBasedCustomControl(Composite parent, int style) {
+	protected NativeBasedCustomControl(NativeComposite parent, int style) {
 		super(parent, style);
 	}
 

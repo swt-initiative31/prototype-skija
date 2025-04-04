@@ -502,12 +502,8 @@ public class Display extends Device implements Executor {
 	static Display [] Displays = new Display [1];
 
 	/* Skinning support */
-<<<<<<< HEAD
 	private RendererFactory rendererFactory;
-	Widget [] skinList = new Widget [GROW_SIZE];
-=======
 	NativeWidget [] skinList = new NativeWidget [GROW_SIZE];
->>>>>>> fa1cdeec5f (Introduce widget facade and adapt Win32 native widgets accordingly)
 	int skinCount;
 
 	/* Package name */
@@ -2780,6 +2776,7 @@ public Shell [] getShells () {
 	return Arrays.stream(getNativeShells()).map(NativeShell::getWrapper).toArray(Shell[]::new);
 }
 
+// TODO Facade added
 public NativeShell[] getNativeShells() {
 	checkDevice ();
 	int index = 0;

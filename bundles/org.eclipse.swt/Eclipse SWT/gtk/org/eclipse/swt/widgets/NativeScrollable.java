@@ -657,12 +657,4 @@ private Point scrollBarSize(long scrollBarHandle) {
 	int spacing = padding[0];
 	return new Point(requisition.width + spacing, requisition.height + spacing);
 }
-
-<<<<<<< HEAD:bundles/org.eclipse.swt/Eclipse SWT/gtk/org/eclipse/swt/widgets/Scrollable.java
-=======
-@Override
-public
-abstract Scrollable getWrapper();
-
->>>>>>> fa1cdeec5f (Introduce widget facade and adapt Win32 native widgets accordingly):bundles/org.eclipse.swt/Eclipse SWT/gtk/org/eclipse/swt/widgets/NativeScrollable.java
 }

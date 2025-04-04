@@ -52,6 +52,11 @@ import org.eclipse.swt.widgets.*;
 public class SWT {
 	public static boolean USE_SKIJA = true;
 
+	@Deprecated
+	public static void todoSkija() {
+		// just to mark all locations with a TODO
+	}
+
 	/* Widget Event Constants */
 
 	/**
