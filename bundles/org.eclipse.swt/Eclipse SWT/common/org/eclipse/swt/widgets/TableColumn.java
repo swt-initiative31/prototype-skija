@@ -1135,24 +1135,31 @@ public class TableColumn extends Item {
 
 	private void doPaint(Event event) {
 
-		Rectangle b = getBounds();
-
 		// TODO: if b and event positions do not fit do not draw
-		// TODO sideshift necessary for table column
+		int index = getParent().indexOf(this);
+		int shiftAmount = getWidth();
+		Point currentLocation = getLocation();
+		int newX = currentLocation.x;
+
+		// Adjust newX for columns other than the first one
+		if (index > 0) {
+			newX = getParent().getColumn(0).getLocation().x + (index * shiftAmount);
+		}
+		Point newLocation = new Point(newX, currentLocation.y);
+
+		Rectangle b = new Rectangle(newLocation.x, newLocation.y, getWidth(), getHeight());
 
 		GC gc = event.gc;
 		gc.setClipping(b);
 		Color bgBefore = gc.getBackground();
 
 		if (getParent().mouseHoverElement == this) {
-
 			gc.setBackground(getParent().getDisplay().getSystemColor(SWT.COLOR_YELLOW));
 			gc.fillRectangle(b);
-
 		}
 
+		System.out.println("x: " + b.x + " y: " + b.y + " w: " + b.width + " h: " + b.height);
 		gc.drawText(getText(), b.x + 1, b.y + 1);
-
 		gc.setBackground(bgBefore);
 
 	}
