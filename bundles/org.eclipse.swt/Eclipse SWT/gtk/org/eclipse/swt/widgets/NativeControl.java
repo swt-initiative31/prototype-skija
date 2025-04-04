@@ -6977,11 +6977,4 @@ Point getSurfaceOrigin () {
 
 	return success ? new Point((int)originX[0], (int)originY[0]) : new Point(0, 0);
 }
-
-<<<<<<< HEAD:bundles/org.eclipse.swt/Eclipse SWT/gtk/org/eclipse/swt/widgets/Control.java
-=======
-@Override
-public abstract Control getWrapper();
-
->>>>>>> fa1cdeec5f (Introduce widget facade and adapt Win32 native widgets accordingly):bundles/org.eclipse.swt/Eclipse SWT/gtk/org/eclipse/swt/widgets/NativeControl.java
 }

@@ -496,7 +496,8 @@ public class Accessible {
 	long getControlHandle () {
 		long result = control.handle;
 
-		if (control instanceof NativeLabel) {
+		SWT.todoSkija();
+		if (/*control instanceof NativeLabel*/false) {
 			if (GTK.GTK4) {
 				for (long child = GTK4.gtk_widget_get_first_child(result); child != 0; child = GTK4.gtk_widget_get_next_sibling(child)) {
 					if (GTK.gtk_widget_get_visible(child)) {

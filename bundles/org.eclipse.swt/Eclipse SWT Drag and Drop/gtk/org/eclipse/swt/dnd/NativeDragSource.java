@@ -412,7 +412,8 @@ void dragBegin(long widget, long context) {
 	 * When we recieve the signal from GTK of DragBegin, we will
 	 * notify SWT that a drag has occurred.
 	 */
-	if (this.control instanceof NativeText) {
+	SWT.todoSkija();
+	if (/*this.control instanceof NativeText*/false) {
 		DNDEvent event = new DNDEvent();
 		Display display = Display.getCurrent();
 		Point loc = display.getCursorLocation();

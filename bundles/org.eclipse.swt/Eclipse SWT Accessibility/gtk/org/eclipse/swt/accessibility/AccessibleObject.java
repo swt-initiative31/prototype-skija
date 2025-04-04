@@ -1192,7 +1192,8 @@ class AccessibleObject {
 				if (setsize == 0 && posinset == 0) {
 					/* Determine position and count for radio buttons. */
 					NativeControl control = accessible.control;
-					if (control instanceof NativeButton && ((control.getStyle() & SWT.RADIO) != 0)) {
+					SWT.todoSkija();
+					if (/*control instanceof NativeButton &&*/ ((control.getStyle() & SWT.RADIO) != 0)) {
 						Control [] children = control.getParent().getChildren();
 						posinset = 1;
 						setsize = 1;
