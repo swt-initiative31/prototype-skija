@@ -146,14 +146,14 @@ public class Display extends Device implements Executor {
 
 	GCData[] contexts;
 
-	Caret currentCaret;
+	NativeCaret currentCaret;
 
 	boolean sendEvent;
 	int clickCountButton, clickCount;
 	int blinkTime;
 
-	Control currentControl, trackingControl, tooltipControl, ignoreFocusControl;
-	Widget tooltipTarget;
+	NativeControl currentControl, trackingControl, tooltipControl, ignoreFocusControl;
+	NativeWidget tooltipTarget;
 
 	NSMutableArray isPainting, needsDisplay, needsDisplayInRect, runLoopModes;
 
@@ -168,12 +168,12 @@ public class Display extends Device implements Executor {
 
 	boolean useNativeItemHeight;
 
-	Shell [] modalShells;
-	Dialog modalDialog;
+	NativeShell [] modalShells;
+	NativeDialog modalDialog;
 	NSPanel modalPanel;
 
-	Menu menuBar;
-	Menu[] menus, popups;
+	NativeMenu menuBar;
+	NativeMenu[] menus, popups;
 	long lastHandledMenuForEventId;
 
 	/* Menu items with ESC key as accelerator need to be handled differently on Cocoa */
@@ -187,7 +187,7 @@ public class Display extends Device implements Executor {
 	int systemUIMode, systemUIOptions;
 
 	/* Focus */
-	Control focusControl, currentFocusControl;
+	NativeControl focusControl, currentFocusControl;
 	int focusEvent;
 
 	NSWindow screenWindow, keyWindow;
@@ -206,7 +206,8 @@ public class Display extends Device implements Executor {
 	long oldCursorSetProc;
 	Callback cursorSetCallback;
 
-	Combo currentCombo;
+	static { SWT.todoSkija(); }
+	//NativeCombo currentCombo;
 
 	// the following Callbacks are never freed
 	static Callback windowCallback2, windowCallback3, windowCallback4, windowCallback5, windowCallback6;
@@ -217,19 +218,19 @@ public class Display extends Device implements Executor {
 	Runnable [] disposeList;
 
 	/* Deferred Layout list */
-	Composite[] layoutDeferred;
+	NativeComposite[] layoutDeferred;
 	int layoutDeferredCount;
 
 	/* System Tray */
-	Tray tray;
-	TrayItem currentTrayItem;
-	Menu trayItemMenu;
+	NativeTray tray;
+	NativeTrayItem currentTrayItem;
+	NativeMenu trayItemMenu;
 
 	/* Main menu bar and application menu */
-	Menu appMenuBar, appMenu;
+	NativeMenu appMenuBar, appMenu;
 
 	/* TaskBar */
-	TaskBar taskBar;
+	NativeTaskBar taskBar;
 
 	/* System Resources */
 	Image errorImage, infoImage, warningImage;
@@ -342,7 +343,7 @@ public class Display extends Device implements Executor {
 	/* Skinning support */
 	private RendererFactory rendererFactory;
 	static final int GROW_SIZE = 1024;
-	Widget [] skinList = new Widget [GROW_SIZE];
+	NativeWidget [] skinList = new NativeWidget [GROW_SIZE];
 	int skinCount;
 
 	/* Package Name */
@@ -475,10 +476,10 @@ public void addFilter (int eventType, Listener listener) {
 	filterTable.hook (eventType, listener);
 }
 
-void addLayoutDeferred (Composite comp) {
-	if (layoutDeferred == null) layoutDeferred = new Composite [64];
+void addLayoutDeferred (NativeComposite comp) {
+	if (layoutDeferred == null) layoutDeferred = new NativeComposite [64];
 	if (layoutDeferredCount == layoutDeferred.length) {
-		Composite [] temp = new Composite [layoutDeferred.length + 64];
+		NativeComposite [] temp = new NativeComposite [layoutDeferred.length + 64];
 		System.arraycopy (layoutDeferred, 0, temp, 0, layoutDeferred.length);
 		layoutDeferred = temp;
 	}
@@ -516,15 +517,15 @@ public void addListener (int eventType, Listener listener) {
 	eventTable.hook (eventType, listener);
 }
 
-void addMenu (Menu menu) {
-	if (menus == null) menus = new Menu [12];
+void addMenu (NativeMenu menu) {
+	if (menus == null) menus = new NativeMenu [12];
 	for (int i=0; i<menus.length; i++) {
 		if (menus [i] == null) {
 			menus [i] = menu;
 			return;
 		}
 	}
-	Menu [] newMenus = new Menu [menus.length + 12];
+	NativeMenu [] newMenus = new NativeMenu [menus.length + 12];
 	newMenus [menus.length] = menu;
 	System.arraycopy (menus, 0, newMenus, 0, menus.length);
 	menus = newMenus;
@@ -548,8 +549,8 @@ void addPool (NSAutoreleasePool pool) {
 	pools [poolCount++] = pool;
 }
 
-void addPopup (Menu menu) {
-	if (popups == null) popups = new Menu [4];
+void addPopup (NativeMenu menu) {
+	if (popups == null) popups = new NativeMenu [4];
 	int length = popups.length;
 	for (int i=0; i<length; i++) {
 		if (popups [i] == menu) return;
@@ -560,23 +561,23 @@ void addPopup (Menu menu) {
 		index++;
 	}
 	if (index == length) {
-		Menu [] newPopups = new Menu [length + 4];
+		NativeMenu [] newPopups = new NativeMenu [length + 4];
 		System.arraycopy (popups, 0, newPopups, 0, length);
 		popups = newPopups;
 	}
 	popups [index] = menu;
 }
 
-void addSkinnableWidget (Widget widget) {
+void addSkinnableWidget (NativeWidget widget) {
 	if (skinCount >= skinList.length) {
-		Widget[] newSkinWidgets = new Widget [(skinList.length + 1) * 3 / 2];
+		NativeWidget[] newSkinWidgets = new NativeWidget [(skinList.length + 1) * 3 / 2];
 		System.arraycopy (skinList, 0, newSkinWidgets, 0, skinList.length);
 		skinList = newSkinWidgets;
 	}
 	skinList [skinCount++] = widget;
 }
 
-void addWidget (NSObject view, Widget widget) {
+void addWidget (NSObject view, NativeWidget widget) {
 	if (view == null) return;
 	long ivar = OS.object_setInstanceVariable (view.id, SWT_OBJECT, widget.jniRef);
 
@@ -712,7 +713,7 @@ protected void checkDevice () {
 	if (isDisposed ()) error (SWT.ERROR_DEVICE_DISPOSED);
 }
 
-void checkEnterExit (Control control, NSEvent nsEvent, boolean send) {
+void checkEnterExit (NativeControl control, NSEvent nsEvent, boolean send) {
 	if (control != currentControl) {
 		if (currentControl != null && !currentControl.isDisposed()) {
 			currentControl.sendMouseEvent (nsEvent, SWT.MouseExit, send);
@@ -732,8 +733,8 @@ void checkEnterExit (Control control, NSEvent nsEvent, boolean send) {
 }
 
 void checkFocus () {
-	Control oldControl = currentFocusControl;
-	Control newControl = getFocusControl ();
+	NativeControl oldControl = currentFocusControl;
+	NativeControl newControl = getNativeFocusControl ();
 	if (oldControl == ignoreFocusControl && newControl == null) {
 		/*
 		* Bug in Cocoa. On Mac 10.8, a control loses and gains focus
@@ -763,7 +764,7 @@ void checkFocus () {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  *
- * @see Widget#checkSubclass
+ * @see NativeWidget#checkSubclass
  */
 protected void checkSubclass () {
 	if (!Display.isValidClass (getClass ())) error (SWT.ERROR_INVALID_SUBCLASS);
@@ -785,8 +786,8 @@ protected void checkSubclass () {
  *
  * @see #getCurrent
  * @see #getDefault
- * @see Widget#checkSubclass
- * @see Shell
+ * @see NativeWidget#checkSubclass
+ * @see NativeShell
  */
 public Display () {
 	this (null);
@@ -842,7 +843,7 @@ static String convertToLf(String text) {
 	return result.toString ();
 }
 
-void clearModal (Shell shell) {
+void clearModal (NativeShell shell) {
 	if (modalShells == null) return;
 	int index = 0, length = modalShells.length;
 	while (index < length) {
@@ -854,7 +855,7 @@ void clearModal (Shell shell) {
 	System.arraycopy (modalShells, index + 1, modalShells, index, --length - index);
 	modalShells [length] = null;
 	if (index == 0 && modalShells [0] == null) modalShells = null;
-	Shell [] shells = getShells ();
+	NativeShell [] shells = getNativeShells ();
 	for (int i=0; i<shells.length; i++) shells [i].updateModal ();
 }
 
@@ -1252,7 +1253,7 @@ boolean filters (int eventType) {
  *
  * @noreference This method is not intended to be referenced by clients.
  */
-public Widget findWidget (long handle) {
+public NativeWidget findWidget (long handle) {
 	checkDevice ();
 	return getWidget (handle);
 }
@@ -1281,7 +1282,7 @@ public Widget findWidget (long handle) {
  *
  * @since 3.1
  */
-public Widget findWidget (long handle, long id) {
+public NativeWidget findWidget (long handle, long id) {
 	checkDevice ();
 	return getWidget (handle);
 }
@@ -1305,7 +1306,7 @@ public Widget findWidget (long handle, long id) {
  *
  * @since 3.3
  */
-public Widget findWidget (Widget widget, long id) {
+public NativeWidget findWidget (NativeWidget widget, long id) {
 	checkDevice ();
 	return null;
 }
@@ -1374,12 +1375,17 @@ TouchSource findTouchSource(NSTouch touch) {
  * </ul>
  */
 public Shell getActiveShell () {
+	NativeShell shell = getActiveNativeShell();
+	return shell != null ? shell.getWrapper() : null;
+}
+
+public NativeShell getActiveNativeShell () {
 	checkDevice ();
 	NSWindow window = keyWindow != null ? keyWindow : application.keyWindow();
 	if (window != null) {
-		Widget widget = getWidget(window.contentView());
-		if (widget instanceof Shell) {
-			return (Shell)widget;
+		NativeWidget widget = getWidget(window.contentView());
+		if (widget instanceof NativeShell) {
+			return (NativeShell)widget;
 		}
 
 		// Embedded shell test: If the NSWindow isn't an SWTWindow walk up the
@@ -1388,12 +1394,12 @@ public Shell getActiveShell () {
 		NSView hitView = window.contentView().hitTest(windowLocation);
 		while (hitView != null) {
 			widget = getWidget(hitView.id);
-			if (widget instanceof Shell) {
+			if (widget instanceof NativeShell) {
 				break;
 			}
 			hitView = hitView.superview();
 		}
-		return (Shell)widget;
+		return (NativeShell)widget;
 	}
 	return null;
 }
@@ -1498,7 +1504,8 @@ public Rectangle getClientArea () {
  */
 public Control getCursorControl () {
 	checkDevice();
-	return findControl(false);
+	NativeControl nativeControl = findControl(false);
+	return nativeControl != null? nativeControl.getWrapper() : null;
 }
 
 /**
@@ -1666,6 +1673,12 @@ public int getDoubleClickTime () {
  * </ul>
  */
 public Control getFocusControl () {
+	NativeControl nativeFocusControl = getNativeFocusControl();
+	return nativeFocusControl != null ? nativeFocusControl.getWrapper() : null;
+}
+
+// TODO Facade added
+public NativeControl getNativeFocusControl() {
 	checkDevice ();
 	if (focusControl != null && !focusControl.isDisposed ()) {
 		return focusControl;
@@ -1674,7 +1687,7 @@ public Control getFocusControl () {
 	return _getFocusControl(window);
 }
 
-Control _getFocusControl (NSWindow window) {
+NativeControl _getFocusControl (NSWindow window) {
 	if (window != null) {
 		NSResponder responder = window.firstResponder();
 		if (responder != null && !responder.respondsToSelector(OS.sel_superview)) {
@@ -1683,9 +1696,9 @@ Control _getFocusControl (NSWindow window) {
 		NSView view = new NSView(responder.id);
 		if (view != null) {
 			do {
-				Widget widget = GetWidget (view.id);
-				if (widget instanceof Control) {
-					return (Control)widget;
+				NativeWidget widget = GetWidget (view.id);
+				if (widget instanceof NativeControl) {
+					return (NativeControl)widget;
 				}
 				view = view.superview();
 			} while (view != null);
@@ -1743,7 +1756,7 @@ public int getIconDepth () {
  *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  *
- * @see Decorations#setImages(Image[])
+ * @see NativeDecorations#setImages(Image[])
  *
  * @since 3.0
  */
@@ -1787,17 +1800,17 @@ int getLastEventTime () {
 	return (int)timestamp;
 }
 
-Menu [] getMenus (Decorations shell) {
-	if (menus == null) return new Menu [0];
+NativeMenu [] getMenus (NativeDecorations shell) {
+	if (menus == null) return new NativeMenu [0];
 	int count = 0;
 	for (int i = 0; i < menus.length; i++) {
-		Menu menu = menus[i];
+		NativeMenu menu = menus[i];
 		if (menu != null && menu.parent == shell) count++;
 	}
 	int index = 0;
-	Menu[] result = new Menu[count];
+	NativeMenu[] result = new NativeMenu[count];
 	for (int i = 0; i < menus.length; i++) {
-		Menu menu = menus[i];
+		NativeMenu menu = menus[i];
 		if (menu != null && menu.parent == shell) {
 			result[index++] = menu;
 		}
@@ -1805,7 +1818,7 @@ Menu [] getMenus (Decorations shell) {
 	return result;
 }
 
-Dialog getModalDialog () {
+NativeDialog getModalDialog () {
 	return modalDialog;
 }
 
@@ -1894,19 +1907,23 @@ public Monitor getPrimaryMonitor () {
  * </ul>
  */
 public Shell [] getShells () {
+	return Arrays.stream(getNativeShells()).map(NativeShell::getWrapper).toArray(Shell[]::new);
+}
+
+public NativeShell[] getNativeShells() {
 	checkDevice ();
 	NSArray windows = application.windows();
 	int index = 0;
-	Shell [] result = new Shell [(int)windows.count()];
+	NativeShell [] result = new NativeShell [(int)windows.count()];
 	for (int i = 0; i < result.length; i++) {
 		NSWindow window = new NSWindow(windows.objectAtIndex(i));
-		Widget widget = getWidget(window.contentView());
-		if (widget instanceof Shell) {
-			result[index++] = (Shell)widget;
+		NativeWidget widget = getWidget(window.contentView());
+		if (widget instanceof NativeShell) {
+			result[index++] = (NativeShell)widget;
 		}
 	}
 	if (index == result.length) return result;
-	Shell [] newResult = new Shell [index];
+	NativeShell [] newResult = new NativeShell [index];
 	System.arraycopy (result, 0, newResult, 0, index);
 	return newResult;
 }
@@ -2213,10 +2230,18 @@ public Image getSystemImage (int id) {
  */
 public Menu getMenuBar () {
 	checkDevice ();
-	if (appMenuBar != null) return appMenuBar;
-	appMenuBar = new Menu (this);
+	if (appMenuBar != null) return appMenuBar.getWrapper();
+	AtomicReference<Menu> wrapperMenu = new AtomicReference<>();
+	appMenuBar = new NativeMenu(this) {
+		@Override
+		public Menu getWrapper() {
+			return wrapperMenu.get();
+		}
+	};
+	Menu menu = new Menu(appMenuBar);
+	wrapperMenu.set(menu);
 	// the menubar will be updated when the Shell or the application activates.
-	return appMenuBar;
+	return menu;
 }
 
 /**
@@ -2237,16 +2262,30 @@ public Menu getSystemMenu () {
 	if (appMenu == null) {
 		NSMenu mainMenu = NSApplication.sharedApplication().mainMenu();
 		NSMenu nsAppMenu = mainMenu.itemAtIndex(0).submenu();
-		appMenu = new Menu(this, nsAppMenu);
+		AtomicReference<Menu> wrapperMenu = new AtomicReference<>();
+		appMenu = new NativeMenu(this, nsAppMenu) {
+			@Override
+			public Menu getWrapper() {
+				return wrapperMenu.get();
+			}
+		};
+		wrapperMenu.set(new Menu(appMenu));
 
 		// Create menu items that correspond to the NSMenuItems.
 		long nsCount = nsAppMenu.numberOfItems();
 		for (int j = 0; j < nsCount; j++) {
 			NSMenuItem currMenuItem = nsAppMenu.itemAtIndex(j);
-			new MenuItem(appMenu, currMenuItem);
+			AtomicReference<MenuItem> wrapperMenuItem = new AtomicReference<>();
+			NativeMenuItem menuItem = new NativeMenuItem(appMenu, currMenuItem) {
+				@Override
+				public MenuItem getWrapper() {
+					return wrapperMenuItem.get();
+				}
+			};
+			wrapperMenuItem.set(new MenuItem(menuItem));
 		}
 	}
-	return appMenu;
+	return appMenu.getWrapper();
 }
 
 /**
@@ -2263,8 +2302,8 @@ public Menu getSystemMenu () {
  */
 public Tray getSystemTray () {
 	checkDevice ();
-	if (tray != null) return tray;
-	return tray = new Tray (this, SWT.NONE);
+	if (tray != null) return tray.getWrapper();
+	return (tray = new Tray (this, SWT.NONE).getWrappedWidget()).getWrapper();
 }
 
 /**
@@ -2281,9 +2320,9 @@ public Tray getSystemTray () {
  */
 public TaskBar getSystemTaskBar () {
 	checkDevice ();
-	if (taskBar != null) return taskBar;
-	taskBar = new TaskBar (this, SWT.NONE);
-	return taskBar;
+	if (taskBar != null) return taskBar.getWrapper();
+	taskBar = new TaskBar (this, SWT.NONE).getWrappedWidget();
+	return taskBar.getWrapper();
 }
 
 /**
@@ -2348,11 +2387,11 @@ int getToolTipTime () {
 	return 560;
 }
 
-Widget getWidget (long id) {
+NativeWidget getWidget (long id) {
 	return GetWidget (id);
 }
 
-static Widget GetWidget (long id) {
+static NativeWidget GetWidget (long id) {
 	if (id == 0) return null;
 	long [] jniRef = new long [1];
 	long iVar = OS.object_getInstanceVariable(id, SWT_OBJECT, jniRef);
@@ -2365,10 +2404,10 @@ static Widget GetWidget (long id) {
 	}
 
 	if (jniRef[0] == 0) return null;
-	return (Widget)OS.JNIGetObject(jniRef[0]);
+	return (NativeWidget)OS.JNIGetObject(jniRef[0]);
 }
 
-Widget getWidget (NSView view) {
+NativeWidget getWidget (NSView view) {
 	if (view == null) return null;
 	return getWidget(view.id);
 }
@@ -3702,7 +3741,7 @@ void postEvent (Event event) {
  *
  * @since 2.1.2
  */
-public Point map (Control from, Control to, Point point) {
+public Point map (NativeControl from, NativeControl to, Point point) {
 	checkDevice ();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
 	return map (from, to, point.x, point.y);
@@ -3744,7 +3783,7 @@ public Point map (Control from, Control to, Point point) {
  *
  * @since 2.1.2
  */
-public Point map (Control from, Control to, int x, int y) {
+public Point map (NativeControl from, NativeControl to, int x, int y) {
 	checkDevice ();
 	if (from != null && from.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (to != null && to.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -3825,10 +3864,30 @@ public Point map (Control from, Control to, int x, int y) {
  *
  * @since 2.1.2
  */
-public Rectangle map (Control from, Control to, Rectangle rectangle) {
+public Rectangle map (NativeControl from, NativeControl to, Rectangle rectangle) {
 	checkDevice ();
 	if (rectangle == null) error (SWT.ERROR_NULL_ARGUMENT);
 	return map (from, to, rectangle.x, rectangle.y, rectangle.width, rectangle.height);
+}
+
+//TODO FACADE added
+public Point map (Control from, Control to, Point point) {
+	return map(Widget.checkNative(from), Widget.checkNative(to), point);
+}
+
+//TODO FACADE added
+public Point map (Control from, Control to, int x, int y) {
+	return map(Widget.checkNative(from), Widget.checkNative(to), x, y);
+}
+
+//TODO FACADE added
+public Rectangle map (Control from, Control to, Rectangle rectangle) {
+	return map(Widget.checkNative(from), Widget.checkNative(to), rectangle);
+}
+
+//TODO FACADE added
+public Rectangle map (Control from, Control to, int x, int y, int width, int height) {
+	return map(Widget.checkNative(from), Widget.checkNative(to), x, y, width, height);
 }
 
 /**
@@ -3869,7 +3928,7 @@ public Rectangle map (Control from, Control to, Rectangle rectangle) {
  *
  * @since 2.1.2
  */
-public Rectangle map (Control from, Control to, int x, int y, int width, int height) {
+public Rectangle map (NativeControl from, NativeControl to, int x, int y, int width, int height) {
 	checkDevice ();
 	if (from != null && from.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (to != null && to.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -4325,7 +4384,7 @@ public void removeListener (int eventType, Listener listener) {
 	eventTable.unhook (eventType, listener);
 }
 
-Widget removeWidget (NSObject view) {
+NativeWidget removeWidget (NSObject view) {
 	if (view == null) return null;
 	long [] jniRef = new long [1];
 	long iVar = OS.object_getInstanceVariable(view.id, SWT_OBJECT, jniRef);
@@ -4339,12 +4398,12 @@ Widget removeWidget (NSObject view) {
 	}
 
 	if (jniRef[0] == 0) return null;
-	Widget widget = (Widget)OS.JNIGetObject(jniRef[0]);
+	NativeWidget widget = (NativeWidget)OS.JNIGetObject(jniRef[0]);
 	OS.object_setInstanceVariable(view.id, SWT_OBJECT, 0);
 	return widget;
 }
 
-void removeMenu (Menu menu) {
+void removeMenu (NativeMenu menu) {
 	if (menus == null) return;
 	for (int i = 0; i < menus.length; i++) {
 		if (menus [i] == menu) {
@@ -4364,7 +4423,7 @@ void removePool () {
 	pool.release ();
 }
 
-void removePopup (Menu menu) {
+void removePopup (NativeMenu menu) {
 	if (popups == null) return;
 	for (int i=0; i<popups.length; i++) {
 		if (popups [i] == menu) {
@@ -4445,12 +4504,12 @@ boolean runDeferredEvents () {
 
 boolean runDeferredLayouts () {
 	if (layoutDeferredCount != 0) {
-		Composite[] temp = layoutDeferred;
+		NativeComposite[] temp = layoutDeferred;
 		int count = layoutDeferredCount;
 		layoutDeferred = null;
 		layoutDeferredCount = 0;
 		for (int i = 0; i < count; i++) {
-			Composite comp = temp[i];
+			NativeComposite comp = temp[i];
 			if (!comp.isDisposed()) comp.setLayoutDeferred (false);
 		}
 		return true;
@@ -4498,7 +4557,7 @@ boolean runPopups () {
 	if (popups == null) return false;
 	boolean result = false;
 	while (popups != null) {
-		Menu menu = popups [0];
+		NativeMenu menu = popups [0];
 		if (menu == null) break;
 		int length = popups.length;
 		System.arraycopy (popups, 1, popups, 0, --length);
@@ -4534,9 +4593,9 @@ boolean runSettings () {
 	initColors (ignoreColorChange);
 
 	sendEvent (SWT.Settings, null);
-	Shell [] shells = getShells ();
+	NativeShell [] shells = getNativeShells ();
 	for (int i=0; i<shells.length; i++) {
-		Shell shell = shells [i];
+		NativeShell shell = shells [i];
 		if (!shell.isDisposed ()) {
 			shell.redraw (true);
 			shell.layout (true, true);
@@ -4572,9 +4631,9 @@ void setWindowsAppearance (APPEARANCE newMode) {
 
 	NSAppearance appearance = getAppearance(newMode);
 	if (appearance != null) {
-		Shell [] shells = getShells ();
+		NativeShell [] shells = getNativeShells ();
 		for (int i=0; i<shells.length; i++) {
-			Shell shell = shells [i];
+			NativeShell shell = shells [i];
 			if (!shell.isDisposed ()) {
 				setWindowAppearance (shell.window, appearance);
 			}
@@ -4585,18 +4644,18 @@ void setWindowsAppearance (APPEARANCE newMode) {
 
 boolean runSkin () {
 	if (skinCount > 0) {
-		Widget [] oldSkinWidgets = skinList;
+		NativeWidget [] oldSkinWidgets = skinList;
 		int count = skinCount;
-		skinList = new Widget[GROW_SIZE];
+		skinList = new NativeWidget[GROW_SIZE];
 		skinCount = 0;
 		if (eventTable != null && eventTable.hooks(SWT.Skin)) {
 			for (int i = 0; i < count; i++) {
-				Widget widget = oldSkinWidgets[i];
+				NativeWidget widget = oldSkinWidgets[i];
 				if (widget != null && !widget.isDisposed()) {
-					widget.state &= ~Widget.SKIN_NEEDED;
+					widget.state &= ~NativeWidget.SKIN_NEEDED;
 					oldSkinWidgets[i] = null;
 					Event event = new Event ();
-					event.widget = widget;
+					event.widget = widget.getWrapper();
 					sendEvent (SWT.Skin, event);
 				}
 			}
@@ -4814,26 +4873,27 @@ Runnable defaultButtonTimer = new Runnable() {
 	@Override
 	public void run() {
 		if (isDisposed ()) return;
-		Shell shell = getActiveShell();
+		NativeShell shell = getActiveNativeShell();
 		if (shell != null && !shell.isDisposed()) {
-			Button defaultButton = shell.defaultButton;
-			if (defaultButton != null && !defaultButton.isDisposed()) {
-				NSView view = defaultButton.view;
-				view.display();
-			}
+			// TODO Facade readd
+//			Button defaultButton = shell.defaultButton;
+//			if (defaultButton != null && !defaultButton.isDisposed()) {
+//				NSView view = defaultButton.view;
+//				view.display();
+//			}
 		}
 		if (isDisposed ()) return;
 		if (hasDefaultButton()) timerExec(DEFAULT_BUTTON_INTERVAL, this);
 	}
 };
 
-void setCurrentCaret (Caret caret) {
+void setCurrentCaret (NativeCaret caret) {
 	currentCaret = caret;
 	int blinkRate = currentCaret != null ? currentCaret.blinkRate : -1;
 	timerExec (blinkRate, caretTimer);
 }
 
-void setCursor (Control control) {
+void setCursor (NativeControl control) {
 	Cursor cursor = null;
 	if (control != null && !control.isDisposed()) cursor = control.findCursor ();
 	if (cursor == null) {
@@ -4929,7 +4989,7 @@ public void setData (String key, Object value) {
 	if (key.equals (ADD_WIDGET_KEY)) {
 		Object [] data = (Object [])value;
 		NSObject object = (NSObject)data [0];
-		Widget widget = (Widget)data [1];
+		NativeWidget widget = (NativeWidget)data [1];
 		if (widget == null) {
 			removeWidget (object);
 		} else {
@@ -4938,7 +4998,7 @@ public void setData (String key, Object value) {
 	}
 
 	if (key.equals(SET_MODAL_DIALOG)) {
-		setModalDialog (value != null ? (Dialog) value : null);
+		setModalDialog (value != null ? (NativeDialog) value : null);
 	}
 
 	if (key.equals (LOCK_CURSOR)) {
@@ -5006,7 +5066,7 @@ static void cancelRootMenuTracking () {
 	OS.CFRelease (rootMenu);
 }
 
-void setMenuBar (Menu menu) {
+void setMenuBar (NativeMenu menu) {
 	// If passed a null menu bar don't clear out the menu bar, but switch back to the
 	// application menu bar instead, if it exists.  If the app menu bar is already active
 	// we jump out without harming the current menu bar.
@@ -5029,9 +5089,9 @@ void setMenuBar (Menu menu) {
 	}
 	//set parent of each item to NULL and add them to menubar
 	if (menu != null) {
-		MenuItem[] items = menu.getItems();
+		NativeMenuItem[] items = menu.getItems();
 		for (int i = 0; i < items.length; i++) {
-			MenuItem item = items[i];
+			NativeMenuItem item = items[i];
 			NSMenuItem nsItem = item.nsItem;
 
 			/*
@@ -5060,17 +5120,17 @@ void setMenuBar (Menu menu) {
 	}
 }
 
-void setModalDialog (Dialog modalDialog) {
+void setModalDialog (NativeDialog modalDialog) {
 	setModalDialog(modalDialog, null);
 }
 
-void setModalDialog (Dialog modalDialog, NSPanel panel) {
+void setModalDialog (NativeDialog modalDialog, NSPanel panel) {
 	this.modalDialog = modalDialog;
 	this.modalPanel = panel;
 }
 
-void setModalShell (Shell shell) {
-	if (modalShells == null) modalShells = new Shell [4];
+void setModalShell (NativeShell shell) {
+	if (modalShells == null) modalShells = new NativeShell [4];
 	int index = 0, length = modalShells.length;
 	while (index < length) {
 		if (modalShells [index] == shell) return;
@@ -5078,12 +5138,12 @@ void setModalShell (Shell shell) {
 		index++;
 	}
 	if (index == length) {
-		Shell [] newModalShells = new Shell [length + 4];
+		NativeShell [] newModalShells = new NativeShell [length + 4];
 		System.arraycopy (modalShells, 0, newModalShells, 0, length);
 		modalShells = newModalShells;
 	}
 	modalShells [index] = shell;
-	Shell [] shells = getShells ();
+	NativeShell [] shells = getNativeShells ();
 	for (int i=0; i<shells.length; i++) shells [i].updateModal ();
 }
 
@@ -5433,13 +5493,13 @@ long timerProc (long id, long sel, long timerID) {
  *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  *
- * @see Control#update()
+ * @see NativeControl#update()
  */
 public void update () {
 	checkDevice ();
-	Shell [] shells = getShells ();
+	NativeShell [] shells = getNativeShells ();
 	for (int i=0; i<shells.length; i++) {
-		Shell shell = shells [i];
+		NativeShell shell = shells [i];
 		if (!shell.isDisposed ()) shell.update (true);
 	}
 }
@@ -5452,10 +5512,10 @@ void updateQuitMenu () {
 	// If we did not create the menu bar, don't modify it.
 	if (isEmbedded) return;
 	boolean enabled = true;
-	Shell [] shells = getShells ();
+	NativeShell [] shells = getNativeShells ();
 	int mask = SWT.PRIMARY_MODAL | SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL;
 	for (int i=0; i<shells.length; i++) {
-		Shell shell = shells [i];
+		NativeShell shell = shells [i];
 		if ((shell.style & mask) != 0 && shell.isVisible ()) {
 			enabled = false;
 			break;
@@ -5503,11 +5563,11 @@ void wakeThread () {
 	object.performSelectorOnMainThread(OS.sel_release, null, false);
 }
 
-Control findControl (boolean checkTrim) {
+NativeControl findControl (boolean checkTrim) {
 	return findControl(checkTrim, null);
 }
 
-Control findControl (boolean checkTrim, NSView[] hitView) {
+NativeControl findControl (boolean checkTrim, NSView[] hitView) {
 	NSView view = null;
 	NSPoint screenLocation = NSEvent.mouseLocation();
 	long hitWindowNumber = NSWindow.windowNumberAtPoint(screenLocation, 0);
@@ -5524,12 +5584,12 @@ Control findControl (boolean checkTrim, NSView[] hitView) {
 		}
 	}
 
-	Control control = null;
+	NativeControl control = null;
 	if (view != null) {
 		do {
-			Widget widget = getWidget (view);
-			if (widget instanceof Control) {
-				control = (Control)widget;
+			NativeWidget widget = getWidget (view);
+			if (widget instanceof NativeControl) {
+				control = (NativeControl)widget;
 				break;
 			}
 			view = view.superview();
@@ -5580,7 +5640,8 @@ long applicationNextEventMatchingMask (long id, long sel, long mask, long expira
 		super_struct.super_class = OS.objc_msgSend(id, OS.sel_superclass);
 		long result = OS.objc_msgSendSuper(super_struct, sel, mask, expiration, mode, dequeue != 0);
 		if (result != 0) {
-			if (dequeue != 0 && currentCombo != null && !currentCombo.isDisposed()) {
+			SWT.todoSkija();
+			if (dequeue != 0 && /*currentCombo != null && !currentCombo.isDisposed()*/false) {
 				NSEvent nsEvent = new NSEvent(result);
 				if (nsEvent.type() == OS.NSKeyDown) {
 					// TODO: replace with platform independent event.
@@ -5597,10 +5658,10 @@ long applicationNextEventMatchingMask (long id, long sel, long mask, long expira
 	}
 }
 
-void applicationSendTrackingEvent (NSEvent nsEvent, Control trackingControl) {
+void applicationSendTrackingEvent (NSEvent nsEvent, NativeControl trackingControl) {
 	int type = (int)nsEvent.type();
 	boolean runEnterExit = false;
-	Control runEnterExitControl = null;
+	NativeControl runEnterExitControl = null;
 	switch (type) {
 		case OS.NSLeftMouseDown:
 		case OS.NSRightMouseDown:
@@ -5614,7 +5675,7 @@ void applicationSendTrackingEvent (NSEvent nsEvent, Control trackingControl) {
 		case OS.NSOtherMouseUp:
 			runEnterExit = true;
 			runEnterExitControl = findControl(true);
-			Control control = trackingControl;
+			NativeControl control = trackingControl;
 			this.trackingControl = null;
 			if (clickCount == 2) {
 				control.sendMouseEvent (nsEvent, SWT.MouseDoubleClick, false);
@@ -5664,9 +5725,9 @@ void applicationSendEvent (long id, long sel, long event) {
 		case OS.NSScrollWheel:
 		// TODO:  Add touch detection here...
 			if (window != null) {
-				Shell shell = (Shell) getWidget (window.id);
+				NativeShell shell = (NativeShell) getWidget (window.id);
 				if (shell != null) {
-					Shell modalShell = shell.getModalShell ();
+					NativeShell modalShell = shell.getModalShell ();
 					if (modalShell != null) {
 						if (activate) {
 							if (application.isActive()) {
@@ -5894,13 +5955,13 @@ static long applicationProc(long id, long sel, long arg0) {
 			return 0;
 		}
 		case sel_applicationDockMenu_: {
-			TaskBar taskbar = display.taskBar;
+			NativeTaskBar taskbar = display.taskBar;
 			if (taskbar != null && taskbar.itemCount != 0) {
-				TaskItem item = taskbar.getItem(null);
+				NativeTaskItem item = taskbar.getItem(null);
 				if (item != null) {
 					Menu menu = item.getMenu();
 					if (menu != null && !menu.isDisposed()) {
-						return menu.nsMenu.id;
+						return Widget.checkNative(menu).nsMenu.id;
 					}
 				}
 			}
@@ -5992,34 +6053,34 @@ static long dialogProc(long id, long sel, long arg0) {
 
 	switch (Selector.valueOf(sel)) {
 		case sel_changeColor_: {
-			ColorDialog dialog = (ColorDialog)OS.JNIGetObject(jniRef[0]);
+			NativeColorDialog dialog = (NativeColorDialog)OS.JNIGetObject(jniRef[0]);
 			if (dialog == null) return 0;
 			dialog.changeColor(id, sel, arg0);
 			return 0;
 		}
 		case sel_changeFont_: {
-			FontDialog dialog = (FontDialog)OS.JNIGetObject(jniRef[0]);
+			NativeFontDialog dialog = (NativeFontDialog)OS.JNIGetObject(jniRef[0]);
 			if (dialog == null) return 0;
 			dialog.changeFont(id, sel, arg0);
 			return 0;
 		}
 		case sel_validModesForFontPanel_: {
-			FontDialog dialog = (FontDialog)OS.JNIGetObject(jniRef[0]);
+			NativeFontDialog dialog = (NativeFontDialog)OS.JNIGetObject(jniRef[0]);
 			if (dialog == null) return 0;
 			return dialog.validModesForFontPanel(id, sel, arg0);
 		}
 		case sel_sendSelection_: {
-			FileDialog dialog = (FileDialog)OS.JNIGetObject(jniRef[0]);
+			NativeFileDialog dialog = (NativeFileDialog)OS.JNIGetObject(jniRef[0]);
 			if (dialog == null) return 0;
 			dialog.sendSelection(id, sel, arg0);
 			return 0;
 		}
 		case sel_windowWillClose_: {
 			Object object = OS.JNIGetObject(jniRef[0]);
-			if (object instanceof FontDialog) {
-				((FontDialog)object).windowWillClose(id, sel, arg0);
-			} else if (object instanceof ColorDialog) {
-				((ColorDialog)object).windowWillClose(id, sel, arg0);
+			if (object instanceof NativeFontDialog) {
+				((NativeFontDialog)object).windowWillClose(id, sel, arg0);
+			} else if (object instanceof NativeColorDialog) {
+				((NativeColorDialog)object).windowWillClose(id, sel, arg0);
 			}
 			return 0;
 		}
@@ -6034,12 +6095,12 @@ static long dialogProc(long id, long sel, long arg0, long arg1) {
 	OS.object_getInstanceVariable(id, SWT_OBJECT, jniRef);
 	if (jniRef[0] == 0) return 0;
 	if (sel == OS.sel_panel_shouldEnableURL_) {
-		FileDialog dialog = (FileDialog)OS.JNIGetObject(jniRef[0]);
+		NativeFileDialog dialog = (NativeFileDialog)OS.JNIGetObject(jniRef[0]);
 		if (dialog == null) return 0;
 		return dialog.panel_shouldEnableURL(id, sel, arg0, arg1);
 	}
 	if (sel == OS.sel_setColor_forAttribute_) {
-		FontDialog dialog = (FontDialog)OS.JNIGetObject(jniRef[0]);
+		NativeFontDialog dialog = (NativeFontDialog)OS.JNIGetObject(jniRef[0]);
 		if (dialog == null) return 0;
 		dialog.setColor_forAttribute(id, sel, arg0, arg1);
 		return 0;
@@ -6052,15 +6113,15 @@ static long dialogProc(long id, long sel, long arg0, long arg1, long arg2) {
 	OS.object_getInstanceVariable(id, SWT_OBJECT, jniRef);
 	if (jniRef[0] == 0) return 0;
 	if (sel == OS.sel_panel_userEnteredFilename_confirmed_) {
-		FileDialog dialog = (FileDialog)OS.JNIGetObject(jniRef[0]);
+		NativeFileDialog dialog = (NativeFileDialog)OS.JNIGetObject(jniRef[0]);
 		if (dialog == null) return 0;
 		return dialog.panel_userEnteredFilename_confirmed(id, sel, arg0, arg1, arg2);
 	}
 	return 0;
 }
 
-static Widget LookupWidget (long id, long sel) {
-	Widget widget = GetWidget(id);
+static NativeWidget LookupWidget (long id, long sel) {
+	NativeWidget widget = GetWidget(id);
 	if (widget == null) {
 		NSView view = new NSView (id);
 		if (view.isKindOfClass(OS.class_NSView)) {
@@ -6092,7 +6153,7 @@ static long windowProc(long id, long sel) {
 			return 1;
 		}
 	}
-	Widget widget = LookupWidget(id, sel);
+	NativeWidget widget = LookupWidget(id, sel);
 	if (widget == null) return 0;
 
 	return switch (Selector.valueOf(sel)) {
@@ -6244,7 +6305,7 @@ static long windowProc(long id, long sel, long arg0) {
 		}
 	}
 
-	Widget widget = LookupWidget(id, sel);
+	NativeWidget widget = LookupWidget(id, sel);
 	if (widget == null) return 0;
 
 	return switch (Selector.valueOf(sel)) {
@@ -6639,7 +6700,7 @@ static long windowProc(long id, long sel, long arg0) {
 }
 
 static long windowProc(long id, long sel, long arg0, long arg1) {
-	Widget widget = LookupWidget(id, sel);
+	NativeWidget widget = LookupWidget(id, sel);
 	if (widget == null) return 0;
 
 	return switch (Selector.valueOf(sel)) {
@@ -6754,7 +6815,7 @@ static long windowProc(long id, long sel, long arg0, long arg1) {
 }
 
 static long windowProc(long id, long sel, long arg0, long arg1, long arg2) {
-	Widget widget = LookupWidget(id, sel);
+	NativeWidget widget = LookupWidget(id, sel);
 	if (widget == null) return 0;
 
 	return switch (Selector.valueOf(sel)) {
@@ -6806,7 +6867,7 @@ static long windowProc(long id, long sel, long arg0, long arg1, long arg2) {
 }
 
 static long windowProc(long id, long sel, long arg0, long arg1, long arg2, long arg3) {
-	Widget widget = LookupWidget(id, sel);
+	NativeWidget widget = LookupWidget(id, sel);
 	if (widget == null) return 0;
 
 	return switch (Selector.valueOf(sel)) {

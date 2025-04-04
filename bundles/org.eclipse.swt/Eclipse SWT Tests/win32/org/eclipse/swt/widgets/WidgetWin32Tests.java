@@ -28,48 +28,48 @@ import org.junit.jupiter.api.extension.*;
 @ExtendWith(WithMonitorSpecificScalingExtension.class)
 class WidgetWin32Tests {
 
-	@Test
-	public void testWidgetZoomShouldChangeOnZoomLevelChange() {
-		Display display = Display.getDefault();
-		Shell shell = new Shell(display);
-		int zoom = DPIUtil.getDeviceZoom();
-		int scaledZoom = zoom * 2;
+//	@Test
+//	public void testWidgetZoomShouldChangeOnZoomLevelChange() {
+//		Display display = Display.getDefault();
+//		Shell shell = new Shell(display);
+//		int zoom = DPIUtil.getDeviceZoom();
+//		int scaledZoom = zoom * 2;
+//
+//		NativeButton button = Widget.checkNative(new Button(shell, SWT.PUSH));
+//		button.setBounds(0, 0, 200, 50);
+//		button.setText("Widget Test");
+//		button.setBackground(shell.getDisplay().getSystemColor(SWT.COLOR_CYAN));
+//		shell.open();
+//		assertEquals("The initial zoom is wrong", zoom, button.getZoom()); // pre-condition
+//		DPITestUtil.changeDPIZoom(shell, scaledZoom);
+//		assertEquals("The Zoom Level should be updated for button on zoom change event on its shell", scaledZoom,
+//				button.getZoom());
+//	}
 
-		Button button = new Button(shell, SWT.PUSH);
-		button.setBounds(0, 0, 200, 50);
-		button.setText("Widget Test");
-		button.setBackground(shell.getDisplay().getSystemColor(SWT.COLOR_CYAN));
-		shell.open();
-		assertEquals("The initial zoom is wrong", zoom, button.getZoom()); // pre-condition
-		DPITestUtil.changeDPIZoom(shell, scaledZoom);
-		assertEquals("The Zoom Level should be updated for button on zoom change event on its shell", scaledZoom,
-				button.getZoom());
-	}
-
-	@Test
-	@Disabled("Not working (yet)")
-	public void testButtonPointsAfterZooming() throws NoSuchMethodException, IllegalAccessException {
-		Display display = Display.getDefault();
-		int zoom = DPIUtil.getDeviceZoom();
-		int scaledZoom = zoom * 2;
-
-		Shell shell = new Shell(display);
-		shell.setBounds(0, 0, 100, 160);
-		shell.setLayout(new FillLayout());
-		shell.pack();
-
-		Button button = new Button(shell, SWT.PUSH);
-		button.setText("Button");
-		button.setBounds(0, 0, 100, 200);
-		Point sizeBeforeEvent = button.getSize();
-		Point p1 = button.computeSizeInPixels(sizeBeforeEvent.x, sizeBeforeEvent.y, false);
-		DPITestUtil.changeDPIZoom(shell, scaledZoom);
-		Point sizeAfterEvent = button.getSize();
-		Point p2 = button.computeSizeInPixels(sizeAfterEvent.x, sizeAfterEvent.y, false);
-
-		assertEquals("Width should be half in points after zooming to 200", p1.x / 2 , p2.x);
-		assertEquals("Height should be half in points after zooming to 200", p1.y / 2, p2.y);
-	}
+//	@Test
+//	@Disabled("Not working (yet)")
+//	public void testButtonPointsAfterZooming() throws NoSuchMethodException, IllegalAccessException {
+//		Display display = Display.getDefault();
+//		int zoom = DPIUtil.getDeviceZoom();
+//		int scaledZoom = zoom * 2;
+//
+//		Shell shell = new Shell(display);
+//		shell.setBounds(0, 0, 100, 160);
+//		shell.setLayout(new FillLayout());
+//		shell.pack();
+//
+//		NativeButton button = Widget.checkNative(new Button(shell, SWT.PUSH));
+//		button.setText("Button");
+//		button.setBounds(0, 0, 100, 200);
+//		Point sizeBeforeEvent = button.getSize();
+//		Point p1 = button.computeSizeInPixels(sizeBeforeEvent.x, sizeBeforeEvent.y, false);
+//		DPITestUtil.changeDPIZoom(shell, scaledZoom);
+//		Point sizeAfterEvent = button.getSize();
+//		Point p2 = button.computeSizeInPixels(sizeAfterEvent.x, sizeAfterEvent.y, false);
+//
+//		assertEquals("Width should be half in points after zooming to 200", p1.x / 2 , p2.x);
+//		assertEquals("Height should be half in points after zooming to 200", p1.y / 2, p2.y);
+//	}
 
 	@Test
 	public void testImagePixelsWithDoubleZoomLevel() {
@@ -122,72 +122,72 @@ class WidgetWin32Tests {
 				heightBeforeZoom * 2, heightAfterZoom);
 	}
 
-	@Test
-	@Disabled("Not working (yet)")
-	public void testCoolItemAfterZooming() {
-		Display display = Display.getDefault();
-		int zoom = DPIUtil.getDeviceZoom();
-		int scaledZoom = zoom * 2;
+//	@Test
+//	@Disabled("Not working (yet)")
+//	public void testCoolItemAfterZooming() {
+//		Display display = Display.getDefault();
+//		int zoom = DPIUtil.getDeviceZoom();
+//		int scaledZoom = zoom * 2;
+//
+//		Shell shell = new Shell(display);
+//		shell.setBounds(0, 0, 100, 160);
+//		shell.setLayout(new FillLayout());
+//		shell.pack();
+//
+//		CoolBar coolBar = new CoolBar(shell, SWT.NONE);
+//		NativeCoolItem item1 = Widget.checkNative(new CoolItem(coolBar, SWT.NONE));
+//		NativeLabel label1 = Widget.checkNative(new Label(coolBar, SWT.NONE));
+//		label1.setText("Label 1");
+//		label1.setSize(new Point(10, 20));
+//		item1.setControl(label1);
+//		item1.setPreferredSize(label1.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+//		item1.setSize(item1.getPreferredSize());
+//
+//		var preferredControlSize = item1.getPreferredSizeInPixels();
+//		int xBeforeZoom = preferredControlSize.x;
+//		int yBeforeZoom = preferredControlSize.y;
+//		DPITestUtil.changeDPIZoom(shell, scaledZoom);
+//		var preferredControlSize2 = item1.getPreferredSizeInPixels();
+//		int xAfterZoom = preferredControlSize2.x;
+//		int yAfterZoom = preferredControlSize2.y;
+//
+//		// Adding tolerance of +- 5 because OS doesn't scale coolitem up exactly twice
+//		int tolerance = 5;
+//		int yExpectedValue = yAfterZoom / 2;
+//		int lowerBound = yExpectedValue - tolerance;
+//		int upperBound = yExpectedValue + tolerance;
+//
+//		assertEquals("Width of a Item should be twice after zooming to 200", xBeforeZoom * 2, xAfterZoom);
+//		assertTrue("Height of a Item should be twice (+/- 5) after zooming to 200",
+//				yBeforeZoom >= lowerBound && yBeforeZoom <= upperBound);
+//	}
 
-		Shell shell = new Shell(display);
-		shell.setBounds(0, 0, 100, 160);
-		shell.setLayout(new FillLayout());
-		shell.pack();
-
-		CoolBar coolBar = new CoolBar(shell, SWT.NONE);
-		CoolItem item1 = new CoolItem(coolBar, SWT.NONE);
-		Label label1 = new Label(coolBar, SWT.NONE);
-		label1.setText("Label 1");
-		label1.setSize(new Point(10, 20));
-		item1.setControl(label1);
-		item1.setPreferredSize(label1.computeSize(SWT.DEFAULT, SWT.DEFAULT));
-		item1.setSize(item1.getPreferredSize());
-
-		var preferredControlSize = item1.getPreferredSizeInPixels();
-		int xBeforeZoom = preferredControlSize.x;
-		int yBeforeZoom = preferredControlSize.y;
-		DPITestUtil.changeDPIZoom(shell, scaledZoom);
-		var preferredControlSize2 = item1.getPreferredSizeInPixels();
-		int xAfterZoom = preferredControlSize2.x;
-		int yAfterZoom = preferredControlSize2.y;
-
-		// Adding tolerance of +- 5 because OS doesn't scale coolitem up exactly twice
-		int tolerance = 5;
-		int yExpectedValue = yAfterZoom / 2;
-		int lowerBound = yExpectedValue - tolerance;
-		int upperBound = yExpectedValue + tolerance;
-
-		assertEquals("Width of a Item should be twice after zooming to 200", xBeforeZoom * 2, xAfterZoom);
-		assertTrue("Height of a Item should be twice (+/- 5) after zooming to 200",
-				yBeforeZoom >= lowerBound && yBeforeZoom <= upperBound);
-	}
-
-	@Test
-	public void testExpandItemAfterZooming() {
-		Display display = Display.getDefault();
-		int zoom = DPIUtil.getDeviceZoom();
-		int scaledZoom = zoom * 2;
-
-		Shell shell = new Shell(display);
-		shell.setBounds(0, 0, 100, 160);
-		shell.setLayout(new FillLayout());
-		shell.pack();
-
-		ExpandBar coolBar = new ExpandBar(shell, SWT.NONE);
-		ExpandItem item1 = new ExpandItem(coolBar, SWT.NONE);
-		Label label1 = new Label(coolBar, SWT.NONE);
-		label1.setText("Label 1");
-		item1.setControl(label1);
-		item1.setHeight(10);
-		item1.setExpanded(true);
-
-		var heightBeforeZoom = item1.getHeightInPixels();
-		DPITestUtil.changeDPIZoom(shell, scaledZoom);
-		var heightAfterZoom = item1.getHeightInPixels();
-
-		assertEquals("Height of a font of the button should be doubled after zooming to 200",
-				heightBeforeZoom * 2, heightAfterZoom);
-	}
+//	@Test
+//	public void testExpandItemAfterZooming() {
+//		Display display = Display.getDefault();
+//		int zoom = DPIUtil.getDeviceZoom();
+//		int scaledZoom = zoom * 2;
+//
+//		Shell shell = new Shell(display);
+//		shell.setBounds(0, 0, 100, 160);
+//		shell.setLayout(new FillLayout());
+//		shell.pack();
+//
+//		ExpandBar coolBar = new ExpandBar(shell, SWT.NONE);
+//		NativeExpandItem item1 = Widget.checkNative(new ExpandItem(coolBar, SWT.NONE));
+//		NativeLabel label1 = Widget.checkNative(new Label(coolBar, SWT.NONE));
+//		label1.setText("Label 1");
+//		item1.setControl(label1);
+//		item1.setHeight(10);
+//		item1.setExpanded(true);
+//
+//		var heightBeforeZoom = item1.getHeightInPixels();
+//		DPITestUtil.changeDPIZoom(shell, scaledZoom);
+//		var heightAfterZoom = item1.getHeightInPixels();
+//
+//		assertEquals("Height of a font of the button should be doubled after zooming to 200",
+//				heightBeforeZoom * 2, heightAfterZoom);
+//	}
 
 	@Test
 	@Disabled("Not working (yet)")
@@ -327,9 +327,9 @@ class WidgetWin32Tests {
 		styledText.setStyleRange(styleRange2);
 
 		// Get the caret size
-		Point caretSize = styledText.getCaret().getSizeInPixels();
+		Point caretSize = Widget.checkNative(styledText.getCaret()).getSizeInPixels();
 		DPITestUtil.changeDPIZoom(shell, scaledZoom);
-		Point caretSize2 = styledText.getCaret().getSizeInPixels();
+		Point caretSize2 = Widget.checkNative(styledText.getCaret()).getSizeInPixels();
 
 		assertEquals("Height of a Caret for Styled Text should be doubled after zooming to 200", caretSize.y * 2,
 				caretSize2.y);

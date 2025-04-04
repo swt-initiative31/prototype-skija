@@ -32,7 +32,7 @@ public class DefaultSliderRenderer extends SliderRenderer {
 	private boolean isDragging;
 	private boolean thumbHovered;
 
-	protected DefaultSliderRenderer(Slider slider) {
+	protected DefaultSliderRenderer(CustomSlider slider) {
 		super(slider);
 	}
 

@@ -31,7 +31,7 @@ public class BasicLabelRenderer extends LabelRenderer {
 	/** Gap between icon and text */
 	private static final int GAP = 5;
 
-	public BasicLabelRenderer(Label label) {
+	public BasicLabelRenderer(CustomLabel label) {
 		super(label);
 	}
 

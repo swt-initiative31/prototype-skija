@@ -60,7 +60,7 @@ public class Accessible {
 	List<AccessibleAttributeListener> accessibleAttributeListeners;
 	Accessible parent;
 	AccessibleObject accessibleObject;
-	Control control;
+	NativeControl control;
 	List<Relation> relations;
 	List<Accessible> children;
 
@@ -116,7 +116,7 @@ public class Accessible {
 		return parent;
 	}
 
-	Accessible (Control control) {
+	Accessible (NativeControl control) {
 		super ();
 		this.control = control;
 		long type = OS.G_OBJECT_TYPE (getControlHandle());
@@ -470,7 +470,7 @@ public class Accessible {
 	 * @since 3.0
 	 */
 	public Control getControl() {
-		return control;
+		return control.getWrapper();
 	}
 
 	/* checkWidget was copied from Widget, and rewritten to work in this package */
@@ -496,7 +496,8 @@ public class Accessible {
 	long getControlHandle () {
 		long result = control.handle;
 
-		if (control instanceof Label) {
+		SWT.todoSkija();
+		if (/*control instanceof NativeLabel*/false) {
 			if (GTK.GTK4) {
 				for (long child = GTK4.gtk_widget_get_first_child(result); child != 0; child = GTK4.gtk_widget_get_next_sibling(child)) {
 					if (GTK.gtk_widget_get_visible(child)) {
@@ -555,7 +556,7 @@ public class Accessible {
 	 *
 	 * @noreference This method is not intended to be referenced by clients.
 	 */
-	public static Accessible internal_new_Accessible (Control control) {
+	public static Accessible internal_new_Accessible (NativeControl control) {
 		return new Accessible (control);
 	}
 

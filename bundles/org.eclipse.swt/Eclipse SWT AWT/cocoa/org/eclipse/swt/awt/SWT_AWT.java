@@ -127,7 +127,7 @@ public static Frame new_Frame(final Composite parent) {
 	if ((parent.getStyle() & SWT.EMBEDDED) == 0) {
 		SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 	}
-	final long handle = parent.view.id;
+	final long handle = Widget.checkNative(parent).view.id;
 	final String className = embeddedFrameClass != null ? embeddedFrameClass : JDK17_FRAME;
 	try {
 		if (embeddedFrameClass != null) {

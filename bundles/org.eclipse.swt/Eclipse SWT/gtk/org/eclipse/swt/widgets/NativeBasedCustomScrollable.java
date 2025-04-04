@@ -16,12 +16,12 @@ import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
 
-abstract class NativeBasedCustomScrollable extends Scrollable {
+abstract class NativeBasedCustomScrollable extends NativeScrollable {
 
 	long imHandle, socketHandle;
 	static final String NO_INPUT_METHOD = "org.eclipse.swt.internal.gtk.noInputMethod"; //$NON-NLS-1$
 
-	public NativeBasedCustomScrollable(Composite parent, int style) {
+	public NativeBasedCustomScrollable(NativeComposite parent, int style) {
 		super(parent, style);
 	}
 
