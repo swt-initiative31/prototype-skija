@@ -100,16 +100,14 @@ public class Table extends Composite implements ICustomWidget {
 	Rectangle focusRect;
 	boolean[] columnVisible;
 	long headerToolTipHandle, hwndHeader, itemToolTipHandle;
-	boolean ignoreCustomDraw, ignoreDrawForeground, ignoreDrawBackground,
-			ignoreDrawFocus, ignoreDrawSelection, ignoreDrawHot;
-	boolean customDraw, dragStarted, explorerTheme, firstColumnImage,
-			fixScrollWidth, tipRequested, wasSelected, wasResized, painted;
-	boolean ignoreActivate, ignoreSelect, ignoreShrink, ignoreResize,
-			ignoreColumnMove, ignoreColumnResize, fullRowSelect,
-			settingItemHeight;
+	boolean ignoreCustomDraw, ignoreDrawForeground, ignoreDrawBackground, ignoreDrawFocus, ignoreDrawSelection,
+			ignoreDrawHot;
+	boolean customDraw, dragStarted, explorerTheme, firstColumnImage, fixScrollWidth, tipRequested, wasSelected,
+			wasResized, painted;
+	boolean ignoreActivate, ignoreSelect, ignoreShrink, ignoreResize, ignoreColumnMove, ignoreColumnResize,
+			fullRowSelect, settingItemHeight;
 	boolean headerItemDragging;
-	int itemHeight, lastIndexOf, lastWidth, sortDirection, resizeCount,
-			selectionForeground, hotIndex;
+	int itemHeight, lastIndexOf, lastWidth, sortDirection, resizeCount, selectionForeground, hotIndex;
 	int headerBackground = -1;
 	int headerForeground = -1;
 	static /* final */ long HeaderProc;
@@ -134,34 +132,34 @@ public class Table extends Composite implements ICustomWidget {
 	private Rectangle headerBounds;
 
 	/**
-	 * Constructs a new instance of this class given its parent and a style
-	 * value describing its behavior and appearance.
+	 * Constructs a new instance of this class given its parent and a style value
+	 * describing its behavior and appearance.
 	 * <p>
 	 * The style value is either one of the style constants defined in class
-	 * <code>SWT</code> which is applicable to instances of this class, or must
-	 * be built by <em>bitwise OR</em>'ing together (that is, using the
-	 * <code>int</code> "|" operator) two or more of those <code>SWT</code>
-	 * style constants. The class description lists the style constants that are
+	 * <code>SWT</code> which is applicable to instances of this class, or must be
+	 * built by <em>bitwise OR</em>'ing together (that is, using the
+	 * <code>int</code> "|" operator) two or more of those <code>SWT</code> style
+	 * constants. The class description lists the style constants that are
 	 * applicable to the class. Style bits are also inherited from superclasses.
 	 * </p>
 	 *
-	 * @param parent
-	 *            a composite control which will be the parent of the new
-	 *            instance (cannot be null)
-	 * @param style
-	 *            the style of control to construct
+	 * @param parent a composite control which will be the parent of the new
+	 *               instance (cannot be null)
+	 * @param style  the style of control to construct
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the parent
+	 *                                     is null</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the parent</li>
-	 *                <li>ERROR_INVALID_SUBCLASS - if this class is not an
-	 *                allowed subclass</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     parent</li>
+	 *                                     <li>ERROR_INVALID_SUBCLASS - if this
+	 *                                     class is not an allowed subclass</li>
+	 *                                     </ul>
 	 *
 	 * @see SWT#SINGLE
 	 * @see SWT#MULTI
@@ -184,35 +182,35 @@ public class Table extends Composite implements ICustomWidget {
 
 		listener = event -> {
 			switch (event.type) {
-				case SWT.Dispose :
-					onDispose(event);
-					break;
-				case SWT.MouseDown :
-					onMouseDown(event);
-					break;
-				case SWT.MouseUp :
-					onMouseUp(event);
-					break;
-				case SWT.Paint :
-					onPaint(event);
-					break;
-				case SWT.Resize :
-					onResize();
-					break;
-				case SWT.FocusIn :
-					onFocusIn();
-					break;
-				case SWT.FocusOut :
-					onFocusOut();
-					break;
-				case SWT.Traverse :
-					onTraverse(event);
-					break;
-				case SWT.Selection :
-					onSelection(event);
-					break;
-				case SWT.V_SCROLL :
-					onScrollBar(event);
+			case SWT.Dispose:
+				onDispose(event);
+				break;
+			case SWT.MouseDown:
+				onMouseDown(event);
+				break;
+			case SWT.MouseUp:
+				onMouseUp(event);
+				break;
+			case SWT.Paint:
+				onPaint(event);
+				break;
+			case SWT.Resize:
+				onResize();
+				break;
+			case SWT.FocusIn:
+				onFocusIn();
+				break;
+			case SWT.FocusOut:
+				onFocusOut();
+				break;
+			case SWT.Traverse:
+				onTraverse(event);
+				break;
+			case SWT.Selection:
+				onSelection(event);
+				break;
+			case SWT.V_SCROLL:
+				onScrollBar(event);
 			}
 		};
 		addListener(SWT.Dispose, listener);
@@ -233,6 +231,7 @@ public class Table extends Composite implements ICustomWidget {
 			public void keyReleased(KeyEvent e) {
 				onKeyReleased(e);
 			}
+
 			@Override
 			public void keyPressed(KeyEvent e) {
 				onKeyPressed(e);
@@ -249,8 +248,7 @@ public class Table extends Composite implements ICustomWidget {
 			if (mouseHoverElement instanceof TableItem tit) {
 
 				if (tit.getBounds().contains(p)) {
-					System.out.println("MouseHoverElementAlready: "
-							+ mouseHoverElement.getText());
+					System.out.println("MouseHoverElementAlready: " + mouseHoverElement.getText());
 					return;
 				}
 
@@ -265,8 +263,7 @@ public class Table extends Composite implements ICustomWidget {
 
 			if (mouseHoverElement instanceof TableColumn tit) {
 				if (tit.getBounds().contains(p)) {
-					System.out.println("MouseHoverElementAlready: "
-							+ mouseHoverElement.getText());
+					System.out.println("MouseHoverElementAlready: " + mouseHoverElement.getText());
 					return;
 				}
 
@@ -283,9 +280,7 @@ public class Table extends Composite implements ICustomWidget {
 
 					if (it.getBounds().contains(p)) {
 						mouseHoverElement = it;
-						System.out
-								.println("MouseHoverElementNew: "
-										+ it.getText());
+						System.out.println("MouseHoverElementNew: " + it.getText());
 
 						it.redraw();
 
@@ -317,8 +312,7 @@ public class Table extends Composite implements ICustomWidget {
 		});
 
 		if (getVerticalBar() != null) {
-			getVerticalBar().addListener(SWT.Selection,
-					event -> onScrollBar(event));
+			getVerticalBar().addListener(SWT.Selection, event -> onScrollBar(event));
 		}
 
 		initializeAccessible();
@@ -379,8 +373,7 @@ public class Table extends Composite implements ICustomWidget {
 		int hmin = hBar.getMinimum();
 		int hmax = hBar.getMaximum();
 
-		System.out.println("Scroll: " + vs + "  " + vmin + "  " + vmax + "  "
-				+ hs + "  " + hmin + "  " + hmax);
+		System.out.println("Scroll: " + vs + "  " + vmin + "  " + vmax + "  " + hs + "  " + hmin + "  " + hmax);
 
 		setTopIndex(vs);
 
@@ -410,6 +403,7 @@ public class Table extends Composite implements ICustomWidget {
 			public void getHelp(AccessibleEvent e) {
 				e.result = getToolTipText();
 			}
+
 			@Override
 			public void getKeyboardShortcut(AccessibleEvent e) {
 			}
@@ -487,12 +481,12 @@ public class Table extends Composite implements ICustomWidget {
 	void _addListener(int eventType, Listener listener) {
 		super._addListener(eventType, listener);
 		switch (eventType) {
-			case SWT.MeasureItem :
-			case SWT.EraseItem :
-			case SWT.PaintItem :
-				setCustomDraw(true);
-				setBackgroundTransparent(true);
-				break;
+		case SWT.MeasureItem:
+		case SWT.EraseItem:
+		case SWT.PaintItem:
+			setCustomDraw(true);
+			setBackgroundTransparent(true);
+			break;
 		}
 	}
 
@@ -559,14 +553,12 @@ public class Table extends Composite implements ICustomWidget {
 			}
 		}
 
-		boolean drawColumns = headerVisible
-				&& (columns != null && columns.length > 0);
+		boolean drawColumns = headerVisible && (columns != null && columns.length > 0);
 
 		if (drawColumns)
 			for (TableColumn c : columns)
 				if (c != null)
 					c.paint(e);
-
 
 		for (int i = getTopIndex(); i < items.length; i++) {
 
@@ -582,8 +574,7 @@ public class Table extends Composite implements ICustomWidget {
 
 		// TODO: what is this??
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		return true;
 
@@ -645,8 +636,7 @@ public class Table extends Composite implements ICustomWidget {
 
 		// TODO what is this?? no idea.
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// //TODO - code could be shared but it would mix keyed and non-keyed
 		// logic
@@ -791,11 +781,9 @@ public class Table extends Composite implements ICustomWidget {
 			int keyIndex = binarySearch(keys, 0, keyCount, index);
 			if (keyIndex < 0)
 				keyIndex = -keyIndex - 1;
-			System.arraycopy(keys, keyIndex, keys, keyIndex + 1,
-					keyCount - keyIndex);
+			System.arraycopy(keys, keyIndex, keys, keyIndex + 1, keyCount - keyIndex);
 			keys[keyIndex] = index;
-			System.arraycopy(items, keyIndex, items, keyIndex + 1,
-					keyCount - keyIndex);
+			System.arraycopy(items, keyIndex, items, keyIndex + 1, keyCount - keyIndex);
 			items[keyIndex] = item;
 			keyCount++;
 			for (int i = keyIndex + 1; i < keyCount; i++)
@@ -813,11 +801,9 @@ public class Table extends Composite implements ICustomWidget {
 				keyIndex = -keyIndex - 1;
 			} else {
 				--keyCount;
-				System.arraycopy(keys, keyIndex + 1, keys, keyIndex,
-						keyCount - keyIndex);
+				System.arraycopy(keys, keyIndex + 1, keys, keyIndex, keyCount - keyIndex);
 				keys[keyCount] = 0;
-				System.arraycopy(items, keyIndex + 1, items, keyIndex,
-						keyCount - keyIndex);
+				System.arraycopy(items, keyIndex + 1, items, keyIndex, keyCount - keyIndex);
 				items[keyCount] = null;
 			}
 			for (int i = keyIndex; i < keyCount; i++)
@@ -874,34 +860,34 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Adds the listener to the collection of listeners who will be notified
-	 * when the user changes the receiver's selection, by sending it one of the
-	 * messages defined in the <code>SelectionListener</code> interface.
+	 * Adds the listener to the collection of listeners who will be notified when
+	 * the user changes the receiver's selection, by sending it one of the messages
+	 * defined in the <code>SelectionListener</code> interface.
 	 * <p>
 	 * When <code>widgetSelected</code> is called, the item field of the event
-	 * object is valid. If the receiver has the <code>SWT.CHECK</code> style and
-	 * the check selection changes, the event object detail field contains the
-	 * value <code>SWT.CHECK</code>. <code>widgetDefaultSelected</code> is
-	 * typically called when an item is double-clicked. The item field of the
-	 * event object is valid for default selection, but the detail field is not
-	 * used.
+	 * object is valid. If the receiver has the <code>SWT.CHECK</code> style and the
+	 * check selection changes, the event object detail field contains the value
+	 * <code>SWT.CHECK</code>. <code>widgetDefaultSelected</code> is typically
+	 * called when an item is double-clicked. The item field of the event object is
+	 * valid for default selection, but the detail field is not used.
 	 * </p>
 	 *
-	 * @param listener
-	 *            the listener which should be notified when the user changes
-	 *            the receiver's selection
+	 * @param listener the listener which should be notified when the user changes
+	 *                 the receiver's selection
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the listener
+	 *                                     is null</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 *
 	 * @see SelectionListener
 	 * @see #removeSelectionListener
@@ -1135,18 +1121,19 @@ public class Table extends Composite implements ICustomWidget {
 
 	static int checkStyle(int style) {
 		/*
-		 * Feature in Windows. Even when WS_HSCROLL or WS_VSCROLL is not
-		 * specified, Windows creates trees and tables with scroll bars. The fix
-		 * is to set H_SCROLL and V_SCROLL.
+		 * Feature in Windows. Even when WS_HSCROLL or WS_VSCROLL is not specified,
+		 * Windows creates trees and tables with scroll bars. The fix is to set H_SCROLL
+		 * and V_SCROLL.
 		 *
-		 * NOTE: This code appears on all platforms so that applications have
-		 * consistent scroll bar behavior.
+		 * NOTE: This code appears on all platforms so that applications have consistent
+		 * scroll bar behavior.
 		 */
 		if ((style & SWT.NO_SCROLL) == 0) {
 			style |= SWT.H_SCROLL | SWT.V_SCROLL;
 		}
 		return checkBits(style, SWT.SINGLE, SWT.MULTI, 0, 0, 0, 0);
 	}
+
 	//
 	// LRESULT CDDS_ITEMPOSTPAINT (NMLVCUSTOMDRAW nmcd, long wParam, long
 	// lParam) {
@@ -1688,27 +1675,27 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Clears the item at the given zero-relative index in the receiver. The
-	 * text, icon and other attributes of the item are set to the default value.
-	 * If the table was created with the <code>SWT.VIRTUAL</code> style, these
-	 * attributes are requested again as needed.
+	 * Clears the item at the given zero-relative index in the receiver. The text,
+	 * icon and other attributes of the item are set to the default value. If the
+	 * table was created with the <code>SWT.VIRTUAL</code> style, these attributes
+	 * are requested again as needed.
 	 *
-	 * @param index
-	 *            the index of the item to clear
+	 * @param index the index of the item to clear
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_INVALID_RANGE - if the index is not between 0
-	 *                and the number of elements in the list minus 1
-	 *                (inclusive)</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_RANGE - if the index is
+	 *                                     not between 0 and the number of elements
+	 *                                     in the list minus 1 (inclusive)</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 *
 	 * @see SWT#VIRTUAL
 	 * @see SWT#SetData
@@ -1718,8 +1705,7 @@ public class Table extends Composite implements ICustomWidget {
 	public void clear(int index) {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// int count = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
 		// if (!(0 <= index && index < count)) error (SWT.ERROR_INVALID_RANGE);
@@ -1755,30 +1741,30 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Removes the items from the receiver which are between the given
-	 * zero-relative start and end indices (inclusive). The text, icon and other
-	 * attributes of the items are set to their default values. If the table was
-	 * created with the <code>SWT.VIRTUAL</code> style, these attributes are
-	 * requested again as needed.
+	 * Removes the items from the receiver which are between the given zero-relative
+	 * start and end indices (inclusive). The text, icon and other attributes of the
+	 * items are set to their default values. If the table was created with the
+	 * <code>SWT.VIRTUAL</code> style, these attributes are requested again as
+	 * needed.
 	 *
-	 * @param start
-	 *            the start index of the item to clear
-	 * @param end
-	 *            the end index of the item to clear
+	 * @param start the start index of the item to clear
+	 * @param end   the end index of the item to clear
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_INVALID_RANGE - if either the start or end are
-	 *                not between 0 and the number of elements in the list minus
-	 *                1 (inclusive)</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_RANGE - if either the
+	 *                                     start or end are not between 0 and the
+	 *                                     number of elements in the list minus 1
+	 *                                     (inclusive)</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 *
 	 * @see SWT#VIRTUAL
 	 * @see SWT#SetData
@@ -1788,8 +1774,7 @@ public class Table extends Composite implements ICustomWidget {
 	public void clear(int start, int end) {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// if (start > end) return;
 		// int count = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
@@ -1845,28 +1830,28 @@ public class Table extends Composite implements ICustomWidget {
 
 	/**
 	 * Clears the items at the given zero-relative indices in the receiver. The
-	 * text, icon and other attributes of the items are set to their default
-	 * values. If the table was created with the <code>SWT.VIRTUAL</code> style,
-	 * these attributes are requested again as needed.
+	 * text, icon and other attributes of the items are set to their default values.
+	 * If the table was created with the <code>SWT.VIRTUAL</code> style, these
+	 * attributes are requested again as needed.
 	 *
-	 * @param indices
-	 *            the array of indices of the items
+	 * @param indices the array of indices of the items
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_INVALID_RANGE - if the index is not between 0
-	 *                and the number of elements in the list minus 1
-	 *                (inclusive)</li>
-	 *                <li>ERROR_NULL_ARGUMENT - if the indices array is
-	 *                null</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_RANGE - if the index is
+	 *                                     not between 0 and the number of elements
+	 *                                     in the list minus 1 (inclusive)</li>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the indices
+	 *                                     array is null</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 *
 	 * @see SWT#VIRTUAL
 	 * @see SWT#SetData
@@ -1876,8 +1861,7 @@ public class Table extends Composite implements ICustomWidget {
 	public void clear(int[] indices) {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// if (indices == null) error (SWT.ERROR_NULL_ARGUMENT);
 		// if (indices.length == 0) return;
@@ -1929,18 +1913,18 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Clears all the items in the receiver. The text, icon and other attributes
-	 * of the items are set to their default values. If the table was created
-	 * with the <code>SWT.VIRTUAL</code> style, these attributes are requested
-	 * again as needed.
+	 * Clears all the items in the receiver. The text, icon and other attributes of
+	 * the items are set to their default values. If the table was created with the
+	 * <code>SWT.VIRTUAL</code> style, these attributes are requested again as
+	 * needed.
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 *
 	 * @see SWT#VIRTUAL
 	 * @see SWT#SetData
@@ -1950,8 +1934,7 @@ public class Table extends Composite implements ICustomWidget {
 	public void clearAll() {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// LVITEM lvItem = null;
 		// boolean cleared = false;
@@ -2105,8 +2088,7 @@ public class Table extends Composite implements ICustomWidget {
 		// return new Point (width, height);
 	}
 
-	private Point calculateSize(boolean widthMustBeComputed,
-			boolean heightMustBeComputed) {
+	private Point calculateSize(boolean widthMustBeComputed, boolean heightMustBeComputed) {
 
 		int width = 1;
 		int height = 1;
@@ -2120,19 +2102,19 @@ public class Table extends Composite implements ICustomWidget {
 
 		}
 
-			if (items != null) {
+		if (items != null) {
 
-				for (TableItem i : items) {
+			for (TableItem i : items) {
 
-					int w = i.getBounds().width;
-					int h = i.getBounds().height;
-					if (w > width)
-						width = w;
-					height += h + 1; // +1 for border width;
-
-				}
+				int w = i.getBounds().width;
+				int h = i.getBounds().height;
+				if (w > width)
+					width = w;
+				height += h + 1; // +1 for border width;
 
 			}
+
+		}
 
 		return new Point(width, height);
 
@@ -2142,8 +2124,7 @@ public class Table extends Composite implements ICustomWidget {
 	void createHandle() {
 		super.createHandle();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// state &= ~(CANVAS | THEME_BACKGROUND);
 		//
@@ -2171,23 +2152,22 @@ public class Table extends Composite implements ICustomWidget {
 		// }
 
 		/*
-		 * Feature in Windows. When the control is created, it does not use the
-		 * default system font. A new HFONT is created and destroyed when the
-		 * control is destroyed. This means that a program that queries the font
-		 * from this control, uses the font in another control and then destroys
-		 * this control will have the font unexpectedly destroyed in the other
-		 * control. The fix is to assign the font ourselves each time the
-		 * control is created. The control will not destroy a font that it did
-		 * not create.
+		 * Feature in Windows. When the control is created, it does not use the default
+		 * system font. A new HFONT is created and destroyed when the control is
+		 * destroyed. This means that a program that queries the font from this control,
+		 * uses the font in another control and then destroys this control will have the
+		 * font unexpectedly destroyed in the other control. The fix is to assign the
+		 * font ourselves each time the control is created. The control will not destroy
+		 * a font that it did not create.
 		 */
 		// long hFont = OS.GetStockObject (OS.SYSTEM_FONT);
 		// OS.SendMessage (handle, OS.WM_SETFONT, hFont, 0);
 
 		/*
-		 * Bug in Windows. When the first column is inserted without setting the
-		 * header text, Windows will never allow the header text for the first
-		 * column to be set. The fix is to set the text to an empty string when
-		 * the column is inserted.
+		 * Bug in Windows. When the first column is inserted without setting the header
+		 * text, Windows will never allow the header text for the first column to be
+		 * set. The fix is to set the text to an empty string when the column is
+		 * inserted.
 		 */
 		// LVCOLUMN lvColumn = new LVCOLUMN ();
 		// lvColumn.mask = OS.LVCF_TEXT | OS.LVCF_WIDTH;
@@ -2206,12 +2186,12 @@ public class Table extends Composite implements ICustomWidget {
 		// bits1);
 
 		/*
-		 * Feature in Windows. Windows does not explicitly set the orientation
-		 * of the header. Instead, the orientation is inherited when
-		 * WS_EX_LAYOUTRTL is specified for the table. This means that when both
-		 * WS_EX_LAYOUTRTL and WS_EX_NOINHERITLAYOUT are specified for the
-		 * table, the header will not be oriented correctly. The fix is to
-		 * explicitly set the orientation for the header.
+		 * Feature in Windows. Windows does not explicitly set the orientation of the
+		 * header. Instead, the orientation is inherited when WS_EX_LAYOUTRTL is
+		 * specified for the table. This means that when both WS_EX_LAYOUTRTL and
+		 * WS_EX_NOINHERITLAYOUT are specified for the table, the header will not be
+		 * oriented correctly. The fix is to explicitly set the orientation for the
+		 * header.
 		 */
 		// if ((style & SWT.RIGHT_TO_LEFT) != 0) {
 		// int bits2 = OS.GetWindowLong (hwndHeader, OS.GWL_EXSTYLE);
@@ -2227,16 +2207,15 @@ public class Table extends Composite implements ICustomWidget {
 	@Override
 	int applyThemeBackground() {
 		/*
-		 * Just inheriting the THEME_BACKGROUND doesn't turn complete Table
-		 * background transparent, TableItem background remains as-is.
+		 * Just inheriting the THEME_BACKGROUND doesn't turn complete Table background
+		 * transparent, TableItem background remains as-is.
 		 */
 		return -1; /* No Change */
 	}
 
 	void createHeaderToolTips() {
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// if (headerToolTipHandle != 0) return;
 		// int bits = 0;
@@ -2266,8 +2245,7 @@ public class Table extends Composite implements ICustomWidget {
 
 	void createItem(TableColumn column, int index) {
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		if (columns == null) {
 			columns = new TableColumn[index + 1];
@@ -2290,7 +2268,6 @@ public class Table extends Composite implements ICustomWidget {
 		calculateHeaderBounds();
 
 		recalculatePositions();
-
 
 		redraw();
 
@@ -2475,8 +2452,7 @@ public class Table extends Composite implements ICustomWidget {
 
 		// Columns left to right
 
-		boolean drawColumns = headerVisible
-				&& (columns != null && columns.length > 0);
+		boolean drawColumns = headerVisible && (columns != null && columns.length > 0);
 
 		int tableColumnsHeight = 0;
 		int currentWidth = 1;
@@ -2493,36 +2469,30 @@ public class Table extends Composite implements ICustomWidget {
 																// position...
 				currentWidth = c.getWidth() + 1; // +1 for the boundary
 
-				tableColumnsHeight = Math.max(c.getHeight(),
-						tableColumnsHeight);
-
+				tableColumnsHeight = Math.max(c.getHeight(), tableColumnsHeight);
 
 			}
 
 			// set items position
 		}
 
-			if(items != null ) {
-				int currentHeight = 1 + tableColumnsHeight + 1;
-				currentWidth = 1;
-				for (TableItem it : items) {
+		if (items != null) {
+			int currentHeight = 1 + tableColumnsHeight + 1;
+			currentWidth = 1;
+			for (TableItem it : items) {
 
-					it.setLocation(new Point(currentWidth, currentHeight));
-					currentHeight += it.getBounds().height + 2;
-
-				}
+				it.setLocation(new Point(currentWidth, currentHeight));
+				currentHeight += it.getBounds().height + 2;
 
 			}
 
-
-
+		}
 
 	}
 
 	private void calculateHeaderBounds() {
 
-		if (this.headerVisible == false || columns == null
-				|| columns.length == 0) {
+		if (this.headerVisible == false || columns == null || columns.length == 0) {
 			headerBounds = new Rectangle(0, 0, 0, 0);
 			return;
 		}
@@ -2629,40 +2599,37 @@ public class Table extends Composite implements ICustomWidget {
 	void deregister() {
 		super.deregister();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// if (hwndHeader != 0) display.removeControl (hwndHeader);
 	}
 
 	/**
-	 * Deselects the items at the given zero-relative indices in the receiver.
-	 * If the item at the given zero-relative index in the receiver is selected,
-	 * it is deselected. If the item at the index was not selected, it remains
-	 * deselected. Indices that are out of range and duplicate indices are
-	 * ignored.
+	 * Deselects the items at the given zero-relative indices in the receiver. If
+	 * the item at the given zero-relative index in the receiver is selected, it is
+	 * deselected. If the item at the index was not selected, it remains deselected.
+	 * Indices that are out of range and duplicate indices are ignored.
 	 *
-	 * @param indices
-	 *            the array of indices for the items to deselect
+	 * @param indices the array of indices for the items to deselect
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_NULL_ARGUMENT - if the set of indices is
-	 *                null</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the set of
+	 *                                     indices is null</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 */
 	public void deselect(int[] indices) {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// if (indices == null) error (SWT.ERROR_NULL_ARGUMENT);
 		// if (indices.length == 0) return;
@@ -2682,30 +2649,28 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Deselects the item at the given zero-relative index in the receiver. If
-	 * the item at the index was already deselected, it remains deselected.
-	 * Indices that are out of range are ignored.
+	 * Deselects the item at the given zero-relative index in the receiver. If the
+	 * item at the index was already deselected, it remains deselected. Indices that
+	 * are out of range are ignored.
 	 *
-	 * @param index
-	 *            the index of the item to deselect
+	 * @param index the index of the item to deselect
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public void deselect(int index) {
 		checkWidget();
 		/*
-		 * An index of -1 will apply the change to all items. Ensure that index
-		 * is greater than -1.
+		 * An index of -1 will apply the change to all items. Ensure that index is
+		 * greater than -1.
 		 */
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// if (index < 0) return;
 		// LVITEM lvItem = new LVITEM ();
@@ -2716,30 +2681,27 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Deselects the items at the given zero-relative indices in the receiver.
-	 * If the item at the given zero-relative index in the receiver is selected,
-	 * it is deselected. If the item at the index was not selected, it remains
-	 * deselected. The range of the indices is inclusive. Indices that are out
-	 * of range are ignored.
+	 * Deselects the items at the given zero-relative indices in the receiver. If
+	 * the item at the given zero-relative index in the receiver is selected, it is
+	 * deselected. If the item at the index was not selected, it remains deselected.
+	 * The range of the indices is inclusive. Indices that are out of range are
+	 * ignored.
 	 *
-	 * @param start
-	 *            the start index of the items to deselect
-	 * @param end
-	 *            the end index of the items to deselect
+	 * @param start the start index of the items to deselect
+	 * @param end   the end index of the items to deselect
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public void deselect(int start, int end) {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// int count = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
 		// if (start == 0 && end == count - 1) {
@@ -2764,18 +2726,17 @@ public class Table extends Composite implements ICustomWidget {
 	 * Deselects all selected items in the receiver.
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public void deselectAll() {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// LVITEM lvItem = new LVITEM ();
 		// lvItem.mask = OS.LVIF_STATE;
@@ -2787,8 +2748,7 @@ public class Table extends Composite implements ICustomWidget {
 
 	void destroyItem(TableColumn column) {
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		//
 		// int index = 0;
 		// while (index < columnCount) {
@@ -3024,8 +2984,7 @@ public class Table extends Composite implements ICustomWidget {
 
 	void destroyItem(TableItem item) {
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		//
 		// int count = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
 		// int index = 0;
@@ -3047,16 +3006,15 @@ public class Table extends Composite implements ICustomWidget {
 
 	void fixCheckboxImageList(boolean fixScroll) {
 		/*
-		 * Bug in Windows. When the state image list is larger than the image
-		 * list, Windows incorrectly positions the state images. When the table
-		 * is scrolled, Windows draws garbage. The fix is to force the state
-		 * image list to be the same size as the image list.
+		 * Bug in Windows. When the state image list is larger than the image list,
+		 * Windows incorrectly positions the state images. When the table is scrolled,
+		 * Windows draws garbage. The fix is to force the state image list to be the
+		 * same size as the image list.
 		 */
 		if ((style & SWT.CHECK) == 0)
 			return;
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// long hImageList = OS.SendMessage (handle, OS.LVM_GETIMAGELIST,
 		// OS.LVSIL_SMALL, 0);
@@ -3076,8 +3034,7 @@ public class Table extends Composite implements ICustomWidget {
 		if ((style & SWT.CHECK) == 0)
 			return;
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// long hStateList = OS.SendMessage (handle, OS.LVM_GETIMAGELIST,
 		// OS.LVSIL_STATE, 0);
@@ -3088,31 +3045,31 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Returns the column at the given, zero-relative index in the receiver.
-	 * Throws an exception if the index is out of range. Columns are returned in
-	 * the order that they were created. If no <code>TableColumn</code>s were
-	 * created by the programmer, this method will throw
-	 * <code>ERROR_INVALID_RANGE</code> despite the fact that a single column of
-	 * data may be visible in the table. This occurs when the programmer uses
-	 * the table like a list, adding items but never creating a column.
+	 * Returns the column at the given, zero-relative index in the receiver. Throws
+	 * an exception if the index is out of range. Columns are returned in the order
+	 * that they were created. If no <code>TableColumn</code>s were created by the
+	 * programmer, this method will throw <code>ERROR_INVALID_RANGE</code> despite
+	 * the fact that a single column of data may be visible in the table. This
+	 * occurs when the programmer uses the table like a list, adding items but never
+	 * creating a column.
 	 *
-	 * @param index
-	 *            the index of the column to return
+	 * @param index the index of the column to return
 	 * @return the column at the given index
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_INVALID_RANGE - if the index is not between 0
-	 *                and the number of elements in the list minus 1
-	 *                (inclusive)</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_RANGE - if the index is
+	 *                                     not between 0 and the number of elements
+	 *                                     in the list minus 1 (inclusive)</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 *
 	 * @see Table#getColumnOrder()
 	 * @see Table#setColumnOrder(int[])
@@ -3129,20 +3086,20 @@ public class Table extends Composite implements ICustomWidget {
 
 	/**
 	 * Returns the number of columns contained in the receiver. If no
-	 * <code>TableColumn</code>s were created by the programmer, this value is
-	 * zero, despite the fact that visually, one column of items may be visible.
-	 * This occurs when the programmer uses the table like a list, adding items
-	 * but never creating a column.
+	 * <code>TableColumn</code>s were created by the programmer, this value is zero,
+	 * despite the fact that visually, one column of items may be visible. This
+	 * occurs when the programmer uses the table like a list, adding items but never
+	 * creating a column.
 	 *
 	 * @return the number of columns
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public int getColumnCount() {
 		checkWidget();
@@ -3150,28 +3107,27 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Returns an array of zero-relative integers that map the creation order of
-	 * the receiver's items to the order in which they are currently being
-	 * displayed.
+	 * Returns an array of zero-relative integers that map the creation order of the
+	 * receiver's items to the order in which they are currently being displayed.
 	 * <p>
-	 * Specifically, the indices of the returned array represent the current
-	 * visual order of the items, and the contents of the array represent the
-	 * creation order of the items.
+	 * Specifically, the indices of the returned array represent the current visual
+	 * order of the items, and the contents of the array represent the creation
+	 * order of the items.
 	 * </p>
 	 * <p>
-	 * Note: This is not the actual structure used by the receiver to maintain
-	 * its list of items, so modifying the array will not affect the receiver.
+	 * Note: This is not the actual structure used by the receiver to maintain its
+	 * list of items, so modifying the array will not affect the receiver.
 	 * </p>
 	 *
 	 * @return the current visual order of the receiver's items
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 *
 	 * @see Table#setColumnOrder(int[])
 	 * @see TableColumn#getMoveable()
@@ -3186,8 +3142,7 @@ public class Table extends Composite implements ICustomWidget {
 		if (columnCount == 0)
 			return new int[0];
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		int[] order = new int[columnCount];
 		// OS.SendMessage (handle, OS.LVM_GETCOLUMNORDERARRAY, columnCount,
@@ -3196,26 +3151,26 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Returns an array of <code>TableColumn</code>s which are the columns in
-	 * the receiver. Columns are returned in the order that they were created.
-	 * If no <code>TableColumn</code>s were created by the programmer, the array
-	 * is empty, despite the fact that visually, one column of items may be
-	 * visible. This occurs when the programmer uses the table like a list,
-	 * adding items but never creating a column.
+	 * Returns an array of <code>TableColumn</code>s which are the columns in the
+	 * receiver. Columns are returned in the order that they were created. If no
+	 * <code>TableColumn</code>s were created by the programmer, the array is empty,
+	 * despite the fact that visually, one column of items may be visible. This
+	 * occurs when the programmer uses the table like a list, adding items but never
+	 * creating a column.
 	 * <p>
-	 * Note: This is not the actual structure used by the receiver to maintain
-	 * its list of items, so modifying the array will not affect the receiver.
+	 * Note: This is not the actual structure used by the receiver to maintain its
+	 * list of items, so modifying the array will not affect the receiver.
 	 * </p>
 	 *
 	 * @return the items in the receiver
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 *
 	 * @see Table#getColumnOrder()
 	 * @see Table#setColumnOrder(int[])
@@ -3233,8 +3188,7 @@ public class Table extends Composite implements ICustomWidget {
 	int getFocusIndex() {
 		// checkWidget ();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		return 0;
 
@@ -3248,12 +3202,12 @@ public class Table extends Composite implements ICustomWidget {
 	 * @return the width of a grid line in points
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public int getGridLineWidth() {
 		checkWidget();
@@ -3270,19 +3224,18 @@ public class Table extends Composite implements ICustomWidget {
 	 * @return the receiver's header background color.
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 * @since 3.106
 	 */
 	public Color getHeaderBackground() {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		return Display.getDefault().getSystemColor(SWT.COLOR_WHITE);
 
@@ -3299,19 +3252,18 @@ public class Table extends Composite implements ICustomWidget {
 	 * @return the receiver's header foreground color.
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 * @since 3.106
 	 */
 	public Color getHeaderForeground() {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		return Display.getDefault().getSystemColor(SWT.COLOR_BLACK);
 	}
@@ -3326,12 +3278,12 @@ public class Table extends Composite implements ICustomWidget {
 	 * @return the height of the header or zero if the header is not visible
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 *
 	 * @since 2.0
 	 */
@@ -3341,8 +3293,7 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	int getHeaderHeightInPixels() {
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		return 80;
 	}
 
@@ -3358,12 +3309,12 @@ public class Table extends Composite implements ICustomWidget {
 	 * @return the receiver's header's visibility state
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public boolean getHeaderVisible() {
 		checkWidget();
@@ -3371,26 +3322,26 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Returns the item at the given, zero-relative index in the receiver.
-	 * Throws an exception if the index is out of range.
+	 * Returns the item at the given, zero-relative index in the receiver. Throws an
+	 * exception if the index is out of range.
 	 *
-	 * @param index
-	 *            the index of the item to return
+	 * @param index the index of the item to return
 	 * @return the item at the given index
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_INVALID_RANGE - if the index is not between 0
-	 *                and the number of elements in the list minus 1
-	 *                (inclusive)</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_RANGE - if the index is
+	 *                                     not between 0 and the number of elements
+	 *                                     in the list minus 1 (inclusive)</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 */
 	public TableItem getItem(int index) {
 		checkWidget();
@@ -3398,32 +3349,33 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Returns the item at the given point in the receiver or null if no such
-	 * item exists. The point is in the coordinate system of the receiver.
+	 * Returns the item at the given point in the receiver or null if no such item
+	 * exists. The point is in the coordinate system of the receiver.
 	 * <p>
-	 * The item that is returned represents an item that could be selected by
-	 * the user. For example, if selection only occurs in items in the first
-	 * column, then null is returned if the point is outside of the item. Note
-	 * that the SWT.FULL_SELECTION style hint, which specifies the selection
-	 * policy, determines the extent of the selection.
+	 * The item that is returned represents an item that could be selected by the
+	 * user. For example, if selection only occurs in items in the first column,
+	 * then null is returned if the point is outside of the item. Note that the
+	 * SWT.FULL_SELECTION style hint, which specifies the selection policy,
+	 * determines the extent of the selection.
 	 * </p>
 	 *
-	 * @param point
-	 *            the point used to locate the item
+	 * @param point the point used to locate the item
 	 * @return the item at the given point, or null if the point is not in a
 	 *         selectable item
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_NULL_ARGUMENT - if the point is null</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the point is
+	 *                                     null</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 */
 	public TableItem getItem(Point point) {
 		checkWidget();
@@ -3434,8 +3386,7 @@ public class Table extends Composite implements ICustomWidget {
 
 	TableItem getItemInPixels(Point point) {
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		return null;
 	}
@@ -3446,12 +3397,12 @@ public class Table extends Composite implements ICustomWidget {
 	 * @return the number of items
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public int getItemCount() {
 		checkWidget();
@@ -3461,18 +3412,18 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Returns the height of the area which would be used to display
-	 * <em>one</em> of the items in the receiver.
+	 * Returns the height of the area which would be used to display <em>one</em> of
+	 * the items in the receiver.
 	 *
 	 * @return the height of one item
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public int getItemHeight() {
 		checkWidget();
@@ -3481,8 +3432,7 @@ public class Table extends Composite implements ICustomWidget {
 
 	int getItemHeightInPixels() {
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		return 0;
 	}
 
@@ -3490,31 +3440,30 @@ public class Table extends Composite implements ICustomWidget {
 	 * Returns a (possibly empty) array of <code>TableItem</code>s which are the
 	 * items in the receiver.
 	 * <p>
-	 * Note: This is not the actual structure used by the receiver to maintain
-	 * its list of items, so modifying the array will not affect the receiver.
+	 * Note: This is not the actual structure used by the receiver to maintain its
+	 * list of items, so modifying the array will not affect the receiver.
 	 * </p>
 	 *
 	 * @return the items in the receiver
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public TableItem[] getItems() {
 		checkWidget();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		return null;
 	}
 
 	/**
 	 * Returns <code>true</code> if the receiver's lines are visible, and
-	 * <code>false</code> otherwise. Note that some platforms draw grid lines
-	 * while others may draw alternating row colors.
+	 * <code>false</code> otherwise. Note that some platforms draw grid lines while
+	 * others may draw alternating row colors.
 	 * <p>
 	 * If one of the receiver's ancestors is not visible or some other condition
 	 * makes the receiver not visible, this method may still indicate that it is
@@ -3524,12 +3473,12 @@ public class Table extends Composite implements ICustomWidget {
 	 * @return the visibility state of the lines
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public boolean getLinesVisible() {
 		checkWidget();
@@ -3538,35 +3487,33 @@ public class Table extends Composite implements ICustomWidget {
 
 	private boolean _getLinesVisible() {
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		return true;
 	}
 
 	/**
-	 * Returns an array of <code>TableItem</code>s that are currently selected
-	 * in the receiver. The order of the items is unspecified. An empty array
-	 * indicates that no items are selected.
+	 * Returns an array of <code>TableItem</code>s that are currently selected in
+	 * the receiver. The order of the items is unspecified. An empty array indicates
+	 * that no items are selected.
 	 * <p>
-	 * Note: This is not the actual structure used by the receiver to maintain
-	 * its selection, so modifying the array will not affect the receiver.
+	 * Note: This is not the actual structure used by the receiver to maintain its
+	 * selection, so modifying the array will not affect the receiver.
 	 * </p>
 	 *
 	 * @return an array representing the selection
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public TableItem[] getSelection() {
 		checkWidget();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		return null;
 	}
 
@@ -3576,81 +3523,78 @@ public class Table extends Composite implements ICustomWidget {
 	 * @return the number of selected items
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public int getSelectionCount() {
 		checkWidget();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		return 0;
 	}
 
 	/**
-	 * Returns the zero-relative index of the item which is currently selected
-	 * in the receiver, or -1 if no item is selected.
+	 * Returns the zero-relative index of the item which is currently selected in
+	 * the receiver, or -1 if no item is selected.
 	 *
 	 * @return the index of the selected item
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public int getSelectionIndex() {
 		checkWidget();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		return 0;
 	}
 
 	/**
-	 * Returns the zero-relative indices of the items which are currently
-	 * selected in the receiver. The order of the indices is unspecified. The
-	 * array is empty if no items are selected.
+	 * Returns the zero-relative indices of the items which are currently selected
+	 * in the receiver. The order of the indices is unspecified. The array is empty
+	 * if no items are selected.
 	 * <p>
-	 * Note: This is not the actual structure used by the receiver to maintain
-	 * its selection, so modifying the array will not affect the receiver.
+	 * Note: This is not the actual structure used by the receiver to maintain its
+	 * selection, so modifying the array will not affect the receiver.
 	 * </p>
 	 *
 	 * @return the array of indices of the selected items
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public int[] getSelectionIndices() {
 		checkWidget();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		return null;
 	}
 
 	/**
-	 * Returns the column which shows the sort indicator for the receiver. The
-	 * value may be null if no column shows the sort indicator.
+	 * Returns the column which shows the sort indicator for the receiver. The value
+	 * may be null if no column shows the sort indicator.
 	 *
 	 * @return the sort indicator
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 *
 	 * @see #setSortColumn(TableColumn)
 	 *
@@ -3662,24 +3606,23 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	int getSortColumnPixel() {
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		return 0;
 	}
 
 	/**
-	 * Returns the direction of the sort indicator for the receiver. The value
-	 * will be one of <code>UP</code>, <code>DOWN</code> or <code>NONE</code>.
+	 * Returns the direction of the sort indicator for the receiver. The value will
+	 * be one of <code>UP</code>, <code>DOWN</code> or <code>NONE</code>.
 	 *
 	 * @return the sort direction
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 *
 	 * @see #setSortDirection(int)
 	 *
@@ -3691,76 +3634,73 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Returns the zero-relative index of the item which is currently at the top
-	 * of the receiver. This index can change when items are scrolled or new
-	 * items are added or removed.
+	 * Returns the zero-relative index of the item which is currently at the top of
+	 * the receiver. This index can change when items are scrolled or new items are
+	 * added or removed.
 	 *
 	 * @return the index of the top item
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public int getTopIndex() {
 		checkWidget();
 		/*
-		 * Bug in Windows. Under rare circumstances, LVM_GETTOPINDEX can return
-		 * a negative number. When this happens, the table is displaying blank
-		 * lines at the top of the controls. The fix is to check for a negative
-		 * number and return zero instead.
+		 * Bug in Windows. Under rare circumstances, LVM_GETTOPINDEX can return a
+		 * negative number. When this happens, the table is displaying blank lines at
+		 * the top of the controls. The fix is to check for a negative number and return
+		 * zero instead.
 		 */
 
 		return topIndex;
 	}
 
 	boolean hasChildren() {
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		return false;
 	}
 
 	boolean hitTestSelection(int index, int x, int y) {
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		return false;
 	}
 
 	int imageIndex(Image image, int column) {
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		return imageList.add(image);
 	}
 
 	int imageIndexHeader(Image image) {
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		return headerImageList.add(image);
 	}
 
 	/**
-	 * Searches the receiver's list starting at the first column (index 0) until
-	 * a column is found that is equal to the argument, and returns the index of
-	 * that column. If no column is found, returns -1.
+	 * Searches the receiver's list starting at the first column (index 0) until a
+	 * column is found that is equal to the argument, and returns the index of that
+	 * column. If no column is found, returns -1.
 	 *
-	 * @param column
-	 *            the search column
+	 * @param column the search column
 	 * @return the index of the column
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_NULL_ARGUMENT - if the column is null</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the column
+	 *                                     is null</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 */
 	public int indexOf(TableColumn column) {
 		checkWidget();
@@ -3774,25 +3714,26 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Searches the receiver's list starting at the first item (index 0) until
-	 * an item is found that is equal to the argument, and returns the index of
-	 * that item. If no item is found, returns -1.
+	 * Searches the receiver's list starting at the first item (index 0) until an
+	 * item is found that is equal to the argument, and returns the index of that
+	 * item. If no item is found, returns -1.
 	 *
-	 * @param item
-	 *            the search item
+	 * @param item the search item
 	 * @return the index of the item
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_NULL_ARGUMENT - if the item is null</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the item is
+	 *                                     null</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 */
 	public int indexOf(TableItem item) {
 		checkWidget();
@@ -3817,37 +3758,33 @@ public class Table extends Composite implements ICustomWidget {
 	boolean isOptimizedRedraw() {
 		if ((style & SWT.H_SCROLL) == 0 || (style & SWT.V_SCROLL) == 0)
 			return false;
-		return !hasChildren() && !hooks(SWT.Paint) && !filters(SWT.Paint)
-				&& !customHeaderDrawing();
+		return !hasChildren() && !hooks(SWT.Paint) && !filters(SWT.Paint) && !customHeaderDrawing();
 	}
 
 	/**
 	 * Returns <code>true</code> if the item is selected, and <code>false</code>
 	 * otherwise. Indices out of range are ignored.
 	 *
-	 * @param index
-	 *            the index of the item
+	 * @param index the index of the item
 	 * @return the selection state of the item at the index
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public boolean isSelected(int index) {
 		checkWidget();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		return false;
 	}
 
 	@Override
 	boolean isUseWsBorder() {
-		return super.isUseWsBorder()
-				|| ((display != null) && display.useWsBorderTable);
+		return super.isUseWsBorder() || ((display != null) && display.useWsBorderTable);
 	}
 
 	@Override
@@ -3857,242 +3794,228 @@ public class Table extends Composite implements ICustomWidget {
 
 	@Override
 	void releaseChildren(boolean destroy) {
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		super.releaseChildren(destroy);
 	}
 
 	@Override
 	void releaseWidget() {
 		super.releaseWidget();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
 
 	/**
 	 * Removes the items from the receiver's list at the given zero-relative
 	 * indices.
 	 *
-	 * @param indices
-	 *            the array of indices of the items
+	 * @param indices the array of indices of the items
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_INVALID_RANGE - if the index is not between 0
-	 *                and the number of elements in the list minus 1
-	 *                (inclusive)</li>
-	 *                <li>ERROR_NULL_ARGUMENT - if the indices array is
-	 *                null</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_RANGE - if the index is
+	 *                                     not between 0 and the number of elements
+	 *                                     in the list minus 1 (inclusive)</li>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the indices
+	 *                                     array is null</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 */
 	public void remove(int[] indices) {
 		checkWidget();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
 
 	/**
 	 * Removes the item from the receiver at the given zero-relative index.
 	 *
-	 * @param index
-	 *            the index for the item
+	 * @param index the index for the item
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_INVALID_RANGE - if the index is not between 0
-	 *                and the number of elements in the list minus 1
-	 *                (inclusive)</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_RANGE - if the index is
+	 *                                     not between 0 and the number of elements
+	 *                                     in the list minus 1 (inclusive)</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 */
 	public void remove(int index) {
 		checkWidget();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
 
 	/**
-	 * Removes the items from the receiver which are between the given
-	 * zero-relative start and end indices (inclusive).
+	 * Removes the items from the receiver which are between the given zero-relative
+	 * start and end indices (inclusive).
 	 *
-	 * @param start
-	 *            the start of the range
-	 * @param end
-	 *            the end of the range
+	 * @param start the start of the range
+	 * @param end   the end of the range
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_INVALID_RANGE - if either the start or end are
-	 *                not between 0 and the number of elements in the list minus
-	 *                1 (inclusive)</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_RANGE - if either the
+	 *                                     start or end are not between 0 and the
+	 *                                     number of elements in the list minus 1
+	 *                                     (inclusive)</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 */
 	public void remove(int start, int end) {
 		checkWidget();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
 
 	/**
 	 * Removes all of the items from the receiver.
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public void removeAll() {
 		checkWidget();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
 
 	/**
-	 * Removes the listener from the collection of listeners who will be
-	 * notified when the user changes the receiver's selection.
+	 * Removes the listener from the collection of listeners who will be notified
+	 * when the user changes the receiver's selection.
 	 *
-	 * @param listener
-	 *            the listener which should no longer be notified
+	 * @param listener the listener which should no longer be notified
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the listener
+	 *                                     is null</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 *
 	 * @see SelectionListener
 	 * @see #addSelectionListener(SelectionListener)
 	 */
 	public void removeSelectionListener(SelectionListener listener) {
 		checkWidget();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
 
 	/**
 	 * Selects the items at the given zero-relative indices in the receiver. The
 	 * current selection is not cleared before the new items are selected.
 	 * <p>
-	 * If the item at a given index is not selected, it is selected. If the item
-	 * at a given index was already selected, it remains selected. Indices that
-	 * are out of range and duplicate indices are ignored. If the receiver is
-	 * single-select and multiple indices are specified, then all indices are
-	 * ignored.
+	 * If the item at a given index is not selected, it is selected. If the item at
+	 * a given index was already selected, it remains selected. Indices that are out
+	 * of range and duplicate indices are ignored. If the receiver is single-select
+	 * and multiple indices are specified, then all indices are ignored.
 	 * </p>
 	 *
-	 * @param indices
-	 *            the array of indices for the items to select
+	 * @param indices the array of indices for the items to select
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_NULL_ARGUMENT - if the array of indices is
-	 *                null</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the array of
+	 *                                     indices is null</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 *
 	 * @see Table#setSelection(int[])
 	 */
 	public void select(int[] indices) {
 		checkWidget();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
 
 	@Override
 	void reskinChildren(int flags) {
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		super.reskinChildren(flags);
 	}
 
 	/**
 	 * Selects the item at the given zero-relative index in the receiver. If the
-	 * item at the index was already selected, it remains selected. Indices that
-	 * are out of range are ignored.
+	 * item at the index was already selected, it remains selected. Indices that are
+	 * out of range are ignored.
 	 *
-	 * @param index
-	 *            the index of the item to select
+	 * @param index the index of the item to select
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public void select(int index) {
 		checkWidget();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
 
 	/**
-	 * Selects the items in the range specified by the given zero-relative
-	 * indices in the receiver. The range of indices is inclusive. The current
-	 * selection is not cleared before the new items are selected.
+	 * Selects the items in the range specified by the given zero-relative indices
+	 * in the receiver. The range of indices is inclusive. The current selection is
+	 * not cleared before the new items are selected.
 	 * <p>
-	 * If an item in the given range is not selected, it is selected. If an item
-	 * in the given range was already selected, it remains selected. Indices
-	 * that are out of range are ignored and no items will be selected if start
-	 * is greater than end. If the receiver is single-select and there is more
-	 * than one item in the given range, then all indices are ignored.
+	 * If an item in the given range is not selected, it is selected. If an item in
+	 * the given range was already selected, it remains selected. Indices that are
+	 * out of range are ignored and no items will be selected if start is greater
+	 * than end. If the receiver is single-select and there is more than one item in
+	 * the given range, then all indices are ignored.
 	 * </p>
 	 *
-	 * @param start
-	 *            the start of the range
-	 * @param end
-	 *            the end of the range
+	 * @param start the start of the range
+	 * @param end   the end of the range
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 *
 	 * @see Table#setSelection(int,int)
 	 */
 	public void select(int start, int end) {
 		checkWidget();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
 
 	/**
@@ -4102,17 +4025,16 @@ public class Table extends Composite implements ICustomWidget {
 	 * </p>
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public void selectAll() {
 		checkWidget();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
 	//
 	// void sendEraseItemEvent (TableItem item, NMLVCUSTOMDRAW nmcd, long
@@ -4755,8 +4677,7 @@ public class Table extends Composite implements ICustomWidget {
 		if (hBitmap != 0) {
 			setBackgroundTransparent(true);
 		} else {
-			if (!hooks(SWT.MeasureItem) && !hooks(SWT.EraseItem)
-					&& !hooks(SWT.PaintItem)) {
+			if (!hooks(SWT.MeasureItem) && !hooks(SWT.EraseItem) && !hooks(SWT.PaintItem)) {
 				setBackgroundTransparent(false);
 			}
 		}
@@ -4764,8 +4685,7 @@ public class Table extends Composite implements ICustomWidget {
 
 	@Override
 	void setBackgroundPixel(int newPixel) {
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		// int oldPixel = (int)OS.SendMessage (handle, OS.LVM_GETBKCOLOR, 0, 0);
 		// if (oldPixel != OS.CLR_NONE) {
 		// if (findImageControl () != null) return;
@@ -4785,8 +4705,7 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	void setBackgroundTransparent(boolean transparent) {
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		// /*
 		// * Bug in Windows. When the table has the extended style
 		// * LVS_EX_FULLROWSELECT and LVM_SETBKCOLOR is used with
@@ -4872,17 +4791,15 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	@Override
-	void setBoundsInPixels(int x, int y, int width, int height, int flags,
-			boolean defer) {
+	void setBoundsInPixels(int x, int y, int width, int height, int flags, boolean defer) {
 		/*
 		 * Bug in Windows. If the table column widths are adjusted in WM_SIZE or
-		 * WM_POSITIONCHANGED using LVM_SETCOLUMNWIDTH blank lines may be
-		 * inserted at the top of the table. A call to LVM_GETTOPINDEX will
-		 * return a negative number (this is an impossible result). Once the
-		 * blank lines appear, there seems to be no way to get rid of them,
-		 * other than destroying and recreating the table. The fix is to send
-		 * the resize notification after the size has been changed in the
-		 * operating system.
+		 * WM_POSITIONCHANGED using LVM_SETCOLUMNWIDTH blank lines may be inserted at
+		 * the top of the table. A call to LVM_GETTOPINDEX will return a negative number
+		 * (this is an impossible result). Once the blank lines appear, there seems to
+		 * be no way to get rid of them, other than destroying and recreating the table.
+		 * The fix is to send the resize notification after the size has been changed in
+		 * the operating system.
 		 *
 		 * NOTE: This does not fix the case when the user is resizing columns
 		 * dynamically. There is no fix for this case at this time.
@@ -4893,26 +4810,28 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Sets the order that the items in the receiver should be displayed in to
-	 * the given argument which is described in terms of the zero-relative
-	 * ordering of when the items were added.
+	 * Sets the order that the items in the receiver should be displayed in to the
+	 * given argument which is described in terms of the zero-relative ordering of
+	 * when the items were added.
 	 *
-	 * @param order
-	 *            the new order to display the items
+	 * @param order the new order to display the items
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_NULL_ARGUMENT - if the item order is null</li>
-	 *                <li>ERROR_INVALID_ARGUMENT - if the item order is not the
-	 *                same length as the number of items</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the item
+	 *                                     order is null</li>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if the item
+	 *                                     order is not the same length as the
+	 *                                     number of items</li>
+	 *                                     </ul>
 	 *
 	 * @see Table#getColumnOrder()
 	 * @see TableColumn#getMoveable()
@@ -4924,8 +4843,7 @@ public class Table extends Composite implements ICustomWidget {
 	public void setColumnOrder(int[] order) {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		//
 		// if (order == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -5031,8 +4949,7 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	void setCheckboxImageList(int width, int height, boolean fixScroll) {
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		// if ((style & SWT.CHECK) == 0) return;
 		// int count = 8, flags = OS.ILC_COLOR32;
 		// if ((style & SWT.RIGHT_TO_LEFT) != 0) flags |= OS.ILC_MIRROR;
@@ -5184,13 +5101,12 @@ public class Table extends Composite implements ICustomWidget {
 
 	void setFocusIndex(int index) {
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// checkWidget ();
 		/*
-		 * An index of -1 will apply the change to all items. Ensure that index
-		 * is greater than -1.
+		 * An index of -1 will apply the change to all items. Ensure that index is
+		 * greater than -1.
 		 */
 		// if (index < 0) return;
 		// LVITEM lvItem = new LVITEM ();
@@ -5206,8 +5122,7 @@ public class Table extends Composite implements ICustomWidget {
 	public void setFont(Font font) {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// /*
 		// * Bug in Windows. Making any change to an item that
@@ -5251,8 +5166,7 @@ public class Table extends Composite implements ICustomWidget {
 	@Override
 	void setForegroundPixel(int pixel) {
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// /*
 		// * The Windows table control uses CLR_DEFAULT to indicate
@@ -5272,37 +5186,36 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Sets the header background color to the color specified by the argument,
-	 * or to the default system color if the argument is null.
+	 * Sets the header background color to the color specified by the argument, or
+	 * to the default system color if the argument is null.
 	 * <p>
 	 * Note: This operation is a <em>HINT</em> and is not supported on all
-	 * platforms. If the native header has a 3D look and feel (e.g. Windows 7),
-	 * this method will cause the header to look FLAT irrespective of the state
-	 * of the table style.
+	 * platforms. If the native header has a 3D look and feel (e.g. Windows 7), this
+	 * method will cause the header to look FLAT irrespective of the state of the
+	 * table style.
 	 * </p>
 	 *
-	 * @param color
-	 *            the new color (or null)
+	 * @param color the new color (or null)
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_INVALID_ARGUMENT - if the argument has been
-	 *                disposed</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if the
+	 *                                     argument has been disposed</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 * @since 3.106
 	 */
 	public void setHeaderBackground(Color color) {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// int pixel = -1;
 		// if (color != null) {
@@ -5317,30 +5230,30 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Sets the header foreground color to the color specified by the argument,
-	 * or to the default system color if the argument is null.
+	 * Sets the header foreground color to the color specified by the argument, or
+	 * to the default system color if the argument is null.
 	 * <p>
 	 * Note: This operation is a <em>HINT</em> and is not supported on all
-	 * platforms. If the native header has a 3D look and feel (e.g. Windows 7),
-	 * this method will cause the header to look FLAT irrespective of the state
-	 * of the table style.
+	 * platforms. If the native header has a 3D look and feel (e.g. Windows 7), this
+	 * method will cause the header to look FLAT irrespective of the state of the
+	 * table style.
 	 * </p>
 	 *
-	 * @param color
-	 *            the new color (or null)
+	 * @param color the new color (or null)
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_INVALID_ARGUMENT - if the argument has been
-	 *                disposed</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if the
+	 *                                     argument has been disposed</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 * @since 3.106
 	 */
 	public void setHeaderForeground(Color color) {
@@ -5358,24 +5271,23 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Marks the receiver's header as visible if the argument is
-	 * <code>true</code>, and marks it invisible otherwise.
+	 * Marks the receiver's header as visible if the argument is <code>true</code>,
+	 * and marks it invisible otherwise.
 	 * <p>
 	 * If one of the receiver's ancestors is not visible or some other condition
-	 * makes the receiver not visible, marking it visible may not actually cause
-	 * it to be displayed.
+	 * makes the receiver not visible, marking it visible may not actually cause it
+	 * to be displayed.
 	 * </p>
 	 *
-	 * @param show
-	 *            the new visibility state
+	 * @param show the new visibility state
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public void setHeaderVisible(boolean show) {
 		checkWidget();
@@ -5420,24 +5332,22 @@ public class Table extends Composite implements ICustomWidget {
 	/**
 	 * Sets the number of items contained in the receiver.
 	 *
-	 * @param count
-	 *            the number of items
+	 * @param count the number of items
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 *
 	 * @since 3.0
 	 */
 	public void setItemCount(int count) {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// count = Math.max (0, count);
 		// int itemCount = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0,
@@ -5485,12 +5395,11 @@ public class Table extends Composite implements ICustomWidget {
 
 	void setItemHeight(boolean fixScroll) {
 		/*
-		 * Bug in Windows. Making any change to an item that changes the item
-		 * height of a table while the table is scrolled can cause the lines to
-		 * draw incorrectly. This happens even when the lines are not currently
-		 * visible and are shown afterwards. The fix is to save the top index,
-		 * scroll to the top of the table and then restore the original top
-		 * index.
+		 * Bug in Windows. Making any change to an item that changes the item height of
+		 * a table while the table is scrolled can cause the lines to draw incorrectly.
+		 * This happens even when the lines are not currently visible and are shown
+		 * afterwards. The fix is to save the top index, scroll to the top of the table
+		 * and then restore the original top index.
 		 */
 		int topIndex = getTopIndex();
 		if (fixScroll && topIndex != 0) {
@@ -5498,8 +5407,7 @@ public class Table extends Composite implements ICustomWidget {
 			setTopIndex(0);
 		}
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		// if (itemHeight == -1) {
 		// /*
 		// * Feature in Windows. Windows has no API to restore the
@@ -5538,19 +5446,18 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Sets the height of the area which would be used to display <em>one</em>
-	 * of the items in the table.
+	 * Sets the height of the area which would be used to display <em>one</em> of
+	 * the items in the table.
 	 *
-	 * @param itemHeight
-	 *            the height of one item
+	 * @param itemHeight the height of one item
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 *
 	 * @since 3.2
 	 */
@@ -5564,31 +5471,29 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Marks the receiver's lines as visible if the argument is
-	 * <code>true</code>, and marks it invisible otherwise. Note that some
-	 * platforms draw grid lines while others may draw alternating row colors.
+	 * Marks the receiver's lines as visible if the argument is <code>true</code>,
+	 * and marks it invisible otherwise. Note that some platforms draw grid lines
+	 * while others may draw alternating row colors.
 	 * <p>
 	 * If one of the receiver's ancestors is not visible or some other condition
-	 * makes the receiver not visible, marking it visible may not actually cause
-	 * it to be displayed.
+	 * makes the receiver not visible, marking it visible may not actually cause it
+	 * to be displayed.
 	 * </p>
 	 *
-	 * @param show
-	 *            the new visibility state
+	 * @param show the new visibility state
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public void setLinesVisible(boolean show) {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		// int newBits = show ? OS.LVS_EX_GRIDLINES : 0;
 		// OS.SendMessage (handle, OS.LVM_SETEXTENDEDLISTVIEWSTYLE,
 		// OS.LVS_EX_GRIDLINES, newBits);
@@ -5599,8 +5504,7 @@ public class Table extends Composite implements ICustomWidget {
 	public void setRedraw(boolean redraw) {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// /*
 		// * Feature in Windows. When WM_SETREDRAW is used to turn
@@ -5682,8 +5586,7 @@ public class Table extends Composite implements ICustomWidget {
 
 	void setScrollWidth(int width) {
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// if (width != (int)OS.SendMessage (handle, OS.LVM_GETCOLUMNWIDTH, 0,
 		// 0)) {
@@ -5713,8 +5616,7 @@ public class Table extends Composite implements ICustomWidget {
 
 	boolean setScrollWidth(TableItem item, boolean force) {
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// if (currentItem != null) {
 		// if (currentItem != item) fixScrollWidth = true;
@@ -5726,9 +5628,9 @@ public class Table extends Composite implements ICustomWidget {
 		// }
 		// fixScrollWidth = false;
 		/*
-		 * NOTE: It is much faster to measure the strings and compute the width
-		 * of the scroll bar in non-virtual table rather than using
-		 * LVM_SETCOLUMNWIDTH with LVSCW_AUTOSIZE.
+		 * NOTE: It is much faster to measure the strings and compute the width of the
+		 * scroll bar in non-virtual table rather than using LVM_SETCOLUMNWIDTH with
+		 * LVSCW_AUTOSIZE.
 		 */
 		if (columnCount == 0) {
 			// int newWidth = 0, imageIndent = 0, index = 0;
@@ -5833,21 +5735,21 @@ public class Table extends Composite implements ICustomWidget {
 	 * indices are ignored.
 	 * </p>
 	 *
-	 * @param indices
-	 *            the indices of the items to select
+	 * @param indices the indices of the items to select
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_NULL_ARGUMENT - if the array of indices is
-	 *                null</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the array of
+	 *                                     indices is null</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 *
 	 * @see Table#deselectAll()
 	 * @see Table#select(int[])
@@ -5855,8 +5757,7 @@ public class Table extends Composite implements ICustomWidget {
 	public void setSelection(int[] indices) {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// if (indices == null) error (SWT.ERROR_NULL_ARGUMENT);
 		// deselectAll ();
@@ -5876,60 +5777,59 @@ public class Table extends Composite implements ICustomWidget {
 	 * If the item is not in the receiver, then it is ignored.
 	 * </p>
 	 *
-	 * @param item
-	 *            the item to select
+	 * @param item the item to select
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_NULL_ARGUMENT - if the item is null</li>
-	 *                <li>ERROR_INVALID_ARGUMENT - if the item has been
-	 *                disposed</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the item is
+	 *                                     null</li>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if the item
+	 *                                     has been disposed</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 *
 	 * @since 3.2
 	 */
 	public void setSelection(TableItem item) {
 		checkWidget();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		// if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 		// setSelection (new TableItem [] {item});
 	}
 
 	/**
 	 * Sets the receiver's selection to be the given array of items. The current
-	 * selection is cleared before the new items are selected, and if necessary
-	 * the receiver is scrolled to make the new selection visible.
+	 * selection is cleared before the new items are selected, and if necessary the
+	 * receiver is scrolled to make the new selection visible.
 	 * <p>
 	 * Items that are not in the receiver are ignored. If the receiver is
-	 * single-select and multiple items are specified, then all items are
-	 * ignored.
+	 * single-select and multiple items are specified, then all items are ignored.
 	 * </p>
 	 *
-	 * @param items
-	 *            the array of items
+	 * @param items the array of items
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_NULL_ARGUMENT - if the array of items is
-	 *                null</li>
-	 *                <li>ERROR_INVALID_ARGUMENT - if one of the items has been
-	 *                disposed</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the array of
+	 *                                     items is null</li>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if one of
+	 *                                     the items has been disposed</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 *
 	 * @see Table#deselectAll()
 	 * @see Table#select(int[])
@@ -5960,16 +5860,15 @@ public class Table extends Composite implements ICustomWidget {
 	 * current selection is first cleared, then the new item is selected, and if
 	 * necessary the receiver is scrolled to make the new selection visible.
 	 *
-	 * @param index
-	 *            the index of the item to select
+	 * @param index the index of the item to select
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 *
 	 * @see Table#deselectAll()
 	 * @see Table#select(int)
@@ -5984,36 +5883,33 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Selects the items in the range specified by the given zero-relative
-	 * indices in the receiver. The range of indices is inclusive. The current
-	 * selection is cleared before the new items are selected, and if necessary
-	 * the receiver is scrolled to make the new selection visible.
+	 * Selects the items in the range specified by the given zero-relative indices
+	 * in the receiver. The range of indices is inclusive. The current selection is
+	 * cleared before the new items are selected, and if necessary the receiver is
+	 * scrolled to make the new selection visible.
 	 * <p>
-	 * Indices that are out of range are ignored and no items will be selected
-	 * if start is greater than end. If the receiver is single-select and there
-	 * is more than one item in the given range, then all indices are ignored.
+	 * Indices that are out of range are ignored and no items will be selected if
+	 * start is greater than end. If the receiver is single-select and there is more
+	 * than one item in the given range, then all indices are ignored.
 	 * </p>
 	 *
-	 * @param start
-	 *            the start index of the items to select
-	 * @param end
-	 *            the end index of the items to select
+	 * @param start the start index of the items to select
+	 * @param end   the end index of the items to select
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 *
 	 * @see Table#deselectAll()
 	 * @see Table#select(int,int)
 	 */
 	public void setSelection(int start, int end) {
 		checkWidget();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		// deselectAll ();
 		// if (end < 0 || start > end || ((style & SWT.SINGLE) != 0 && start !=
 		// end)) return;
@@ -6028,32 +5924,31 @@ public class Table extends Composite implements ICustomWidget {
 
 	/**
 	 * Sets the column used by the sort indicator for the receiver. A null value
-	 * will clear the sort indicator. The current sort column is cleared before
-	 * the new column is set.
+	 * will clear the sort indicator. The current sort column is cleared before the
+	 * new column is set.
 	 *
-	 * @param column
-	 *            the column used by the sort indicator or <code>null</code>
+	 * @param column the column used by the sort indicator or <code>null</code>
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_INVALID_ARGUMENT - if the column is
-	 *                disposed</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if the
+	 *                                     column is disposed</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 *
 	 * @since 3.2
 	 */
 	public void setSortColumn(TableColumn column) {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// if (column != null && column.isDisposed ()) error
 		// (SWT.ERROR_INVALID_ARGUMENT);
@@ -6075,26 +5970,24 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Sets the direction of the sort indicator for the receiver. The value can
-	 * be one of <code>UP</code>, <code>DOWN</code> or <code>NONE</code>.
+	 * Sets the direction of the sort indicator for the receiver. The value can be
+	 * one of <code>UP</code>, <code>DOWN</code> or <code>NONE</code>.
 	 *
-	 * @param direction
-	 *            the direction of the sort indicator
+	 * @param direction the direction of the sort indicator
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 *
 	 * @since 3.2
 	 */
 	public void setSortDirection(int direction) {
 		checkWidget();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		// if ((direction & (SWT.UP | SWT.DOWN)) == 0 && direction != SWT.NONE)
 		// return;
 		// sortDirection = direction;
@@ -6105,8 +5998,7 @@ public class Table extends Composite implements ICustomWidget {
 
 	void setSubImagesVisible(boolean visible) {
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// int dwExStyle = (int)OS.SendMessage (handle,
 		// OS.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0);
@@ -6117,8 +6009,7 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	void setTableEmpty() {
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		// if (imageList != null) {
 		// /*
 		// * Bug in Windows. When LVM_SETIMAGELIST is used to remove the
@@ -6161,20 +6052,19 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Sets the zero-relative index of the item which is currently at the top of
-	 * the receiver. This index can change when items are scrolled or new items
-	 * are added and removed.
+	 * Sets the zero-relative index of the item which is currently at the top of the
+	 * receiver. This index can change when items are scrolled or new items are
+	 * added and removed.
 	 *
-	 * @param index
-	 *            the index of the top item
+	 * @param index the index of the top item
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public void setTopIndex(int index) {
 		checkWidget();
@@ -6238,33 +6128,33 @@ public class Table extends Composite implements ICustomWidget {
 
 	/**
 	 * Shows the column. If the column is already showing in the receiver, this
-	 * method simply returns. Otherwise, the columns are scrolled until the
-	 * column is visible.
+	 * method simply returns. Otherwise, the columns are scrolled until the column
+	 * is visible.
 	 *
-	 * @param column
-	 *            the column to be shown
+	 * @param column the column to be shown
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_NULL_ARGUMENT - if the column is null</li>
-	 *                <li>ERROR_INVALID_ARGUMENT - if the column has been
-	 *                disposed</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the column
+	 *                                     is null</li>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if the
+	 *                                     column has been disposed</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 *
 	 * @since 3.0
 	 */
 	public void showColumn(TableColumn column) {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// if (column == null) error (SWT.ERROR_NULL_ARGUMENT);
 		// if (column.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
@@ -6346,8 +6236,7 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	void showItem(int index) {
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		// if (!painted && hooks (SWT.MeasureItem)) hitTestSelection (index, 0,
 		// 0);
 		// /*
@@ -6389,34 +6278,33 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	/**
-	 * Shows the item. If the item is already showing in the receiver, this
-	 * method simply returns. Otherwise, the items are scrolled until the item
-	 * is visible.
+	 * Shows the item. If the item is already showing in the receiver, this method
+	 * simply returns. Otherwise, the items are scrolled until the item is visible.
 	 *
-	 * @param item
-	 *            the item to be shown
+	 * @param item the item to be shown
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_NULL_ARGUMENT - if the item is null</li>
-	 *                <li>ERROR_INVALID_ARGUMENT - if the item has been
-	 *                disposed</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the item is
+	 *                                     null</li>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if the item
+	 *                                     has been disposed</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 *
 	 * @see Table#showSelection()
 	 */
 	public void showItem(TableItem item) {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 		// if (item.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
@@ -6430,20 +6318,19 @@ public class Table extends Composite implements ICustomWidget {
 	 * selection is visible.
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 *
 	 * @see Table#showItem(TableItem)
 	 */
 	public void showSelection() {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// int index = (int)OS.SendMessage (handle, OS.LVM_GETNEXTITEM, -1,
 		// OS.LVNI_SELECTED);
@@ -6492,8 +6379,7 @@ public class Table extends Composite implements ICustomWidget {
 	@Override
 	void subclass() {
 		super.subclass();
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		// if (HeaderProc != 0) {
 		// OS.SetWindowLongPtr (hwndHeader, OS.GWLP_WNDPROC,
 		// display.windowProc);
@@ -6532,8 +6418,7 @@ public class Table extends Composite implements ICustomWidget {
 	void unsubclass() {
 		super.unsubclass();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// if (HeaderProc != 0) {
 		// OS.SetWindowLongPtr (hwndHeader, OS.GWLP_WNDPROC, HeaderProc);
@@ -6543,19 +6428,17 @@ public class Table extends Composite implements ICustomWidget {
 	@Override
 	void update(boolean all) {
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		// checkWidget ();
 		/*
-		 * When there are many columns in a table, scrolling performance can be
-		 * improved by temporarily unsubclassing the window proc so that
-		 * internal messages are dispatched directly to the table. If the
-		 * application expects to see a paint event or has a child whose font,
-		 * foreground or background color might be needed, the window proc
-		 * cannot be unsubclassed.
+		 * When there are many columns in a table, scrolling performance can be improved
+		 * by temporarily unsubclassing the window proc so that internal messages are
+		 * dispatched directly to the table. If the application expects to see a paint
+		 * event or has a child whose font, foreground or background color might be
+		 * needed, the window proc cannot be unsubclassed.
 		 *
-		 * NOTE: The header tooltip can subclass the header proc so the current
-		 * proc must be restored or header tooltips stop working.
+		 * NOTE: The header tooltip can subclass the header proc so the current proc
+		 * must be restored or header tooltips stop working.
 		 */
 		// long oldHeaderProc = 0, oldTableProc = 0;
 		// boolean fixSubclass = isOptimizedRedraw ();
@@ -6573,8 +6456,7 @@ public class Table extends Composite implements ICustomWidget {
 	}
 
 	void updateHeaderToolTips() {
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		// if (headerToolTipHandle == 0) return;
 		// long hwndHeader = OS.SendMessage (handle, OS.LVM_GETHEADER, 0, 0);
 		// RECT rect = new RECT ();
@@ -6599,8 +6481,7 @@ public class Table extends Composite implements ICustomWidget {
 	@Override
 	void updateMenuLocation(Event event) {
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// Rectangle clientArea = getClientAreaInPixels ();
 		// int x = clientArea.x, y = clientArea.y;
@@ -6625,8 +6506,7 @@ public class Table extends Composite implements ICustomWidget {
 
 	void updateMoveable() {
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		// int index = 0;
 		// while (index < columnCount) {
 		// if (columns [index].moveable) break;
@@ -6641,8 +6521,7 @@ public class Table extends Composite implements ICustomWidget {
 	void updateOrientation() {
 		super.updateOrientation();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		// long hwndHeader = OS.SendMessage (handle, OS.LVM_GETHEADER, 0, 0);
 		// if (hwndHeader != 0) {
 		// int bits = OS.GetWindowLong (hwndHeader, OS.GWL_EXSTYLE);
@@ -6720,8 +6599,7 @@ public class Table extends Composite implements ICustomWidget {
 	@Override
 	boolean updateTextDirection(int textDirection) {
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		return super.updateTextDirection(textDirection);
 
@@ -6745,8 +6623,7 @@ public class Table extends Composite implements ICustomWidget {
 	@Override
 	int widgetStyle() {
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		return super.widgetStyle();
 

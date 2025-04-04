@@ -58,35 +58,34 @@ public class TableColumn extends Item {
 
 	/**
 	 * Constructs a new instance of this class given its parent (which must be a
-	 * <code>Table</code>) and a style value describing its behavior and
-	 * appearance. The item is added to the end of the items maintained by its
-	 * parent.
+	 * <code>Table</code>) and a style value describing its behavior and appearance.
+	 * The item is added to the end of the items maintained by its parent.
 	 * <p>
 	 * The style value is either one of the style constants defined in class
-	 * <code>SWT</code> which is applicable to instances of this class, or must
-	 * be built by <em>bitwise OR</em>'ing together (that is, using the
-	 * <code>int</code> "|" operator) two or more of those <code>SWT</code>
-	 * style constants. The class description lists the style constants that are
+	 * <code>SWT</code> which is applicable to instances of this class, or must be
+	 * built by <em>bitwise OR</em>'ing together (that is, using the
+	 * <code>int</code> "|" operator) two or more of those <code>SWT</code> style
+	 * constants. The class description lists the style constants that are
 	 * applicable to the class. Style bits are also inherited from superclasses.
 	 * </p>
 	 *
-	 * @param parent
-	 *            a composite control which will be the parent of the new
-	 *            instance (cannot be null)
-	 * @param style
-	 *            the style of control to construct
+	 * @param parent a composite control which will be the parent of the new
+	 *               instance (cannot be null)
+	 * @param style  the style of control to construct
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the parent
+	 *                                     is null</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the parent</li>
-	 *                <li>ERROR_INVALID_SUBCLASS - if this class is not an
-	 *                allowed subclass</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     parent</li>
+	 *                                     <li>ERROR_INVALID_SUBCLASS - if this
+	 *                                     class is not an allowed subclass</li>
+	 *                                     </ul>
 	 *
 	 * @see SWT#LEFT
 	 * @see SWT#RIGHT
@@ -103,43 +102,42 @@ public class TableColumn extends Item {
 
 	/**
 	 * Constructs a new instance of this class given its parent (which must be a
-	 * <code>Table</code>), a style value describing its behavior and
-	 * appearance, and the index at which to place it in the items maintained by
-	 * its parent.
+	 * <code>Table</code>), a style value describing its behavior and appearance,
+	 * and the index at which to place it in the items maintained by its parent.
 	 * <p>
 	 * The style value is either one of the style constants defined in class
-	 * <code>SWT</code> which is applicable to instances of this class, or must
-	 * be built by <em>bitwise OR</em>'ing together (that is, using the
-	 * <code>int</code> "|" operator) two or more of those <code>SWT</code>
-	 * style constants. The class description lists the style constants that are
+	 * <code>SWT</code> which is applicable to instances of this class, or must be
+	 * built by <em>bitwise OR</em>'ing together (that is, using the
+	 * <code>int</code> "|" operator) two or more of those <code>SWT</code> style
+	 * constants. The class description lists the style constants that are
 	 * applicable to the class. Style bits are also inherited from superclasses.
 	 * </p>
 	 * <p>
-	 * Note that due to a restriction on some platforms, the first column is
-	 * always left aligned.
+	 * Note that due to a restriction on some platforms, the first column is always
+	 * left aligned.
 	 * </p>
 	 *
-	 * @param parent
-	 *            a composite control which will be the parent of the new
-	 *            instance (cannot be null)
-	 * @param style
-	 *            the style of control to construct
-	 * @param index
-	 *            the zero-relative index to store the receiver in its parent
+	 * @param parent a composite control which will be the parent of the new
+	 *               instance (cannot be null)
+	 * @param style  the style of control to construct
+	 * @param index  the zero-relative index to store the receiver in its parent
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
-	 *                <li>ERROR_INVALID_RANGE - if the index is not between 0
-	 *                and the number of elements in the parent (inclusive)</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the parent
+	 *                                     is null</li>
+	 *                                     <li>ERROR_INVALID_RANGE - if the index is
+	 *                                     not between 0 and the number of elements
+	 *                                     in the parent (inclusive)</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the parent</li>
-	 *                <li>ERROR_INVALID_SUBCLASS - if this class is not an
-	 *                allowed subclass</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     parent</li>
+	 *                                     <li>ERROR_INVALID_SUBCLASS - if this
+	 *                                     class is not an allowed subclass</li>
+	 *                                     </ul>
 	 *
 	 * @see SWT#LEFT
 	 * @see SWT#RIGHT
@@ -155,24 +153,25 @@ public class TableColumn extends Item {
 	}
 
 	/**
-	 * Adds the listener to the collection of listeners who will be notified
-	 * when the control is moved or resized, by sending it one of the messages
-	 * defined in the <code>ControlListener</code> interface.
+	 * Adds the listener to the collection of listeners who will be notified when
+	 * the control is moved or resized, by sending it one of the messages defined in
+	 * the <code>ControlListener</code> interface.
 	 *
-	 * @param listener
-	 *            the listener which should be notified
+	 * @param listener the listener which should be notified
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the listener
+	 *                                     is null</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 *
 	 * @see ControlListener
 	 * @see #removeControlListener
@@ -182,29 +181,30 @@ public class TableColumn extends Item {
 	}
 
 	/**
-	 * Adds the listener to the collection of listeners who will be notified
-	 * when the control is selected by the user, by sending it one of the
-	 * messages defined in the <code>SelectionListener</code> interface.
+	 * Adds the listener to the collection of listeners who will be notified when
+	 * the control is selected by the user, by sending it one of the messages
+	 * defined in the <code>SelectionListener</code> interface.
 	 * <p>
 	 * <code>widgetSelected</code> is called when the column header is selected.
 	 * <code>widgetDefaultSelected</code> is not called.
 	 * </p>
 	 *
-	 * @param listener
-	 *            the listener which should be notified when the control is
-	 *            selected by the user
+	 * @param listener the listener which should be notified when the control is
+	 *                 selected by the user
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the listener
+	 *                                     is null</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 *
 	 * @see SelectionListener
 	 * @see #removeSelectionListener
@@ -232,18 +232,18 @@ public class TableColumn extends Item {
 
 	/**
 	 * Returns a value which describes the position of the text or image in the
-	 * receiver. The value will be one of <code>LEFT</code>, <code>RIGHT</code>
-	 * or <code>CENTER</code>.
+	 * receiver. The value will be one of <code>LEFT</code>, <code>RIGHT</code> or
+	 * <code>CENTER</code>.
 	 *
 	 * @return the alignment
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public int getAlignment() {
 		checkWidget();
@@ -267,12 +267,12 @@ public class TableColumn extends Item {
 	 * @return the receiver's parent
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public Table getParent() {
 		checkWidget();
@@ -287,12 +287,12 @@ public class TableColumn extends Item {
 	 * @return the moveable attribute
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 *
 	 * @see Table#getColumnOrder()
 	 * @see Table#setColumnOrder(int[])
@@ -313,12 +313,12 @@ public class TableColumn extends Item {
 	 * @return the resizable attribute
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public boolean getResizable() {
 		checkWidget();
@@ -331,12 +331,12 @@ public class TableColumn extends Item {
 	 * @return the receiver's tool tip text
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 *
 	 * @since 3.2
 	 */
@@ -351,12 +351,12 @@ public class TableColumn extends Item {
 	 * @return the width
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public int getWidth() {
 		checkWidget();
@@ -400,16 +400,15 @@ public class TableColumn extends Item {
 	}
 
 	/**
-	 * WINAPI doesn't provide any means to request column's optimal size. There
-	 * is only an API to resize to optimal size. The workaround is to 1) disable
-	 * redraw 2) resize to optimal 3) query new column size 4) set old column
-	 * size 5) enable redraw This preserves old column size. As a consequence,
-	 * no painting is needed after enabling redraw.
+	 * WINAPI doesn't provide any means to request column's optimal size. There is
+	 * only an API to resize to optimal size. The workaround is to 1) disable redraw
+	 * 2) resize to optimal 3) query new column size 4) set old column size 5)
+	 * enable redraw This preserves old column size. As a consequence, no painting
+	 * is needed after enabling redraw.
 	 */
 	private int calcAutoWidth(int index, boolean withHeader) {
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		return 200;
 
@@ -480,16 +479,15 @@ public class TableColumn extends Item {
 
 	/**
 	 * Causes the receiver to be resized to its preferred size. For a composite,
-	 * this involves computing the preferred size from its layout, if there is
-	 * one.
+	 * this involves computing the preferred size from its layout, if there is one.
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public void pack() {
 		checkWidget();
@@ -498,7 +496,6 @@ public class TableColumn extends Item {
 
 		this.setWidth(p.x);
 		this.setHeight(p.y);
-
 
 		// int index = parent.indexOf(this);
 		// if (index == -1)
@@ -667,23 +664,24 @@ public class TableColumn extends Item {
 	}
 
 	/**
-	 * Removes the listener from the collection of listeners who will be
-	 * notified when the control is moved or resized.
+	 * Removes the listener from the collection of listeners who will be notified
+	 * when the control is moved or resized.
 	 *
-	 * @param listener
-	 *            the listener which should no longer be notified
+	 * @param listener the listener which should no longer be notified
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the listener
+	 *                                     is null</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 *
 	 * @see ControlListener
 	 * @see #addControlListener
@@ -699,23 +697,24 @@ public class TableColumn extends Item {
 	}
 
 	/**
-	 * Removes the listener from the collection of listeners who will be
-	 * notified when the control is selected by the user.
+	 * Removes the listener from the collection of listeners who will be notified
+	 * when the control is selected by the user.
 	 *
-	 * @param listener
-	 *            the listener which should no longer be notified
+	 * @param listener the listener which should no longer be notified
 	 *
 	 * @exception IllegalArgumentException
-	 *                <ul>
-	 *                <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_NULL_ARGUMENT - if the listener
+	 *                                     is null</li>
+	 *                                     </ul>
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                     receiver has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
 	 *
 	 * @see SelectionListener
 	 * @see #addSelectionListener
@@ -731,30 +730,28 @@ public class TableColumn extends Item {
 	}
 
 	/**
-	 * Controls how text and images will be displayed in the receiver. The
-	 * argument should be one of <code>LEFT</code>, <code>RIGHT</code> or
+	 * Controls how text and images will be displayed in the receiver. The argument
+	 * should be one of <code>LEFT</code>, <code>RIGHT</code> or
 	 * <code>CENTER</code>.
 	 * <p>
-	 * Note that due to a restriction on some platforms, the first column is
-	 * always left aligned.
+	 * Note that due to a restriction on some platforms, the first column is always
+	 * left aligned.
 	 * </p>
 	 *
-	 * @param alignment
-	 *            the new alignment
+	 * @param alignment the new alignment
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public void setAlignment(int alignment) {
 		checkWidget();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// if ((alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) == 0)
 		// return;
@@ -814,25 +811,23 @@ public class TableColumn extends Item {
 		int index = parent.indexOf(this);
 		if (index == -1)
 			return;
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
 
 	/**
-	 * Sets the moveable attribute. A column that is moveable can be reordered
-	 * by the user by dragging the header. A column that is not moveable cannot
-	 * be dragged by the user but may be reordered by the programmer.
+	 * Sets the moveable attribute. A column that is moveable can be reordered by
+	 * the user by dragging the header. A column that is not moveable cannot be
+	 * dragged by the user but may be reordered by the programmer.
 	 *
-	 * @param moveable
-	 *            the moveable attribute
+	 * @param moveable the moveable attribute
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 *
 	 * @see Table#setColumnOrder(int[])
 	 * @see Table#getColumnOrder()
@@ -848,21 +843,19 @@ public class TableColumn extends Item {
 	}
 
 	/**
-	 * Sets the resizable attribute. A column that is resizable can be resized
-	 * by the user dragging the edge of the header. A column that is not
-	 * resizable cannot be dragged by the user but may be resized by the
-	 * programmer.
+	 * Sets the resizable attribute. A column that is resizable can be resized by
+	 * the user dragging the edge of the header. A column that is not resizable
+	 * cannot be dragged by the user but may be resized by the programmer.
 	 *
-	 * @param resizable
-	 *            the resize attribute
+	 * @param resizable the resize attribute
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public void setResizable(boolean resizable) {
 		checkWidget();
@@ -874,8 +867,7 @@ public class TableColumn extends Item {
 		if (index == -1)
 			return;
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// long hwnd = parent.handle;
 		// long hwndHeader = OS.SendMessage(hwnd, OS.LVM_GETHEADER, 0, 0);
@@ -956,8 +948,7 @@ public class TableColumn extends Item {
 
 		pack();
 
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		// if (string == null)
 		// error(SWT.ERROR_NULL_ARGUMENT);
 		// if (string.equals(text))
@@ -1005,29 +996,28 @@ public class TableColumn extends Item {
 	 * Sets the receiver's tool tip text to the argument, which may be null
 	 * indicating that the default tool tip for the control will be shown. For a
 	 * control that has a default tool tip, such as the Tree control on Windows,
-	 * setting the tool tip text to an empty string replaces the default,
-	 * causing no tool tip text to be shown.
+	 * setting the tool tip text to an empty string replaces the default, causing no
+	 * tool tip text to be shown.
 	 * <p>
-	 * The mnemonic indicator (character '&amp;') is not displayed in a tool
-	 * tip. To display a single '&amp;' in the tool tip, the character '&amp;'
-	 * can be escaped by doubling it in the string.
+	 * The mnemonic indicator (character '&amp;') is not displayed in a tool tip. To
+	 * display a single '&amp;' in the tool tip, the character '&amp;' can be
+	 * escaped by doubling it in the string.
 	 * </p>
 	 * <p>
-	 * NOTE: This operation is a hint and behavior is platform specific, on
-	 * Windows for CJK-style mnemonics of the form " (&amp;C)" at the end of the
-	 * tooltip text are not shown in tooltip.
+	 * NOTE: This operation is a hint and behavior is platform specific, on Windows
+	 * for CJK-style mnemonics of the form " (&amp;C)" at the end of the tooltip
+	 * text are not shown in tooltip.
 	 * </p>
 	 *
-	 * @param string
-	 *            the new tool tip text (or null)
+	 * @param string the new tool tip text (or null)
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 *
 	 * @since 3.2
 	 */
@@ -1044,16 +1034,15 @@ public class TableColumn extends Item {
 	/**
 	 * Sets the width of the receiver.
 	 *
-	 * @param width
-	 *            the new width
+	 * @param width the new width
 	 *
 	 * @exception SWTException
-	 *                <ul>
-	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                disposed</li>
-	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *                thread that created the receiver</li>
-	 *                </ul>
+	 *                         <ul>
+	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                         disposed</li>
+	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+	 *                         the thread that created the receiver</li>
+	 *                         </ul>
 	 */
 	public void setWidth(int width) {
 		checkWidget();
@@ -1089,8 +1078,7 @@ public class TableColumn extends Item {
 	}
 
 	void updateToolTip(int index) {
-		System.out.println("WARN: Not implemented yet: "
-				+ new Throwable().getStackTrace()[0]);
+		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 		// long hwndHeaderToolTip = parent.headerToolTipHandle;
 		// if (hwndHeaderToolTip != 0) {
@@ -1112,13 +1100,11 @@ public class TableColumn extends Item {
 		// }
 	}
 
-	private static void handleDPIChange(Widget widget, int newZoom,
-			float scalingFactor) {
+	private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
 		if (!(widget instanceof TableColumn tableColumn)) {
 			return;
 		}
-		final int newColumnWidth = Math
-				.round(tableColumn.getWidthInPixels() * scalingFactor);
+		final int newColumnWidth = Math.round(tableColumn.getWidthInPixels() * scalingFactor);
 		tableColumn.setWidthInPixels(newColumnWidth);
 		Image image = tableColumn.getImage();
 		if (image != null) {
@@ -1137,7 +1123,6 @@ public class TableColumn extends Item {
 	void paint(Event event) {
 
 		System.out.println("TableColumn.paint: " + getText());
-
 
 		GC gc = event.gc;
 		if (gc == null) {
@@ -1161,8 +1146,7 @@ public class TableColumn extends Item {
 
 		if (getParent().mouseHoverElement == this) {
 
-			gc.setBackground(
-					getParent().getDisplay().getSystemColor(SWT.COLOR_YELLOW));
+			gc.setBackground(getParent().getDisplay().getSystemColor(SWT.COLOR_YELLOW));
 			gc.fillRectangle(b);
 
 		}
