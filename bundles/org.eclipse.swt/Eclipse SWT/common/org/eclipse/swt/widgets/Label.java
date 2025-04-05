@@ -110,7 +110,6 @@ public class Label extends CustomControl {
 		final RendererFactory rendererFactory = parent.getDisplay().getRendererFactory();
 		renderer = rendererFactory.createLabelRenderer(this);
 		renderer.setAlign(align);
-		renderer.setForeground(getForeground());
 
 		final Listener listener = event -> {
 			switch (event.type) {
@@ -444,6 +443,11 @@ public class Label extends CustomControl {
 	}
 
 	@Override
+	public Color getBackground() {
+		return renderer.getBackground();
+	}
+
+	@Override
 	public void setBackground(Color color) {
 		super.setBackground(color);
 		renderer.setBackground(color);
@@ -451,9 +455,13 @@ public class Label extends CustomControl {
 	}
 
 	@Override
+	public Color getForeground() {
+		return foreground != null ? foreground : getColorProvider().getColor(LabelRenderer.COLOR_FOREGROUND);
+	}
+
+	@Override
 	public void setForeground(Color color) {
 		super.setForeground(color);
-		renderer.setForeground(getForeground());
 		redraw();
 	}
 

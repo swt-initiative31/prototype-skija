@@ -35,6 +35,10 @@ public abstract class ToolBarRenderer extends ControlRenderer {
 	 */
 	public abstract int rowCount();
 
+	public abstract Color getDefaultBackground();
+
+	public abstract Color getDefaultForeground();
+
 	protected ToolBarRenderer(ToolBar control) {
 		super(control);
 	}

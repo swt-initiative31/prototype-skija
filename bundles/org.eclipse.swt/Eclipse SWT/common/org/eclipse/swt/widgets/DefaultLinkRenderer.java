@@ -38,7 +38,10 @@ public class DefaultLinkRenderer extends LinkRenderer {
 
 		drawBackground(gc, width, height);
 
-		Color linkColor = link.getLinkForeground();
+		final Color linkColor = link.getLinkForeground();
+		final boolean enabled = isEnabled();
+		final Color foreground = enabled ? link.getForeground() : link.getColorProvider().getColor(COLOR_DISABLED);
+		final int lineHeight = gc.getFontMetrics().getHeight();
 
 		links.clear();
 
@@ -61,11 +64,7 @@ public class DefaultLinkRenderer extends LinkRenderer {
 			for (TextSegment segment : segments) {
 				Point extent = gc.textExtent(segment.text, DRAW_FLAGS);
 
-				if (isEnabled()) {
-					gc.setForeground(segment.isLink() ? linkColor : link.getForeground());
-				} else {
-					gc.setForeground(gc.getDevice().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
-				}
+				gc.setForeground(enabled && segment.isLink() ? linkColor : foreground);
 				gc.drawText(segment.text, lineX, lineY, DRAW_FLAGS);
 
 				if (segment.isLink()) {
@@ -78,7 +77,7 @@ public class DefaultLinkRenderer extends LinkRenderer {
 
 				lineX += extent.x;
 			}
-			lineY += gc.getFontMetrics().getHeight();
+			lineY += lineHeight;
 		}
 	}
 
