@@ -2467,12 +2467,14 @@ public class Table extends Composite implements ICustomWidget {
 	protected int getTotalColumnWidth() {
 		int totalWidth = 0;
 		int columnWidth = 0;
-		for (TableColumn column : columns) {
-			columnWidth = column.getWidth();
-			totalWidth += columnWidth;
+		if (this.columns != null) {
+			for (TableColumn column : this.columns) {
+				columnWidth = column.getWidth();
+				totalWidth += columnWidth;
+			}
+			return totalWidth;
 		}
-//		System.out.println("Total Width: " + totalWidth + ", Col Width: " + columnWidth);
-		return totalWidth;
+		return 0;
 	}
 
 	protected int getColumnWidth() {

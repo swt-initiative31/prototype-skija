@@ -557,48 +557,31 @@ public class TableItem extends Item {
 		if (!changed && computedSize != null)
 			return computedSize;
 
-		int lineWidth = 0;
 		int lineHeight = 0;
-
-		int leftMargin = this.leftMargin;
-		int imageWidth = 0;
 		int imageHeight = 0;
-		int GAP = 0;
 		int topMargin = this.topMargin;
 
-		int textWidth = 0;
-		int textHeight = 0;
-
-		if (text != null && !"".equals(text)) {
-
-			if (text != null && !text.isEmpty()) {
-				Point textExtent = Drawing.executeOnGC(this.getParent(), gc -> {
-					gc.setFont(getFont());
-					return gc.textExtent(text, DRAW_FLAGS);
-				});
-				lineWidth = textExtent.x;
-				lineHeight = textExtent.y;
-				if (image != null)
-					GAP = TableItem.GAP;
-
-				textWidth = textExtent.x + 1;
-				textHeight = textExtent.y;
-			}
-
+		if (text != null && !text.isEmpty()) {
+			Point textExtent = computeTextExtent();
+			lineHeight = textExtent.y;
 		}
 		if (image != null) {
-
-			Rectangle imgB = image.getBounds();
-			imageWidth = imgB.width;
-			imageHeight = imgB.height;
+			Rectangle imageBounds = image.getBounds();
+			imageHeight = imageBounds.height;
 		}
 
-		int width = leftMargin + imageWidth + GAP + lineWidth + this.rightMargin;
 		int height = topMargin + Math.max(lineHeight, imageHeight) + this.bottomMargin;
 
 		computedSize = new Point(getParent().getTotalColumnWidth(), height);
 
 		return computedSize;
+	}
+
+	private Point computeTextExtent() {
+		return Drawing.executeOnGC(this.getParent(), gc -> {
+			gc.setFont(getFont());
+			return gc.textExtent(text, DRAW_FLAGS);
+		});
 	}
 
 	/**
@@ -1865,6 +1848,10 @@ public class TableItem extends Item {
 		if (strings == null && index != 0) {
 			strings = new String[count];
 			strings[0] = text;
+		} else if (strings != null && strings.length < count) {
+			String[] newStrings = new String[count];
+			System.arraycopy(strings, 0, newStrings, 0, strings.length);
+			strings = newStrings;
 		}
 		if (strings != null) {
 			if (string.equals(strings[index]))
