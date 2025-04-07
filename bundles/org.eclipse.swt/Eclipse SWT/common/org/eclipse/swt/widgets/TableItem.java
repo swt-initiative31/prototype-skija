@@ -559,7 +559,6 @@ public class TableItem extends Item {
 
 		int lineHeight = 0;
 		int imageHeight = 0;
-		int topMargin = this.topMargin;
 
 		if (text != null && !text.isEmpty()) {
 			Point textExtent = computeTextExtent();
@@ -570,7 +569,7 @@ public class TableItem extends Item {
 			imageHeight = imageBounds.height;
 		}
 
-		int height = topMargin + Math.max(lineHeight, imageHeight) + this.bottomMargin;
+		int height = this.topMargin + Math.max(lineHeight, imageHeight) + this.bottomMargin;
 
 		computedSize = new Point(getParent().getTotalColumnWidth(), height);
 
@@ -605,17 +604,42 @@ public class TableItem extends Item {
 	}
 
 	Rectangle getBoundsInPixels(int index) {
+		checkWidget();
+
 		if (!parent.checkData(this, true))
 			error(SWT.ERROR_WIDGET_DISPOSED);
+
 		int itemIndex = parent.indexOf(this);
 		if (itemIndex == -1)
 			return new Rectangle(0, 0, 0, 0);
-		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
-		// RECT rect = getBounds(itemIndex, index, true, true, true);
-		// int width = rect.right - rect.left, height = rect.bottom - rect.top;
-		return new Rectangle(0, 0, 0, 0);
+		int columnCount = Math.max(1, parent.getColumnCount());
+		if (index < 0 || index >= columnCount)
+			return new Rectangle(0, 0, 0, 0);
+
+		// Ensure bounds is initialized
+		Point size = computeSize(false);
+		if (bounds == null)
+			bounds = new Rectangle(location.x, location.y, size.x, size.y);
+
+		int x = location.x;
+		for (int i = 0; i < index; i++) {
+			x += parent.getColumn(i).getWidth();
+		}
+
+		// Adjust for horizontal scroll
+		ScrollBar hBar = parent.getHorizontalBar();
+		if (hBar != null) {
+			x -= hBar.getSelection();
+		}
+
+		int width = parent.getColumn(index).getWidth();
+		int height = bounds.height;
+		int y = location.y;
+
+		return new Rectangle(x, y, width, height);
 	}
+
 
 	// RECT getBounds(int row, int column, boolean getText, boolean getImage,
 	// boolean fullText) {
