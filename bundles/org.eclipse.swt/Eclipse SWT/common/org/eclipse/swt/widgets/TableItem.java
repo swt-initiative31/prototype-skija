@@ -633,13 +633,51 @@ public class TableItem extends Item {
 			x -= hBar.getSelection();
 		}
 
-		int width = parent.getColumn(index).getWidth();
-		int height = bounds.height;
+		int width = Math.max(getWidth(), parent.getColumnWidth());
+		int height = Math.max(getWidth(), parent.getColumnWidth());
 		int y = location.y;
 
 		return new Rectangle(x, y, width, height);
 	}
 
+	private int getWidth() {
+		if (getParent().getColumns() == null || getParent().getColumns().length == 0) {
+			return 0;
+		}
+		return getWidth(0);
+	}
+
+	private int getWidth(int index) {
+		GC gc = new GC(getParent());
+		if (getParent().getItems() != null) {
+			for (TableItem i : getParent().getItems()) {
+
+				String t = i.getText(index);
+				Point p = gc.textExtent(t);
+				return p.x;
+			}
+		}
+		return 0;
+	}
+
+	private int getHeight() {
+		if (getParent().getItems() == null || getParent().getItems().length == 0) {
+			return 0;
+		}
+		return getHeight(0);
+	}
+
+	private int getHeight(int i) {
+		GC gc = new GC(getParent());
+		if (getParent().getItems() != null) {
+			for (TableItem item : getParent().getItems()) {
+				String t = item.getText(i);
+				Point p = gc.textExtent(t);
+				return p.y;
+			}
+		}
+		return 0;
+	}
 
 	// RECT getBounds(int row, int column, boolean getText, boolean getImage,
 	// boolean fullText) {
