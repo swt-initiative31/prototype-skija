@@ -71,6 +71,9 @@ public class ToolBar extends Composite {
 	private final boolean vertical;
 	private final boolean rightToLeft;
 
+	private Color background;
+	private Color foreground;
+
 	public ToolBar(Composite parent, int style) {
 		this(parent, style, false);
 	}
@@ -546,5 +549,31 @@ public class ToolBar extends Composite {
 		} else if (item.isDisposed()) {
 			error(SWT.ERROR_WIDGET_DISPOSED);
 		}
+	}
+
+	@Override
+	public Color getBackground() {
+		return background != null ? background : renderer.getDefaultBackground();
+	}
+
+	@Override
+	public void setBackground(Color color) {
+		checkWidget ();
+		if (color != null && color.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
+		background = color;
+		redraw();
+	}
+
+	@Override
+	public Color getForeground() {
+		return foreground != null ? foreground : renderer.getDefaultForeground();
+	}
+
+	@Override
+	public void setForeground(Color color) {
+		checkWidget ();
+		if (color != null && color.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
+		foreground = color;
+		redraw();
 	}
 }
