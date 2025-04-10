@@ -19,12 +19,6 @@ import org.eclipse.swt.graphics.*;
 
 public class DefaultCheckboxRenderer extends ButtonRenderer {
 
-	private static final Color HOVER_COLOR = new Color(224, 238, 254);
-	private static final Color SELECTION_COLOR = new Color(0, 95, 184);
-	private static final Color BORDER_DISABLED_COLOR = new Color(192, 192, 192);
-	private static final Color CHECKBOX_GRAYED_COLOR = new Color(192, 192, 192);
-	private static final Color BOX_COLOR = new Color(0, 0, 0);
-
 	/**
 	 * Left and right margins
 	 */
@@ -134,7 +128,7 @@ public class DefaultCheckboxRenderer extends ButtonRenderer {
 
 		// Draw text
 		if (text != null && !text.isEmpty()) {
-			gc.setForeground(isEnabled() ? button.getForeground() : DISABLED_COLOR);
+			gc.setForeground(isEnabled() ? button.getForeground() : getColor(COLOR_DISABLED));
 			int textTopOffset = (height - 1 - textHeight) / 2;
 			int textLeftOffset = contentArea.x + imageSpace;
 			gc.drawText(text, textLeftOffset, textTopOffset, DRAW_FLAGS);
@@ -149,9 +143,9 @@ public class DefaultCheckboxRenderer extends ButtonRenderer {
 
 	private void drawCheckbox(GC gc, int x, int y) {
 		if (isSelected()) {
-			gc.setBackground(isEnabled()
-					? isGrayed() ? CHECKBOX_GRAYED_COLOR : SELECTION_COLOR
-					: DISABLED_COLOR);
+			gc.setBackground(getColor(isEnabled()
+					? isGrayed() ? COLOR_GRAYED : COLOR_SELECTION
+					: COLOR_DISABLED));
 			int partialBoxBorder = 2;
 			gc.fillRoundRectangle(x + partialBoxBorder, y + partialBoxBorder,
 					BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1,
@@ -160,17 +154,17 @@ public class DefaultCheckboxRenderer extends ButtonRenderer {
 		}
 
 		if (!isEnabled()) {
-			gc.setForeground(BORDER_DISABLED_COLOR);
-		} else if (isHover()) {
-			gc.setBackground(HOVER_COLOR);
-			int partialBoxBorder = isSelected() ? 4 : 0;
-			gc.fillRoundRectangle(x + partialBoxBorder, y + partialBoxBorder,
-					BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1,
-					BOX_SIZE / 4 - partialBoxBorder / 2,
-					BOX_SIZE / 4 - partialBoxBorder / 2);
-		}
-		else {
-			gc.setForeground(BOX_COLOR);
+			gc.setForeground(getColor(COLOR_BOX_DISABLED));
+		} else {
+			gc.setForeground(getColor(COLOR_BOX));
+			if (isHover()) {
+				gc.setBackground(getColor(COLOR_HOVER));
+				int partialBoxBorder = isSelected() ? 4 : 0;
+				gc.fillRoundRectangle(x + partialBoxBorder, y + partialBoxBorder,
+						BOX_SIZE - 2 * partialBoxBorder + 1, BOX_SIZE - 2 * partialBoxBorder + 1,
+						BOX_SIZE / 4 - partialBoxBorder / 2,
+						BOX_SIZE / 4 - partialBoxBorder / 2);
+			}
 		}
 		gc.drawRoundRectangle(x, y, BOX_SIZE, BOX_SIZE, 4, 4);
 	}
