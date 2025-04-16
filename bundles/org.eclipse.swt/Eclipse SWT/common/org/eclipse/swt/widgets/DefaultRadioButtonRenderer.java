@@ -39,7 +39,7 @@ public class DefaultRadioButtonRenderer extends ButtonRenderer {
 			| SWT.DRAW_TRANSPARENT | SWT.DRAW_DELIMITER;
 
 
-	public DefaultRadioButtonRenderer(Button button) {
+	public DefaultRadioButtonRenderer(CustomButton button) {
 		super(button);
 	}
 

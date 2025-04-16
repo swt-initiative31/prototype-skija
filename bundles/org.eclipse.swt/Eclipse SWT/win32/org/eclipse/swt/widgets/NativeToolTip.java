@@ -43,9 +43,9 @@ import org.eclipse.swt.internal.win32.*;
  * @since 3.2
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class ToolTip extends Widget {
-	Shell parent;
-	TrayItem item;
+public abstract class NativeToolTip extends NativeWidget {
+	NativeShell parent;
+	NativeTrayItem item;
 	String text = "", message = "";
 	int id, x, y;
 	boolean autoHide = true, hasLocation, visible;
@@ -79,10 +79,10 @@ public class ToolTip extends Widget {
  * @see SWT#ICON_ERROR
  * @see SWT#ICON_INFORMATION
  * @see SWT#ICON_WARNING
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public ToolTip (Shell parent, int style) {
+protected NativeToolTip (NativeShell parent, int style) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	checkOrientation (parent);
@@ -171,7 +171,7 @@ public String getMessage () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Shell getParent () {
+public NativeShell getParent () {
 	checkWidget ();
 	return parent;
 }
@@ -467,7 +467,7 @@ public void setVisible (boolean visible) {
 		lpti.uId = id;
 		lpti.hwnd = hwnd;
 		long hwndToolTip = hwndToolTip ();
-		Shell shell = parent.getShell ();
+		NativeShell shell = parent.getShell ();
 		if (text.length () != 0) {
 			int icon = OS.TTI_NONE;
 			if ((style & SWT.ICON_INFORMATION) != 0) icon = OS.TTI_INFO;
@@ -551,4 +551,8 @@ public void setVisible (boolean visible) {
 		}
 	}
 }
+
+@Override
+public abstract ToolTip getWrapper();
+
 }

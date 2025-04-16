@@ -43,7 +43,7 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public  class MessageBox extends Dialog {
+public  class NativeMessageBox extends NativeDialog {
 	Callback callback_completion_handler;
 	String message = "";
 	int userResponse;
@@ -62,7 +62,7 @@ public  class MessageBox extends Dialog {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public MessageBox (Shell parent) {
+public NativeMessageBox (NativeShell parent) {
 	this (parent, SWT.OK | SWT.ICON_INFORMATION | SWT.APPLICATION_MODAL);
 }
 
@@ -102,7 +102,7 @@ public MessageBox (Shell parent) {
  * @see SWT#RETRY
  * @see SWT#IGNORE
  */
-public MessageBox (Shell parent, int style) {
+public NativeMessageBox (NativeShell parent, int style) {
 	super (parent, checkStyle (parent, checkStyle (style)));
 	if (Display.getSheetEnabled ()) {
 		if (parent != null && (style & SWT.SHEET) != 0) this.style |= SWT.SHEET;

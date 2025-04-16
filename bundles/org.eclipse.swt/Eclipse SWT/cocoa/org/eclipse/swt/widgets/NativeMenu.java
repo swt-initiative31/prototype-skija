@@ -41,13 +41,13 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Menu extends Widget {
+public abstract class NativeMenu extends NativeWidget {
 	NSMenu nsMenu;
 	int x, y, itemCount;
 	boolean hasLocation, visible;
-	MenuItem [] items;
-	MenuItem cascade, defaultItem;
-	Decorations parent;
+	NativeMenuItem [] items;
+	NativeMenuItem cascade, defaultItem;
+	NativeDecorations parent;
 
 	static final int GAP = 4;
 
@@ -72,10 +72,10 @@ public class Menu extends Widget {
  * </ul>
  *
  * @see SWT#POP_UP
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Menu (Control parent) {
+protected NativeMenu (NativeControl parent) {
 	this (checkNull (parent).menuShell (), SWT.POP_UP);
 }
 
@@ -113,10 +113,10 @@ public Menu (Control parent) {
  * @see SWT#NO_RADIO_GROUP
  * @see SWT#LEFT_TO_RIGHT
  * @see SWT#RIGHT_TO_LEFT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Menu (Decorations parent, int style) {
+protected NativeMenu (NativeDecorations parent, int style) {
 	checkSubclass ();
 	checkParent (parent);
 	this.style = checkStyle(style);
@@ -155,10 +155,10 @@ public Menu (Decorations parent, int style) {
  * </ul>
  *
  * @see SWT#DROP_DOWN
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Menu (Menu parentMenu) {
+protected NativeMenu (NativeMenu parentMenu) {
 	this (checkNull (parentMenu).parent, SWT.DROP_DOWN);
 }
 
@@ -183,14 +183,14 @@ public Menu (Menu parentMenu) {
  * </ul>
  *
  * @see SWT#DROP_DOWN
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Menu (MenuItem parentItem) {
+protected NativeMenu (NativeMenuItem parentItem) {
 	this (checkNull (parentItem).parent);
 }
 
-Menu (Display display) {
+NativeMenu (Display display) {
 	if (display == null) display = Display.getCurrent ();
 	if (display == null) display = Display.getDefault ();
 	if (!display.isValidThread ()) {
@@ -202,7 +202,7 @@ Menu (Display display) {
 	createWidget();
 }
 
-Menu (Display display, NSMenu nativeMenu) {
+NativeMenu (Display display, NSMenu nativeMenu) {
 	this.display = display;
 	this.style = SWT.DROP_DOWN;
 	this.nsMenu = nativeMenu;
@@ -210,23 +210,23 @@ Menu (Display display, NSMenu nativeMenu) {
 	createWidget();
 }
 
-static Control checkNull (Control control) {
+static NativeControl checkNull (NativeControl control) {
 	if (control == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	return control;
 }
 
-static Menu checkNull (Menu menu) {
+static NativeMenu checkNull (NativeMenu menu) {
 	if (menu == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	return menu;
 }
 
-static MenuItem checkNull (MenuItem item) {
+static NativeMenuItem checkNull (NativeMenuItem item) {
 	if (item == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	return item;
 }
 
 @Override
-void checkParent (Widget parent) {
+void checkParent (NativeWidget parent) {
 	// A null parent is okay when the app menu bar is in use.
 	if (parent == null && Display.getDefault().appMenuBar == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (parent != null) {
@@ -242,13 +242,13 @@ static int checkStyle (int style) {
 
 void _setVisible (boolean visible) {
 	if ((style & (SWT.BAR | SWT.DROP_DOWN)) != 0) return;
-	TrayItem trayItem = display.currentTrayItem;
+	NativeTrayItem trayItem = display.currentTrayItem;
 	if (trayItem != null && visible) {
 		trayItem.showMenu (this);
 		return;
 	}
 	if (visible) {
-		Shell shell = getShell ();
+		NativeShell shell = getShell ();
 		NSWindow window = shell.view.window ();
 		NSPoint location = null;
 		if (hasLocation) {
@@ -344,7 +344,7 @@ void createHandle () {
 	}
 }
 
-void createItem (MenuItem item, int index) {
+void createItem (NativeMenuItem item, int index) {
 	if (!(0 <= index && index <= itemCount)) error (SWT.ERROR_INVALID_RANGE);
 	boolean add = true;
 	NSMenuItem nsItem = item.nsItem;
@@ -401,7 +401,7 @@ void createItem (MenuItem item, int index) {
 		nsMenu.insertItem(nsItem, index);
 	}
 	if (itemCount == items.length) {
-		MenuItem [] newItems = new MenuItem [items.length + 4];
+		NativeMenuItem [] newItems = new NativeMenuItem [items.length + 4];
 		System.arraycopy (items, 0, newItems, 0, items.length);
 		items = newItems;
 	}
@@ -430,7 +430,7 @@ void createItem (MenuItem item, int index) {
 void createWidget () {
 	checkOrientation (parent);
 	super.createWidget ();
-	items = new MenuItem [4];
+	items = new NativeMenuItem [4];
 }
 
 @Override
@@ -439,7 +439,7 @@ void deregister () {
 	display.removeWidget (nsMenu);
 }
 
-void destroyItem (MenuItem item) {
+void destroyItem (NativeMenuItem item) {
 	int index = 0;
 	while (index < itemCount) {
 		if (items [index] == item) break;
@@ -448,7 +448,7 @@ void destroyItem (MenuItem item) {
 	if (index == itemCount) return;
 	System.arraycopy (items, index + 1, items, index, --itemCount - index);
 	items [itemCount] = null;
-	if (itemCount == 0) items = new MenuItem [4];
+	if (itemCount == 0) items = new NativeMenuItem [4];
 	nsMenu.removeItem (item.nsItem);
 	if (display.menuBar == this) {
 		NSApplication application = display.application;
@@ -460,7 +460,7 @@ void destroyItem (MenuItem item) {
 	}
 }
 
-void fixMenus (Decorations newParent) {
+void fixMenus (NativeDecorations newParent) {
 	this.parent = newParent;
 }
 
@@ -475,7 +475,7 @@ void fixMenus (Decorations newParent) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public MenuItem getDefaultItem () {
+public NativeMenuItem getDefaultItem () {
 	checkWidget();
 	return defaultItem;
 }
@@ -515,7 +515,7 @@ public boolean getEnabled () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public MenuItem getItem (int index) {
+public NativeMenuItem getItem (int index) {
 	checkWidget ();
 	if (!(0 <= index && index < itemCount)) error (SWT.ERROR_INVALID_RANGE);
 	return items [index];
@@ -552,20 +552,20 @@ public int getItemCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public MenuItem [] getItems () {
+public NativeMenuItem [] getItems () {
 	checkWidget ();
-	MenuItem [] result = new MenuItem [itemCount];
+	NativeMenuItem [] result = new NativeMenuItem [itemCount];
 	int index = 0;
 	if (items != null) {
 		for (int i = 0; i < itemCount; i++) {
-			MenuItem item = items [i];
+			NativeMenuItem item = items [i];
 			if (item != null && !item.isDisposed ()) {
 				result [index++] = item;
 			}
 		}
 	}
 	if (index != result.length) {
-		MenuItem [] newItems = new MenuItem[index];
+		NativeMenuItem [] newItems = new NativeMenuItem[index];
 		System.arraycopy(result, 0, newItems, 0, index);
 		result = newItems;
 	}
@@ -575,7 +575,7 @@ public MenuItem [] getItems () {
 @Override
 String getNameText () {
 	String result = "";
-	MenuItem [] items = getItems ();
+	NativeMenuItem [] items = getItems ();
 	int length = items.length;
 	if (length > 0) {
 		for (int i=0; i<length-1; i++) {
@@ -614,7 +614,7 @@ public int getOrientation () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Decorations getParent () {
+public NativeDecorations getParent () {
 	checkWidget ();
 	return parent;
 }
@@ -631,7 +631,7 @@ public Decorations getParent () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public MenuItem getParentItem () {
+public NativeMenuItem getParentItem () {
 	checkWidget ();
 	return cascade;
 }
@@ -648,7 +648,7 @@ public MenuItem getParentItem () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Menu getParentMenu () {
+public NativeMenu getParentMenu () {
 	checkWidget ();
 	if (cascade != null) return cascade.parent;
 	return null;
@@ -670,7 +670,7 @@ public Menu getParentMenu () {
  *
  * @see #getParent
  */
-public Shell getShell () {
+public NativeShell getShell () {
 	checkWidget ();
 	/* parent is null when application menubar is in use. */
 	if (parent != null) return parent.getShell ();
@@ -703,7 +703,7 @@ public boolean getVisible () {
 			return this == parent.menuShell ().menuBar;
 	}
 	if ((style & SWT.POP_UP) != 0) {
-		Menu [] popups = display.popups;
+		NativeMenu [] popups = display.popups;
 		if (popups == null) return false;
 		for (int i=0; i<popups.length; i++) {
 			if (popups [i] == this) return true;
@@ -729,7 +729,7 @@ public boolean getVisible () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public int indexOf (MenuItem item) {
+public int indexOf (NativeMenuItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	for (int i=0; i<itemCount; i++) {
@@ -757,7 +757,7 @@ public boolean isEnabled () {
 	checkWidget ();
 	if (this == display.appMenuBar) return getEnabled();
 	if (this == display.appMenu) return getEnabled();
-	Menu parentMenu = getParentMenu ();
+	NativeMenu parentMenu = getParentMenu ();
 	if (parentMenu == null) {
 		return getEnabled () && parent.isEnabled ();
 	}
@@ -785,8 +785,8 @@ public boolean isVisible () {
 
 @Override
 void menu_willHighlightItem(long id, long sel, long menu, long itemID) {
-	Widget widget = display.getWidget(itemID);
-	if (widget instanceof MenuItem item) {
+	NativeWidget widget = display.getWidget(itemID);
+	if (widget instanceof NativeMenuItem item) {
 		item.sendEvent (SWT.Arm);
 	}
 }
@@ -805,7 +805,7 @@ void menuWillOpen(long id, long sel, long menu) {
 	double width = 0;
 	NSAttributedString[] strs = new NSAttributedString[itemCount];
 	for (int i=0; i<itemCount; i++) {
-		MenuItem item = items [i];
+		NativeMenuItem item = items [i];
 		NSMenuItem nsItem = item.nsItem;
 		strs[i] = nsItem.attributedTitle();
 		NSImage nsImage = nsItem.image();
@@ -819,7 +819,7 @@ void menuWillOpen(long id, long sel, long menu) {
 		if (strs[i] != null) width = Math.max(width, w);
 	}
 	for (int i=0; i<itemCount; i++) {
-		MenuItem item = items [i];
+		NativeMenuItem item = items [i];
 		if (item.updateAccelerator(true)) continue;
 		if (item.accelerator != 0 || strs[i] == null || (style & SWT.BAR) != 0 || (item.style & SWT.CASCADE) != 0) continue;
 		int accelIndex = item.text.indexOf ('\t');
@@ -871,7 +871,7 @@ void menuDidClose(long id, long sel, long menu) {
 	if (isDisposed()) return;
 	visible = false;
 	for (int i=0; i<itemCount; i++) {
-		MenuItem item = items [i];
+		NativeMenuItem item = items [i];
 		item.updateAccelerator(false);
 		if ((item.style & SWT.SEPARATOR) != 0) continue;
 		item.updateText();
@@ -888,7 +888,7 @@ void register () {
 void releaseChildren (boolean destroy) {
 	if (items != null) {
 		for (int i=0; i<items.length; i++) {
-			MenuItem item = items [i];
+			NativeMenuItem item = items [i];
 			if (item != null && !item.isDisposed ()) {
 				item.release (false);
 			}
@@ -973,9 +973,9 @@ public void removeMenuListener (MenuListener listener) {
 
 @Override
 void reskinChildren (int flags) {
-	MenuItem [] items = getItems ();
+	NativeMenuItem [] items = getItems ();
 	for (int i=0; i<items.length; i++) {
-		MenuItem item = items [i];
+		NativeMenuItem item = items [i];
 		item.reskin (flags);
 	}
 	super.reskinChildren (flags);
@@ -995,7 +995,7 @@ void reskinChildren (int flags) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setDefaultItem (MenuItem item) {
+public void setDefaultItem (NativeMenuItem item) {
 	checkWidget();
 	if (item != null && item.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
 	defaultItem = item;
@@ -1023,7 +1023,7 @@ public void setEnabled (boolean enabled) {
 	}
 	//TODO - find a way to disable the menu instead of each item
 	for (int i=0; i<items.length; i++) {
-		MenuItem item = items [i];
+		NativeMenuItem item = items [i];
 		if (item != null) {
 			/*
 			* Feature in the Macintosh.  When a cascade menu
@@ -1139,5 +1139,8 @@ public void setVisible (boolean visible) {
 		_setVisible(false);
 	}
 }
+
+@Override
+public abstract Menu getWrapper();
 
 }

@@ -38,9 +38,9 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class MenuItem extends Item {
+public abstract class NativeMenuItem extends NativeItem {
 	NSMenuItem nsItem;
-	Menu parent, menu;
+	NativeMenu parent, menu;
 	int accelerator;
 	long nsItemAction;
 	id nsItemTarget;
@@ -77,10 +77,10 @@ public class MenuItem extends Item {
  * @see SWT#PUSH
  * @see SWT#RADIO
  * @see SWT#SEPARATOR
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public MenuItem (Menu parent, int style) {
+protected NativeMenuItem (NativeMenu parent, int style) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	parent.createItem (this, parent.getItemCount ());
@@ -119,16 +119,16 @@ public MenuItem (Menu parent, int style) {
  * @see SWT#PUSH
  * @see SWT#RADIO
  * @see SWT#SEPARATOR
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public MenuItem (Menu parent, int style, int index) {
+protected NativeMenuItem (NativeMenu parent, int style, int index) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	parent.createItem (this, index);
 }
 
-MenuItem (Menu parent, NSMenuItem nsMenuItem) {
+NativeMenuItem (NativeMenu parent, NSMenuItem nsMenuItem) {
 	super(parent, 0);
 	this.parent = parent;
 	this.nsItem = nsMenuItem;
@@ -216,7 +216,7 @@ public void addSelectionListener (SelectionListener listener) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -315,7 +315,7 @@ public int getID () {
  */
 public Menu getMenu () {
 	checkWidget ();
-	return menu;
+	return menu != null ? menu.getWrapper() : null;
 }
 
 @Override
@@ -334,7 +334,7 @@ String getNameText () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Menu getParent () {
+public NativeMenu getParent () {
 	checkWidget ();
 	return parent;
 }
@@ -558,7 +558,7 @@ void reskinChildren (int flags) {
 
 void selectRadio () {
 	int index = 0;
-	MenuItem [] items = parent.getItems ();
+	NativeMenuItem [] items = parent.getItems ();
 	while (index < items.length && items [index] != this) index++;
 	int i = index - 1;
 	while (i >= 0 && items [i].setRadioSelection (false)) --i;
@@ -722,7 +722,7 @@ public void setImage (Image image) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setMenu (Menu menu) {
+public void setMenu (NativeMenu menu) {
 	checkWidget ();
 
 	/* Check to make sure the new menu is valid */
@@ -739,7 +739,7 @@ public void setMenu (Menu menu) {
 		}
 	}
 	/* Assign the new menu */
-	Menu oldMenu = this.menu;
+	NativeMenu oldMenu = this.menu;
 	if (oldMenu == menu) return;
 	if (oldMenu != null) oldMenu.cascade = null;
 	this.menu = menu;
@@ -857,7 +857,7 @@ public void setText (String string) {
  * </p>
  * <p>
  * NOTE: Tooltips are currently not shown for top-level menu items in the
- * {@link Shell#setMenuBar(Menu) shell menubar} on Windows, Mac, and Ubuntu Unity desktop.
+ * {@link NativeShell#setMenuBar(NativeMenu) shell menubar} on Windows, Mac, and Ubuntu Unity desktop.
  * </p>
  * <p>
  * NOTE: This operation is a hint and behavior is platform specific, on Windows
@@ -1002,6 +1002,9 @@ boolean updateAccelerator (boolean show) {
 	nsstring.release();
 	return key != 0;
 }
+
+@Override
+public abstract MenuItem getWrapper();
 
 }
 

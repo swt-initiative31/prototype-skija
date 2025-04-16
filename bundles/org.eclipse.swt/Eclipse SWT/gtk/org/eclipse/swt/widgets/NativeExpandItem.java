@@ -33,15 +33,15 @@ import org.eclipse.swt.internal.gtk4.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see ExpandBar
+ * @see NativeExpandBar
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  *
  * @since 3.2
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class ExpandItem extends Item {
-	ExpandBar parent;
-	Control control;
+public abstract class NativeExpandItem extends NativeItem {
+	NativeExpandBar parent;
+	NativeControl control;
 	long clientHandle, boxHandle, labelHandle, imageHandle;
 	int width, height;
 
@@ -69,10 +69,10 @@ public class ExpandItem extends Item {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  *
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public ExpandItem (ExpandBar parent, int style) {
+protected NativeExpandItem (NativeExpandBar parent, int style) {
 	super (parent, style);
 	this.parent = parent;
 	createWidget (parent.getItemCount ());
@@ -105,17 +105,17 @@ public ExpandItem (ExpandBar parent, int style) {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  *
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public ExpandItem (ExpandBar parent, int style, int index) {
+protected NativeExpandItem (NativeExpandBar parent, int style, int index) {
 	super (parent, style);
 	this.parent = parent;
 	createWidget (index);
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -199,7 +199,7 @@ void destroyWidget () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Control getControl () {
+public NativeControl getControl () {
 	checkWidget ();
 	return control;
 }
@@ -269,7 +269,7 @@ public int getHeight() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public ExpandBar getParent () {
+public NativeExpandBar getParent () {
 	checkWidget();
 	return parent;
 }
@@ -277,7 +277,7 @@ public ExpandBar getParent () {
 @Override
 long gtk_activate (long widget) {
 	Event event = new Event ();
-	event.item = this;
+	event.item = this.getWrapper();
 	int type = GTK.gtk_expander_get_expanded (handle) ? SWT.Collapse : SWT.Expand;
 	parent.sendEvent (type, event);
 	return 0;
@@ -400,7 +400,7 @@ void resizeControl () {
 		* hierarchy of the GtkScrolledWindow.
 		* The fix is calculate the width ourselves when the scrollbar is visible.
 		*/
-		ScrollBar vBar = parent.verticalBar;
+		NativeScrollBar vBar = parent.verticalBar;
 		if (vBar != null) {
 			if (GTK.gtk_widget_get_visible (vBar.handle)) {
 				GTK.gtk_widget_get_allocation (parent.scrolledHandle, allocation);
@@ -435,7 +435,7 @@ void resizeControl () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setControl (Control control) {
+public void setControl (NativeControl control) {
 	checkWidget ();
 	if (control != null) {
 		if (control.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -451,7 +451,7 @@ public void setControl (Control control) {
 		//As ExpandItem's child can be created before the ExpandItem, our only
 		//option is to reparent the child upon the setControl(..) call.
 		//This is simmilar to TabFolder.
-		Control.gtk_widget_reparent (control, clientHandle);
+		NativeControl.gtk_widget_reparent (control, clientHandle);
 	}
 	parent.layoutItems();
 }
@@ -600,4 +600,8 @@ long dpiChanged(long object, long arg0) {
 
 	return 0;
 }
+
+@Override
+public abstract ExpandItem getWrapper();
+
 }

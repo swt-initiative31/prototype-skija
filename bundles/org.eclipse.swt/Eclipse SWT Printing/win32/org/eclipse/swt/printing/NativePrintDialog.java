@@ -31,7 +31,7 @@ import org.eclipse.swt.widgets.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class PrintDialog extends Dialog {
+public class NativePrintDialog extends NativeDialog {
 	static final TCHAR DialogClass = new TCHAR (0, "#32770", true);
 	PrinterData printerData = new PrinterData();
 
@@ -49,10 +49,10 @@ public class PrintDialog extends Dialog {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public PrintDialog (Shell parent) {
+public NativePrintDialog (NativeShell parent) {
 	this (parent, SWT.PRIMARY_MODAL);
 }
 
@@ -81,10 +81,10 @@ public PrintDialog (Shell parent) {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public PrintDialog (Shell parent, int style) {
+public NativePrintDialog (NativeShell parent, int style) {
 	super (parent, checkStyle(parent, style));
 	checkSubclass ();
 }
@@ -101,7 +101,7 @@ static int checkBits (int style, int int0, int int1, int int2, int int3, int int
 	return style;
 }
 
-static int checkStyle (Shell parent, int style) {
+static int checkStyle (NativeShell parent, int style) {
 	int mask = SWT.PRIMARY_MODAL | SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL;
 	if ((style & SWT.SHEET) != 0) {
 		style &= ~SWT.SHEET;
@@ -268,7 +268,7 @@ public void setPrintToFile(boolean printToFile) {
 @Override
 protected void checkSubclass() {
 	String name = getClass().getName();
-	String validName = PrintDialog.class.getName();
+	String validName = NativePrintDialog.class.getName();
 	if (!validName.equals(name)) {
 		SWT.error(SWT.ERROR_INVALID_SUBCLASS);
 	}
@@ -288,7 +288,7 @@ protected void checkSubclass() {
  */
 public PrinterData open() {
 	/* Get the owner HWND for the dialog */
-	Control parent = getParent();
+	NativeControl parent = getParent();
 	int style = getStyle();
 	long hwndOwner = parent.handle;
 	long hwndParent = parent.handle;
@@ -430,7 +430,7 @@ public PrinterData open() {
 		pd.nFromPage = (short) Math.min (0xFFFF, Math.max (1, printerData.startPage));
 		pd.nToPage = (short) Math.min (0xFFFF, Math.max (1, printerData.endPage));
 
-		Shell [] shells = display.getShells();
+		NativeShell [] shells = display.getNativeShells();
 		if ((getStyle() & (SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL)) != 0) {
 			for (int i=0; i<shells.length; i++) {
 				if (shells[i].isEnabled() && shells[i] != parent) {
@@ -450,7 +450,7 @@ public PrinterData open() {
 		display.sendPostExternalEventDispatchEvent ();
 		display.setData(key, oldValue);
 		if ((getStyle() & (SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL)) != 0) {
-			for (Shell shell : shells) {
+			for (NativeShell shell : shells) {
 				if (shell != null && !shell.isDisposed ()) {
 					shell.setEnabled(true);
 				}

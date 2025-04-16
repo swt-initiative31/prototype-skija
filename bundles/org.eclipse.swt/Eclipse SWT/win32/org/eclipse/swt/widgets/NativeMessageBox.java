@@ -43,7 +43,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public  class MessageBox extends Dialog {
+public  class NativeMessageBox extends NativeDialog {
 	String message = "";
 	private long cbtHook;
 	private Map<Integer, String> labels;
@@ -61,7 +61,7 @@ public  class MessageBox extends Dialog {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public MessageBox (Shell parent) {
+public NativeMessageBox (NativeShell parent) {
 	this (parent, SWT.OK | SWT.ICON_INFORMATION | SWT.APPLICATION_MODAL);
 }
 
@@ -101,7 +101,7 @@ public MessageBox (Shell parent) {
  * @see SWT#RETRY
  * @see SWT#IGNORE
  */
-public MessageBox (Shell parent, int style) {
+public NativeMessageBox (NativeShell parent, int style) {
 	super (parent, checkStyle (parent, checkStyle (style)));
 	checkSubclass ();
 }
@@ -257,7 +257,7 @@ public int open () {
 	*/
 	long hwndOwner = parent != null ? parent.handle : 0;
 	Display display = parent != null ? parent.getDisplay (): Display.getCurrent ();
-	Dialog oldModal = null;
+	NativeDialog oldModal = null;
 	if ((bits & OS.MB_TASKMODAL) != 0) {
 		oldModal = display.getModalDialog ();
 		display.setModalDialog (this);

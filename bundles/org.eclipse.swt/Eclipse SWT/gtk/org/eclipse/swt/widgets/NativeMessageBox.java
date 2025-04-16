@@ -45,7 +45,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class MessageBox extends Dialog {
+public class NativeMessageBox extends NativeDialog {
 
 	String message = "";
 	long handle;
@@ -64,7 +64,7 @@ public class MessageBox extends Dialog {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public MessageBox (Shell parent) {
+public NativeMessageBox (NativeShell parent) {
 	this (parent, SWT.OK | SWT.ICON_INFORMATION | SWT.APPLICATION_MODAL);
 }
 
@@ -104,7 +104,7 @@ public MessageBox (Shell parent) {
  * @see SWT#RETRY
  * @see SWT#IGNORE
  */
-public MessageBox (Shell parent, int style) {
+public NativeMessageBox (NativeShell parent, int style) {
 	super (parent, checkStyle (parent, checkStyle (style)));
 	checkSubclass ();
 }
@@ -189,7 +189,7 @@ public int open() {
 	GTK.gtk_message_dialog_format_secondary_text(handle, format, Converter.javaStringToCString(message));
 
 	display.addIdleProc();
-	Dialog oldModal = null;
+	NativeDialog oldModal = null;
 	if (GTK.gtk_window_get_modal(handle)) {
 		oldModal = display.getModalDialog();
 		display.setModalDialog(this);

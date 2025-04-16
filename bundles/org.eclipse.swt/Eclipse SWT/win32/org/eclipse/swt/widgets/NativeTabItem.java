@@ -36,9 +36,9 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class TabItem extends Item {
-	TabFolder parent;
-	Control control;
+public abstract class NativeTabItem extends NativeItem {
+	NativeTabFolder parent;
+	NativeControl control;
 	String toolTipText;
 
 /**
@@ -68,10 +68,10 @@ public class TabItem extends Item {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TabItem (TabFolder parent, int style) {
+protected NativeTabItem (NativeTabFolder parent, int style) {
 	super (parent, style);
 	this.parent = parent;
 	parent.createItem (this, parent.getItemCount ());
@@ -106,10 +106,10 @@ public TabItem (TabFolder parent, int style) {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TabItem (TabFolder parent, int style, int index) {
+protected NativeTabItem (NativeTabFolder parent, int style, int index) {
 	super (parent, style);
 	this.parent = parent;
 	parent.createItem (this, index);
@@ -149,7 +149,7 @@ void _setText (int index, String string) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -171,7 +171,7 @@ void destroyWidget () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Control getControl () {
+public NativeControl getControl () {
 	checkWidget();
 	return control;
 }
@@ -212,7 +212,7 @@ Rectangle getBoundsInPixels() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TabFolder getParent () {
+public NativeTabFolder getParent () {
 	checkWidget();
 	return parent;
 }
@@ -269,7 +269,7 @@ void releaseWidget () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setControl (Control control) {
+public void setControl (NativeControl control) {
 	checkWidget();
 	if (control != null) {
 		if (control.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -278,13 +278,13 @@ public void setControl (Control control) {
 	if (this.control != null && this.control.isDisposed ()) {
 		this.control = null;
 	}
-	Control oldControl = this.control, newControl = control;
+	NativeControl oldControl = this.control, newControl = control;
 	this.control = control;
 	int index = parent.indexOf (this), selectionIndex = parent.getSelectionIndex();
 	if (index != selectionIndex) {
 		if (newControl != null) {
 			if (selectionIndex != -1) {
-				Control selectedControl = parent.getItem(selectionIndex).getControl();
+				NativeControl selectedControl = parent.getItem(selectionIndex).getControl();
 				if (selectedControl == newControl) return;
 			}
 			newControl.setVisible(false);
@@ -409,5 +409,8 @@ public void setToolTipText (String string) {
 	checkWidget();
 	toolTipText = string;
 }
+
+@Override
+public abstract TabItem getWrapper();
 
 }

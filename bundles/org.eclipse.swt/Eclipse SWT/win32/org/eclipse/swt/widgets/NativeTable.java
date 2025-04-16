@@ -74,14 +74,14 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Table extends Composite {
-	TableItem [] items;
+public abstract class NativeTable extends NativeComposite {
+	NativeTableItem [] items;
 	int [] keys;
-	TableColumn [] columns;
+	NativeTableColumn [] columns;
 	int columnCount, customCount, keyCount;
 	ImageList imageList, headerImageList;
-	TableItem currentItem;
-	TableColumn sortColumn;
+	NativeTableItem currentItem;
+	NativeTableColumn sortColumn;
 	RECT focusRect;
 	boolean [] columnVisible;
 	long headerToolTipHandle, hwndHeader, itemToolTipHandle;
@@ -113,7 +113,7 @@ public class Table extends Composite {
 		TableProc = lpWndClass.lpfnWndProc;
 		OS.GetClassInfo (0, HeaderClass, lpWndClass);
 		HeaderProc = lpWndClass.lpfnWndProc;
-		DPIZoomChangeRegistry.registerHandler(Table::handleDPIChange, Table.class);
+		DPIZoomChangeRegistry.registerHandler(NativeTable::handleDPIChange, Table.class);
 	}
 
 /**
@@ -147,10 +147,10 @@ public class Table extends Composite {
  * @see SWT#HIDE_SELECTION
  * @see SWT#VIRTUAL
  * @see SWT#NO_SCROLL
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Table (Composite parent, int style) {
+protected NativeTable (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
@@ -179,7 +179,7 @@ boolean _checkGrow (int count) {
 			*/
 			boolean small = getDrawing () && OS.IsWindowVisible (handle);
 			int length = small ? items.length + 4 : Math.max (4, items.length * 3 / 2);
-			TableItem [] newItems = new TableItem [length];
+			NativeTableItem [] newItems = new NativeTableItem [length];
 			System.arraycopy (items, 0, newItems, 0, items.length);
 			items = newItems;
 		}
@@ -190,7 +190,7 @@ boolean _checkGrow (int count) {
 		if (!ignoreShrink && keyCount > count / 2) {
 			boolean small = getDrawing () && OS.IsWindowVisible (handle);
 			int length = small ? count + 4 : Math.max (4, count * 3 / 2);
-			TableItem [] newItems = new TableItem [length];
+			NativeTableItem [] newItems = new NativeTableItem [length];
 			for (int i=0; i<keyCount; i++) {
 				newItems [keys [i]] = items [i];
 			}
@@ -207,7 +207,7 @@ boolean _checkGrow (int count) {
 				int [] newKeys = new int [length];
 				System.arraycopy (keys, 0, newKeys, 0, keys.length);
 				keys = newKeys;
-				TableItem [] newItems = new TableItem [length];
+				NativeTableItem [] newItems = new NativeTableItem [length];
 				System.arraycopy (items, 0, newItems, 0, items.length);
 				items = newItems;
 			}
@@ -238,7 +238,7 @@ void _checkShrink () {
 
 			if (items.length > 4 && items.length - count > 3) {
 				int length = Math.max (4, (count + 3) / 4 * 4);
-				TableItem [] newItems = new TableItem [length];
+				NativeTableItem [] newItems = new NativeTableItem [length];
 				System.arraycopy (items, 0, newItems, 0, count);
 				items = newItems;
 			}
@@ -250,7 +250,7 @@ void _checkShrink () {
 				int [] newKeys = new int [length];
 				System.arraycopy (keys, 0, newKeys, 0, keyCount);
 				keys = newKeys;
-				TableItem [] newItems = new TableItem [length];
+				NativeTableItem [] newItems = new NativeTableItem [length];
 				System.arraycopy (items, 0, newItems, 0, keyCount);
 				items = newItems;
 			}
@@ -264,22 +264,22 @@ void _clearItems () {
 	keyCount = 0;
 }
 
-TableItem _getItem (int index) {
+NativeTableItem _getItem (int index) {
 	return _getItem (index, true);
 }
 
 //TODO - check senders who have count (watch methods that change the count)
-TableItem _getItem (int index, boolean create) {
+NativeTableItem _getItem (int index, boolean create) {
 	return _getItem (index, create, -1);
 }
 
-TableItem _getItem (int index, boolean create, int count) {
+NativeTableItem _getItem (int index, boolean create, int count) {
 	//TODO - code could be shared but it would mix keyed and non-keyed logic
 	if (keys == null) {
 		if (index >= items.length) return null;
 		if ((style & SWT.VIRTUAL) == 0 || !create) return items [index];
 		if (items [index] != null) return items [index];
-		return items [index] = new TableItem (this, SWT.NONE, -1, false);
+		return items [index] = new TableItem (this.getWrapper(), SWT.NONE, -1, false).getWrappedWidget();
 	} else {
 		if ((style & SWT.VIRTUAL) == 0 || !create) {
 			if (keyCount == 0) return null;
@@ -296,7 +296,7 @@ TableItem _getItem (int index, boolean create, int count) {
 			//TODO - _checkGrow() doesn't return a value, check keys == null instead
 			if (_checkGrow (count)) {
 				if (items [index] != null) return items [index];
-				return items [index] = new TableItem (this, SWT.NONE, -1, false);
+				return items [index] = new TableItem (this.getWrapper(), SWT.NONE, -1, false).getWrappedWidget();
 			}
 			keyIndex = -keyIndex - 1;
 			if (keyIndex < keyCount) {
@@ -308,11 +308,11 @@ TableItem _getItem (int index, boolean create, int count) {
 		} else {
 			if (items [keyIndex] != null) return items [keyIndex];
 		}
-		return items [keyIndex] = new TableItem (this, SWT.NONE, -1, false);
+		return items [keyIndex] = new TableItem (this.getWrapper(), SWT.NONE, -1, false).getWrappedWidget();
 	}
 }
 
-void _getItems (TableItem [] result, int count) {
+void _getItems (NativeTableItem [] result, int count) {
 	if (keys == null) {
 		System.arraycopy (items, 0, result, 0, count);
 	} else {
@@ -329,7 +329,7 @@ boolean _hasItems () {
 }
 
 void _initItems () {
-	items = new TableItem [4];
+	items = new NativeTableItem [4];
 	if (COMPRESS_ITEMS) {
 		if ((style & SWT.VIRTUAL) != 0) {
 			keyCount = 0;
@@ -339,7 +339,7 @@ void _initItems () {
 }
 
 /* NOTE: The array has already been grown to have space for the new item */
-void _insertItem (int index, TableItem item, int count) {
+void _insertItem (int index, NativeTableItem item, int count) {
 	if (keys == null) {
 		System.arraycopy (items, index, items, index + 1, count - index);
 		items [index] = item;
@@ -398,7 +398,7 @@ void _removeItems (int start, int index, int count) {
 void _setItemCount (int count, int itemCount) {
 	if (keys == null) {
 		int length = Math.max (4, (count + 3) / 4 * 4);
-		TableItem [] newItems = new TableItem [length];
+		NativeTableItem [] newItems = new NativeTableItem [length];
 		System.arraycopy (items, 0, newItems, 0, Math.min (count, itemCount));
 		items = newItems;
 	} else {
@@ -409,7 +409,7 @@ void _setItemCount (int count, int itemCount) {
 		int [] newKeys = new int [length];
 		System.arraycopy (keys, 0, newKeys, 0, keyCount);
 		keys = newKeys;
-		TableItem [] newItems = new TableItem [length];
+		NativeTableItem [] newItems = new NativeTableItem [length];
 		System.arraycopy (items, 0, newItems, 0, keyCount);
 		items = newItems;
 	}
@@ -594,7 +594,7 @@ long callWindowProc (long hwnd, int msg, long wParam, long lParam, boolean force
 		if (wasSelected || forceSelect) {
 			Event event = new Event ();
 			int index = (int)OS.SendMessage (handle, OS.LVM_GETNEXTITEM, -1, OS.LVNI_FOCUSED);
-			if (index != -1) event.item = _getItem (index);
+			if (index != -1) event.item = _getItem (index).getWrapper();
 			sendSelectionEvent (SWT.Selection, event, false);
 		}
 		wasSelected = oldSelected;
@@ -880,7 +880,7 @@ LRESULT CDDS_PREPAINT (NMLVCUSTOMDRAW nmcd, long wParam, long lParam) {
 				fillBackground (hDC, OS.GetSysColor (OS.COLOR_3DFACE), rect);
 			}
 		} else {
-			Control control = findBackgroundControl ();
+			NativeControl control = findBackgroundControl ();
 			if (control != null && control.backgroundImage != null) {
 				fillImageBackground (nmcd.hdc, control, rect, 0, 0);
 			} else {
@@ -947,7 +947,7 @@ LRESULT CDDS_SUBITEMPOSTPAINT (NMLVCUSTOMDRAW nmcd, long wParam, long lParam) {
 			}
 		}
 		if (hooks (SWT.PaintItem)) {
-			TableItem item = _getItem ((int)nmcd.dwItemSpec);
+			NativeTableItem item = _getItem ((int)nmcd.dwItemSpec);
 			sendPaintItemEvent (item, nmcd);
 			//widget could be disposed at this point
 		}
@@ -976,7 +976,7 @@ LRESULT CDDS_SUBITEMPREPAINT (NMLVCUSTOMDRAW nmcd, long wParam, long lParam) {
 	*
 	* NOTE: Force the item to be created if it does not exist.
 	*/
-	TableItem item = _getItem ((int)nmcd.dwItemSpec);
+	NativeTableItem item = _getItem ((int)nmcd.dwItemSpec);
 	if (item == null || item.isDisposed ()) return null;
 	long hFont = item.fontHandle (nmcd.iSubItem);
 	if (hFont != -1) OS.SelectObject (hDC, hFont);
@@ -1078,7 +1078,7 @@ LRESULT CDDS_SUBITEMPREPAINT (NMLVCUSTOMDRAW nmcd, long wParam, long lParam) {
 				if (clrTextBk == -1) {
 					nmcd.clrTextBk = OS.CLR_NONE;
 					if (selectionForeground == -1) {
-						Control control = findBackgroundControl ();
+						NativeControl control = findBackgroundControl ();
 						if (control == null) control = this;
 						if (control.backgroundImage == null) {
 							if ((int)OS.SendMessage (handle, OS.LVM_GETBKCOLOR, 0, 0) != OS.CLR_NONE) {
@@ -1138,17 +1138,17 @@ void checkBuffered () {
 	style |= SWT.DOUBLE_BUFFERED;
 }
 
-boolean checkData (TableItem item, boolean redraw) {
+boolean checkData (NativeTableItem item, boolean redraw) {
 	if ((style & SWT.VIRTUAL) == 0) return true;
 	return checkData (item, indexOf (item), redraw);
 }
 
-boolean checkData (TableItem item, int index, boolean redraw) {
+boolean checkData (NativeTableItem item, int index, boolean redraw) {
 	if ((style & SWT.VIRTUAL) == 0) return true;
 	if (!item.cached) {
 		item.cached = true;
 		Event event = new Event ();
-		event.item = item;
+		event.item = item.getWrapper();
 		event.index = index;
 		currentItem = item;
 		sendEvent (SWT.SetData, event);
@@ -1165,7 +1165,7 @@ boolean checkData (TableItem item, int index, boolean redraw) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -1194,7 +1194,7 @@ public void clear (int index) {
 	checkWidget ();
 	int count = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
 	if (!(0 <= index && index < count)) error (SWT.ERROR_INVALID_RANGE);
-	TableItem item = _getItem (index, false);
+	NativeTableItem item = _getItem (index, false);
 	if (item != null) {
 		if (item != currentItem) item.clear ();
 		/*
@@ -1259,7 +1259,7 @@ public void clear (int start, int end) {
 		LVITEM lvItem = null;
 		boolean cleared = false;
 		for (int i=start; i<=end; i++) {
-			TableItem item = _getItem (i, false);
+			NativeTableItem item = _getItem (i, false);
 			if (item != null) {
 				if (item != currentItem) {
 					cleared = true;
@@ -1292,7 +1292,7 @@ public void clear (int start, int end) {
 			if (currentItem == null && getDrawing () && OS.IsWindowVisible (handle)) {
 				OS.SendMessage (handle, OS.LVM_REDRAWITEMS, start, end);
 			}
-			TableItem item = start == end ? _getItem (start, false) : null;
+			NativeTableItem item = start == end ? _getItem (start, false) : null;
 			setScrollWidth (item, false);
 		}
 	}
@@ -1334,7 +1334,7 @@ public void clear (int [] indices) {
 	boolean cleared = false;
 	for (int i=0; i<indices.length; i++) {
 		int index = indices [i];
-		TableItem item = _getItem (index, false);
+		NativeTableItem item = _getItem (index, false);
 		if (item != null) {
 			if (item != currentItem) {
 				cleared = true;
@@ -1391,7 +1391,7 @@ public void clearAll () {
 	boolean cleared = false;
 	int count = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
 	for (int i=0; i<count; i++) {
-		TableItem item = _getItem (i, false);
+		NativeTableItem item = _getItem (i, false);
 		if (item != null) {
 			if (item != currentItem) {
 				cleared = true;
@@ -1598,20 +1598,20 @@ void createHeaderToolTips () {
 	OS.SendMessage (headerToolTipHandle, OS.TTM_SETMAXTIPWIDTH, 0, 0x7FFF);
 }
 
-void createItem (TableColumn column, int index) {
+void createItem (NativeTableColumn column, int index) {
 	if (!(0 <= index && index <= columnCount)) error (SWT.ERROR_INVALID_RANGE);
 	int oldColumn = (int)OS.SendMessage (handle, OS.LVM_GETSELECTEDCOLUMN, 0, 0);
 	if (oldColumn >= index) {
 		OS.SendMessage (handle, OS.LVM_SETSELECTEDCOLUMN, oldColumn + 1, 0);
 	}
 	if (columnCount == columns.length) {
-		TableColumn [] newColumns = new TableColumn [columns.length + 4];
+		NativeTableColumn [] newColumns = new NativeTableColumn [columns.length + 4];
 		System.arraycopy (columns, 0, newColumns, 0, columns.length);
 		columns = newColumns;
 	}
 	int itemCount = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
 	for (int i=0; i<itemCount; i++) {
-		TableItem item = _getItem (i, false);
+		NativeTableItem item = _getItem (i, false);
 		if (item != null) {
 			String [] strings = item.strings;
 			if (strings != null) {
@@ -1761,7 +1761,7 @@ void createItem (TableColumn column, int index) {
 	}
 }
 
-void createItem (TableItem item, int index) {
+void createItem (NativeTableItem item, int index) {
 	int count = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
 	if (!(0 <= index && index <= count)) error (SWT.ERROR_INVALID_RANGE);
 	_checkGrow (count);
@@ -1799,7 +1799,7 @@ void createWidget () {
 	super.createWidget ();
 	itemHeight = hotIndex = -1;
 	_initItems ();
-	columns = new TableColumn [4];
+	columns = new NativeTableColumn [4];
 }
 
 private boolean customHeaderDrawing() {
@@ -1933,7 +1933,7 @@ public void deselectAll () {
 	ignoreSelect = false;
 }
 
-void destroyItem (TableColumn column) {
+void destroyItem (NativeTableColumn column) {
 	int index = 0;
 	while (index < columnCount) {
 		if (columns [index] == column) break;
@@ -2031,7 +2031,7 @@ void destroyItem (TableColumn column) {
 	columns [columnCount] = null;
 	int itemCount = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
 	for (int i=0; i<itemCount; i++) {
-		TableItem item = _getItem (i, false);
+		NativeTableItem item = _getItem (i, false);
 		if (item != null) {
 			if (columnCount == 0) {
 				item.strings = null;
@@ -2125,12 +2125,12 @@ void destroyItem (TableColumn column) {
 			*/
 			OS.InvalidateRect (handle, null, true);
 		}
-		TableColumn [] newColumns = new TableColumn [columnCount - orderIndex];
+		NativeTableColumn [] newColumns = new NativeTableColumn [columnCount - orderIndex];
 		for (int i=orderIndex; i<newOrder.length; i++) {
 			newColumns [i - orderIndex] = columns [newOrder [i]];
 			newColumns [i - orderIndex].updateToolTip (newOrder [i]);
 		}
-		for (TableColumn newColumn : newColumns) {
+		for (NativeTableColumn newColumn : newColumns) {
 			if (!newColumn.isDisposed ()) {
 				newColumn.sendEvent (SWT.Move);
 			}
@@ -2147,7 +2147,7 @@ void destroyItem (TableColumn column) {
 	}
 }
 
-void destroyItem (TableItem item) {
+void destroyItem (NativeTableItem item) {
 	int count = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
 	int index = 0;
 	while (index < count) {
@@ -2216,13 +2216,13 @@ void fixCheckboxImageListColor (boolean fixScroll) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#getColumnOrder()
- * @see Table#setColumnOrder(int[])
- * @see TableColumn#getMoveable()
- * @see TableColumn#setMoveable(boolean)
+ * @see NativeTable#getColumnOrder()
+ * @see NativeTable#setColumnOrder(int[])
+ * @see NativeTableColumn#getMoveable()
+ * @see NativeTableColumn#setMoveable(boolean)
  * @see SWT#Move
  */
-public TableColumn getColumn (int index) {
+public NativeTableColumn getColumn (int index) {
 	checkWidget ();
 	if (!(0 <= index && index < columnCount)) error (SWT.ERROR_INVALID_RANGE);
 	return columns [index];
@@ -2268,9 +2268,9 @@ public int getColumnCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#setColumnOrder(int[])
- * @see TableColumn#getMoveable()
- * @see TableColumn#setMoveable(boolean)
+ * @see NativeTable#setColumnOrder(int[])
+ * @see NativeTableColumn#getMoveable()
+ * @see NativeTableColumn#setMoveable(boolean)
  * @see SWT#Move
  *
  * @since 3.1
@@ -2304,15 +2304,15 @@ public int[] getColumnOrder () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#getColumnOrder()
- * @see Table#setColumnOrder(int[])
- * @see TableColumn#getMoveable()
- * @see TableColumn#setMoveable(boolean)
+ * @see NativeTable#getColumnOrder()
+ * @see NativeTable#setColumnOrder(int[])
+ * @see NativeTableColumn#getMoveable()
+ * @see NativeTableColumn#setMoveable(boolean)
  * @see SWT#Move
  */
-public TableColumn [] getColumns () {
+public NativeTableColumn [] getColumns () {
 	checkWidget ();
-	TableColumn [] result = new TableColumn [columnCount];
+	NativeTableColumn [] result = new NativeTableColumn [columnCount];
 	System.arraycopy (columns, 0, result, 0, columnCount);
 	return result;
 }
@@ -2443,7 +2443,7 @@ public boolean getHeaderVisible () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TableItem getItem (int index) {
+public NativeTableItem getItem (int index) {
 	checkWidget ();
 	int count = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
 	if (!(0 <= index && index < count)) error (SWT.ERROR_INVALID_RANGE);
@@ -2473,13 +2473,13 @@ public TableItem getItem (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TableItem getItem (Point point) {
+public NativeTableItem getItem (Point point) {
 	checkWidget ();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
 	return getItemInPixels (DPIUtil.scaleUp(point, getZoom()));
 }
 
-TableItem getItemInPixels (Point point) {
+NativeTableItem getItemInPixels (Point point) {
 	int count = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
 	if (count == 0) return null;
 	LVHITTESTINFO pinfo = new LVHITTESTINFO ();
@@ -2602,10 +2602,10 @@ int getItemHeightInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TableItem [] getItems () {
+public NativeTableItem [] getItems () {
 	checkWidget ();
 	int count = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
-	TableItem [] result = new TableItem [count];
+	NativeTableItem [] result = new NativeTableItem [count];
 	if ((style & SWT.VIRTUAL) != 0) {
 		for (int i=0; i<count; i++) {
 			result [i] = _getItem (i);
@@ -2660,10 +2660,10 @@ private boolean _getLinesVisible() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TableItem [] getSelection () {
+public NativeTableItem [] getSelection () {
 	checkWidget ();
 	int i = -1, j = 0, count = (int)OS.SendMessage (handle, OS.LVM_GETSELECTEDCOUNT, 0, 0);
-	TableItem [] result = new TableItem [count];
+	NativeTableItem [] result = new NativeTableItem [count];
 	while ((i = (int)OS.SendMessage (handle, OS.LVM_GETNEXTITEM, i, OS.LVNI_SELECTED)) != -1) {
 		result [j++] = _getItem (i);
 	}
@@ -2752,11 +2752,11 @@ public int [] getSelectionIndices () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see #setSortColumn(TableColumn)
+ * @see #setSortColumn(NativeTableColumn)
  *
  * @since 3.2
  */
-public TableColumn getSortColumn () {
+public NativeTableColumn getSortColumn () {
 	checkWidget ();
 	return sortColumn;
 }
@@ -2825,7 +2825,7 @@ boolean hitTestSelection (int index, int x, int y) {
 	if (!hooks (SWT.MeasureItem)) return false;
 	boolean result = false;
 	if (0 <= index && index < count) {
-		TableItem item = _getItem (index);
+		NativeTableItem item = _getItem (index);
 		long hDC = OS.GetDC (handle);
 		long oldFont = 0, newFont = OS.SendMessage (handle, OS.WM_GETFONT, 0, 0);
 		if (newFont != 0) oldFont = OS.SelectObject (hDC, newFont);
@@ -2919,7 +2919,7 @@ int imageIndexHeader (Image image) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public int indexOf (TableColumn column) {
+public int indexOf (NativeTableColumn column) {
 	checkWidget ();
 	if (column == null) error (SWT.ERROR_NULL_ARGUMENT);
 	for (int i=0; i<columnCount; i++) {
@@ -2945,7 +2945,7 @@ public int indexOf (TableColumn column) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public int indexOf (TableItem item) {
+public int indexOf (NativeTableItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	//TODO - find other loops that can be optimized
@@ -3022,12 +3022,12 @@ void releaseChildren (boolean destroy) {
 		int itemCount = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
 		if (keys == null) {
 			for (int i=0; i<itemCount; i++) {
-				TableItem item = _getItem (i, false);
+				NativeTableItem item = _getItem (i, false);
 				if (item != null && !item.isDisposed ()) item.release (false);
 			}
 		} else {
 			for (int i=0; i<keyCount; i++) {
-				TableItem item = items [i];
+				NativeTableItem item = items [i];
 				if (item != null && !item.isDisposed ()) item.release (false);
 			}
 		}
@@ -3035,7 +3035,7 @@ void releaseChildren (boolean destroy) {
 	}
 	if (columns != null) {
 		for (int i=0; i<columnCount; i++) {
-			TableColumn column = columns [i];
+			NativeTableColumn column = columns [i];
 			if (!column.isDisposed ()) column.release (false);
 		}
 		columns = null;
@@ -3095,7 +3095,7 @@ public void remove (int [] indices) {
 	int last = -1;
 	for (int index : newIndices) {
 		if (index != last) {
-			TableItem item = _getItem (index, false);
+			NativeTableItem item = _getItem (index, false);
 			if (item != null && !item.isDisposed ()) item.release (false);
 			ignoreSelect = ignoreShrink = true;
 			long code = OS.SendMessage (handle, OS.LVM_DELETEITEM, index, 0);
@@ -3128,7 +3128,7 @@ public void remove (int index) {
 	checkWidget ();
 	int count = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
 	if (!(0 <= index && index < count)) error (SWT.ERROR_INVALID_RANGE);
-	TableItem item = _getItem (index, false);
+	NativeTableItem item = _getItem (index, false);
 	if (item != null && !item.isDisposed ()) item.release (false);
 	setDeferResize (true);
 	ignoreSelect = ignoreShrink = true;
@@ -3170,7 +3170,7 @@ public void remove (int start, int end) {
 		setDeferResize (true);
 		int index = start;
 		while (index <= end) {
-			TableItem item = _getItem (index, false);
+			NativeTableItem item = _getItem (index, false);
 			if (item != null && !item.isDisposed ()) item.release (false);
 			ignoreSelect = ignoreShrink = true;
 			long code = OS.SendMessage (handle, OS.LVM_DELETEITEM, start, 0);
@@ -3202,7 +3202,7 @@ public void removeAll () {
 	checkWidget ();
 	int itemCount = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
 	for (int i=0; i<itemCount; i++) {
-		TableItem item = _getItem (i, false);
+		NativeTableItem item = _getItem (i, false);
 		if (item != null && !item.isDisposed ()) item.release (false);
 	}
 	setDeferResize (true);
@@ -3260,7 +3260,7 @@ public void removeSelectionListener(SelectionListener listener) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#setSelection(int[])
+ * @see NativeTable#setSelection(int[])
  */
 public void select (int [] indices) {
 	checkWidget ();
@@ -3288,13 +3288,13 @@ void reskinChildren (int flags) {
 	if (_hasItems ()) {
 		int itemCount = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
 		for (int i=0; i<itemCount; i++) {
-			TableItem item = _getItem (i, false);
+			NativeTableItem item = _getItem (i, false);
 			if (item != null) item.reskin (flags);
 		}
 	}
 	if (columns != null) {
 		for (int i=0; i<columnCount; i++) {
-			TableColumn column = columns [i];
+			NativeTableColumn column = columns [i];
 			if (!column.isDisposed ()) column.reskin (flags);
 		}
 	}
@@ -3349,7 +3349,7 @@ public void select (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#setSelection(int,int)
+ * @see NativeTable#setSelection(int,int)
  */
 public void select (int start, int end) {
 	checkWidget ();
@@ -3399,7 +3399,7 @@ public void selectAll () {
 	ignoreSelect = false;
 }
 
-void sendEraseItemEvent (TableItem item, NMLVCUSTOMDRAW nmcd, long lParam, Event measureEvent) {
+void sendEraseItemEvent (NativeTableItem item, NMLVCUSTOMDRAW nmcd, long lParam, Event measureEvent) {
 	long hDC = nmcd.hdc;
 	int clrText = item.cellForeground != null ? item.cellForeground [nmcd.iSubItem] : -1;
 	if (clrText == -1) clrText = item.foreground;
@@ -3448,7 +3448,7 @@ void sendEraseItemEvent (TableItem item, NMLVCUSTOMDRAW nmcd, long lParam, Event
 			* set the color.
 			*/
 			if (clrText == -1 || clrTextBk == -1) {
-				Control control = findBackgroundControl ();
+				NativeControl control = findBackgroundControl ();
 				if (control == null) control = this;
 				if (clrText == -1) clrText = control.getForegroundPixel ();
 				if (clrTextBk == -1) clrTextBk = control.getBackgroundPixel ();
@@ -3467,7 +3467,7 @@ void sendEraseItemEvent (TableItem item, NMLVCUSTOMDRAW nmcd, long lParam, Event
 	GC gc = createNewGC(hDC, data);
 	RECT cellRect = item.getBounds ((int)nmcd.dwItemSpec, nmcd.iSubItem, true, true, true, true, hDC);
 	Event event = new Event ();
-	event.item = item;
+	event.item = item.getWrapper();
 	event.gc = gc;
 	event.index = nmcd.iSubItem;
 	event.detail |= SWT.FOREGROUND;
@@ -3589,7 +3589,7 @@ void sendEraseItemEvent (TableItem item, NMLVCUSTOMDRAW nmcd, long lParam, Event
 	}
 }
 
-Event sendEraseItemEvent (TableItem item, NMTTCUSTOMDRAW nmcd, int column, RECT cellRect) {
+Event sendEraseItemEvent (NativeTableItem item, NMTTCUSTOMDRAW nmcd, int column, RECT cellRect) {
 	int nSavedDC = OS.SaveDC (nmcd.hdc);
 	RECT insetRect = toolTipInset (cellRect);
 	OS.SetWindowOrgEx (nmcd.hdc, insetRect.left, insetRect.top, null);
@@ -3601,7 +3601,7 @@ Event sendEraseItemEvent (TableItem item, NMTTCUSTOMDRAW nmcd, int column, RECT 
 	data.uiState = (int)OS.SendMessage (handle, OS.WM_QUERYUISTATE, 0, 0);
 	GC gc = createNewGC(nmcd.hdc, data);
 	Event event = new Event ();
-	event.item = item;
+	event.item = item.getWrapper();
 	event.index = column;
 	event.gc = gc;
 	event.detail |= SWT.FOREGROUND;
@@ -3615,7 +3615,7 @@ Event sendEraseItemEvent (TableItem item, NMTTCUSTOMDRAW nmcd, int column, RECT 
 	return event;
 }
 
-Event sendMeasureItemEvent (TableItem item, int row, int column, long hDC) {
+Event sendMeasureItemEvent (NativeTableItem item, int row, int column, long hDC) {
 	GCData data = new GCData ();
 	data.device = display;
 	data.font = item.getFont (column);
@@ -3623,7 +3623,7 @@ Event sendMeasureItemEvent (TableItem item, int row, int column, long hDC) {
 	GC gc = createNewGC(hDC, data);
 	RECT itemRect = item.getBounds (row, column, true, true, false, false, hDC);
 	Event event = new Event ();
-	event.item = item;
+	event.item = item.getWrapper();
 	event.gc = gc;
 	event.index = column;
 	event.setBounds(DPIUtil.scaleDown(new Rectangle(itemRect.left, itemRect.top, itemRect.right - itemRect.left, itemRect.bottom - itemRect.top), getZoom()));
@@ -3839,7 +3839,7 @@ LRESULT sendMouseDownEvent (int type, int button, int msg, long wParam, long lPa
 	return new LRESULT (code);
 }
 
-void sendPaintItemEvent (TableItem item, NMLVCUSTOMDRAW nmcd) {
+void sendPaintItemEvent (NativeTableItem item, NMLVCUSTOMDRAW nmcd) {
 	long hDC = nmcd.hdc;
 	GCData data = new GCData ();
 	data.device = display;
@@ -3893,7 +3893,7 @@ void sendPaintItemEvent (TableItem item, NMLVCUSTOMDRAW nmcd) {
 			* set the color.
 			*/
 			if (clrText == -1 || clrTextBk == -1) {
-				Control control = findBackgroundControl ();
+				NativeControl control = findBackgroundControl ();
 				if (control == null) control = this;
 				if (clrText == -1) clrText = control.getForegroundPixel ();
 				if (clrTextBk == -1) clrTextBk = control.getBackgroundPixel ();
@@ -3910,7 +3910,7 @@ void sendPaintItemEvent (TableItem item, NMLVCUSTOMDRAW nmcd) {
 	GC gc = createNewGC(hDC, data);
 	RECT itemRect = item.getBounds ((int)nmcd.dwItemSpec, nmcd.iSubItem, true, true, false, false, hDC);
 	Event event = new Event ();
-	event.item = item;
+	event.item = item.getWrapper();
 	event.gc = gc;
 	event.index = nmcd.iSubItem;
 	event.detail |= SWT.FOREGROUND;
@@ -3938,7 +3938,7 @@ void sendPaintItemEvent (TableItem item, NMLVCUSTOMDRAW nmcd) {
 	OS.RestoreDC (hDC, nSavedDC);
 }
 
-Event sendPaintItemEvent (TableItem item, NMTTCUSTOMDRAW nmcd, int column, RECT itemRect) {
+Event sendPaintItemEvent (NativeTableItem item, NMTTCUSTOMDRAW nmcd, int column, RECT itemRect) {
 	int nSavedDC = OS.SaveDC (nmcd.hdc);
 	RECT insetRect = toolTipInset (itemRect);
 	OS.SetWindowOrgEx (nmcd.hdc, insetRect.left, insetRect.top, null);
@@ -3950,7 +3950,7 @@ Event sendPaintItemEvent (TableItem item, NMTTCUSTOMDRAW nmcd, int column, RECT 
 	data.uiState = (int)OS.SendMessage (handle, OS.WM_QUERYUISTATE, 0, 0);
 	GC gc = createNewGC(nmcd.hdc, data);
 	Event event = new Event ();
-	event.item = item;
+	event.item = item.getWrapper();
 	event.index = column;
 	event.gc = gc;
 	event.detail |= SWT.FOREGROUND;
@@ -4043,7 +4043,7 @@ void setBackgroundTransparent (boolean transparent) {
 		}
 	} else {
 		if (oldPixel == OS.CLR_NONE) {
-			Control control = findBackgroundControl ();
+			NativeControl control = findBackgroundControl ();
 			if (control == null) control = this;
 			if (control.backgroundImage == null) {
 				int newPixel = control.getBackgroundPixel ();
@@ -4119,9 +4119,9 @@ void setBoundsInPixels (int x, int y, int width, int height, int flags, boolean 
  *    <li>ERROR_INVALID_ARGUMENT - if the item order is not the same length as the number of items</li>
  * </ul>
  *
- * @see Table#getColumnOrder()
- * @see TableColumn#getMoveable()
- * @see TableColumn#setMoveable(boolean)
+ * @see NativeTable#getColumnOrder()
+ * @see NativeTableColumn#getMoveable()
+ * @see NativeTableColumn#setMoveable(boolean)
  * @see SWT#Move
  *
  * @since 3.1
@@ -4158,11 +4158,11 @@ public void setColumnOrder (int [] order) {
 		* not.  The fix is to force a redraw.
 		*/
 		OS.InvalidateRect (handle, null, true);
-		TableColumn[] newColumns = new TableColumn [columnCount];
+		NativeTableColumn[] newColumns = new NativeTableColumn [columnCount];
 		System.arraycopy (columns, 0, newColumns, 0, columnCount);
 		RECT newRect = new RECT ();
 		for (int i=0; i<columnCount; i++) {
-			TableColumn column = newColumns [i];
+			NativeTableColumn column = newColumns [i];
 			if (!column.isDisposed ()) {
 				OS.SendMessage (hwndHeader, OS.HDM_GETITEMRECT, i, newRect);
 				if (newRect.left != oldRects [i].left) {
@@ -4238,7 +4238,7 @@ void setCheckboxImageList (int width, int height, boolean fixScroll) {
 	OS.SetRect (rect, 0, 0, width * count, height);
 	int clrBackground;
 	if (OS.IsAppThemed ()) {
-		Control control = findBackgroundControl ();
+		NativeControl control = findBackgroundControl ();
 		if (control == null) control = this;
 		clrBackground = control.getBackgroundPixel ();
 	} else {
@@ -4557,7 +4557,7 @@ public void setItemCount (int count) {
 	if (!isVirtual) setRedraw (false);
 	int index = count;
 	while (index < itemCount) {
-		TableItem item = _getItem (index, false);
+		NativeTableItem item = _getItem (index, false);
 		if (item != null && !item.isDisposed ()) item.release (false);
 		if (!isVirtual) {
 			ignoreSelect = ignoreShrink = true;
@@ -4584,7 +4584,7 @@ public void setItemCount (int count) {
 		}
 	} else {
 		for (int i=itemCount; i<count; i++) {
-			new TableItem (this, SWT.NONE, i, true);
+			new TableItem (this.getWrapper(), SWT.NONE, i, true).getWrappedWidget();
 		}
 	}
 	if (!isVirtual) setRedraw (true);
@@ -4790,7 +4790,7 @@ void setScrollWidth (int width) {
 	}
 }
 
-boolean setScrollWidth (TableItem item, boolean force) {
+boolean setScrollWidth (NativeTableItem item, boolean force) {
 	if (currentItem != null) {
 		if (currentItem != item) fixScrollWidth = true;
 		return false;
@@ -4816,7 +4816,7 @@ boolean setScrollWidth (TableItem item, boolean force) {
 				imageIndent = Math.max (imageIndent, item.imageIndent);
 				hFont = item.fontHandle (0);
 			} else {
-				TableItem tableItem = _getItem (index, false);
+				NativeTableItem tableItem = _getItem (index, false);
 				if (tableItem != null) {
 					string = tableItem.text;
 					imageIndent = Math.max (imageIndent, tableItem.imageIndent);
@@ -4910,8 +4910,8 @@ boolean setScrollWidth (TableItem item, boolean force) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#deselectAll()
- * @see Table#select(int[])
+ * @see NativeTable#deselectAll()
+ * @see NativeTable#select(int[])
  */
 public void setSelection (int [] indices) {
 	checkWidget ();
@@ -4946,10 +4946,10 @@ public void setSelection (int [] indices) {
  *
  * @since 3.2
  */
-public void setSelection (TableItem  item) {
+public void setSelection (NativeTableItem  item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
-	setSelection (new TableItem [] {item});
+	setSelection (new NativeTableItem [] {item});
 }
 
 /**
@@ -4973,11 +4973,11 @@ public void setSelection (TableItem  item) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#deselectAll()
- * @see Table#select(int[])
- * @see Table#setSelection(int[])
+ * @see NativeTable#deselectAll()
+ * @see NativeTable#select(int[])
+ * @see NativeTable#setSelection(int[])
  */
-public void setSelection (TableItem [] items) {
+public void setSelection (NativeTableItem [] items) {
 	checkWidget ();
 	if (items == null) error (SWT.ERROR_NULL_ARGUMENT);
 	deselectAll ();
@@ -5006,8 +5006,8 @@ public void setSelection (TableItem [] items) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#deselectAll()
- * @see Table#select(int)
+ * @see NativeTable#deselectAll()
+ * @see NativeTable#select(int)
  */
 public void setSelection (int index) {
 	checkWidget ();
@@ -5037,8 +5037,8 @@ public void setSelection (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#deselectAll()
- * @see Table#select(int,int)
+ * @see NativeTable#deselectAll()
+ * @see NativeTable#select(int,int)
  */
 public void setSelection (int start, int end) {
 	checkWidget ();
@@ -5070,7 +5070,7 @@ public void setSelection (int start, int end) {
  *
  * @since 3.2
  */
-public void setSortColumn (TableColumn column) {
+public void setSortColumn (NativeTableColumn column) {
 	checkWidget ();
 	if (column != null && column.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (sortColumn != null && !sortColumn.isDisposed ()) {
@@ -5136,7 +5136,7 @@ void setTableEmpty () {
 		if (itemHeight != -1) setItemHeight (false);
 	}
 	if (!hooks (SWT.MeasureItem) && !hooks (SWT.EraseItem) && !hooks (SWT.PaintItem)) {
-		Control control = findBackgroundControl ();
+		NativeControl control = findBackgroundControl ();
 		if (control == null) control = this;
 		if (control.backgroundImage == null) {
 			setCustomDraw (false);
@@ -5235,7 +5235,7 @@ public void setTopIndex (int index) {
  *
  * @since 3.0
  */
-public void showColumn (TableColumn column) {
+public void showColumn (NativeTableColumn column) {
 	checkWidget ();
 	if (column == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (column.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
@@ -5369,9 +5369,9 @@ void showItem (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#showSelection()
+ * @see NativeTable#showSelection()
  */
-public void showItem (TableItem item) {
+public void showItem (NativeTableItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
@@ -5389,7 +5389,7 @@ public void showItem (TableItem item) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#showItem(TableItem)
+ * @see NativeTable#showItem(NativeTableItem)
  */
 public void showSelection () {
 	checkWidget ();
@@ -5404,7 +5404,7 @@ public void showSelection () {
 		 *
 		 * Make sure above fix is only applied to the active shell, see bug 450391.
 		 */
-		if (display.getActiveShell() == getShell() && (style & SWT.NO_SCROLL) == 0
+		if (Widget.checkNative(display.getActiveShell()) == getShell() && (style & SWT.NO_SCROLL) == 0
 					&& (verticalBar == null || !verticalBar.isVisible())) {
 			showItem (0);
 		} else {
@@ -5459,7 +5459,7 @@ String toolTipText (NMTTDISPINFO hdr) {
 	if (hwndToolTip == hdr.hwndFrom && toolTipText != null) return ""; //$NON-NLS-1$
 	if (headerToolTipHandle == hdr.hwndFrom) {
 		for (int i=0; i<columnCount; i++) {
-			TableColumn column = columns [i];
+			NativeTableColumn column = columns [i];
 			if (column.id == hdr.idFrom) return column.toolTipText;
 		}
 	}
@@ -5511,7 +5511,7 @@ void updateHeaderToolTips () {
 	lpti.hwnd = hwndHeader;
 	lpti.lpszText = OS.LPSTR_TEXTCALLBACK;
 	for (int i=0; i<columnCount; i++) {
-		TableColumn column = columns [i];
+		NativeTableColumn column = columns [i];
 		if (OS.SendMessage (hwndHeader, OS.HDM_GETITEMRECT, i, rect) != 0) {
 			lpti.uId = column.id = display.nextToolTipId++;
 			lpti.left = rect.left;
@@ -5529,7 +5529,7 @@ void updateMenuLocation (Event event) {
 	int x = clientArea.x, y = clientArea.y;
 	int focusIndex = getFocusIndex ();
 	if (focusIndex != -1) {
-		TableItem focusItem = getItem (focusIndex);
+		NativeTableItem focusItem = getItem (focusIndex);
 		Rectangle bounds = focusItem.getBoundsInPixels (0);
 		if (focusItem.text != null && focusItem.text.length () != 0) {
 			bounds = focusItem.getBoundsInPixels ();
@@ -5581,7 +5581,7 @@ void updateOrientation () {
 		imageList = display.getImageList (style & SWT.RIGHT_TO_LEFT, size.x, size.y, getZoom());
 		int count = (int)OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
 		for (int i = 0; i < count; i++) {
-			TableItem item = _getItem (i, false);
+			NativeTableItem item = _getItem (i, false);
 			if (item != null) {
 				Image image = item.image;
 				if (image != null) {
@@ -5600,7 +5600,7 @@ void updateOrientation () {
 			headerImageList = display.getImageList (style & SWT.RIGHT_TO_LEFT, size.x, size.y, getZoom());
 			if (columns != null) {
 				for (int i = 0; i < columns.length; i++) {
-					TableColumn column = columns [i];
+					NativeTableColumn column = columns [i];
 					if (column != null) {
 						Image image = column.image;
 						if (image != null) {
@@ -5628,7 +5628,7 @@ void updateOrientation () {
 boolean updateTextDirection(int textDirection) {
 	if (super.updateTextDirection(textDirection)) {
 		if (textDirection == AUTO_TEXT_DIRECTION || (state & HAS_AUTO_DIRECTION) != 0) {
-			for (TableItem item : items) {
+			for (NativeTableItem item : items) {
 				if (item != null) {
 					item.updateTextDirection(textDirection == AUTO_TEXT_DIRECTION ? AUTO_TEXT_DIRECTION : style & SWT.FLIP_TEXT_DIRECTION);
 				}
@@ -5743,7 +5743,7 @@ long windowProc (long hwnd, int msg, long wParam, long lParam) {
 		OS.MapWindowPoints(0, handle, mousePos, 1);
 		RECT clientRect = new RECT ();
 		OS.GetClientRect (handle, clientRect);
-		TableItem item = _getItem (selection);
+		NativeTableItem item = _getItem (selection);
 		RECT rect = item.getBounds (selection, 0, true, true, true);
 		if ((style & SWT.FULL_SELECTION) != 0) {
 			int width = DRAG_IMAGE_SIZE;
@@ -5821,7 +5821,7 @@ LRESULT WM_CHAR (long wParam, long lParam) {
 			if ((style & SWT.CHECK) != 0) {
 				int index = -1;
 				while ((index = (int)OS.SendMessage (handle, OS.LVM_GETNEXTITEM, index, OS.LVNI_SELECTED)) != -1) {
-					TableItem item = _getItem (index);
+					NativeTableItem item = _getItem (index);
 					item.setChecked (!item.getChecked (), true);
 					OS.NotifyWinEvent (OS.EVENT_OBJECT_FOCUS, handle, OS.OBJID_CLIENT, index + 1);
 				}
@@ -5845,7 +5845,7 @@ LRESULT WM_CHAR (long wParam, long lParam) {
 			int index = (int)OS.SendMessage (handle, OS.LVM_GETNEXTITEM, -1, OS.LVNI_FOCUSED);
 			if (index != -1) {
 				Event event = new Event ();
-				event.item = _getItem (index);
+				event.item = _getItem (index).getWrapper();
 				sendSelectionEvent (SWT.DefaultSelection, event, false);
 			}
 			return LRESULT.ZERO;
@@ -5912,9 +5912,9 @@ LRESULT WM_KEYDOWN (long wParam, long lParam) {
 					index++;
 				}
 				if (index != columnCount || hooks (SWT.MeasureItem)) {
-					TableColumn [] newColumns = new TableColumn [columnCount];
+					NativeTableColumn [] newColumns = new NativeTableColumn [columnCount];
 					System.arraycopy (columns, 0, newColumns, 0, columnCount);
-					for (TableColumn column : newColumns) {
+					for (NativeTableColumn column : newColumns) {
 						if (!column.isDisposed () && column.getResizable ()) {
 							column.pack ();
 						}
@@ -6013,7 +6013,7 @@ LRESULT WM_LBUTTONDBLCLK (long wParam, long lParam) {
 		* the check box, equality is needed.
 		*/
 		if (index != -1 && pinfo.flags == OS.LVHT_ONITEMSTATEICON) {
-			TableItem item = _getItem (index);
+			NativeTableItem item = _getItem (index);
 			if (item != null && !item.isDisposed ()) {
 				item.setChecked (!item.getChecked (), true);
 				OS.NotifyWinEvent (OS.EVENT_OBJECT_FOCUS, handle, OS.OBJID_CLIENT, index + 1);
@@ -6050,7 +6050,7 @@ LRESULT WM_LBUTTONDOWN (long wParam, long lParam) {
 		*/
 		int index = (int)OS.SendMessage (handle, OS.LVM_HITTEST, 0, pinfo);
 		if (index != -1 && pinfo.flags == OS.LVHT_ONITEMSTATEICON) {
-			TableItem item = _getItem (index);
+			NativeTableItem item = _getItem (index);
 			if (item != null && !item.isDisposed ()) {
 				item.setChecked (!item.getChecked (), true);
 				OS.NotifyWinEvent (OS.EVENT_OBJECT_FOCUS, handle, OS.OBJID_CLIENT, index + 1);
@@ -6547,7 +6547,7 @@ LRESULT wmNotifyChild (NMHDR hdr, long wParam, long lParam) {
 			*
 			* NOTE: Force the item to be created if it does not exist.
 			*/
-			TableItem item = _getItem (plvfi.iItem);
+			NativeTableItem item = _getItem (plvfi.iItem);
 			if (item == null) break;
 
 			/*
@@ -6588,7 +6588,7 @@ LRESULT wmNotifyChild (NMHDR hdr, long wParam, long lParam) {
 				if ((style & SWT.VIRTUAL) != 0) {
 					lastIndexOf = plvfi.iItem;
 					if (!checkData (item, lastIndexOf, false)) break;
-					TableItem newItem = fixScrollWidth ? null : item;
+					NativeTableItem newItem = fixScrollWidth ? null : item;
 					if (setScrollWidth (newItem, true)) {
 						OS.InvalidateRect (handle, null, true);
 					}
@@ -6756,7 +6756,7 @@ LRESULT wmNotifyChild (NMHDR hdr, long wParam, long lParam) {
 		case OS.LVN_COLUMNCLICK: {
 			NMLISTVIEW pnmlv = new NMLISTVIEW ();
 			OS.MoveMemory(pnmlv, lParam, NMLISTVIEW.sizeof);
-			TableColumn column = columns [pnmlv.iSubItem];
+			NativeTableColumn column = columns [pnmlv.iSubItem];
 			if (column != null) {
 				column.sendSelectionEvent (SWT.Selection);
 			}
@@ -6768,7 +6768,7 @@ LRESULT wmNotifyChild (NMHDR hdr, long wParam, long lParam) {
 			OS.MoveMemory(pnmlv, lParam, NMLISTVIEW.sizeof);
 			if (pnmlv.iItem != -1) {
 				Event event = new Event ();
-				event.item = _getItem (pnmlv.iItem);
+				event.item = _getItem (pnmlv.iItem).getWrapper();
 				sendSelectionEvent (SWT.DefaultSelection, event, false);
 			}
 			break;
@@ -6845,7 +6845,7 @@ LRESULT wmNotifyHeader (NMHDR hdr, long wParam, long lParam) {
 			if (columnCount == 0) return LRESULT.ONE;
 			NMHEADER phdn = new NMHEADER ();
 			OS.MoveMemory (phdn, lParam, NMHEADER.sizeof);
-			TableColumn column = columns [phdn.iItem];
+			NativeTableColumn column = columns [phdn.iItem];
 			if (column != null && !column.getResizable ()) {
 				return LRESULT.ONE;
 			}
@@ -7016,7 +7016,7 @@ LRESULT wmNotifyHeader (NMHDR hdr, long wParam, long lParam) {
 		case OS.NM_RELEASEDCAPTURE: {
 			if (!ignoreColumnMove) {
 				for (int i=0; i<columnCount; i++) {
-					TableColumn column = columns [i];
+					NativeTableColumn column = columns [i];
 					column.updateToolTip (i);
 				}
 			}
@@ -7031,7 +7031,7 @@ LRESULT wmNotifyHeader (NMHDR hdr, long wParam, long lParam) {
 				NMHEADER phdn = new NMHEADER ();
 				OS.MoveMemory (phdn, lParam, NMHEADER.sizeof);
 				if (phdn.iItem != -1) {
-					TableColumn column = columns [phdn.iItem];
+					NativeTableColumn column = columns [phdn.iItem];
 					if (column != null && !column.getMoveable ()) {
 						ignoreColumnMove = true;
 						return LRESULT.ONE;
@@ -7065,7 +7065,7 @@ LRESULT wmNotifyHeader (NMHDR hdr, long wParam, long lParam) {
 					int end = Math.max (index, pitem.iOrder);
 					ignoreColumnMove = false;
 					for (int i=start; i<=end; i++) {
-						TableColumn column = columns [order [i]];
+						NativeTableColumn column = columns [order [i]];
 						if (!column.isDisposed ()) {
 							column.postEvent (SWT.Move);
 						}
@@ -7100,7 +7100,7 @@ LRESULT wmNotifyHeader (NMHDR hdr, long wParam, long lParam) {
 					HDITEM pitem = new HDITEM ();
 					OS.MoveMemory (pitem, phdn.pitem, HDITEM.sizeof);
 					if ((pitem.mask & OS.HDI_WIDTH) != 0) {
-						TableColumn column = columns [phdn.iItem];
+						NativeTableColumn column = columns [phdn.iItem];
 						if (column != null) {
 							column.updateToolTip (phdn.iItem);
 							column.sendEvent (SWT.Resize);
@@ -7111,13 +7111,13 @@ LRESULT wmNotifyHeader (NMHDR hdr, long wParam, long lParam) {
 							* event.  If this happens, process the move event
 							* for those columns that have not been destroyed.
 							*/
-							TableColumn [] newColumns = new TableColumn [columnCount];
+							NativeTableColumn [] newColumns = new NativeTableColumn [columnCount];
 							System.arraycopy (columns, 0, newColumns, 0, columnCount);
 							int [] order = new int [columnCount];
 							OS.SendMessage (handle, OS.LVM_GETCOLUMNORDERARRAY, columnCount, order);
 							boolean moved = false;
 							for (int i=0; i<columnCount; i++) {
-								TableColumn nextColumn = newColumns [order [i]];
+								NativeTableColumn nextColumn = newColumns [order [i]];
 								if (moved && !nextColumn.isDisposed ()) {
 									nextColumn.updateToolTip (order [i]);
 									nextColumn.sendEvent (SWT.Move);
@@ -7133,7 +7133,7 @@ LRESULT wmNotifyHeader (NMHDR hdr, long wParam, long lParam) {
 		case OS.HDN_ITEMDBLCLICK: {
 			NMHEADER phdn = new NMHEADER ();
 			OS.MoveMemory (phdn, lParam, NMHEADER.sizeof);
-			TableColumn column = columns [phdn.iItem];
+			NativeTableColumn column = columns [phdn.iItem];
 			if (column != null) {
 				column.sendSelectionEvent (SWT.DefaultSelection);
 			}
@@ -7177,7 +7177,7 @@ LRESULT wmNotifyToolTip (NMHDR hdr, long wParam, long lParam) {
 				*  The fix is to consider any value that is negative a failure.
 				*/
 				if (OS.SendMessage (handle, OS.LVM_SUBITEMHITTEST, 0, pinfo) >= 0) {
-					TableItem item = _getItem (pinfo.iItem);
+					NativeTableItem item = _getItem (pinfo.iItem);
 					long hDC = OS.GetDC (handle);
 					long oldFont = 0, newFont = OS.SendMessage (handle, OS.WM_GETFONT, 0, 0);
 					if (newFont != 0) oldFont = OS.SelectObject (hDC, newFont);
@@ -7216,7 +7216,7 @@ LRESULT wmNotifyToolTip (NMHDR hdr, long wParam, long lParam) {
 //									if (strings != null) string = strings [pinfo.iSubItem];
 //								}
 								if (string != null) {
-									Shell shell = getShell ();
+									NativeShell shell = getShell ();
 									char [] chars = new char [string.length () + 1];
 									string.getChars (0, string.length (), chars, 0);
 									shell.setToolTipText (lpnmtdi, chars);
@@ -7262,7 +7262,7 @@ LRESULT wmNotifyToolTip (NMTTCUSTOMDRAW nmcd, long lParam) {
 			*  The fix is to consider any value that is negative a failure.
 			*/
 			if (OS.SendMessage (handle, OS.LVM_SUBITEMHITTEST, 0, pinfo) >= 0) {
-				TableItem item = _getItem (pinfo.iItem);
+				NativeTableItem item = _getItem (pinfo.iItem);
 				long hDC = OS.GetDC (handle);
 				long hFont = item.fontHandle (pinfo.iSubItem);
 				if (hFont == -1) hFont = OS.SendMessage (handle, OS.WM_GETFONT, 0, 0);
@@ -7280,7 +7280,7 @@ LRESULT wmNotifyToolTip (NMTTCUSTOMDRAW nmcd, long lParam) {
 				}
 				if (drawForeground) {
 					int nSavedDC = OS.SaveDC (nmcd.hdc);
-					int gridWidth = getLinesVisible () ? Table.GRID_WIDTH : 0;
+					int gridWidth = getLinesVisible () ? NativeTable.GRID_WIDTH : 0;
 					RECT insetRect = toolTipInset (cellRect);
 					OS.SetWindowOrgEx (nmcd.hdc, insetRect.left, insetRect.top, null);
 					GCData data = new GCData ();
@@ -7307,7 +7307,7 @@ LRESULT wmNotifyToolTip (NMTTCUSTOMDRAW nmcd, long lParam) {
 					String string = item.getText (pinfo.iSubItem);
 					if (string != null) {
 						int flags = OS.DT_NOPREFIX | OS.DT_SINGLELINE | OS.DT_VCENTER;
-						TableColumn column = columns != null ? columns [pinfo.iSubItem] : null;
+						NativeTableColumn column = columns != null ? columns [pinfo.iSubItem] : null;
 						if (column != null) {
 							if ((column.style & SWT.CENTER) != 0) flags |= OS.DT_CENTER;
 							if ((column.style & SWT.RIGHT) != 0) flags |= OS.DT_RIGHT;
@@ -7333,7 +7333,7 @@ LRESULT wmNotifyToolTip (NMTTCUSTOMDRAW nmcd, long lParam) {
 }
 
 private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-	if (!(widget instanceof Table table)) {
+	if (!(Widget.checkNative(widget) instanceof NativeTable table)) {
 		return;
 	}
 	table.settingItemHeight = true;
@@ -7363,11 +7363,11 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 	// Resetting it will re-enable the default behavior again
 	table.setItemHeight(-1);
 
-	for (TableItem item : table.getItems()) {
-		DPIZoomChangeRegistry.applyChange(item, newZoom, scalingFactor);
+	for (NativeTableItem item : table.getItems()) {
+		DPIZoomChangeRegistry.applyChange(item.getWrapper(), newZoom, scalingFactor);
 	}
-	for (TableColumn tableColumn : table.getColumns()) {
-		DPIZoomChangeRegistry.applyChange(tableColumn, newZoom, scalingFactor);
+	for (NativeTableColumn tableColumn : table.getColumns()) {
+		DPIZoomChangeRegistry.applyChange(tableColumn.getWrapper(), newZoom, scalingFactor);
 	}
 
 	if (table.getColumns().length == 0 && scrollWidth != 0) {
@@ -7377,4 +7377,8 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 	 table.fixCheckboxImageListColor (true);
 	 table.settingItemHeight = false;
 }
+
+@Override
+public abstract Table getWrapper();
+
 }

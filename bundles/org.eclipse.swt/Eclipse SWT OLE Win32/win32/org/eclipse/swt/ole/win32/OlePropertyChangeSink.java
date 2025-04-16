@@ -21,7 +21,7 @@ import org.eclipse.swt.internal.win32.*;
 
 final class OlePropertyChangeSink {
 
-	private OleControlSite controlSite;
+	private NativeOleControlSite controlSite;
 	//private IUnknown objIUnknown;
 
 	private COMObject iPropertyNotifySink;
@@ -32,7 +32,7 @@ final class OlePropertyChangeSink {
 
 	private OleEventTable eventTable;
 
-OlePropertyChangeSink(OleControlSite controlSite) {
+OlePropertyChangeSink(NativeOleControlSite controlSite) {
 
 	this.controlSite = controlSite;
 

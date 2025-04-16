@@ -43,8 +43,8 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Tracker extends Widget {
-	Control parent;
+public abstract class NativeTracker extends NativeWidget {
+	NativeControl parent;
 	boolean tracking, cancelled, stippled;
 	Rectangle [] rectangles = new Rectangle [0], proportions = rectangles;
 	Rectangle bounds;
@@ -91,10 +91,10 @@ public class Tracker extends Widget {
  * @see SWT#UP
  * @see SWT#DOWN
  * @see SWT#RESIZE
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Tracker (Composite parent, int style) {
+protected NativeTracker (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 }
@@ -134,7 +134,7 @@ public Tracker (Composite parent, int style) {
  * @see SWT#DOWN
  * @see SWT#RESIZE
  */
-public Tracker (Display display, int style) {
+protected NativeTracker (Display display, int style) {
 	if (display == null) display = Display.getCurrent ();
 	if (display == null) display = Display.getDefault ();
 	if (!display.isValidThread ()) {
@@ -955,7 +955,7 @@ void update () {
 	if (hwndOpaque != 0) return;
 	if (parent != null) {
 		if (parent.isDisposed ()) return;
-		Shell shell = parent.getShell ();
+		NativeShell shell = parent.getShell ();
 		shell.update (true);
 	} else {
 		display.update ();
@@ -1226,5 +1226,8 @@ LRESULT wmMouse (int message, long wParam, long lParam) {
 	tracking = message != OS.WM_LBUTTONUP;
 	return null;
 }
+
+@Override
+public abstract Tracker getWrapper();
 
 }

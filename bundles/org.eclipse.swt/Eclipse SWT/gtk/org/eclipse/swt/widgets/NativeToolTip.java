@@ -46,10 +46,10 @@ import org.eclipse.swt.internal.gtk4.*;
  * @since 3.2
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class ToolTip extends Widget {
-	Shell parent;
+public abstract class NativeToolTip extends NativeWidget {
+	NativeShell parent;
 	String text, message;
-	TrayItem item;
+	NativeTrayItem item;
 	int x, y, timerId;
 	long layoutText = 0, layoutMessage = 0;
 	long provider;
@@ -91,10 +91,10 @@ public class ToolTip extends Widget {
  * @see SWT#ICON_ERROR
  * @see SWT#ICON_INFORMATION
  * @see SWT#ICON_WARNING
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public ToolTip (Shell parent, int style) {
+protected NativeToolTip (NativeShell parent, int style) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	createWidget (0);
@@ -430,7 +430,7 @@ String getNameText () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Shell getParent () {
+public NativeShell getParent () {
 	checkWidget ();
 	return parent;
 }
@@ -880,5 +880,8 @@ long timerProc (long widget) {
 	}
 	return 0;
 }
+
+@Override
+public abstract ToolTip getWrapper();
 
 }

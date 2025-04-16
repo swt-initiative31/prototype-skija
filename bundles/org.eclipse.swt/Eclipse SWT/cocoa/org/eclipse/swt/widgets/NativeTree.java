@@ -13,6 +13,8 @@
  *******************************************************************************/
 package org.eclipse.swt.widgets;
 
+import java.util.concurrent.atomic.*;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
@@ -75,22 +77,22 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Tree extends Composite {
-	private static final TreeItem[] NO_ITEM = new TreeItem[0];
+public abstract class NativeTree extends NativeComposite {
+	private static final NativeTreeItem[] NO_ITEM = new NativeTreeItem[0];
 	NSTableColumn firstColumn, checkColumn;
 	NSTextFieldCell dataCell;
 	NSButtonCell buttonCell;
 	NSTableHeaderView headerView;
-	TreeItem [] items;
+	NativeTreeItem [] items;
 	int itemCount;
-	TreeColumn [] columns;
-	TreeColumn sortColumn;
+	NativeTreeColumn [] columns;
+	NativeTreeColumn sortColumn;
 	int columnCount;
 	int sortDirection;
 	int selectedRowIndex = -1;
 	boolean ignoreExpand, ignoreSelect, ignoreRedraw, reloadPending, drawExpansion, didSelect, preventSelect, dragDetected;
 	Rectangle imageBounds;
-	TreeItem insertItem;
+	NativeTreeItem insertItem;
 	boolean insertBefore;
 	double [] headerBackground, headerForeground;
 
@@ -141,10 +143,10 @@ public class Tree extends Composite {
  * @see SWT#FULL_SELECTION
  * @see SWT#VIRTUAL
  * @see SWT#NO_SCROLL
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Tree (Composite parent, int style) {
+protected NativeTree (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 
 	this.nativeItemHeight = (int)((NSTableView)view).rowHeight();
@@ -157,9 +159,9 @@ void _addListener (int eventType, Listener listener) {
 	clearCachedWidth (items);
 }
 
-TreeItem _getItem (TreeItem parentItem, int index, boolean create) {
+NativeTreeItem _getItem (NativeTreeItem parentItem, int index, boolean create) {
 	int count;
-	TreeItem[] items;
+	NativeTreeItem[] items;
 	if (parentItem != null) {
 		count = parentItem.itemCount;
 		items = parentItem.items;
@@ -168,9 +170,16 @@ TreeItem _getItem (TreeItem parentItem, int index, boolean create) {
 		items = this.items;
 	}
 	if (index < 0 || index >= count) return null;
-	TreeItem item = items [index];
+	NativeTreeItem item = items [index];
 	if (item != null || (style & SWT.VIRTUAL) == 0 || !create) return item;
-	item = new TreeItem (this, parentItem, SWT.NONE, index, false);
+	AtomicReference<TreeItem> wrapperItem = new AtomicReference<>();
+	item = new NativeTreeItem (this, parentItem, SWT.NONE, index, false) {
+		@Override
+		public TreeItem getWrapper() {
+			return wrapperItem.get();
+		}
+	};
+	wrapperItem.set(new TreeItem(item));
 	items [index] = item;
 	return item;
 }
@@ -261,11 +270,11 @@ public void addTreeListener(TreeListener listener) {
 	addTypedListener(listener, SWT.Expand, SWT.Collapse);
 }
 
-int calculateWidth (TreeItem[] items, int index, GC gc, boolean recurse) {
+int calculateWidth (NativeTreeItem[] items, int index, GC gc, boolean recurse) {
 	if (items == null) return 0;
 	int width = 0;
 	for (int i=0; i<items.length; i++) {
-		TreeItem item = items [i];
+		NativeTreeItem item = items [i];
 		if (item != null) {
 			int itemWidth = item.calculateWidth (index, gc);
 			width = Math.max (width, itemWidth);
@@ -286,7 +295,7 @@ NSSize cellSize (long id, long sel) {
 	if (hooks(SWT.MeasureItem)) {
 		long [] outValue = new long [1];
 		OS.object_getInstanceVariable(id, Display.SWT_ROW, outValue);
-		TreeItem item = (TreeItem) display.getWidget (outValue [0]);
+		NativeTreeItem item = (NativeTreeItem) display.getWidget (outValue [0]);
 		OS.object_getInstanceVariable(id, Display.SWT_COLUMN, outValue);
 		long tableColumn = outValue[0];
 		int columnIndex = 0;
@@ -324,13 +333,13 @@ boolean canDragRowsWithIndexes_atPoint(long id, long sel, long rowIndexes, NSPoi
 	return (widget.isRowSelected(row) && drag) || !hasFocus();
 }
 
-boolean checkData (TreeItem item) {
+boolean checkData (NativeTreeItem item) {
 	if (item.cached) return true;
 	if ((style & SWT.VIRTUAL) != 0) {
 		item.cached = true;
 		Event event = new Event ();
-		TreeItem parentItem = item.getParentItem ();
-		event.item = item;
+		NativeTreeItem parentItem = item.getParentItem ();
+		event.item = item.getWrapper();
 		event.index = parentItem == null ? indexOf (item) : parentItem.indexOf (item);
 		ignoreRedraw = true;
 		sendEvent (SWT.SetData, event);
@@ -361,14 +370,14 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
 void checkItems () {
 	if (!reloadPending) return;
 	reloadPending = false;
-	TreeItem[] selectedItems = getSelection ();
+	NativeTreeItem[] selectedItems = getSelection ();
 	((NSOutlineView)view).reloadData ();
 	selectItems (selectedItems, true);
 	ignoreExpand = true;
@@ -378,8 +387,8 @@ void checkItems () {
 	ignoreExpand = false;
 }
 
-void clear (TreeItem parentItem, int index, boolean all) {
-	TreeItem item = _getItem (parentItem, index, false);
+void clear (NativeTreeItem parentItem, int index, boolean all) {
+	NativeTreeItem item = _getItem (parentItem, index, false);
 	if (item != null) {
 		item.clear();
 		item.redraw (-1);
@@ -389,12 +398,12 @@ void clear (TreeItem parentItem, int index, boolean all) {
 	}
 }
 
-void clearAll (TreeItem parentItem, boolean all) {
+void clearAll (NativeTreeItem parentItem, boolean all) {
 	int count = getItemCount (parentItem);
 	if (count == 0) return;
-	TreeItem [] children = parentItem == null ? items : parentItem.items;
+	NativeTreeItem [] children = parentItem == null ? items : parentItem.items;
 	for (int i=0; i<count; i++) {
-		TreeItem item = children [i];
+		NativeTreeItem item = children [i];
 		if (item != null) {
 			item.clear ();
 			item.redraw (-1);
@@ -457,10 +466,10 @@ public void clearAll (boolean all) {
 	clearAll (null, all);
 }
 
-void clearCachedWidth (TreeItem[] items) {
+void clearCachedWidth (NativeTreeItem[] items) {
 	if (items == null) return;
 	for (int i = 0; i < items.length; i++) {
-		TreeItem item = items [i];
+		NativeTreeItem item = items [i];
 		if (item == null) break;
 		item.width = -1;
 		clearCachedWidth (item.items);
@@ -469,7 +478,7 @@ void clearCachedWidth (TreeItem[] items) {
 
 @Override
 void collapseItem_collapseChildren (long id, long sel, long itemID, boolean children) {
-	TreeItem item = (TreeItem)display.getWidget(itemID);
+	NativeTreeItem item = (NativeTreeItem)display.getWidget(itemID);
 	if (item == null) return;
 	if (!ignoreExpand) item.sendExpand (false, children);
 	ignoreExpand = true;
@@ -517,7 +526,7 @@ public Point computeSize (int wHint, int hHint, boolean changed) {
 	return new Point (rect.width, rect.height);
 }
 
-void createColumn (TreeItem item, int index) {
+void createColumn (NativeTreeItem item, int index) {
 	if (item.items != null) {
 		for (int i = 0; i < item.items.length; i++) {
 			if (item.items[i] != null) createColumn (item.items[i], index);
@@ -649,7 +658,7 @@ void createHandle () {
 	view = widget;
 }
 
-void createItem (TreeColumn column, int index) {
+void createItem (NativeTreeColumn column, int index) {
 	if (!(0 <= index && index <= columnCount)) error (SWT.ERROR_INVALID_RANGE);
 	if (index == 0) {
 		// first column must be left aligned
@@ -657,7 +666,7 @@ void createItem (TreeColumn column, int index) {
 		column.style |= SWT.LEFT;
 	}
 	if (columnCount == columns.length) {
-		TreeColumn [] newColumns = new TreeColumn [columnCount + 4];
+		NativeTreeColumn [] newColumns = new NativeTreeColumn [columnCount + 4];
 		System.arraycopy (columns, 0, newColumns, 0, columns.length);
 		columns = newColumns;
 	}
@@ -697,7 +706,7 @@ void createItem (TreeColumn column, int index) {
 	System.arraycopy (columns, index, columns, index + 1, columnCount++ - index);
 	columns [index] = column;
 	for (int i = 0; i < itemCount; i++) {
-		TreeItem item = items [i];
+		NativeTreeItem item = items [i];
 		if (item != null) {
 			if (columnCount > 1) {
 				createColumn (item, index);
@@ -707,12 +716,12 @@ void createItem (TreeColumn column, int index) {
 }
 
 /**
- * The fastest way to insert many items is documented in {@link TreeItem#TreeItem(org.eclipse.swt.widgets.Tree,int,int)}
- * and {@link TreeItem#setItemCount}
+ * The fastest way to insert many items is documented in {@link NativeTreeItem#TreeItem(org.eclipse.swt.widgets.NativeTree,int,int)}
+ * and {@link NativeTreeItem#setItemCount}
  */
-void createItem (TreeItem item, TreeItem parentItem, int index) {
+void createItem (NativeTreeItem item, NativeTreeItem parentItem, int index) {
 	int count;
-	TreeItem [] items;
+	NativeTreeItem [] items;
 	if (parentItem != null) {
 		count = parentItem.itemCount;
 		items = parentItem.items;
@@ -723,7 +732,7 @@ void createItem (TreeItem item, TreeItem parentItem, int index) {
 	if (index == -1) index = count;
 	if (!(0 <= index && index <= count)) error (SWT.ERROR_INVALID_RANGE);
 	if (count == items.length) {
-		TreeItem [] newItems = new TreeItem [items.length + 4];
+		NativeTreeItem [] newItems = new NativeTreeItem [items.length + 4];
 		System.arraycopy (items, 0, newItems, 0, items.length);
 		items = newItems;
 		if (parentItem != null) {
@@ -734,7 +743,7 @@ void createItem (TreeItem item, TreeItem parentItem, int index) {
 	}
 	System.arraycopy (items, index, items, index + 1, count++ - index);
 	items [index] = item;
-	item.items = new TreeItem [4];
+	item.items = new NativeTreeItem [4];
 	SWTTreeItem handle = (SWTTreeItem) new SWTTreeItem ().alloc ().init ();
 	item.handle = handle;
 	item.createJNIRef ();
@@ -747,7 +756,7 @@ void createItem (TreeItem item, TreeItem parentItem, int index) {
 	ignoreExpand = true;
 	NSOutlineView widget = (NSOutlineView)view;
 	if (getDrawing()) {
-		TreeItem[] selectedItems = getSelection ();
+		NativeTreeItem[] selectedItems = getSelection ();
 		if (parentItem != null) {
 			widget.reloadItem (parentItem.handle, true);
 		} else {
@@ -771,8 +780,8 @@ void createItem (TreeItem item, TreeItem parentItem, int index) {
 @Override
 void createWidget () {
 	super.createWidget ();
-	items = new TreeItem [4];
-	columns = new TreeColumn [4];
+	items = new NativeTreeItem [4];
+	columns = new NativeTreeColumn [4];
 }
 
 @Override
@@ -849,7 +858,7 @@ void deregister () {
  *
  * @since 3.4
  */
-public void deselect (TreeItem item) {
+public void deselect (NativeTreeItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -860,14 +869,14 @@ public void deselect (TreeItem item) {
 	ignoreSelect = false;
 }
 
-void destroyItem (TreeColumn column) {
+void destroyItem (NativeTreeColumn column) {
 	int index = 0;
 	while (index < columnCount) {
 		if (columns [index] == column) break;
 		index++;
 	}
 	for (int i=0; i<items.length; i++) {
-		TreeItem item = items [i];
+		NativeTreeItem item = items [i];
 		if (item != null) {
 			if (columnCount <= 1) {
 				item.strings = null;
@@ -961,10 +970,10 @@ void destroyItem (TreeColumn column) {
 	}
 }
 
-void destroyItem (TreeItem item) {
+void destroyItem (NativeTreeItem item) {
 	int count;
-	TreeItem[] items;
-	TreeItem parentItem = item.parentItem;
+	NativeTreeItem[] items;
+	NativeTreeItem parentItem = item.parentItem;
 	if (parentItem != null) {
 		count = parentItem.itemCount;
 		items = parentItem.items;
@@ -1032,7 +1041,7 @@ void drawInteriorWithFrame_inView (long id, long sel, NSRect rect, long view) {
 	if (rowIndex == -1) {
 		return;	// the row item doesn't exist or has been disposed
 	}
-	TreeItem item = (TreeItem) display.getWidget (outValue [0]);
+	NativeTreeItem item = (NativeTreeItem) display.getWidget (outValue [0]);
 	if (item == null) return;
 	OS.object_getInstanceVariable(id, Display.SWT_COLUMN, outValue);
 	long tableColumn = outValue[0];
@@ -1114,7 +1123,7 @@ void drawInteriorWithFrame_inView (long id, long sel, NSRect rect, long view) {
 			gc.setClipping ((int)(cellRect.x - offsetX), (int)(cellRect.y - offsetY), (int)cellRect.width, (int)cellRect.height);
 		}
 		Event event = new Event ();
-		event.item = item;
+		event.item = item.getWrapper();
 		event.gc = gc;
 		event.index = columnIndex;
 		event.detail = SWT.FOREGROUND;
@@ -1292,7 +1301,7 @@ void drawInteriorWithFrame_inView (long id, long sel, NSRect rect, long view) {
 		item.width = -1;
 
 		Event event = new Event ();
-		event.item = item;
+		event.item = item.getWrapper();
 		event.gc = gc;
 		event.index = columnIndex;
 		if (drawForeground) event.detail |= SWT.FOREGROUND;
@@ -1318,7 +1327,7 @@ void drawWithExpansionFrame_inView (long id, long sel, NSRect cellFrame, long vi
 
 @Override
 void expandItem_expandChildren (long id, long sel, long itemID, boolean children) {
-	TreeItem item = (TreeItem)display.getWidget(itemID);
+	NativeTreeItem item = (NativeTreeItem)display.getWidget(itemID);
 	if (item == null) return;
 	if (!ignoreExpand) item.sendExpand (true, children);
 	ignoreExpand = true;
@@ -1327,7 +1336,7 @@ void expandItem_expandChildren (long id, long sel, long itemID, boolean children
 	if (isDisposed() || item.isDisposed()) return;
 	if (!children) {
 		ignoreExpand = true;
-		TreeItem[] items = item.items;
+		NativeTreeItem[] items = item.items;
 		for (int i = 0; i < item.itemCount; i++) {
 			if (items[i] != null) items[i].updateExpanded ();
 		}
@@ -1381,7 +1390,7 @@ NSRect expansionFrameWithFrame_inView(long id, long sel, NSRect cellRect, long v
 }
 
 @Override
-Widget findTooltip (NSPoint pt) {
+NativeWidget findTooltip (NSPoint pt) {
 	NSTableView widget = (NSTableView)view;
 	NSTableHeaderView headerView = widget.headerView();
 	if (headerView != null) {
@@ -1391,7 +1400,7 @@ Widget findTooltip (NSPoint pt) {
 			NSArray nsColumns = widget.tableColumns ();
 			id nsColumn = nsColumns.objectAtIndex (index);
 			for (int i = 0; i < columnCount; i++) {
-				TreeColumn column = columns [i];
+				NativeTreeColumn column = columns [i];
 				if (column.nsColumn.id == nsColumn.id) {
 					return column;
 				}
@@ -1428,7 +1437,7 @@ public Rectangle getClientArea () {
 	return rect;
 }
 
-TreeColumn getColumn (id id) {
+NativeTreeColumn getColumn (id id) {
 	for (int i = 0; i < columnCount; i++) {
 		if (columns[i].nsColumn.id == id.id) {
 			return columns[i];
@@ -1458,15 +1467,15 @@ TreeColumn getColumn (id id) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Tree#getColumnOrder()
- * @see Tree#setColumnOrder(int[])
- * @see TreeColumn#getMoveable()
- * @see TreeColumn#setMoveable(boolean)
+ * @see NativeTree#getColumnOrder()
+ * @see NativeTree#setColumnOrder(int[])
+ * @see NativeTreeColumn#getMoveable()
+ * @see NativeTreeColumn#setMoveable(boolean)
  * @see SWT#Move
  *
  * @since 3.1
  */
-public TreeColumn getColumn (int index) {
+public NativeTreeColumn getColumn (int index) {
 	checkWidget ();
 	if (!(0 <=index && index < columnCount)) error (SWT.ERROR_INVALID_RANGE);
 	return columns [index];
@@ -1514,9 +1523,9 @@ public int getColumnCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Tree#setColumnOrder(int[])
- * @see TreeColumn#getMoveable()
- * @see TreeColumn#setMoveable(boolean)
+ * @see NativeTree#setColumnOrder(int[])
+ * @see NativeTreeColumn#getMoveable()
+ * @see NativeTreeColumn#setMoveable(boolean)
  * @see SWT#Move
  *
  * @since 3.2
@@ -1525,7 +1534,7 @@ public int [] getColumnOrder () {
 	checkWidget ();
 	int [] order = new int [columnCount];
 	for (int i = 0; i < columnCount; i++) {
-		TreeColumn column = columns [i];
+		NativeTreeColumn column = columns [i];
 		int index = indexOf (column.nsColumn);
 		if ((style & SWT.CHECK) != 0) index -= 1;
 		order [index] = i;
@@ -1554,17 +1563,17 @@ public int [] getColumnOrder () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Tree#getColumnOrder()
- * @see Tree#setColumnOrder(int[])
- * @see TreeColumn#getMoveable()
- * @see TreeColumn#setMoveable(boolean)
+ * @see NativeTree#getColumnOrder()
+ * @see NativeTree#setColumnOrder(int[])
+ * @see NativeTreeColumn#getMoveable()
+ * @see NativeTreeColumn#setMoveable(boolean)
  * @see SWT#Move
  *
  * @since 3.1
  */
-public TreeColumn [] getColumns () {
+public NativeTreeColumn [] getColumns () {
 	checkWidget ();
-	TreeColumn [] result = new TreeColumn [columnCount];
+	NativeTreeColumn [] result = new NativeTreeColumn [columnCount];
 	System.arraycopy (columns, 0, result, 0, columnCount);
 	return result;
 }
@@ -1686,7 +1695,7 @@ public boolean getHeaderVisible () {
  *
  * @since 3.1
  */
-public TreeItem getItem (int index) {
+public NativeTreeItem getItem (int index) {
 	checkWidget ();
 	int count = getItemCount ();
 	if (index < 0 || index >= count) error (SWT.ERROR_INVALID_RANGE);
@@ -1716,7 +1725,7 @@ public TreeItem getItem (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TreeItem getItem (Point point) {
+public NativeTreeItem getItem (Point point) {
 	checkWidget ();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
 	checkItems ();
@@ -1729,9 +1738,9 @@ public TreeItem getItem (Point point) {
 	NSRect rect = widget.frameOfOutlineCellAtRow(row);
 	if (OS.NSPointInRect(pt, rect)) return null;
 	id id = widget.itemAtRow(row);
-	Widget item = display.getWidget (id.id);
-	if (item != null && item instanceof TreeItem) {
-		return (TreeItem)item;
+	NativeWidget item = display.getWidget (id.id);
+	if (item != null && item instanceof NativeTreeItem) {
+		return (NativeTreeItem)item;
 	}
 	return null;
 }
@@ -1754,7 +1763,7 @@ public int getItemCount () {
 	return itemCount;
 }
 
-int getItemCount (TreeItem item) {
+int getItemCount (NativeTreeItem item) {
 	return item == null ? itemCount : item.itemCount;
 }
 
@@ -1791,9 +1800,9 @@ public int getItemHeight () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TreeItem [] getItems () {
+public NativeTreeItem [] getItems () {
 	checkWidget ();
-	TreeItem [] result = new TreeItem [itemCount];
+	NativeTreeItem [] result = new NativeTreeItem [itemCount];
 	for (int i=0; i<itemCount; i++) {
 		result [i] = _getItem (null, i, true);
 	}
@@ -1837,7 +1846,7 @@ public boolean getLinesVisible () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TreeItem getParentItem () {
+public NativeTreeItem getParentItem () {
 	checkWidget ();
 	return null;
 }
@@ -1858,7 +1867,7 @@ public TreeItem getParentItem () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TreeItem [] getSelection () {
+public NativeTreeItem [] getSelection () {
 	checkWidget ();
 	NSOutlineView widget = (NSOutlineView) view;
 	if (widget.numberOfSelectedRows () == 0) {
@@ -1868,12 +1877,12 @@ public TreeItem [] getSelection () {
 	int count = (int)selection.count ();
 	long [] indexBuffer = new long [count];
 	selection.getIndexes (indexBuffer, count, 0);
-	TreeItem [] result = new TreeItem [count];
+	NativeTreeItem [] result = new NativeTreeItem [count];
 	for (int i=0; i<count; i++) {
 		id id = widget.itemAtRow (indexBuffer [i]);
-		Widget item = display.getWidget (id.id);
-		if (item != null && item instanceof TreeItem) {
-			result[i] = (TreeItem) item;
+		NativeWidget item = display.getWidget (id.id);
+		if (item != null && item instanceof NativeTreeItem) {
+			result[i] = (NativeTreeItem) item;
 		}
 	}
 	return result;
@@ -1906,11 +1915,11 @@ public int getSelectionCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see #setSortColumn(TreeColumn)
+ * @see #setSortColumn(NativeTreeColumn)
  *
  * @since 3.2
  */
-public TreeColumn getSortColumn () {
+public NativeTreeColumn getSortColumn () {
 	checkWidget ();
 	return sortColumn;
 }
@@ -1950,7 +1959,7 @@ public int getSortDirection () {
  *
  * @since 2.1
  */
-public TreeItem getTopItem () {
+public NativeTreeItem getTopItem () {
 	checkWidget ();
 	//TODO - partial item at the top
 	NSRect rect = scrollView.documentVisibleRect ();
@@ -1972,7 +1981,7 @@ public TreeItem getTopItem () {
 	long index = outlineView.rowAtPoint (point);
 	if (index == -1) return null; /* empty */
 	id item = outlineView.itemAtRow (index);
-	return (TreeItem)display.getWidget (item.id);
+	return (NativeTreeItem)display.getWidget (item.id);
 }
 
 @Override
@@ -2053,7 +2062,7 @@ int indexOf (NSTableColumn column) {
  *
  * @since 3.1
  */
-public int indexOf (TreeColumn column) {
+public int indexOf (NativeTreeColumn column) {
 	checkWidget ();
 	if (column == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (column.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -2083,7 +2092,7 @@ public int indexOf (TreeColumn column) {
  *
  * @since 3.1
  */
-public int indexOf (TreeItem item) {
+public int indexOf (NativeTreeItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -2208,7 +2217,7 @@ long nextState (long id, long sel) {
 	NSOutlineView outlineView = (NSOutlineView)view;
 	int index = (int)outlineView.clickedRow();
 	if (index == -1) index = (int)outlineView.selectedRow ();
-	TreeItem item = (TreeItem)display.getWidget (outlineView.itemAtRow (index).id);
+	NativeTreeItem item = (NativeTreeItem)display.getWidget (outlineView.itemAtRow (index).id);
 	if (item.grayed) {
 		return item.checked ? OS.NSOffState : OS.NSMixedState;
 	}
@@ -2217,8 +2226,8 @@ long nextState (long id, long sel) {
 
 @Override
 long outlineView_child_ofItem (long id, long sel, long outlineView, long index, long itemID) {
-	TreeItem parent = (TreeItem) display.getWidget (itemID);
-	TreeItem item = _getItem (parent, (int)index, true);
+	NativeTreeItem parent = (NativeTreeItem) display.getWidget (itemID);
+	NativeTreeItem item = _getItem (parent, (int)index, true);
 	if (item != null && item.handle != null) {
 		return item.handle.id;
 	}
@@ -2227,14 +2236,14 @@ long outlineView_child_ofItem (long id, long sel, long outlineView, long index, 
 
 @Override
 void outlineView_didClickTableColumn (long id, long sel, long outlineView, long tableColumn) {
-	TreeColumn column = getColumn (new id (tableColumn));
+	NativeTreeColumn column = getColumn (new id (tableColumn));
 	if (column == null) return; /* either CHECK column or firstColumn in 0-column Tree */
 	column.sendSelectionEvent (SWT.Selection);
 }
 
 @Override
 long outlineView_objectValueForTableColumn_byItem (long id, long sel, long outlineView, long tableColumn, long itemID) {
-	TreeItem item = (TreeItem) display.getWidget (itemID);
+	NativeTreeItem item = (NativeTreeItem) display.getWidget (itemID);
 	checkData (item);
 	if (checkColumn != null && tableColumn == checkColumn.id) {
 		NSNumber value;
@@ -2256,13 +2265,13 @@ long outlineView_objectValueForTableColumn_byItem (long id, long sel, long outli
 @Override
 boolean outlineView_isItemExpandable (long id, long sel, long outlineView, long item) {
 	if (item == 0) return true;
-	return ((TreeItem) display.getWidget (item)).itemCount != 0;
+	return ((NativeTreeItem) display.getWidget (item)).itemCount != 0;
 }
 
 @Override
 long outlineView_numberOfChildrenOfItem (long id, long sel, long outlineView, long item) {
 	if (item == 0) return itemCount;
-	return ((TreeItem) display.getWidget (item)).itemCount;
+	return ((NativeTreeItem) display.getWidget (item)).itemCount;
 }
 
 @Override
@@ -2302,7 +2311,7 @@ boolean outlineView_shouldTrackCell_forTableColumn_item(long id, long sel, long 
 @Override
 void outlineView_willDisplayCell_forTableColumn_item (long id, long sel, long outlineView, long cell, long tableColumn, long itemID) {
 	if (checkColumn != null && tableColumn == checkColumn.id) return;
-	TreeItem item = (TreeItem) display.getWidget(itemID);
+	NativeTreeItem item = (NativeTreeItem) display.getWidget(itemID);
 	int index = 0;
 	for (int i=0; i<columnCount; i++) {
 		if (columns [i].nsColumn.id == tableColumn) {
@@ -2385,7 +2394,7 @@ void outlineViewColumnDidMove (long id, long sel, long aNotification) {
 	NSArray nsColumns = outlineView.tableColumns ();
 	for (int i = startIndex; i <= endIndex; i++) {
 		id columnId = nsColumns.objectAtIndex (i);
-		TreeColumn column = getColumn (columnId);
+		NativeTreeColumn column = getColumn (columnId);
 		if (column != null) {
 			column.sendEvent (SWT.Move);
 			if (isDisposed ()) return;
@@ -2402,7 +2411,7 @@ void outlineViewColumnDidResize (long id, long sel, long aNotification) {
 	nsstring = nsstring.initWithString("NSTableColumn"); //$NON-NLS-1$
 	id columnId = userInfo.valueForKey (nsstring);
 	nsstring.release();
-	TreeColumn column = getColumn (columnId);
+	NativeTreeColumn column = getColumn (columnId);
 	if (column == null) return; /* either CHECK column or firstColumn in 0-column Tree */
 
 	column.sendEvent (SWT.Resize);
@@ -2449,9 +2458,9 @@ void sendSelection () {
 		sendSelectionEvent (SWT.Selection);
 	else {
 		id _id = widget.itemAtRow (row);
-		TreeItem item = (TreeItem) display.getWidget (_id.id);
+		NativeTreeItem item = (NativeTreeItem) display.getWidget (_id.id);
 		Event event = new Event ();
-		event.item = item;
+		event.item = item.getWrapper();
 		event.index = row;
 		sendSelectionEvent (SWT.Selection, event, false);
 	}
@@ -2475,11 +2484,11 @@ void outlineViewSelectionIsChanging (long id, long sel, long notification) {
 @Override
 void outlineView_setObjectValue_forTableColumn_byItem (long id, long sel, long outlineView, long object, long tableColumn, long itemID) {
 	if (checkColumn != null && tableColumn == checkColumn.id)  {
-		TreeItem item = (TreeItem) display.getWidget (itemID);
+		NativeTreeItem item = (NativeTreeItem) display.getWidget (itemID);
 		item.checked = !item.checked;
 		Event event = new Event ();
 		event.detail = SWT.CHECK;
-		event.item = item;
+		event.item = item.getWrapper();
 		sendSelectionEvent (SWT.Selection, event, false);
 		item.redraw (-1);
 	}
@@ -2501,7 +2510,7 @@ void register () {
 @Override
 void releaseChildren (boolean destroy) {
 	for (int i=0; i<items.length; i++) {
-		TreeItem item = items [i];
+		NativeTreeItem item = items [i];
 		if (item != null && !item.isDisposed ()) {
 			item.release (false);
 		}
@@ -2509,7 +2518,7 @@ void releaseChildren (boolean destroy) {
 	items = null;
 	if (columns != null) {
 		for (int i=0; i<columnCount; i++) {
-			TreeColumn column = columns [i];
+			NativeTreeColumn column = columns [i];
 			if (column != null && !column.isDisposed ()) {
 				column.release (false);
 			}
@@ -2551,10 +2560,10 @@ void releaseWidget () {
 public void removeAll () {
 	checkWidget ();
 	for (int i=0; i<items.length; i++) {
-		TreeItem item = items [i];
+		NativeTreeItem item = items [i];
 		if (item != null && !item.isDisposed ()) item.release (false);
 	}
-	items = new TreeItem [4];
+	items = new NativeTreeItem [4];
 	itemCount = 0;
 	imageBounds = null;
 	insertItem = null;
@@ -2617,13 +2626,13 @@ public void removeTreeListener (TreeListener listener) {
 void reskinChildren (int flags) {
 	if (items != null) {
 		for (int i=0; i<items.length; i++) {
-			TreeItem item = items [i];
+			NativeTreeItem item = items [i];
 			if (item != null) item.reskinChildren (flags);
 		}
 	}
 	if (columns != null) {
 		for (int i=0; i<columns.length; i++) {
-			TreeColumn column = columns [i];
+			NativeTreeColumn column = columns [i];
 			if (column != null) column.reskinChildren (flags);
 		}
 	}
@@ -2652,10 +2661,10 @@ void setImage (long id, long sel, long arg0) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setInsertMark (TreeItem item, boolean before) {
+public void setInsertMark (NativeTreeItem item, boolean before) {
 	checkWidget ();
 	if (item != null && item.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
-	TreeItem oldMark = insertItem;
+	NativeTreeItem oldMark = insertItem;
 	insertItem = item;
 	insertBefore = before;
 	if (oldMark != null && !oldMark.isDisposed()) oldMark.redraw (-1);
@@ -2700,7 +2709,7 @@ public void selectAll () {
  *
  * @since 3.4
  */
-public void select (TreeItem item) {
+public void select (NativeTreeItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -2742,9 +2751,9 @@ void sendDoubleSelection() {
 		}
 		id itemAtRow = outlineView.itemAtRow (rowIndex);
 		if (itemAtRow != null) {
-			TreeItem item = (TreeItem) display.getWidget (itemAtRow.id);
+			NativeTreeItem item = (NativeTreeItem) display.getWidget (itemAtRow.id);
 			Event event = new Event ();
-			event.item = item;
+			event.item = item.getWrapper();
 			sendSelectionEvent (SWT.DefaultSelection, event, false);
 		}
 	}
@@ -2766,7 +2775,7 @@ boolean sendKeyEvent (NSEvent nsEvent, int type) {
 	return result;
 }
 
-void sendMeasureItem (TreeItem item, boolean selected, int columnIndex, NSSize size) {
+void sendMeasureItem (NativeTreeItem item, boolean selected, int columnIndex, NSSize size) {
 	NSOutlineView widget = (NSOutlineView)this.view;
 	int contentWidth = (int)Math.ceil (size.width);
 	NSSize spacing = widget.intercellSpacing();
@@ -2776,7 +2785,7 @@ void sendMeasureItem (TreeItem item, boolean selected, int columnIndex, NSSize s
 	GC gc = GC.cocoa_new (this, data);
 	gc.setFont (item.getFont (columnIndex));
 	Event event = new Event ();
-	event.item = item;
+	event.item = item.getWrapper();
 	event.gc = gc;
 	event.index = columnIndex;
 	event.width = contentWidth;
@@ -2829,9 +2838,9 @@ boolean sendMouseEvent(NSEvent nsEvent, int type, boolean send) {
 				// (itemID = null) means that item was removed after
 				// 'selectedRowIndex' was cached
 				if (itemID != null) {
-					Widget item = display.getWidget (itemID.id);
-					if (item != null && item instanceof TreeItem) {
-						event.item = display.getWidget (itemID.id);
+					NativeWidget item = display.getWidget (itemID.id);
+					if (item != null && item instanceof NativeTreeItem) {
+						event.item = display.getWidget (itemID.id).getWrapper();
 						sendSelectionEvent (SWT.Selection, event, false);
 					}
 				}
@@ -2845,7 +2854,7 @@ boolean sendMouseEvent(NSEvent nsEvent, int type, boolean send) {
 	return super.sendMouseEvent (nsEvent, type, send);
 }
 
-void selectItems (TreeItem[] items, boolean ignoreDisposed) {
+void selectItems (NativeTreeItem[] items, boolean ignoreDisposed) {
 	NSOutlineView outlineView = (NSOutlineView) view;
 	NSMutableIndexSet set = (NSMutableIndexSet) new NSMutableIndexSet ().alloc ().init ();
 	int length = items.length;
@@ -2855,7 +2864,7 @@ void selectItems (TreeItem[] items, boolean ignoreDisposed) {
 				if (ignoreDisposed) continue;
 				error (SWT.ERROR_INVALID_ARGUMENT);
 			}
-			TreeItem item = items [i];
+			NativeTreeItem item = items [i];
 			if (!ignoreDisposed) showItem (items [i], false);
 			set.addIndex (outlineView.rowForItem (item.handle));
 		}
@@ -2899,9 +2908,9 @@ void setBackgroundColor(NSColor nsColor) {
  *    <li>ERROR_INVALID_ARGUMENT - if the item order is not the same length as the number of items</li>
  * </ul>
  *
- * @see Tree#getColumnOrder()
- * @see TreeColumn#getMoveable()
- * @see TreeColumn#setMoveable(boolean)
+ * @see NativeTree#getColumnOrder()
+ * @see NativeTreeColumn#getMoveable()
+ * @see NativeTreeColumn#setMoveable(boolean)
  * @see SWT#Move
  *
  * @since 3.2
@@ -2935,17 +2944,17 @@ public void setColumnOrder (int [] order) {
 		int [] newX = new int [order.length];
 		for (int i=0; i<order.length; i++) {
 			int index = order [i];
-			TreeColumn column = columns[index];
+			NativeTreeColumn column = columns[index];
 			int oldIndex = indexOf (column.nsColumn);
 			int newIndex = i + check;
 			outlineView.moveColumn (oldIndex, newIndex);
 			newX [index] = (int)outlineView.rectOfColumn (newIndex).x;
 		}
 
-		TreeColumn[] newColumns = new TreeColumn [columnCount];
+		NativeTreeColumn[] newColumns = new NativeTreeColumn [columnCount];
 		System.arraycopy (columns, 0, newColumns, 0, columnCount);
 		for (int i=0; i<columnCount; i++) {
-			TreeColumn column = newColumns [i];
+			NativeTreeColumn column = newColumns [i];
 			if (!column.isDisposed ()) {
 				if (newX [i] != oldX [i]) {
 					column.sendEvent (SWT.Move);
@@ -3074,8 +3083,8 @@ public void setHeaderVisible (boolean show) {
 /**
  * Sets the number of root-level items contained in the receiver.
  * <p>
- * The fastest way to insert many items is documented in {@link TreeItem#TreeItem(Tree,int,int)}
- * and {@link TreeItem#setItemCount}
+ * The fastest way to insert many items is documented in {@link NativeTreeItem#NativeTreeItem(NativeTree,int,int)}
+ * and {@link NativeTreeItem#setItemCount}
  *
  * @param count the number of items
  *
@@ -3093,12 +3102,12 @@ public void setItemCount (int count) {
 	setItemCount (null, count);
 }
 
-void setItemCount (TreeItem parentItem, int count) {
+void setItemCount (NativeTreeItem parentItem, int count) {
 	int itemCount = getItemCount (parentItem);
 	if (count == itemCount) return;
 	NSOutlineView widget = (NSOutlineView) view;
 	int length = Math.max (4, (count + 3) / 4 * 4);
-	TreeItem [] children = parentItem == null ? items : parentItem.items;
+	NativeTreeItem [] children = parentItem == null ? items : parentItem.items;
 	boolean expanded = parentItem == null || parentItem.getExpanded();
 	if (count < itemCount) {
 		/*
@@ -3110,14 +3119,14 @@ void setItemCount (TreeItem parentItem, int count) {
 		} else {
 			parentItem.itemCount = count;
 		}
-		TreeItem[] selectedItems = getSelection ();
+		NativeTreeItem[] selectedItems = getSelection ();
 		widget.reloadItem (parentItem != null ? parentItem.handle : null, expanded);
 		for (int index = count; index < itemCount; index ++) {
-			TreeItem item = children [index];
+			NativeTreeItem item = children [index];
 			if (item != null && !item.isDisposed()) item.release (false);
 		}
 		selectItems (selectedItems, true);
-		TreeItem [] newItems = new TreeItem [length];
+		NativeTreeItem [] newItems = new NativeTreeItem [length];
 		if (children != null) {
 			System.arraycopy (children, 0, newItems, 0, count);
 		}
@@ -3130,10 +3139,17 @@ void setItemCount (TreeItem parentItem, int count) {
 	} else {
 		if ((style & SWT.VIRTUAL) == 0) {
 			for (int i=itemCount; i<count; i++) {
-				new TreeItem (this, parentItem, SWT.NONE, i, true);
+				AtomicReference<TreeItem> wrapperItem = new AtomicReference<>();
+				NativeTreeItem item = new NativeTreeItem (this, parentItem, SWT.NONE, i, true) {
+					@Override
+					public TreeItem getWrapper() {
+						return wrapperItem.get();
+					}
+				};
+				wrapperItem.set(new TreeItem(item));
 			}
 		} else {
-			TreeItem [] newItems = new TreeItem [length];
+			NativeTreeItem [] newItems = new NativeTreeItem [length];
 			if (children != null) {
 				System.arraycopy (children, 0, newItems, 0, itemCount);
 			}
@@ -3145,7 +3161,7 @@ void setItemCount (TreeItem parentItem, int count) {
 				parentItem.items = newItems;
 				parentItem.itemCount = count;
 			}
-			TreeItem[] selectedItems = getSelection ();
+			NativeTreeItem[] selectedItems = getSelection ();
 			widget.reloadItem (parentItem != null ? parentItem.handle : null, expanded);
 			selectItems (selectedItems, true);
 
@@ -3233,7 +3249,7 @@ boolean setScrollWidth () {
 	return setScrollWidth (true, items, true);
 }
 
-boolean setScrollWidth (boolean set, TreeItem[] items, boolean recurse) {
+boolean setScrollWidth (boolean set, NativeTreeItem[] items, boolean recurse) {
 	if (items == null) return false;
 	if (ignoreRedraw || !getDrawing()) return false;
 	if (columnCount != 0) return false;
@@ -3249,10 +3265,10 @@ boolean setScrollWidth (boolean set, TreeItem[] items, boolean recurse) {
 	return true;
 }
 
-boolean setScrollWidth (TreeItem item) {
+boolean setScrollWidth (NativeTreeItem item) {
 	if (ignoreRedraw || !getDrawing()) return false;
 	if (columnCount != 0) return false;
-	TreeItem parentItem = item.parentItem;
+	NativeTreeItem parentItem = item.parentItem;
 	if (parentItem != null && !parentItem.getExpanded ()) return false;
 	GC gc = new GC (this);
 	int newWidth = item.calculateWidth (0, gc);
@@ -3297,10 +3313,10 @@ void setShouldScrollClipView (long id, long sel, boolean shouldScroll) {
  *
  * @since 3.2
  */
-public void setSelection (TreeItem item) {
+public void setSelection (NativeTreeItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
-	setSelection (new TreeItem [] {item});
+	setSelection (new NativeTreeItem [] {item});
 }
 
 /**
@@ -3324,9 +3340,9 @@ public void setSelection (TreeItem item) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Tree#deselectAll()
+ * @see NativeTree#deselectAll()
  */
-public void setSelection (TreeItem [] items) {
+public void setSelection (NativeTreeItem [] items) {
 	checkWidget ();
 	if (items == null) error (SWT.ERROR_NULL_ARGUMENT);
 	checkItems ();
@@ -3336,7 +3352,7 @@ public void setSelection (TreeItem [] items) {
 	selectItems (items, false);
 	if (items.length > 0) {
 		for (int i = 0; i < items.length; i++) {
-			TreeItem item = items[i];
+			NativeTreeItem item = items[i];
 			if (item != null) {
 				showItem(item, true);
 				break;
@@ -3362,7 +3378,7 @@ public void setSelection (TreeItem [] items) {
  *
  * @since 3.2
  */
-public void setSortColumn (TreeColumn column) {
+public void setSortColumn (NativeTreeColumn column) {
 	checkWidget ();
 	if (column != null && column.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (column == sortColumn) return;
@@ -3389,7 +3405,7 @@ public void setSortDirection  (int direction) {
 	setSort(sortColumn, direction);
 }
 
-void setSort (TreeColumn column, int direction) {
+void setSort (NativeTreeColumn column, int direction) {
 	NSImage image = null;
 	NSTableColumn nsColumn = null;
 	if (column != null) {
@@ -3423,11 +3439,11 @@ void setSort (TreeColumn column, int direction) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Tree#getTopItem()
+ * @see NativeTree#getTopItem()
  *
  * @since 2.1
  */
-public void setTopItem (TreeItem item) {
+public void setTopItem (NativeTreeItem item) {
 	checkWidget();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -3470,7 +3486,7 @@ public void setTopItem (TreeItem item) {
  *
  * @since 3.1
  */
-public void showColumn (TreeColumn column) {
+public void showColumn (NativeTreeColumn column) {
 	checkWidget ();
 	if (column == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (column.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -3497,9 +3513,9 @@ public void showColumn (TreeColumn column) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Tree#showSelection()
+ * @see NativeTree#showSelection()
  */
-public void showItem (TreeItem item) {
+public void showItem (NativeTreeItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -3507,14 +3523,14 @@ public void showItem (TreeItem item) {
 	showItem (item, true);
 }
 
-void showItem (TreeItem item, boolean scroll) {
-	TreeItem parentItem = item.parentItem;
+void showItem (NativeTreeItem item, boolean scroll) {
+	NativeTreeItem parentItem = item.parentItem;
 	if (parentItem != null) {
 		showItem (parentItem, false);
 		if (!parentItem.getExpanded()) {
 			parentItem.setExpanded (true);
 			Event event = new Event ();
-			event.item = parentItem;
+			event.item = parentItem.getWrapper();
 			sendEvent (SWT.Expand, event);
 		}
 	}
@@ -3560,13 +3576,13 @@ void showItem (TreeItem item, boolean scroll) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Tree#showItem(TreeItem)
+ * @see NativeTree#showItem(NativeTreeItem)
  */
 public void showSelection () {
 	checkWidget ();
 	checkItems ();
 	//TODO - optimize
-	TreeItem [] selection = getSelection ();
+	NativeTreeItem [] selection = getSelection ();
 	if (selection.length > 0) {
 		checkData(selection [0]);
 		showItem (selection [0], true);
@@ -3579,6 +3595,9 @@ void updateCursorRects (boolean enabled) {
 	if (headerView == null) return;
 	updateCursorRects (enabled, headerView);
 }
+
+@Override
+public abstract Tree getWrapper();
 
 }
 

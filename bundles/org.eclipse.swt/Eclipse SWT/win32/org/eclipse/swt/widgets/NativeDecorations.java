@@ -93,17 +93,17 @@ import org.eclipse.swt.internal.win32.*;
  *
  * @see #getMinimized
  * @see #getMaximized
- * @see Shell
+ * @see NativeShell
  * @see SWT
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Decorations extends Canvas {
+public abstract class NativeDecorations extends NativeCanvas {
 	Image image, smallImage, largeImage;
 	Image [] images;
-	Menu menuBar;
-	Menu [] menus;
-	Control savedFocus;
+	NativeMenu menuBar;
+	NativeMenu [] menus;
+	NativeControl savedFocus;
 	Button defaultButton, saveDefault;
 	int swFlags, nAccel;
 	long hAccel;
@@ -113,13 +113,13 @@ public class Decorations extends Canvas {
 	RECT maxRect = new RECT();
 
 	static {
-		DPIZoomChangeRegistry.registerHandler(Decorations::handleDPIChange, Decorations.class);
+		DPIZoomChangeRegistry.registerHandler(NativeDecorations::handleDPIChange, Decorations.class);
 	}
 
 /**
  * Prevents uninitialized instances from being created outside the package.
  */
-Decorations () {
+NativeDecorations () {
 }
 
 /**
@@ -158,10 +158,10 @@ Decorations () {
  * @see SWT#DIALOG_TRIM
  * @see SWT#ON_TOP
  * @see SWT#TOOL
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Decorations (Composite parent, int style) {
+protected NativeDecorations (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
@@ -185,15 +185,15 @@ void _setMinimized (boolean minimized) {
 	OS.UpdateWindow (handle);
 }
 
-void addMenu (Menu menu) {
-	if (menus == null) menus = new Menu [4];
+void addMenu (NativeMenu menu) {
+	if (menus == null) menus = new NativeMenu [4];
 	for (int i=0; i<menus.length; i++) {
 		if (menus [i] == null) {
 			menus [i] = menu;
 			return;
 		}
 	}
-	Menu [] newMenus = new Menu [menus.length + 4];
+	NativeMenu [] newMenus = new NativeMenu [menus.length + 4];
 	newMenus [menus.length] = menu;
 	System.arraycopy (menus, 0, newMenus, 0, menus.length);
 	menus = newMenus;
@@ -248,7 +248,7 @@ void checkBorder () {
 	/* Do nothing */
 }
 
-void checkComposited (Composite parent) {
+void checkComposited (NativeComposite parent) {
 	/* Do nothing */
 }
 
@@ -258,7 +258,7 @@ void checkOpened () {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -295,12 +295,12 @@ int compare (ImageData data1, ImageData data2, int width, int height, int depth)
 }
 
 @Override
-Widget computeTabGroup () {
+NativeWidget computeTabGroup () {
 	return this;
 }
 
 @Override
-Control computeTabRoot () {
+NativeControl computeTabRoot () {
 	return this;
 }
 
@@ -336,16 +336,16 @@ Control computeTabRoot () {
 
 void createAccelerators () {
 	hAccel = nAccel = 0;
-	MenuItem [] items = display.items;
+	NativeMenuItem [] items = display.items;
 	if (menuBar == null || items == null) {
 		return;
 	}
 	ACCEL accel = new ACCEL ();
 	byte [] buffer1 = new byte [ACCEL.sizeof];
 	byte [] buffer2 = new byte [items.length * ACCEL.sizeof];
-	for (MenuItem item : items) {
+	for (NativeMenuItem item : items) {
 		if (item != null && item.accelerator != 0) {
-			Menu menu = item.parent;
+			NativeMenu menu = item.parent;
 			if (menu.parent == this) {
 				while (menu != null && menu != menuBar) {
 					menu = menu.getParentMenu ();
@@ -386,9 +386,9 @@ void destroyAccelerators () {
 public void dispose () {
 	if (isDisposed()) return;
 	if (!isValidThread ()) error (SWT.ERROR_THREAD_INVALID_ACCESS);
-	if (!(this instanceof Shell)) {
+	if (!(this instanceof NativeShell)) {
 		if (!traverseDecorations (true)) {
-			Shell shell = getShell ();
+			NativeShell shell = getShell ();
 			shell.setFocus ();
 		}
 		setVisible (false);
@@ -396,21 +396,21 @@ public void dispose () {
 	super.dispose ();
 }
 
-Menu findMenu (long hMenu) {
+NativeMenu findMenu (long hMenu) {
 	if (menus == null) return null;
-	for (Menu menu : menus) {
+	for (NativeMenu menu : menus) {
 		if (menu != null && hMenu == menu.handle) return menu;
 	}
 	return null;
 }
 
-void fixDecorations (Decorations newDecorations, Control control, Menu [] menus) {
+void fixDecorations (NativeDecorations newDecorations, NativeControl control, NativeMenu [] menus) {
 	if (this == newDecorations) return;
 	if (control == savedFocus) savedFocus = null;
-	if (control == defaultButton) defaultButton = null;
-	if (control == saveDefault) saveDefault = null;
+	if (control.getWrapper() == defaultButton) defaultButton = null;
+	if (control.getWrapper() == saveDefault) saveDefault = null;
 	if (menus == null) return;
-	Menu menu = control.menu;
+	NativeMenu menu = control.menu;
 	if (menu != null) {
 		int index = 0;
 		while (index <menus.length) {
@@ -604,7 +604,7 @@ public boolean getMaximized () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Menu getMenuBar () {
+public NativeMenu getMenuBar () {
 	checkWidget ();
 	return menuBar;
 }
@@ -702,7 +702,7 @@ boolean isTabItem () {
 }
 
 @Override
-Decorations menuShell () {
+NativeDecorations menuShell () {
 	return this;
 }
 
@@ -714,7 +714,7 @@ void releaseChildren (boolean destroy) {
 	}
 	super.releaseChildren (destroy);
 	if (menus != null) {
-		for (Menu menu : menus) {
+		for (NativeMenu menu : menus) {
 			if (menu != null && !menu.isDisposed ()) {
 				menu.dispose ();
 			}
@@ -736,7 +736,7 @@ void releaseWidget () {
 	hAccel = -1;
 }
 
-void removeMenu (Menu menu) {
+void removeMenu (NativeMenu menu) {
 	if (menus == null) return;
 	for (int i=0; i<menus.length; i++) {
 		if (menus [i] == menu) {
@@ -750,7 +750,7 @@ void removeMenu (Menu menu) {
 void reskinChildren (int flags) {
 	if (menuBar != null) menuBar.reskin (flags);
 	if (menus != null) {
-		for (Menu menu : menus) {
+		for (NativeMenu menu : menus) {
 			if (menu != null) menu.reskin (flags);
 		}
 	}
@@ -765,7 +765,7 @@ boolean restoreFocus () {
 }
 
 void saveFocus () {
-	Control control = display._getFocusControl ();
+	NativeControl control = display._getFocusControl ();
 	if (control != null && control != this && this == control.menuShell ()) {
 		setSavedFocus (control);
 	}
@@ -829,7 +829,7 @@ public void setDefaultButton (Button button) {
 	checkWidget ();
 	if (button != null) {
 		if (button.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
-		if (button.menuShell () != this) error(SWT.ERROR_INVALID_PARENT);
+		if (button.menuShell () != this.getWrapper()) error(SWT.ERROR_INVALID_PARENT);
 	}
 	setDefaultButton (button, true);
 }
@@ -841,19 +841,20 @@ void setDefaultButton (Button button, boolean save) {
 			return;
 		}
 	} else {
-		if ((button.style & SWT.PUSH) == 0) return;
+		if ((button.getStyle() & SWT.PUSH) == 0) return;
 		if (button == defaultButton) {
 			if (save) saveDefault = defaultButton;
 			return;
 		}
 	}
-	if (defaultButton != null) {
-		if (!defaultButton.isDisposed ()) defaultButton.setDefault (false);
-	}
+	// TODO facade readd
+//	if (defaultButton != null) {
+//		if (!defaultButton.isDisposed ()) defaultButton.setDefault (false);
+//	}
 	if ((defaultButton = button) == null) defaultButton = saveDefault;
-	if (defaultButton != null) {
-		if (!defaultButton.isDisposed ()) defaultButton.setDefault (true);
-	}
+//	if (defaultButton != null) {
+//		if (!defaultButton.isDisposed ()) defaultButton.setDefault (true);
+//	}
 	if (save) saveDefault = defaultButton;
 	if (saveDefault != null && saveDefault.isDisposed ()) saveDefault = null;
 }
@@ -1027,7 +1028,7 @@ public void setMaximized (boolean maximized) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setMenuBar (Menu menu) {
+public void setMenuBar (NativeMenu menu) {
 	checkWidget ();
 	if (menuBar == menu) return;
 	if (menu != null) {
@@ -1075,7 +1076,7 @@ public void setMinimized (boolean minimized) {
 public void setOrientation (int orientation) {
 	super.setOrientation (orientation);
 	if (menus != null) {
-		for (Menu menu : menus) {
+		for (NativeMenu menu : menus) {
 			if (menu != null && !menu.isDisposed () && (menu.getStyle () & SWT.POP_UP) != 0) {
 				menu._setOrientation (menu.getOrientation ());
 			}
@@ -1158,7 +1159,7 @@ void setPlacement (int x, int y, int width, int height, int flags) {
 	}
 }
 
-void setSavedFocus (Control control) {
+void setSavedFocus (NativeControl control) {
 	savedFocus = control;
 }
 
@@ -1338,7 +1339,7 @@ boolean translateAccelerator (MSG msg) {
 	if (!isEnabled () || !isActive ()) return false;
 	if (menuBar != null && !menuBar.isEnabled ()) return false;
 	if (translateMDIAccelerator (msg) || translateMenuAccelerator (msg)) return true;
-	Decorations decorations = parent.menuShell ();
+	NativeDecorations decorations = parent.menuShell ();
 	return decorations.translateAccelerator (msg);
 }
 
@@ -1348,8 +1349,8 @@ boolean translateMenuAccelerator (MSG msg) {
 }
 
 boolean translateMDIAccelerator (MSG msg) {
-	if (!(this instanceof Shell)) {
-		Shell shell = getShell ();
+	if (!(this instanceof NativeShell)) {
+		NativeShell shell = getShell ();
 		long hwndMDIClient = shell.hwndMDIClient;
 		if (hwndMDIClient != 0 && OS.TranslateMDISysAccel (hwndMDIClient, msg)) {
 			return true;
@@ -1378,7 +1379,7 @@ boolean translateMDIAccelerator (MSG msg) {
 }
 
 boolean traverseDecorations (boolean next) {
-	Control [] children = parent._getChildren ();
+	NativeControl [] children = parent._getChildren ();
 	int length = children.length;
 	int index = 0;
 	while (index < length) {
@@ -1393,8 +1394,8 @@ boolean traverseDecorations (boolean next) {
 	*/
 	int start = index, offset = (next) ? 1 : -1;
 	while ((index = (index + offset + length) % length) != start) {
-		Control child = children [index];
-		if (!child.isDisposed () && child instanceof Decorations) {
+		NativeControl child = children [index];
+		if (!child.isDisposed () && child instanceof NativeDecorations) {
 			if (child.setFocus ()) return true;
 		}
 	}
@@ -1410,7 +1411,8 @@ boolean traverseItem (boolean next) {
 boolean traverseReturn () {
 	if (defaultButton == null || defaultButton.isDisposed ()) return false;
 	if (!defaultButton.isVisible () || !defaultButton.isEnabled ()) return false;
-	defaultButton.click ();
+	// TODO facade readd
+//	defaultButton.click ();
 	return true;
 }
 
@@ -1431,7 +1433,7 @@ int widgetExtStyle () {
 
 @Override
 long widgetParent () {
-	Shell shell = getShell ();
+	NativeShell shell = getShell ();
 	return shell.hwndMDIClient ();
 }
 
@@ -1515,9 +1517,9 @@ LRESULT WM_ACTIVATE (long wParam, long lParam) {
 		* events or restore the focus.
 		*/
 		if (OS.HIWORD (wParam) != 0) return result;
-		Control control = display.findControl (lParam);
-		if (control == null || control instanceof Shell) {
-			if (this instanceof Shell) {
+		NativeControl control = display.findControl (lParam);
+		if (control == null || control instanceof NativeShell) {
+			if (this instanceof NativeShell) {
 				Event event = new Event ();
 				event.detail = loWord == OS.WA_CLICKACTIVE ? SWT.MouseDown : SWT.None;
 				sendEvent (SWT.Activate, event);
@@ -1529,12 +1531,12 @@ LRESULT WM_ACTIVATE (long wParam, long lParam) {
 		Display display = this.display;
 		boolean lockWindow = display.isXMouseActive ();
 		if (lockWindow) display.lockActiveWindow = true;
-		Control control = display.findControl (lParam);
-		if (control == null || control instanceof Shell) {
-			if (this instanceof Shell) {
+		NativeControl control = display.findControl (lParam);
+		if (control == null || control instanceof NativeShell) {
+			if (this instanceof NativeShell) {
 				sendEvent (SWT.Deactivate);
 				if (!isDisposed ()) {
-					Shell shell = getShell ();
+					NativeShell shell = getShell ();
 					shell.setActiveControl (null);
 					// widget could be disposed at this point
 				}
@@ -1581,12 +1583,12 @@ LRESULT WM_NCACTIVATE (long wParam, long lParam) {
 	if (result != null) return result;
 	if (wParam == 0) {
 		if (display.lockActiveWindow) return LRESULT.ZERO;
-		Control control = display.findControl (lParam);
+		NativeControl control = display.findControl (lParam);
 		if (control != null) {
-			Shell shell = getShell ();
-			Decorations decorations = control.menuShell ();
+			NativeShell shell = getShell ();
+			NativeDecorations decorations = control.menuShell ();
 			if (decorations.getShell () == shell) {
-				if (this instanceof Shell) return LRESULT.ONE;
+				if (this instanceof NativeShell) return LRESULT.ONE;
 				if (display.ignoreRestoreFocus) {
 					if (display.lastHittest != OS.HTCLIENT) {
 						result = LRESULT.ONE;
@@ -1595,7 +1597,7 @@ LRESULT WM_NCACTIVATE (long wParam, long lParam) {
 			}
 		}
 	}
-	if (!(this instanceof Shell)) {
+	if (!(this instanceof NativeShell)) {
 		long hwndShell = getShell().handle;
 		OS.SendMessage (hwndShell, OS.WM_NCACTIVATE, wParam, lParam);
 	}
@@ -1659,7 +1661,7 @@ LRESULT WM_SIZE (long wParam, long lParam) {
 LRESULT WM_SYSCOMMAND (long wParam, long lParam) {
 	LRESULT result = super.WM_SYSCOMMAND (wParam, lParam);
 	if (result != null) return result;
-	if (!(this instanceof Shell)) {
+	if (!(this instanceof NativeShell)) {
 		int cmd = (int)wParam & 0xFFF0;
 		switch (cmd) {
 			case OS.SC_CLOSE: {
@@ -1689,7 +1691,7 @@ LRESULT WM_WINDOWPOSCHANGING (long wParam, long lParam) {
 }
 
 private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-	if (!(widget instanceof Decorations decorations)) {
+	if (!(Widget.checkNative(widget) instanceof NativeDecorations decorations)) {
 		return;
 	}
 
@@ -1703,12 +1705,17 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 		decorations.setImages(images);
 	}
 
-	DPIZoomChangeRegistry.applyChange(decorations.getMenuBar(), newZoom, scalingFactor);
+	NativeMenu wrappedMenuBar = decorations.getMenuBar();
+	DPIZoomChangeRegistry.applyChange(wrappedMenuBar != null ? wrappedMenuBar.getWrapper() : null, newZoom, scalingFactor);
 
 	if (decorations.menus != null) {
-		for (Menu menu : decorations.menus) {
-			DPIZoomChangeRegistry.applyChange(menu, newZoom, scalingFactor);
+		for (NativeMenu menu : decorations.menus) {
+			DPIZoomChangeRegistry.applyChange(menu.getWrapper(), newZoom, scalingFactor);
 		}
 	}
 }
+
+@Override
+public abstract Decorations getWrapper();
+
 }

@@ -104,14 +104,13 @@ import org.eclipse.swt.widgets.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class DragSource extends Widget {
-
+public abstract class NativeDragSource extends NativeWidget {
 	// info for registering as a drag source
 	Control control;
 	Listener controlListener;
 	Transfer[] transferAgents = new Transfer[0];
 	DragSourceEffect dragEffect;
-	Composite topControl;
+	NativeComposite topControl;
 	long hwndDrag;
 
 	// ole interfaces
@@ -157,8 +156,8 @@ public class DragSource extends Widget {
 		public long Release() {
 			refCount--;
 			if (refCount == 0) {
-				if (DragSource.this.iDropSource == this) {
-					DragSource.this.iDropSource = null;
+				if (NativeDragSource.this.iDropSource == this) {
+					NativeDragSource.this.iDropSource = null;
 				}
 				this.dispose();
 				if (COM.FreeUnusedLibraries) {
@@ -237,8 +236,8 @@ public class DragSource extends Widget {
 		public long Release() {
 			refCount--;
 			if (refCount == 0) {
-				if (DragSource.this.iDataObject == this) {
-					DragSource.this.iDataObject = null;
+				if (NativeDragSource.this.iDataObject == this) {
+					NativeDragSource.this.iDataObject = null;
 				}
 				this.dispose();
 				if (COM.FreeUnusedLibraries) {
@@ -254,7 +253,7 @@ public class DragSource extends Widget {
 		 * @return <code>true</true> if this object currently used for DND
 		 */
 		private boolean isActive() {
-			return DragSource.this.iDataObject == this;
+			return NativeDragSource.this.iDataObject == this;
 		}
 
 		private int GetData(long pFormatetc, long pmedium) {
@@ -277,7 +276,7 @@ public class DragSource extends Widget {
 			final Object data;
 			if (isActive()) {
 				DNDEvent event = new DNDEvent();
-				event.widget = DragSource.this;
+				event.widget = NativeDragSource.this.getWrapper();
 				event.time = OS.GetMessageTime();
 				event.dataType = transferData;
 				notifyListeners(DND.DragSetData,event);
@@ -355,36 +354,36 @@ public class DragSource extends Widget {
  * recoverable error, but can not be changed due to backward compatibility.</p>
  *
  * @see Widget#dispose
- * @see DragSource#checkSubclass
+ * @see NativeDragSource#checkSubclass
  * @see DND#DROP_NONE
  * @see DND#DROP_COPY
  * @see DND#DROP_MOVE
  * @see DND#DROP_LINK
  */
-public DragSource(Control control, int style) {
-	super(control, checkStyle(style));
+protected NativeDragSource(Control control, int style) {
+	super(Widget.checkNative(control), checkStyle(style));
 	this.control = control;
 	if (control.getData(DND.DRAG_SOURCE_KEY) != null) {
 		DND.error(DND.ERROR_CANNOT_INIT_DRAG);
 	}
-	control.setData(DND.DRAG_SOURCE_KEY, this);
+	control.setData(DND.DRAG_SOURCE_KEY, this.getWrapper());
 
 	controlListener = event -> {
 		if (event.type == SWT.Dispose) {
-			if (!DragSource.this.isDisposed()) {
-				DragSource.this.dispose();
+			if (!NativeDragSource.this.isDisposed()) {
+				NativeDragSource.this.dispose();
 			}
 		}
 		if (event.type == SWT.DragDetect) {
-			if (!DragSource.this.isDisposed()) {
-				DragSource.this.drag(event);
+			if (!NativeDragSource.this.isDisposed()) {
+				NativeDragSource.this.drag(event);
 			}
 		}
 	};
 	control.addListener(SWT.Dispose, controlListener);
 	control.addListener(SWT.DragDetect, controlListener);
 
-	this.addListener(SWT.Dispose, e -> DragSource.this.onDispose());
+	this.addListener(SWT.Dispose, e -> NativeDragSource.this.onDispose());
 
 	Object effect = control.getData(DEFAULT_DRAG_SOURCE_EFFECT);
 	if (effect instanceof DragSourceEffect) {
@@ -434,7 +433,7 @@ static int checkStyle(int style) {
 public void addDragListener(DragSourceListener listener) {
 	if (listener == null) DND.error(SWT.ERROR_NULL_ARGUMENT);
 	DNDListener typedListener = new DNDListener(listener);
-	typedListener.dndWidget = this;
+	typedListener.dndWidget = this.getWrapper();
 	addListener(DND.DragStart, typedListener);
 	addListener(DND.DragSetData, typedListener);
 	addListener(DND.DragEnd, typedListener);
@@ -447,11 +446,11 @@ private void createCOMInterfaces() {
 }
 
 @Override
-protected void checkSubclass() {
-	String name = getClass().getName();
-	String validName = DragSource.class.getName();
-	if (!validName.equals(name)) {
-		DND.error(SWT.ERROR_INVALID_SUBCLASS);
+public void checkSubclass () {
+	String name = getClass().getName ();
+	String validName = NativeDragSource.class.getPackageName();
+	if (!name.startsWith(validName)) {
+		DND.error (SWT.ERROR_INVALID_SUBCLASS);
 	}
 }
 
@@ -472,7 +471,7 @@ boolean canBeginDrag() {
 
 private void drag(Event dragEvent) {
 	DNDEvent event = new DNDEvent();
-	event.widget = this;
+	event.widget = this.getWrapper();
 	event.x = dragEvent.x;
 	event.y = dragEvent.y;
 	event.time = OS.GetMessageTime();
@@ -494,7 +493,7 @@ private void drag(Event dragEvent) {
 		int zoom = DPIUtil.getZoomForAutoscaleProperty(nativeZoom);
 		imagelist = new ImageList(SWT.NONE, zoom);
 		imagelist.add(image);
-		topControl = control.getShell();
+		topControl = Widget.checkNative(control).getShell();
 		/*
 		 * Bug in Windows. The image is inverted if the shell is RIGHT_TO_LEFT.
 		 * The fix is to create a transparent window that covers the shell client
@@ -534,7 +533,7 @@ private void drag(Event dragEvent) {
 		POINT pt = new POINT ();
 		pt.x = DPIUtil.scaleUp(dragEvent.x, zoom);// To Pixels
 		pt.y = DPIUtil.scaleUp(dragEvent.y, zoom);// To Pixels
-		OS.MapWindowPoints (control.handle, 0, pt, 1);
+		OS.MapWindowPoints (Widget.checkNative(control).handle, 0, pt, 1);
 		RECT rect = new RECT ();
 		OS.GetWindowRect (hwndDrag, rect);
 		OS.ImageList_DragEnter(hwndDrag, pt.x - rect.left, pt.y - rect.top);
@@ -569,7 +568,7 @@ private void drag(Event dragEvent) {
 	}
 
 	event = new DNDEvent();
-	event.widget = this;
+	event.widget = this.getWrapper();
 	event.time = OS.GetMessageTime();
 	event.doit = (result == COM.DRAGDROP_S_DROP);
 	event.detail = operation;
@@ -824,5 +823,8 @@ public void setDragSourceEffect(DragSourceEffect effect) {
 public void setTransfer(Transfer... transferAgents){
 	this.transferAgents = transferAgents;
 }
+
+@Override
+public abstract DragSource getWrapper();
 
 }

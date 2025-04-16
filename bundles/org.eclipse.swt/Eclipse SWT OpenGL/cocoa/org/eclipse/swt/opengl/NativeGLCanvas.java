@@ -27,7 +27,7 @@ import org.eclipse.swt.widgets.*;
  * @since 3.2
  */
 
-public class GLCanvas extends Canvas {
+public abstract class NativeGLCanvas extends NativeCanvas {
 	NSOpenGLContext context;
 	NSOpenGLPixelFormat pixelFormat;
 
@@ -47,7 +47,7 @@ public class GLCanvas extends Canvas {
  *     <li>ERROR_UNSUPPORTED_DEPTH when the requested attributes cannot be provided</li>
  * </ul>
  */
-public GLCanvas (Composite parent, int style, GLData data) {
+protected NativeGLCanvas (NativeComposite parent, int style, GLData data) {
 	super (parent, style);
 	if (data == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	int attrib [] = new int [MAX_ATTRIBUTES];
@@ -112,7 +112,7 @@ public GLCanvas (Composite parent, int style, GLData data) {
 	}
 	pixelFormat.initWithAttributes(attrib);
 
-	NSOpenGLContext ctx = data.shareContext != null ? data.shareContext.context : null;
+	NSOpenGLContext ctx = data.shareContext != null ? data.shareContext.getWrappedWidget().context : null;
 	context = (NSOpenGLContext) new NSOpenGLContext().alloc();
 	if (context == null) {
 		dispose ();
@@ -245,4 +245,8 @@ public void swapBuffers () {
 	checkWidget ();
 	context.flushBuffer();
 }
+
+@Override
+public abstract Canvas getWrapper();
+
 }

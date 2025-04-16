@@ -94,23 +94,23 @@ import org.eclipse.swt.internal.gtk4.*;
  *
  * @see #getMinimized
  * @see #getMaximized
- * @see Shell
+ * @see NativeShell
  * @see SWT
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Decorations extends Canvas {
+public abstract class NativeDecorations extends NativeCanvas {
 	String text;
 	Image image;
 	Image [] images = new Image [0];
 	boolean minimized, maximized;
-	Menu menuBar;
-	Menu [] menus;
-	Control savedFocus;
+	NativeMenu menuBar;
+	NativeMenu [] menus;
+	NativeControl savedFocus;
 	Button defaultButton, saveDefault;
 	long accelGroup, vboxHandle;
 
-Decorations () {
+NativeDecorations () {
 	/* Do nothing */
 }
 
@@ -150,10 +150,10 @@ Decorations () {
  * @see SWT#DIALOG_TRIM
  * @see SWT#ON_TOP
  * @see SWT#TOOL
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Decorations (Composite parent, int style) {
+protected NativeDecorations (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
@@ -170,7 +170,7 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -217,15 +217,15 @@ void _setImages (Image [] images) {
 	if (icon_list != 0) OS.g_list_free(icon_list);
 }
 
-void addMenu (Menu menu) {
-	if (menus == null) menus = new Menu [4];
+void addMenu (NativeMenu menu) {
+	if (menus == null) menus = new NativeMenu [4];
 	for (int i=0; i<menus.length; i++) {
 		if (menus [i] == null) {
 			menus [i] = menu;
 			return;
 		}
 	}
-	Menu [] newMenus = new Menu [menus.length + 4];
+	NativeMenu [] newMenus = new NativeMenu [menus.length + 4];
 	newMenus [menus.length] = menu;
 	System.arraycopy (menus, 0, newMenus, 0, menus.length);
 	menus = newMenus;
@@ -247,12 +247,12 @@ int compare (ImageData data1, ImageData data2) {
 }
 
 @Override
-Widget computeTabGroup () {
+NativeWidget computeTabGroup () {
 	return this;
 }
 
 @Override
-Control computeTabRoot () {
+NativeControl computeTabRoot () {
 	return this;
 }
 
@@ -287,13 +287,13 @@ void fixAccelGroup () {
 	menuBar.addAccelerators (accelGroup);
 }
 
-void fixDecorations (Decorations newDecorations, Control control, Menu [] menus) {
+void fixDecorations (NativeDecorations newDecorations, NativeControl control, NativeMenu [] menus) {
 	if (this == newDecorations) return;
 	if (control == savedFocus) savedFocus = null;
-	if (control == defaultButton) defaultButton = null;
-	if (control == saveDefault) saveDefault = null;
+	if (control.getWrapper() == defaultButton) defaultButton = null;
+	if (control.getWrapper() == saveDefault) saveDefault = null;
 	if (menus == null) return;
-	Menu menu = control.menu;
+	NativeMenu menu = control.menu;
 	if (menu != null) {
 		int index = 0;
 		while (index <menus.length) {
@@ -417,7 +417,7 @@ public boolean getMaximized () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Menu getMenuBar () {
+public NativeMenu getMenuBar () {
 	checkWidget();
 	return menuBar;
 }
@@ -480,11 +480,11 @@ boolean isTabItem () {
 }
 
 @Override
-Decorations menuShell () {
+NativeDecorations menuShell () {
 	return this;
 }
 
-void removeMenu (Menu menu) {
+void removeMenu (NativeMenu menu) {
 	if (menus == null) return;
 	for (int i=0; i<menus.length; i++) {
 		if (menus [i] == menu) {
@@ -503,7 +503,7 @@ void releaseChildren (boolean destroy) {
 	super.releaseChildren (destroy);
 	if (menus != null) {
 		for (int i=0; i<menus.length; i++) {
-			Menu menu = menus [i];
+			NativeMenu menu = menus [i];
 			if (menu != null && !menu.isDisposed ()) {
 				menu.dispose ();
 			}
@@ -532,7 +532,7 @@ void reskinChildren (int flags) {
 	if (menuBar != null) menuBar.reskin (flags);
 	if (menus != null) {
 		for (int i=0; i<menus.length; i++) {
-			Menu menu = menus [i];
+			NativeMenu menu = menus [i];
 			if (menu != null) menu.reskin (flags);
 		}
 	}
@@ -575,16 +575,18 @@ public void setDefaultButton (Button button) {
 	checkWidget();
 	long buttonHandle = 0;
 	if (saveDefault != null && !saveDefault.isDisposed ()  ) {
-		long saveButtonHandle = saveDefault.handle;
-		if (saveButtonHandle != 0) {
-			long context = GTK.gtk_widget_get_style_context (saveButtonHandle);
-			GTK.gtk_style_context_remove_class(context, GTK.GTK_STYLE_CLASS_SUGGESTED_ACTION);
-		}
+		// TODO Facade readd
+//		long saveButtonHandle = saveDefault.handle;
+//		if (saveButtonHandle != 0) {
+//			long context = GTK.gtk_widget_get_style_context (saveButtonHandle);
+//			GTK.gtk_style_context_remove_class(context, GTK.GTK_STYLE_CLASS_SUGGESTED_ACTION);
+//		}
 	}
 	if (button != null) {
 		if (button.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
-		if (button.menuShell () != this) error (SWT.ERROR_INVALID_PARENT);
-		buttonHandle = button.handle;
+		if (button.menuShell () != this.getWrapper()) error (SWT.ERROR_INVALID_PARENT);
+		// TODO Facade readd
+//		buttonHandle = button.handle;
 	}
 	saveDefault = defaultButton = button;
 	if (buttonHandle != 0) {
@@ -702,7 +704,7 @@ public void setMaximized (boolean maximized) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setMenuBar (Menu menu) {
+public void setMenuBar (NativeMenu menu) {
 	checkWidget();
 	if (menuBar == menu) return;
 	if (menu != null) {
@@ -748,7 +750,7 @@ void setOrientation (boolean create) {
 	}
 }
 
-void setSavedFocus (Control control) {
+void setSavedFocus (NativeControl control) {
 	if (this == control) return;
 	savedFocus = control;
 }
@@ -827,5 +829,8 @@ boolean traverseReturn () {
 		return GTK3.gtk_window_activate_default (shellHandle);
 	}
 }
+
+@Override
+public abstract Decorations getWrapper();
 
 }

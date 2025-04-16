@@ -40,7 +40,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class FileDialog extends Dialog {
+public class NativeFileDialog extends NativeDialog {
 	String [] filterNames = new String [0];
 	String [] filterExtensions = new String [0];
 	String [] fileNames = new String [0];
@@ -63,7 +63,7 @@ public class FileDialog extends Dialog {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public FileDialog (Shell parent) {
+public NativeFileDialog (NativeShell parent) {
 	this (parent, SWT.APPLICATION_MODAL);
 }
 
@@ -95,7 +95,7 @@ public FileDialog (Shell parent) {
  * @see SWT#OPEN
  * @see SWT#MULTI
  */
-public FileDialog (Shell parent, int style) {
+public NativeFileDialog (NativeShell parent, int style) {
 	super (parent, checkStyle (parent, style));
 	checkSubclass ();
 }
@@ -229,7 +229,7 @@ public String open () {
 
 /**
  * Makes the dialog visible and brings it to the front of the display.
- * Equal to {@link FileDialog#open()} but also exposes for state information like user cancellation.
+ * Equal to {@link NativeFileDialog#open()} but also exposes for state information like user cancellation.
  *
  * @return an Optional that either contains the absolute path of the first selected file
  *         or is empty in case the dialog was canceled
@@ -338,7 +338,7 @@ public Optional<String> openDialog () {
 	}
 
 	/* Make the parent shell be temporary modal */
-	Dialog oldModal = null;
+	NativeDialog oldModal = null;
 	Display display = parent.getDisplay();
 	if ((style & (SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL)) != 0) {
 		oldModal = display.getModalDialog();

@@ -37,8 +37,8 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class TableColumn extends Item {
-	Table parent;
+public abstract class NativeTableColumn extends NativeItem {
+	NativeTable parent;
 	NSTableColumn nsColumn;
 	String toolTipText, displayText;
 	boolean movable;
@@ -74,10 +74,10 @@ public class TableColumn extends Item {
  * @see SWT#LEFT
  * @see SWT#RIGHT
  * @see SWT#CENTER
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TableColumn (Table parent, int style) {
+protected NativeTableColumn (NativeTable parent, int style) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	parent.createItem (this, parent.columnCount);
@@ -117,10 +117,10 @@ public TableColumn (Table parent, int style) {
  * @see SWT#LEFT
  * @see SWT#RIGHT
  * @see SWT#CENTER
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TableColumn (Table parent, int style, int index) {
+protected NativeTableColumn (NativeTable parent, int style, int index) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	parent.createItem (this, index);
@@ -182,7 +182,7 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -421,7 +421,7 @@ String getNameText () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Table getParent () {
+public NativeTable getParent () {
 	checkWidget ();
 	return parent;
 }
@@ -439,9 +439,9 @@ public Table getParent () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#getColumnOrder()
- * @see Table#setColumnOrder(int[])
- * @see TableColumn#setMoveable(boolean)
+ * @see NativeTable#getColumnOrder()
+ * @see NativeTable#setColumnOrder(int[])
+ * @see NativeTableColumn#setMoveable(boolean)
  * @see SWT#Move
  *
  * @since 3.1
@@ -500,7 +500,7 @@ public int getWidth () {
 	checkWidget ();
 	int width = (int)nsColumn.width();
 	// TODO how to differentiate 0 and 1 cases?
-	if (width > 0) width += Table.CELL_GAP;
+	if (width > 0) width += NativeTable.CELL_GAP;
 	return width;
 }
 
@@ -669,9 +669,9 @@ public void setImage (Image image) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#setColumnOrder(int[])
- * @see Table#getColumnOrder()
- * @see TableColumn#getMoveable()
+ * @see NativeTable#setColumnOrder(int[])
+ * @see NativeTable#getColumnOrder()
+ * @see NativeTableColumn#getMoveable()
  * @see SWT#Move
  *
  * @since 3.1
@@ -765,7 +765,7 @@ public void setWidth (int width) {
 	checkWidget ();
 	if (width < 0) return;
 	// TODO how to differentiate 0 and 1 cases?
-	width = Math.max (0, width - Table.CELL_GAP);
+	width = Math.max (0, width - NativeTable.CELL_GAP);
 	nsColumn.setWidth (width);
 }
 
@@ -773,5 +773,8 @@ public void setWidth (int width) {
 String tooltipText () {
 	return toolTipText;
 }
+
+@Override
+public abstract TableColumn getWrapper();
 
 }

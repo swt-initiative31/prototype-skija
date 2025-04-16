@@ -75,8 +75,7 @@ import org.eclipse.swt.widgets.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class DropTarget extends Widget {
-
+public abstract class NativeDropTarget extends NativeWidget {
 	Control control;
 	Listener controlListener;
 	Transfer[] transferAgents = new Transfer[0];
@@ -125,30 +124,30 @@ public class DropTarget extends Widget {
  * recoverable error, but can not be changed due to backward compatibility.</p>
  *
  * @see Widget#dispose
- * @see DropTarget#checkSubclass
+ * @see NativeDropTarget#checkSubclass
  * @see DND#DROP_NONE
  * @see DND#DROP_COPY
  * @see DND#DROP_MOVE
  * @see DND#DROP_LINK
  */
-public DropTarget(Control control, int style) {
-	super (control, checkStyle(style));
+protected NativeDropTarget(Control control, int style) {
+	super (Widget.checkNative(control), checkStyle(style));
 	this.control = control;
 	if (control.getData(DND.DROP_TARGET_KEY) != null) {
 		DND.error(DND.ERROR_CANNOT_INIT_DROP);
 	}
-	control.setData(DND.DROP_TARGET_KEY, this);
+	control.setData(DND.DROP_TARGET_KEY, this.getWrapper());
 	createCOMInterfaces();
 	this.AddRef();
 
 	if (COM.CoLockObjectExternal(iDropTarget.getAddress(), true, true) != COM.S_OK)
 		DND.error(DND.ERROR_CANNOT_INIT_DROP);
-	if (COM.RegisterDragDrop( control.handle, iDropTarget.getAddress()) != COM.S_OK)
+	if (COM.RegisterDragDrop(Widget.checkNative(control).handle, iDropTarget.getAddress()) != COM.S_OK)
 		DND.error(DND.ERROR_CANNOT_INIT_DROP);
 
 	controlListener = event -> {
-		if (!DropTarget.this.isDisposed()){
-			DropTarget.this.dispose();
+		if (!NativeDropTarget.this.isDisposed()){
+			NativeDropTarget.this.dispose();
 		}
 	};
 	control.addListener (SWT.Dispose, controlListener);
@@ -206,7 +205,7 @@ static int checkStyle (int style) {
 public void addDropListener(DropTargetListener listener) {
 	if (listener == null) DND.error (SWT.ERROR_NULL_ARGUMENT);
 	DNDListener typedListener = new DNDListener (listener);
-	typedListener.dndWidget = this;
+	typedListener.dndWidget = this.getWrapper();
 	addListener (DND.DragEnter, typedListener);
 	addListener (DND.DragLeave, typedListener);
 	addListener (DND.DragOver, typedListener);
@@ -221,10 +220,10 @@ int AddRef() {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	String name = getClass().getName ();
-	String validName = DropTarget.class.getName();
-	if (!validName.equals(name)) {
+	String validName = NativeDropTarget.class.getPackageName();
+	if (!name.startsWith(validName)) {
 		DND.error (SWT.ERROR_INVALID_SUBCLASS);
 	}
 }
@@ -331,7 +330,7 @@ int DragLeave() {
 	if (iDataObject == null) return COM.S_FALSE;
 
 	DNDEvent event = new DNDEvent();
-	event.widget = this;
+	event.widget = this.getWrapper();
 	event.time = OS.GetMessageTime();
 	event.detail = DND.DROP_NONE;
 	notifyListeners(DND.DragLeave, event);
@@ -409,7 +408,7 @@ int Drop(long pDataObject, int grfKeyState, int pt_x, int pt_y, long pdwEffect) 
 		pt_x = DPIUtil.scaleDown(pt_x, zoom);// To Points
 		pt_y = DPIUtil.scaleDown(pt_y, zoom);// To Points
 		DNDEvent event = new DNDEvent();
-		event.widget = this;
+		event.widget = this.getWrapper();
 		event.time = OS.GetMessageTime();
 		if (dropEffect != null) {
 			event.item = dropEffect.getItem(pt_x, pt_y);
@@ -560,7 +559,7 @@ public Transfer[] getTransfer() {
 void onDispose () {
 	if (control == null) return;
 
-	COM.RevokeDragDrop(control.handle);
+	COM.RevokeDragDrop(Widget.checkNative(control).handle);
 
 	if (controlListener != null)
 		control.removeListener(SWT.Dispose, controlListener);
@@ -645,7 +644,7 @@ int Release() {
 
 void refresh() {
 	if (control == null || control.isDisposed()) return;
-	long handle = control.handle;
+	long handle = Widget.checkNative(control).handle;
 	RECT lpRect = new RECT();
 	if (OS.GetUpdateRect(handle, lpRect, false)) {
 		OS.ImageList_DragShowNolock(false);
@@ -759,7 +758,7 @@ boolean setEventData(DNDEvent event, long pDataObject, int grfKeyState, int pt_x
 	}
 	if (dataTypes.length == 0) return false;
 
-	event.widget = this;
+	event.widget = this.getWrapper();
 	event.x = pt_x;
 	event.y = pt_y;
 	event.time = OS.GetMessageTime();
@@ -791,4 +790,8 @@ public void setTransfer(Transfer... transferAgents){
 	if (transferAgents == null) DND.error(SWT.ERROR_NULL_ARGUMENT);
 	this.transferAgents = transferAgents;
 }
+
+@Override
+public abstract DropTarget getWrapper();
+
 }

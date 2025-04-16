@@ -40,7 +40,7 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class FileDialog extends Dialog {
+public class NativeFileDialog extends NativeDialog {
 	Callback callback_completion_handler;
 	Callback callback_overwrite_existing_file;
 	Callback callback_performKeyEquivalent;
@@ -75,7 +75,7 @@ public class FileDialog extends Dialog {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public FileDialog (Shell parent) {
+public NativeFileDialog (NativeShell parent) {
 	this (parent, SWT.APPLICATION_MODAL);
 }
 
@@ -107,7 +107,7 @@ public FileDialog (Shell parent) {
  * @see SWT#OPEN
  * @see SWT#MULTI
  */
-public FileDialog (Shell parent, int style) {
+public NativeFileDialog (NativeShell parent, int style) {
 	super (parent, checkStyle (parent, style));
 	if (Display.getSheetEnabled ()) {
 		if (parent != null && (style & SWT.SHEET) != 0) this.style |= SWT.SHEET;
@@ -366,7 +366,7 @@ public String open () {
 
 /**
  * Makes the dialog visible and brings it to the front of the display.
- * Equal to {@link FileDialog#open()} but also exposes for state information like user cancellation.
+ * Equal to {@link NativeFileDialog#open()} but also exposes for state information like user cancellation.
  *
  * @return an Optional that either contains the absolute path of the first selected file
  *         or is empty in case the dialog was canceled

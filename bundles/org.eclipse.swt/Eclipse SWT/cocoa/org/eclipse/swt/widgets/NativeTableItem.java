@@ -35,8 +35,8 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class TableItem extends Item {
-	Table parent;
+public abstract class NativeTableItem extends NativeItem {
+	NativeTable parent;
 	String [] strings;
 	Image [] images;
 	boolean checked, grayed, cached;
@@ -73,10 +73,10 @@ public class TableItem extends Item {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TableItem (Table parent, int style) {
+protected NativeTableItem (NativeTable parent, int style) {
 	this (parent, style, checkNull (parent).getItemCount (), true);
 }
 
@@ -109,20 +109,20 @@ public TableItem (Table parent, int style) {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TableItem (Table parent, int style, int index) {
+protected NativeTableItem (NativeTable parent, int style, int index) {
 	this (parent, style, index, true);
 }
 
-TableItem (Table parent, int style, int index, boolean create) {
+NativeTableItem (NativeTable parent, int style, int index, boolean create) {
 	super (parent, style);
 	this.parent = parent;
 	if (create) parent.createItem (this, index);
 }
 
-static Table checkNull (Table control) {
+static NativeTable checkNull (NativeTable control) {
 	if (control == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	return control;
 }
@@ -158,7 +158,7 @@ int calculateWidth (int index, GC gc, boolean rowSelected) {
 	super_struct.super_class = OS.objc_msgSend(cell.id, OS.sel_superclass);
 	NSSize size = new NSSize();
 	OS.objc_msgSendSuper_stret(size, super_struct, OS.sel_cellSize);
-	if (image != null) size.width += parent.imageBounds.width + Table.IMAGE_GAP;
+	if (image != null) size.width += parent.imageBounds.width + NativeTable.IMAGE_GAP;
 //	cell.setImage (image != null ? image.handle : null);
 //	NSSize size = cell.cellSize ();
 
@@ -170,7 +170,7 @@ int calculateWidth (int index, GC gc, boolean rowSelected) {
 	if (sendMeasure && parent.hooks (SWT.MeasureItem)) {
 		gc.setFont (font);
 		Event event = new Event ();
-		event.item = this;
+		event.item = this.getWrapper();
 		event.index = index;
 		event.gc = gc;
 		NSTableView widget = (NSTableView)parent.view;
@@ -190,7 +190,7 @@ int calculateWidth (int index, GC gc, boolean rowSelected) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -284,7 +284,7 @@ public Rectangle getBounds () {
 	int columnIndex = parent.indexOf (column);
 	NSRect titleRect = widget.frameOfCellAtColumn (columnIndex, rowIndex);
 	if (image != null) {
-		titleRect.x += parent.imageBounds.width + Table.IMAGE_GAP;
+		titleRect.x += parent.imageBounds.width + NativeTable.IMAGE_GAP;
 	}
 	Font font = null;
 	if (cellFont != null) font = cellFont[columnIndex];
@@ -338,7 +338,7 @@ public Rectangle getBounds (int index) {
 	if (parent.columnCount == 0) {
 		index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
 	} else {
-		TableColumn column = parent.getColumn (index);
+		NativeTableColumn column = parent.getColumn (index);
 		index = parent.indexOf (column.nsColumn);
 	}
 	NSRect rect = tableView.frameOfCellAtColumn (index, parent.indexOf (this));
@@ -518,11 +518,11 @@ public Rectangle getImageBounds (int index) {
 	if (parent.columnCount == 0) {
 		index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
 	} else {
-		TableColumn column = parent.getColumn (index);
+		NativeTableColumn column = parent.getColumn (index);
 		index = parent.indexOf (column.nsColumn);
 	}
 	NSRect rect = tableView.frameOfCellAtColumn (index, parent.indexOf (this));
-	rect.x += Table.IMAGE_GAP;
+	rect.x += NativeTable.IMAGE_GAP;
 	if (image != null) {
 		rect.width = parent.imageBounds.width;
 	} else {
@@ -565,7 +565,7 @@ String getNameText () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Table getParent () {
+public NativeTable getParent () {
 	checkWidget ();
 	return parent;
 }
@@ -628,14 +628,14 @@ public Rectangle getTextBounds (int index) {
 	if (parent.columnCount == 0) {
 		index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
 	} else {
-		TableColumn column = parent.getColumn (index);
+		NativeTableColumn column = parent.getColumn (index);
 		index = parent.indexOf (column.nsColumn);
 	}
 	NSRect rect = tableView.frameOfCellAtColumn (index, parent.indexOf (this));
-	rect.x += Table.TEXT_GAP;
-	rect.width -= Table.TEXT_GAP;
+	rect.x += NativeTable.TEXT_GAP;
+	rect.width -= NativeTable.TEXT_GAP;
 	if (image != null) {
-		int offset = parent.imageBounds.width + Table.IMAGE_GAP;
+		int offset = parent.imageBounds.width + NativeTable.IMAGE_GAP;
 		rect.x += offset;
 		rect.width -= offset;
 	}
@@ -1095,5 +1095,8 @@ public void setText (String string) {
 	checkWidget ();
 	setText (0, string);
 }
+
+@Override
+public abstract TableItem getWrapper();
 
 }

@@ -14,6 +14,8 @@
 package org.eclipse.swt.widgets;
 
 
+import java.util.concurrent.atomic.*;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
@@ -39,11 +41,11 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class MenuItem extends Item {
-	Menu parent, menu;
+public abstract class NativeMenuItem extends NativeItem {
+	NativeMenu parent, menu;
 	long hBitmap;
 	int id, accelerator, userId;
-	ToolTip itemToolTip;
+	NativeToolTip itemToolTip;
 	/* Image margin. */
 	final static int MARGIN_WIDTH = 1;
 	final static int MARGIN_HEIGHT = 1;
@@ -54,7 +56,7 @@ public class MenuItem extends Item {
 	// This static is used to mitigate this increase
 	private final static int WINDOWS_OVERHEAD = 6;
 	static {
-		DPIZoomChangeRegistry.registerHandler(MenuItem::handleDPIChange, MenuItem.class);
+		DPIZoomChangeRegistry.registerHandler(NativeMenuItem::handleDPIChange, MenuItem.class);
 	}
 
 /**
@@ -88,10 +90,10 @@ public class MenuItem extends Item {
  * @see SWT#PUSH
  * @see SWT#RADIO
  * @see SWT#SEPARATOR
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public MenuItem (Menu parent, int style) {
+protected NativeMenuItem (NativeMenu parent, int style) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	parent.createItem (this, parent.getItemCount ());
@@ -130,10 +132,10 @@ public MenuItem (Menu parent, int style) {
  * @see SWT#PUSH
  * @see SWT#RADIO
  * @see SWT#SEPARATOR
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public MenuItem (Menu parent, int style, int index) {
+protected NativeMenuItem (NativeMenu parent, int style, int index) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	parent.createItem (this, index);
@@ -220,7 +222,7 @@ public void addSelectionListener (SelectionListener listener) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -275,7 +277,7 @@ boolean fillAccel (ACCEL accel) {
 	return true;
 }
 
-void fixMenus (Decorations newParent) {
+void fixMenus (NativeDecorations newParent) {
 	this.nativeZoom = newParent.nativeZoom;
 	if (menu != null && !menu.isDisposed() && !newParent.isDisposed()) menu.fixMenus (newParent);
 }
@@ -317,7 +319,7 @@ public int getAccelerator () {
 	int index = parent.indexOf (this);
 	if (index == -1) return new Rectangle (0, 0, 0, 0);
 	if ((parent.style & SWT.BAR) != 0) {
-		Decorations shell = parent.parent;
+		NativeDecorations shell = parent.parent;
 		if (shell.menuBar != parent) {
 			return new Rectangle (0, 0, 0, 0);
 		}
@@ -424,7 +426,7 @@ public int getID () {
 @Override
 public Menu getMenu () {
 	checkWidget ();
-	return menu;
+	return menu != null ? menu.getWrapper() : null;
 }
 
 @Override
@@ -443,7 +445,7 @@ String getNameText () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Menu getParent () {
+public NativeMenu getParent () {
 	checkWidget ();
 	return parent;
 }
@@ -637,7 +639,7 @@ void reskinChildren (int flags) {
 
 void selectRadio () {
 	int index = 0;
-	MenuItem [] items = parent.getItems ();
+	NativeMenuItem [] items = parent.getItems ();
 	while (index < items.length && items [index] != this) index++;
 	int i = index - 1;
 	while (i >= 0 && items [i].setRadioSelection (false)) --i;
@@ -817,7 +819,7 @@ public void setImage (Image image) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setMenu (Menu menu) {
+public void setMenu (NativeMenu menu) {
 	checkWidget ();
 
 	/* Check to make sure the new menu is valid */
@@ -836,10 +838,10 @@ public void setMenu (Menu menu) {
 	setMenu (menu, false);
 }
 
-void setMenu (Menu menu, boolean dispose) {
+void setMenu (NativeMenu menu, boolean dispose) {
 
 	/* Assign the new menu */
-	Menu oldMenu = this.menu;
+	NativeMenu oldMenu = this.menu;
 	if (oldMenu == menu) return;
 	if (oldMenu != null) oldMenu.cascade = null;
 	this.menu = menu;
@@ -1042,7 +1044,7 @@ public void setText (String string) {
  * </p>
  * <p>
  * NOTE: Tooltips are currently not shown for top-level menu items in the
- * {@link Shell#setMenuBar(Menu) shell menubar} on Windows, Mac, and Ubuntu Unity desktop.
+ * {@link NativeShell#setMenuBar(NativeMenu) shell menubar} on Windows, Mac, and Ubuntu Unity desktop.
  * </p>
  * <p>
  * NOTE: This operation is a hint and behavior is platform specific, on Windows
@@ -1073,7 +1075,14 @@ public void setToolTipText (String toolTip) {
 			|| (itemToolTip != null && !itemToolTip.isDisposed() && toolTip.equals(itemToolTip.getMessage()))) return;
 
 	if (itemToolTip != null) itemToolTip.dispose();
-	itemToolTip = new MenuItemToolTip (this.getParent().getShell());
+	AtomicReference<ToolTip> wrapperToolTip = new AtomicReference<>();
+	itemToolTip = new MenuItemToolTip (this.getParent().getShell()) {
+		@Override
+		public ToolTip getWrapper() {
+			return wrapperToolTip.get();
+		}
+	};
+	wrapperToolTip.set(new ToolTip(itemToolTip));
 	itemToolTip.setMessage (toolTip);
 	itemToolTip.setVisible (false);
 }
@@ -1086,7 +1095,7 @@ void showTooltip (int x, int y) {
 
 int widgetStyle () {
 	int bits = 0;
-	Decorations shell = parent.parent;
+	NativeDecorations shell = parent.parent;
 	if ((shell.style & SWT.MIRRORED) != 0) {
 		if ((parent.style & SWT.LEFT_TO_RIGHT) != 0) {
 			bits |= OS.MFT_RIGHTJUSTIFY | OS.MFT_RIGHTORDER;
@@ -1245,7 +1254,7 @@ LRESULT wmMeasureChild (long wParam, long lParam) {
 		long hMenu = parent.handle;
 		OS.GetMenuInfo (hMenu, lpcmi);
 		if ((lpcmi.dwStyle & OS.MNS_CHECKORBMP) == 0) {
-			for (MenuItem item : parent.getItems ()) {
+			for (NativeMenuItem item : parent.getItems ()) {
 				if (item.image != null) {
 					Rectangle rect = item.image.getBoundsInPixels ();
 					width = Math.max (width, rect.width);
@@ -1287,9 +1296,9 @@ private Point calculateRenderedTextSize() {
 	return points;
 }
 
-private static final class MenuItemToolTip extends ToolTip {
+private abstract static class MenuItemToolTip extends NativeToolTip {
 
-	public MenuItemToolTip(Shell parent) {
+	public MenuItemToolTip(NativeShell parent) {
 		super(parent, 0);
 		maybeEnableDarkSystemTheme(hwndToolTip ());
 	}
@@ -1298,11 +1307,10 @@ private static final class MenuItemToolTip extends ToolTip {
 	long hwndToolTip() {
 		return parent.menuItemToolTipHandle();
 	}
-
 }
 
 private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-	if (!(widget instanceof MenuItem menuItem)) {
+	if (!(Widget.checkNative(widget) instanceof NativeMenuItem menuItem)) {
 		return;
 	}
 	// Refresh the image
@@ -1318,4 +1326,8 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 		DPIZoomChangeRegistry.applyChange(subMenu, newZoom, scalingFactor);
 	}
 }
+
+@Override
+public abstract MenuItem getWrapper();
+
 }

@@ -78,14 +78,13 @@ import org.eclipse.swt.widgets.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class DropTarget extends Widget {
-
+public abstract class NativeDropTarget extends NativeWidget {
 	static Callback dropTarget2Args, dropTarget3Args, dropTarget6Args;
 	static long proc2Args, proc3Args, proc6Args;
 	static final String LOCK_CURSOR = "org.eclipse.swt.internal.lockCursor"; //$NON-NLS-1$
 
 	static {
-		Class<?> clazz = DropTarget.class;
+		Class<?> clazz = NativeDropTarget.class;
 
 		dropTarget2Args = new Callback(clazz, "dropTargetProc", 2);
 		proc2Args = dropTarget2Args.getAddress();
@@ -123,9 +122,9 @@ public class DropTarget extends Widget {
 	 * the corresponding label class to enable it to act as a drop target.
 	 * @param c the Control whose hierarchy needs to be iterated to check for label with imageView
 	 */
-void handleLabels(Control c) {
+void handleLabels(NativeControl c) {
 	if (labelDragHandlersAdded) return;
-	if (c instanceof Label) {
+	if (c instanceof NativeLabel) {
 		long labelViewClass = OS.object_getClass(c.view.id);
 		// adding the handlers to label class
 		addDragHandlers(labelViewClass);
@@ -140,10 +139,10 @@ void handleLabels(Control c) {
 			addDragHandlers(cls);
 			labelDragHandlersAdded = true;
 		}
-	} else if (c instanceof Composite) {
-		Control[] cal = ((Composite) c).getChildren();
+	} else if (c instanceof NativeComposite) {
+		Control[] cal = ((NativeComposite) c).getChildren();
 		for (Control child : cal) {
-			handleLabels(child);
+			handleLabels(Widget.checkNative(child));
 		}
 	}
 }
@@ -155,13 +154,13 @@ void addDragHandlers() {
 	 * just register the types with the Control's NSView and AppKit will call the
 	 * methods in the protocol when a drag goes over the view.
 	 */
-	long cls = OS.object_getClass(control.view.id);
+	long cls = OS.object_getClass(Widget.checkNative(control).view.id);
 
 	if (cls == 0) {
 		DND.error(DND.ERROR_CANNOT_INIT_DROP);
 	}
 	addDragHandlers(cls);
-	handleLabels(control);
+	handleLabels(Widget.checkNative(control));
 }
 
 void addDragHandlers (long cls) {
@@ -220,7 +219,7 @@ void addDragHandlers (long cls) {
 public void addDropListener(DropTargetListener listener) {
 	if (listener == null) DND.error (SWT.ERROR_NULL_ARGUMENT);
 	DNDListener typedListener = new DNDListener (listener);
-	typedListener.dndWidget = this;
+	typedListener.dndWidget = this.getWrapper();
 	addListener (DND.DragEnter, typedListener);
 	addListener (DND.DragLeave, typedListener);
 	addListener (DND.DragOver, typedListener);
@@ -242,10 +241,10 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	String name = getClass().getName ();
-	String validName = DropTarget.class.getName();
-	if (!validName.equals(name)) {
+	String validName = NativeDropTarget.class.getPackageName();
+	if (!name.startsWith(validName)) {
 		DND.error (SWT.ERROR_INVALID_SUBCLASS);
 	}
 }
@@ -307,7 +306,7 @@ void draggingExited(long id, long sel, NSObject sender) {
 	keyOperation = -1;
 
 	DNDEvent event = new DNDEvent();
-	event.widget = this;
+	event.widget = this.getWrapper();
 	event.time = (int)System.currentTimeMillis();
 	event.detail = DND.DROP_NONE;
 	notifyListeners(DND.DragLeave, event);
@@ -402,26 +401,26 @@ int draggingUpdated(long id, long sel, NSObject sender) {
  * <p>NOTE: ERROR_CANNOT_INIT_DROP should be an SWTException, since it is a
  * recoverable error, but can not be changed due to backward compatibility.</p>
  *
- * @see Widget#dispose
- * @see DropTarget#checkSubclass
+ * @see NativeWidget#dispose
+ * @see NativeDropTarget#checkSubclass
  * @see DND#DROP_NONE
  * @see DND#DROP_COPY
  * @see DND#DROP_MOVE
  * @see DND#DROP_LINK
  */
-public DropTarget(Control control, int style) {
-	super(control, checkStyle(style));
+protected NativeDropTarget(Control control, int style) {
+	super(Widget.checkNative(control), checkStyle(style));
 	this.control = control;
 
 	if (control.getData(DND.DROP_TARGET_KEY) != null) {
 		DND.error(DND.ERROR_CANNOT_INIT_DROP);
 	}
 
-	control.setData(DND.DROP_TARGET_KEY, this);
+	control.setData(DND.DROP_TARGET_KEY, this.getWrapper());
 
 	controlListener = event -> {
-		if (!DropTarget.this.isDisposed()) {
-			DropTarget.this.dispose();
+		if (!NativeDropTarget.this.isDisposed()) {
+			NativeDropTarget.this.dispose();
 		}
 	};
 	control.addListener (SWT.Dispose, controlListener);
@@ -443,9 +442,9 @@ public DropTarget(Control control, int style) {
 static long dropTargetProc(long id, long sel) {
 	Display display = Display.findDisplay(Thread.currentThread());
 	if (display == null || display.isDisposed()) return 0;
-	Widget widget = display.findWidget(id);
+	NativeWidget widget = display.findWidget(id);
 	if (widget == null) return 0;
-	DropTarget dt = (DropTarget)widget.getData(DND.DROP_TARGET_KEY);
+	NativeDropTarget dt = ((DropTarget)widget.getData(DND.DROP_TARGET_KEY)).getWrappedWidget();
 	if (dt == null) return 0;
 
 	if (sel == OS.sel_wantsPeriodicDraggingUpdates) {
@@ -458,18 +457,18 @@ static long dropTargetProc(long id, long sel) {
 static long dropTargetProc(long id, long sel, long arg0) {
 	Display display = Display.findDisplay(Thread.currentThread());
 	if (display == null || display.isDisposed()) return 0;
-	Widget widget = display.findWidget(id);
+	NativeWidget widget = display.findWidget(id);
 	if (widget == null) return 0;
-	Widget tempWidget = widget;
-	DropTarget dt = (DropTarget) tempWidget.getData(DND.DROP_TARGET_KEY);
-	if (dt == null && tempWidget instanceof Label) {
-		while (tempWidget != null && !(tempWidget instanceof Shell)) {
-		    dt = (DropTarget) tempWidget.getData(DND.DROP_TARGET_KEY);
+	NativeWidget tempWidget = widget;
+	NativeDropTarget dt = ((DropTarget)widget.getData(DND.DROP_TARGET_KEY)).getWrappedWidget();
+	if (dt == null && tempWidget instanceof NativeLabel) {
+		while (tempWidget != null && !(tempWidget instanceof NativeShell)) {
+			dt = ((DropTarget)tempWidget.getData(DND.DROP_TARGET_KEY)).getWrappedWidget();
 		    if (dt != null) {
 		        break;
 		    }
-		    if (tempWidget instanceof Control) {
-		        Composite widgetParent = ((Control) tempWidget).getParent();
+		    if (tempWidget instanceof NativeControl) {
+		        NativeComposite widgetParent = Widget.checkNative(((NativeControl) tempWidget).getParent());
 		        tempWidget = widgetParent;
 		    }
 		    else break;
@@ -497,9 +496,9 @@ static long dropTargetProc(long id, long sel, long arg0) {
 static long dropTargetProc(long id, long sel, long arg0, long arg1, long arg2, long arg3) {
 	Display display = Display.findDisplay(Thread.currentThread());
 	if (display == null || display.isDisposed()) return 0;
-	Widget widget = display.findWidget(id);
+	NativeWidget widget = display.findWidget(id);
 	if (widget == null) return 0;
-	DropTarget dt = (DropTarget)widget.getData(DND.DROP_TARGET_KEY);
+	NativeDropTarget dt = ((DropTarget)widget.getData(DND.DROP_TARGET_KEY)).getWrappedWidget();
 	if (dt == null) return 0;
 
 	if (sel == OS.sel_outlineView_acceptDrop_item_childIndex_) {
@@ -602,7 +601,7 @@ void onDispose () {
 	transferAgents = null;
 
 	// Unregister the control as a drop target.
-	control.view.unregisterDraggedTypes();
+	Widget.checkNative(control).view.unregisterDraggedTypes();
 	control = null;
 }
 
@@ -646,7 +645,7 @@ int osOpToOp(long osOperation){
 boolean drop(NSObject sender) {
 	clearDropNotAllowed();
 	DNDEvent event = new DNDEvent();
-	event.widget = this;
+	event.widget = this.getWrapper();
 	event.time = (int)System.currentTimeMillis();
 
 	if (dropEffect != null) {
@@ -775,22 +774,22 @@ long outlineView_validateDrop_proposedItem_proposedChildIndex(long id, long sel,
 	NSObject sender = new NSObject(info);
 	NSPoint pt = sender.draggingLocation();
 	pt = widget.convertPoint_fromView_(pt, null);
-	Tree tree = (Tree)getControl();
-	TreeItem childItem = tree.getItem(new Point((int)pt.x, (int)pt.y));
+	NativeTree tree = (NativeTree)Widget.checkNative(getControl());
+	NativeTreeItem childItem = tree.getItem(new Point((int)pt.x, (int)pt.y));
 	if (feedback == 0 || childItem == null) {
 		widget.setDropItem(null, -1);
 	} else {
 		if ((feedback & DND.FEEDBACK_SELECT) != 0) {
 			widget.setDropItem(childItem.handle, -1);
 		} else {
-			TreeItem parentItem = childItem.getParentItem();
+			NativeTreeItem parentItem = childItem.getParentItem();
 			int childIndex;
 			id parentID = null;
 			if (parentItem != null) {
 				parentID = parentItem.handle;
 				childIndex = parentItem.indexOf(childItem);
 			} else {
-				childIndex = ((Tree)getControl()).indexOf(childItem);
+				childIndex = ((NativeTree)Widget.checkNative(getControl())).indexOf(childItem);
 			}
 			if ((feedback & DND.FEEDBACK_INSERT_AFTER) != 0) {
 				widget.setDropItem(parentID, childIndex + 1);
@@ -906,7 +905,7 @@ boolean setEventData(NSObject draggingState, DNDEvent event) {
 	NSRect screenRect = new NSScreen(screens.objectAtIndex(0)).frame();
 	globalMouse.y = screenRect.height - globalMouse.y;
 
-	event.widget = this;
+	event.widget = this.getWrapper();
 	event.x = (int)globalMouse.x;
 	event.y = (int)globalMouse.y;
 	event.time = (int)System.currentTimeMillis();
@@ -960,7 +959,7 @@ public void setTransfer(Transfer... transferAgents){
 		nsTypeStrings.addObject(NSString.stringWith((String)typeStrings.get(i)));
 	}
 
-	control.view.registerForDraggedTypes(nsTypeStrings);
+	Widget.checkNative(control).view.registerForDraggedTypes(nsTypeStrings);
 
 }
 
@@ -1019,5 +1018,8 @@ int tableView_validateDrop_proposedRow_proposedDropOperation(long id, long sel, 
 boolean wantsPeriodicDraggingUpdates(long id, long sel) {
 	return true;
 }
+
+@Override
+public abstract DropTarget getWrapper();
 
 }

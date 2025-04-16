@@ -1191,15 +1191,15 @@ class AccessibleObject {
 				int posinset = (event.groupIndex != -1) ? event.groupIndex : 0;
 				if (setsize == 0 && posinset == 0) {
 					/* Determine position and count for radio buttons. */
-					Control control = accessible.control;
-					if (control instanceof Button && ((control.getStyle() & SWT.RADIO) != 0)) {
+					NativeControl control = accessible.control;
+					if (control instanceof NativeButton && ((control.getStyle() & SWT.RADIO) != 0)) {
 						Control [] children = control.getParent().getChildren();
 						posinset = 1;
 						setsize = 1;
 						for (int i = 0; i < children.length; i++) {
 							Control child = children[i];
 							if (child instanceof Button && ((child.getStyle() & SWT.RADIO) != 0)) {
-								if (child == control) posinset = setsize;
+								if (Widget.checkNative(child) == control) posinset = setsize;
 								else setsize++;
 							}
 						}
@@ -4429,7 +4429,7 @@ class AccessibleObject {
 		AccessibleObject object = AccessibleObjects.get (new LONG (atkObject));
 		if (object == null) return null;
 		if (object.accessible == null) return null;
-		Control control = object.accessible.control;
+		NativeControl control = object.accessible.control;
 		if (control == null || control.isDisposed()) return null;
 		return object;
 	}

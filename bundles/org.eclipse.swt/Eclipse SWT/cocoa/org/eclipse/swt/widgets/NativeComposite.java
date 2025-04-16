@@ -14,10 +14,12 @@
 package org.eclipse.swt.widgets;
 
 
+import java.util.*;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.ExceptionStash;
+import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 
 /**
@@ -46,17 +48,17 @@ import org.eclipse.swt.internal.cocoa.*;
  * of other controls.
  * </p>
  *
- * @see Canvas
+ * @see NativeCanvas
  * @see <a href="http://www.eclipse.org/swt/snippets/#composite">Composite snippets</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public class Composite extends Scrollable {
+public abstract class NativeComposite extends NativeScrollable implements IComposite {
 	Layout layout;
-	Control[] tabList;
+	NativeControl[] tabList;
 	int layoutCount, backgroundMode;
 	private boolean isStyledText; // This field is set to true if Object is StyledText
 
-Composite () {
+NativeComposite () {
 	/* Do nothing */
 }
 
@@ -90,40 +92,40 @@ Composite () {
  * @see SWT#NO_RADIO_GROUP
  * @see SWT#EMBEDDED
  * @see SWT#DOUBLE_BUFFERED
- * @see Widget#getStyle
+ * @see NativeWidget#getStyle
  */
-public Composite (Composite parent, int style) {
+protected NativeComposite (NativeComposite parent, int style) {
 	super (parent, style);
 }
 
-Control [] _getChildren () {
+NativeControl [] _getChildren () {
 	NSView nsClipView = contentView();
-	if (nsClipView == null) return new Control [0];
+	if (nsClipView == null) return new NativeControl [0];
 	NSArray views = nsClipView.subviews();
 	int count = (int)views.count();
-	Control [] children = new Control [count];
+	NativeControl [] children = new NativeControl [count];
 	if (count == 0) return children;
 	int j = 0;
 	for (int i=0; i<count; i++){
-		Widget widget = display.getWidget (views.objectAtIndex (count - i - 1).id);
-		if (widget != null && widget != this && widget instanceof Control) {
-			children [j++] = (Control) widget;
+		NativeWidget widget = display.getWidget (views.objectAtIndex (count - i - 1).id);
+		if (widget != null && widget != this && widget instanceof NativeControl) {
+			children [j++] = (NativeControl) widget;
 		}
 	}
 	if (j == count) return children;
-	Control [] newChildren = new Control [j];
+	NativeControl [] newChildren = new NativeControl [j];
 	System.arraycopy (children, 0, newChildren, 0, j);
 	return newChildren;
 }
 
-Control [] _getTabList () {
+NativeControl [] _getTabList () {
 	if (tabList == null) return null;
 	int count = 0;
 	for (int i=0; i<tabList.length; i++) {
 		if (!tabList [i].isDisposed ()) count++;
 	}
 	if (count == tabList.length) return tabList;
-	Control [] newList = new Control [count];
+	NativeControl [] newList = new NativeControl [count];
 	int index = 0;
 	for (int i=0; i<tabList.length; i++) {
 		if (!tabList [i].isDisposed ()) {
@@ -213,9 +215,10 @@ boolean accessibilityIsIgnored(long id, long sel) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @deprecated use {@link Composite#layout(Control[], int)} instead
+ * @deprecated use {@link NativeComposite#layout(NativeControl[], int)} instead
  * @since 3.1
  */
+@Override
 @Deprecated
 public void changed (Control[] changed) {
 	layout(changed, SWT.DEFER);
@@ -229,7 +232,7 @@ public Point computeSize (int wHint, int hHint, boolean changed) {
 	if (layout != null) {
 		if ((wHint == SWT.DEFAULT) || (hHint == SWT.DEFAULT)) {
 			changed |= (state & LAYOUT_CHANGED) != 0;
-			size = layout.computeSize (this, wHint, hHint, changed);
+			size = layout.computeSize (this.getWrapper(), wHint, hHint, changed);
 			state &= ~LAYOUT_CHANGED;
 		} else {
 			size = new Point (wHint, hHint);
@@ -246,20 +249,20 @@ public Point computeSize (int wHint, int hHint, boolean changed) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	/* Do nothing - Subclassing is allowed */
 }
 
 @Override
-Widget [] computeTabList () {
-	Widget result [] = super.computeTabList ();
+NativeWidget [] computeTabList () {
+	NativeWidget result [] = super.computeTabList ();
 	if (result.length == 0) return result;
-	Control [] list = tabList != null ? _getTabList () : _getChildren ();
+	NativeControl [] list = tabList != null ? _getTabList () : _getChildren ();
 	for (int i=0; i<list.length; i++) {
-		Control child = list [i];
-		Widget [] childList = child.computeTabList ();
+		NativeControl child = list [i];
+		NativeWidget [] childList = child.computeTabList ();
 		if (childList.length != 0) {
-			Widget [] newResult = new Widget [result.length + childList.length];
+			NativeWidget [] newResult = new NativeWidget [result.length + childList.length];
 			System.arraycopy (result, 0, newResult, 0, result.length);
 			System.arraycopy (childList, 0, newResult, result.length, childList.length);
 			result = newResult;
@@ -321,11 +324,12 @@ void createHandle () {
  *
  * @since 3.6
  */
+@Override
 public void drawBackground(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
 	checkWidget ();
 	if (gc == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (gc.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
-	Control control = findBackgroundControl ();
+	NativeControl control = findBackgroundControl ();
 	if (control != null) {
 		NSRect rect = new NSRect();
 		rect.x = x;
@@ -360,20 +364,20 @@ void drawBackground (long id, NSGraphicsContext context, NSRect rect) {
 	}
 }
 
-Composite findDeferredControl () {
+NativeComposite findDeferredControl () {
 	return layoutCount > 0 ? this : parent.findDeferredControl ();
 }
 
 @Override
-Menu [] findMenus (Control control) {
-	if (control == this) return new Menu [0];
-	Menu result [] = super.findMenus (control);
-	Control [] children = _getChildren ();
+NativeMenu [] findMenus (NativeControl control) {
+	if (control == this) return new NativeMenu [0];
+	NativeMenu result [] = super.findMenus (control);
+	NativeControl [] children = _getChildren ();
 	for (int i=0; i<children.length; i++) {
-		Control child = children [i];
-		Menu [] menuList = child.findMenus (control);
+		NativeControl child = children [i];
+		NativeMenu [] menuList = child.findMenus (control);
 		if (menuList.length != 0) {
-			Menu [] newResult = new Menu [result.length + menuList.length];
+			NativeMenu [] newResult = new NativeMenu [result.length + menuList.length];
 			System.arraycopy (result, 0, newResult, 0, result.length);
 			System.arraycopy (menuList, 0, newResult, result.length, menuList.length);
 			result = newResult;
@@ -383,25 +387,25 @@ Menu [] findMenus (Control control) {
 }
 
 @Override
-void fixChildren (Shell newShell, Shell oldShell, Decorations newDecorations, Decorations oldDecorations, Menu [] menus) {
+void fixChildren (NativeShell newShell, NativeShell oldShell, NativeDecorations newDecorations, NativeDecorations oldDecorations, NativeMenu [] menus) {
 	super.fixChildren (newShell, oldShell, newDecorations, oldDecorations, menus);
-	Control [] children = _getChildren ();
+	NativeControl [] children = _getChildren ();
 	for (int i=0; i<children.length; i++) {
 		children [i].fixChildren (newShell, oldShell, newDecorations, oldDecorations, menus);
 	}
 }
 
-void fixTabList (Control control) {
+void fixTabList (NativeControl control) {
 	if (tabList == null) return;
 	int count = 0;
 	for (int i=0; i<tabList.length; i++) {
 		if (tabList [i] == control) count++;
 	}
 	if (count == 0) return;
-	Control [] newList = null;
+	NativeControl [] newList = null;
 	int length = tabList.length - count;
 	if (length != 0) {
-		newList = new Control [length];
+		newList = new NativeControl [length];
 		int index = 0;
 		for (int i=0; i<tabList.length; i++) {
 			if (tabList [i] != control) {
@@ -430,6 +434,7 @@ void fixTabList (Control control) {
  *
  * @since 3.2
  */
+@Override
 public int getBackgroundMode () {
 	checkWidget ();
 	return backgroundMode;
@@ -448,17 +453,18 @@ public int getBackgroundMode () {
  *
  * @return an array of children
  *
- * @see Control#moveAbove
- * @see Control#moveBelow
+ * @see NativeControl#moveAbove
+ * @see NativeControl#moveBelow
  *
  * @exception SWTException <ul>
  *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Control [] getChildren () {
 	checkWidget();
-	return _getChildren ();
+	return Arrays.stream(_getChildren ()).map(NativeControl::getWrapper).toArray(Control[]::new);
 }
 
 /**
@@ -472,6 +478,7 @@ public Control [] getChildren () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Layout getLayout () {
 	checkWidget();
 	return layout;
@@ -493,6 +500,7 @@ public Layout getLayout () {
  *
  * @since 3.1
  */
+@Override
 public boolean getLayoutDeferred () {
 	checkWidget ();
 	return layoutCount > 0 ;
@@ -510,16 +518,17 @@ public boolean getLayoutDeferred () {
  *
  * @see #setTabList
  */
+@Override
 public Control [] getTabList () {
 	checkWidget ();
-	Control [] tabList = _getTabList ();
+	NativeControl [] tabList = _getTabList ();
 	if (tabList == null) {
 		int count = 0;
-		Control [] list =_getChildren ();
+		NativeControl [] list =_getChildren ();
 		for (int i=0; i<list.length; i++) {
 			if (list [i].isTabGroup ()) count++;
 		}
-		tabList = new Control [count];
+		tabList = new NativeControl [count];
 		int index = 0;
 		for (int i=0; i<list.length; i++) {
 			if (list [i].isTabGroup ()) {
@@ -527,7 +536,7 @@ public Control [] getTabList () {
 			}
 		}
 	}
-	return tabList;
+	return Arrays.stream(tabList).map(NativeControl::getWrapper).toArray(Control[]::new);
 }
 
 @Override
@@ -537,9 +546,9 @@ boolean hooksKeys () {
 
 @Override
 void invalidateChildrenVisibleRegion () {
-	Control [] children = _getChildren ();
+	NativeControl [] children = _getChildren ();
 	for (int i=0; i<children.length; i++) {
-		Control child = children [i];
+		NativeControl child = children [i];
 		child.resetVisibleRegion ();
 		child.invalidateChildrenVisibleRegion ();
 	}
@@ -563,6 +572,7 @@ void invalidateChildrenVisibleRegion () {
  *
  * @since 3.1
  */
+@Override
 public boolean isLayoutDeferred () {
 	checkWidget ();
 	return findDeferredControl () != null;
@@ -601,7 +611,7 @@ boolean isTabGroup () {
 void keyDown (long id, long sel, long theEvent) {
 	if (hasFocus()) {
 		if ((state & CANVAS) != 0) {
-			Shell s = this.getShell();
+			NativeShell s = this.getShell();
 			s.deferFlushing();
 			NSArray array = NSArray.arrayWithObject (new NSEvent (theEvent));
 			s.keyInputHappened = false;
@@ -630,7 +640,7 @@ void keyDown (long id, long sel, long theEvent) {
  * way to trigger a layout. The use of <code>layout(true)</code>
  * discards all cached layout information, even from controls which
  * have not changed. It is much more efficient to invoke
- * {@link Control#requestLayout()} on every control which has changed
+ * {@link NativeControl#requestLayout()} on every control which has changed
  * in the layout than it is to invoke this method on the layout itself.
  * </p>
  * <p>
@@ -648,6 +658,7 @@ void keyDown (long id, long sel, long theEvent) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void layout () {
 	checkWidget ();
 	layout (true);
@@ -663,10 +674,10 @@ public void layout () {
  * children has changed state since the last layout.
  * If the receiver does not have a layout, do nothing.
  * <p>
- * It is normally more efficient to invoke {@link Control#requestLayout()}
+ * It is normally more efficient to invoke {@link NativeControl#requestLayout()}
  * on every control which has changed in the layout than it is to invoke
  * this method on the layout itself. Clients are encouraged to use
- * {@link Control#requestLayout()} where possible instead of calling
+ * {@link NativeControl#requestLayout()} where possible instead of calling
  * this method.
  * </p>
  * <p>
@@ -691,6 +702,7 @@ public void layout () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void layout (boolean changed) {
 	checkWidget ();
 	if (layout == null) return;
@@ -715,10 +727,10 @@ public void layout (boolean changed) {
  * a layout due to a resize will not flush any cached information
  * (same as <code>layout(false)</code>).
  * <p>
- * It is normally more efficient to invoke {@link Control#requestLayout()}
+ * It is normally more efficient to invoke {@link NativeControl#requestLayout()}
  * on every control which has changed in the layout than it is to invoke
  * this method on the layout itself. Clients are encouraged to use
- * {@link Control#requestLayout()} where possible instead of calling
+ * {@link NativeControl#requestLayout()} where possible instead of calling
  * this method.
  * </p>
  * <p>
@@ -738,6 +750,7 @@ public void layout (boolean changed) {
  *
  * @since 3.1
  */
+@Override
 public void layout (boolean changed, boolean all) {
 	checkWidget ();
 	if (layout == null && !all) return;
@@ -754,10 +767,10 @@ public void layout (boolean changed, boolean all) {
  * peers of the changed control have changed state since the last layout.
  * If an ancestor does not have a layout, skip it.
  * <p>
- * It is normally more efficient to invoke {@link Control#requestLayout()}
+ * It is normally more efficient to invoke {@link NativeControl#requestLayout()}
  * on every control which has changed in the layout than it is to invoke
  * this method on the layout itself. Clients are encouraged to use
- * {@link Control#requestLayout()} where possible instead of calling
+ * {@link NativeControl#requestLayout()} where possible instead of calling
  * this method.
  * </p>
  * <p>
@@ -780,6 +793,7 @@ public void layout (boolean changed, boolean all) {
  *
  * @since 3.1
  */
+@Override
 public void layout (Control [] changed) {
 	checkWidget ();
 	if (changed == null) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -844,15 +858,20 @@ public void layout (Control [] changed) {
  *
  * @since 3.6
  */
+@Override
 public void layout (Control [] changed, int flags) {
+	layout (Widget.checkNative(changed), flags);
+}
+
+private void layout (NativeControl [] changed, int flags) {
 	checkWidget ();
 	if (changed != null) {
 		for (int i=0; i<changed.length; i++) {
-			Control control = changed [i];
+			NativeControl control = changed [i];
 			if (control == null) error (SWT.ERROR_INVALID_ARGUMENT);
 			if (control.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
 			boolean ancestor = false;
-			Composite composite = control.parent;
+			NativeComposite composite = control.parent;
 			while (composite != null) {
 				ancestor = composite == this;
 				if (ancestor) break;
@@ -861,22 +880,22 @@ public void layout (Control [] changed, int flags) {
 			if (!ancestor) error (SWT.ERROR_INVALID_PARENT);
 		}
 		int updateCount = 0;
-		Composite [] update = new Composite [16];
+		NativeComposite [] update = new NativeComposite [16];
 		for (int i=0; i<changed.length; i++) {
-			Control child = changed [i];
-			Composite composite = child.parent;
+			NativeControl child = changed [i];
+			NativeComposite composite = child.parent;
 			// Update layout when the list of children has changed.
 			// See bug 497812.
 			child.markLayout(false, false);
 			while (child != this) {
 				if (composite.layout != null) {
 					composite.state |= LAYOUT_NEEDED;
-					if (!composite.layout.flushCache (child)) {
+					if (!composite.layout.flushCache (child.getWrapper())) {
 						composite.state |= LAYOUT_CHANGED;
 					}
 				}
 				if (updateCount == update.length) {
-					Composite [] newUpdate = new Composite [update.length + 16];
+					NativeComposite [] newUpdate = new NativeComposite [update.length + 16];
 					System.arraycopy (update, 0, newUpdate, 0, update.length);
 					update = newUpdate;
 				}
@@ -909,7 +928,7 @@ void markLayout (boolean changed, boolean all) {
 		if (changed) state |= LAYOUT_CHANGED;
 	}
 	if (all) {
-		Control [] children = _getChildren ();
+		NativeControl [] children = _getChildren ();
 		for (int i=0; i<children.length; i++) {
 			children [i].markLayout (changed, all);
 		}
@@ -917,7 +936,7 @@ void markLayout (boolean changed, boolean all) {
 }
 
 Point minimumSize (int wHint, int Hint, boolean changed) {
-	Control [] children = _getChildren ();
+	NativeControl [] children = _getChildren ();
 	Rectangle clientArea = getClientArea();
 	int width = 0, height = 0;
 	for (int i=0; i<children.length; i++) {
@@ -950,8 +969,8 @@ void pageUp(long id, long sel, long sender) {
 void redrawWidget(NSView view, boolean redrawChildren) {
 	super.redrawWidget(view, redrawChildren);
 	if (redrawChildren) {
-		Control[] _getChildren = _getChildren();
-		for (Control child : _getChildren) {
+		NativeControl[] _getChildren = _getChildren();
+		for (NativeControl child : _getChildren) {
 			if (child != null && !child.isDisposed () && child.isVisible()) {
 				child.redrawWidget(child.view, redrawChildren);
 			}
@@ -963,8 +982,8 @@ void redrawWidget(NSView view, boolean redrawChildren) {
 public void redraw(int x, int y, int width, int height, boolean all) {
 	super.redraw(x, y, width, height, all);
 	if (all) {
-		Control[] children = _getChildren();
-		for (Control child : children) {
+		NativeControl[] children = _getChildren();
+		for (NativeControl child : children) {
 			if (child != null && !child.isDisposed () && child.isVisible()) {
 				NSRect rect = new NSRect();
 				rect.x = x;
@@ -987,7 +1006,7 @@ void reflectScrolledClipView (long id, long sel, long aClipView) {
 @Override
 void releaseChildren (boolean destroy) {
 	try (ExceptionStash exceptions = new ExceptionStash ()) {
-		for (Control child : _getChildren ()) {
+		for (NativeControl child : _getChildren ()) {
 			if (child == null || child.isDisposed ())
 				continue;
 
@@ -1008,7 +1027,7 @@ void releaseWidget () {
 	tabList = null;
 }
 
-void removeControl (Control control) {
+void removeControl (NativeControl control) {
 	if (control.hasFocus()) redrawWidget(view, true);
 	fixTabList (control);
 }
@@ -1016,9 +1035,9 @@ void removeControl (Control control) {
 @Override
 void reskinChildren (int flags) {
 	super.reskinChildren (flags);
-	Control [] children = _getChildren ();
+	NativeControl [] children = _getChildren ();
 	for (int i=0; i<children.length; i++) {
-		Control child = children [i];
+		NativeControl child = children [i];
 		if (child != null) child.reskin (flags);
 	}
 }
@@ -1053,7 +1072,7 @@ void scrollWheel (long id, long sel, long theEvent) {
 					if (hooks (SWT.MouseWheel) || filters (SWT.MouseWheel)) {
 						doit = sendMouseEvent(nsEvent, SWT.MouseWheel, true);
 					}
-					ScrollBar bar = verticalBar;
+					NativeScrollBar bar = verticalBar;
 					if (doit && bar != null && bar.getEnabled ()) {
 						if (-1 < deltaY && deltaY < 0) deltaY = -1;
 						if (0 < deltaY && deltaY < 1) deltaY = 1;
@@ -1071,7 +1090,7 @@ void scrollWheel (long id, long sel, long theEvent) {
 					if (hooks (SWT.MouseHorizontalWheel) || filters (SWT.MouseHorizontalWheel)) {
 						doit = sendMouseEvent(nsEvent, SWT.MouseHorizontalWheel, true);
 					}
-					ScrollBar bar = horizontalBar;
+					NativeScrollBar bar = horizontalBar;
 					if (doit && bar != null && bar.getEnabled ()) {
 						if (-1 < deltaX && deltaX < 0) deltaX = -1;
 						if (0 < deltaX && deltaX < 1) deltaX = 1;
@@ -1111,10 +1130,11 @@ void scrollWheel (long id, long sel, long theEvent) {
  *
  * @since 3.2
  */
+@Override
 public void setBackgroundMode (int mode) {
 	checkWidget ();
 	backgroundMode = mode;
-	Control [] children = _getChildren ();
+	NativeControl [] children = _getChildren ();
 	for (int i = 0; i < children.length; i++) {
 		children [i].updateBackgroundMode ();
 	}
@@ -1123,7 +1143,7 @@ public void setBackgroundMode (int mode) {
 @Override
 public boolean setFocus () {
 	checkWidget ();
-	Control [] children = _getChildren ();
+	NativeControl [] children = _getChildren ();
 	for (int i= 0; i < children.length; i++) {
 		if (children [i].getVisible() && children [i].setFocus ()) return true;
 	}
@@ -1146,6 +1166,7 @@ void setIsStyledText() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setLayout (Layout layout) {
 	checkWidget();
 	this.layout = layout;
@@ -1173,6 +1194,7 @@ public void setLayout (Layout layout) {
  *
  * @since 3.1
  */
+@Override
 public void setLayoutDeferred (boolean defer) {
 	checkWidget();
 	if (!defer) {
@@ -1187,7 +1209,7 @@ public void setLayoutDeferred (boolean defer) {
 }
 
 @Override
-boolean setScrollBarVisible (ScrollBar bar, boolean visible) {
+boolean setScrollBarVisible (NativeScrollBar bar, boolean visible) {
 	boolean changed = super.setScrollBarVisible (bar, visible);
 	if (changed && layout != null) {
 		markLayout (false, false);
@@ -1202,9 +1224,9 @@ boolean setTabGroupFocus () {
 	boolean takeFocus = (style & SWT.NO_FOCUS) == 0;
 	if ((state & CANVAS) != 0) takeFocus = hooksKeys ();
 	if (takeFocus && setTabItemFocus ()) return true;
-	Control [] children = _getChildren ();
+	NativeControl [] children = _getChildren ();
 	for (int i=0; i<children.length; i++) {
-		Control child = children [i];
+		NativeControl child = children [i];
 		/*
 		 * It is unlikely but possible that a child is disposed at this point, for more
 		 * details refer bug 381668.
@@ -1229,16 +1251,21 @@ boolean setTabGroupFocus () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setTabList (Control [] tabList) {
+	setTabList(Widget.checkNative(tabList));
+}
+
+private void setTabList (NativeControl [] tabList) {
 	checkWidget ();
 	if (tabList != null) {
 		for (int i=0; i<tabList.length; i++) {
-			Control control = tabList [i];
+			NativeControl control = tabList [i];
 			if (control == null) error (SWT.ERROR_INVALID_ARGUMENT);
 			if (control.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
 			if (control.parent != this) error (SWT.ERROR_INVALID_PARENT);
 		}
-		Control [] newList = new Control [tabList.length];
+		NativeControl [] newList = new NativeControl [tabList.length];
 		System.arraycopy (tabList, 0, newList, 0, tabList.length);
 		tabList = newList;
 	}
@@ -1257,7 +1284,7 @@ int traversalCode (int key, NSEvent theEvent) {
 @Override
 void updateBackgroundColor () {
 	super.updateBackgroundColor ();
-	Control [] children = _getChildren ();
+	NativeControl [] children = _getChildren ();
 	for (int i=0; i<children.length; i++) {
 		if ((children [i].state & PARENT_BACKGROUND) != 0) {
 			children [i].updateBackgroundColor ();
@@ -1268,7 +1295,7 @@ void updateBackgroundColor () {
 @Override
 void updateBackgroundImage () {
 	super.updateBackgroundImage ();
-	Control [] children = _getChildren ();
+	NativeControl [] children = _getChildren ();
 	for (int i=0; i<children.length; i++) {
 		if ((children [i].state & PARENT_BACKGROUND) != 0) {
 			children [i].updateBackgroundImage ();
@@ -1279,7 +1306,7 @@ void updateBackgroundImage () {
 @Override
 void updateBackgroundMode () {
 	super.updateBackgroundMode ();
-	Control [] children = _getChildren ();
+	NativeControl [] children = _getChildren ();
 	for (int i = 0; i < children.length; i++) {
 		children [i].updateBackgroundMode ();
 	}
@@ -1288,16 +1315,16 @@ void updateBackgroundMode () {
 @Override
 void updateCursorRects (boolean enabled) {
 	super.updateCursorRects (enabled);
-	Control [] children = _getChildren ();
+	NativeControl [] children = _getChildren ();
 	for (int i = 0; i < children.length; i++) {
-		Control control = children [i];
+		NativeControl control = children [i];
 		control.updateCursorRects (enabled && control.isEnabled ());
 	}
 }
 
 @Override
 void updateLayout (boolean all) {
-	Composite parent = findDeferredControl ();
+	NativeComposite parent = findDeferredControl ();
 	if (parent != null) {
 		parent.state |= LAYOUT_CHILD;
 		return;
@@ -1306,11 +1333,11 @@ void updateLayout (boolean all) {
 		boolean changed = (state & LAYOUT_CHANGED) != 0;
 		state &= ~(LAYOUT_NEEDED | LAYOUT_CHANGED);
 		display.runSkin ();
-		layout.layout (this, changed);
+		layout.layout (this.getWrapper(), changed);
 	}
 	if (all) {
 		state &= ~LAYOUT_CHILD;
-		Control [] children = _getChildren ();
+		NativeControl [] children = _getChildren ();
 		for (int i=0; i<children.length; i++) {
 			children [i].updateLayout (all);
 		}
@@ -1321,5 +1348,8 @@ void updateLayout (boolean all) {
 public String toString() {
 	return super.toString() + " [layout=" + layout + "]";
 }
+
+@Override
+public abstract Composite getWrapper();
 
 }

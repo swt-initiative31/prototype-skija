@@ -37,9 +37,9 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class CoolItem extends Item {
-	CoolBar parent;
-	Control control;
+public abstract class NativeCoolItem extends NativeItem {
+	NativeCoolBar parent;
+	NativeControl control;
 	int id;
 	boolean ideal, minimum;
 
@@ -70,10 +70,10 @@ public class CoolItem extends Item {
  * </ul>
  *
  * @see SWT#DROP_DOWN
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public CoolItem (CoolBar parent, int style) {
+protected NativeCoolItem (NativeCoolBar parent, int style) {
 	super (parent, style);
 	this.parent = parent;
 	parent.createItem (this, parent.getItemCount ());
@@ -108,10 +108,10 @@ public CoolItem (CoolBar parent, int style) {
  * </ul>
  *
  * @see SWT#DROP_DOWN
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public CoolItem (CoolBar parent, int style, int index) {
+protected NativeCoolItem (NativeCoolBar parent, int style, int index) {
 	super (parent, style);
 	this.parent = parent;
 	parent.createItem (this, index);
@@ -152,7 +152,7 @@ public void addSelectionListener(SelectionListener listener) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -179,9 +179,9 @@ protected void checkSubclass () {
  * @see Layout
  * @see #getBounds
  * @see #getSize
- * @see Control#getBorderWidth
- * @see Scrollable#computeTrim
- * @see Scrollable#getClientArea
+ * @see NativeControl#getBorderWidth
+ * @see NativeScrollable#computeTrim
+ * @see NativeScrollable#getClientArea
  */
 public Point computeSize (int wHint, int hHint) {
 	checkWidget ();
@@ -237,7 +237,7 @@ Rectangle getBoundsInPixels () {
 	rect.left -= margins.cxLeftWidth;
 	rect.right += margins.cxRightWidth;
 	if (!parent.isLastItemOfRow (index)) {
-		rect.right += (parent.style & SWT.FLAT) == 0 ? CoolBar.SEPARATOR_WIDTH : 0;
+		rect.right += (parent.style & SWT.FLAT) == 0 ? NativeCoolBar.SEPARATOR_WIDTH : 0;
 	}
 	int width = rect.right - rect.left;
 	int height = rect.bottom - rect.top;
@@ -285,7 +285,7 @@ Rectangle getClientArea () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Control getControl () {
+public NativeControl getControl () {
 	checkWidget ();
 	return control;
 }
@@ -300,7 +300,7 @@ public Control getControl () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public CoolBar getParent () {
+public NativeCoolBar getParent () {
 	checkWidget ();
 	return parent;
 }
@@ -328,7 +328,7 @@ void releaseHandle () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setControl (Control control) {
+public void setControl (NativeControl control) {
 	checkWidget ();
 	if (control != null) {
 		if (control.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -339,7 +339,7 @@ public void setControl (Control control) {
 	if (this.control != null && this.control.isDisposed ()) {
 		this.control = null;
 	}
-	Control oldControl = this.control, newControl = control;
+	NativeControl oldControl = this.control, newControl = control;
 	long hwnd = parent.handle;
 	long hwndChild = newControl != null ? control.topHandle () : 0;
 	REBARBANDINFO rbBand = new REBARBANDINFO ();
@@ -497,7 +497,7 @@ Point getSizeInPixels() {
 	rect.left -= margins.cxLeftWidth;
 	rect.right += margins.cxRightWidth;
 	if (!parent.isLastItemOfRow (index)) {
-		rect.right += (parent.style & SWT.FLAT) == 0 ? CoolBar.SEPARATOR_WIDTH : 0;
+		rect.right += (parent.style & SWT.FLAT) == 0 ? NativeCoolBar.SEPARATOR_WIDTH : 0;
 	}
 	int width = rect.right - rect.left;
 	int height = rect.bottom - rect.top;
@@ -564,7 +564,7 @@ void setSizeInPixels (int width, int height) {
 		MARGINS margins = new MARGINS ();
 		OS.SendMessage (hwnd, OS.RB_GETBANDMARGINS, 0, margins);
 		cx -= margins.cxLeftWidth + margins.cxRightWidth;
-		int separator = (parent.style & SWT.FLAT) == 0 ? CoolBar.SEPARATOR_WIDTH : 0;
+		int separator = (parent.style & SWT.FLAT) == 0 ? NativeCoolBar.SEPARATOR_WIDTH : 0;
 		rbBand.cx = cx - separator;
 		rbBand.fMask |= OS.RBBIM_SIZE;
 	}
@@ -750,5 +750,8 @@ public void removeSelectionListener(SelectionListener listener) {
 	eventTable.unhook (SWT.Selection, listener);
 	eventTable.unhook (SWT.DefaultSelection,listener);
 }
+
+@Override
+public abstract CoolItem getWrapper();
 
 }

@@ -31,15 +31,15 @@ import org.eclipse.swt.internal.win32.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see ExpandBar
+ * @see NativeExpandBar
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  *
  * @since 3.2
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class ExpandItem extends Item {
-	ExpandBar parent;
-	Control control;
+public abstract class NativeExpandItem extends NativeItem {
+	NativeExpandBar parent;
+	NativeControl control;
 	boolean expanded, hover;
 	int x, y, width, height;
 	int imageHeight, imageWidth;
@@ -49,7 +49,7 @@ public class ExpandItem extends Item {
 	static final int CHEVRON_SIZE = 24;
 
 	static {
-		DPIZoomChangeRegistry.registerHandler(ExpandItem::handleDPIChange, ExpandItem.class);
+		DPIZoomChangeRegistry.registerHandler(NativeExpandItem::handleDPIChange, ExpandItem.class);
 	}
 
 /**
@@ -76,10 +76,10 @@ public class ExpandItem extends Item {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  *
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public ExpandItem (ExpandBar parent, int style) {
+protected NativeExpandItem (NativeExpandBar parent, int style) {
 	this (parent, style, checkNull (parent).getItemCount ());
 }
 
@@ -110,16 +110,16 @@ public ExpandItem (ExpandBar parent, int style) {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  *
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public ExpandItem (ExpandBar parent, int style, int index) {
+protected NativeExpandItem (NativeExpandBar parent, int style, int index) {
 	super (parent, style);
 	this.parent = parent;
 	parent.createItem (this, style, index);
 }
 
-static ExpandBar checkNull (ExpandBar control) {
+static NativeExpandBar checkNull (NativeExpandBar control) {
 	if (control == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	return control;
 }
@@ -200,13 +200,13 @@ void drawItem (GC gc, long hTheme, RECT clipRect, boolean drawFocus) {
 		OS.SelectObject (hDC, oldBrush);
 	}
 	if (image != null) {
-		rect.left += ExpandItem.TEXT_INSET;
+		rect.left += NativeExpandItem.TEXT_INSET;
 		int yInPoints = DPIUtil.scaleDown(rect.top + ((headerHeightinPixels - imageHeightInPixels) / 2), zoom);
 		gc.drawImage (image, DPIUtil.scaleDown(rect.left, zoom), yInPoints);
 		rect.left += imageWidthInPixels;
 	}
 	if (text.length () > 0) {
-		rect.left += ExpandItem.TEXT_INSET;
+		rect.left += NativeExpandItem.TEXT_INSET;
 		char [] buffer;
 		if ((style & SWT.FLIP_TEXT_DIRECTION) != 0) {
 			int bits  = OS.GetWindowLong (parent.handle, OS.GWL_EXSTYLE);
@@ -226,7 +226,7 @@ void drawItem (GC gc, long hTheme, RECT clipRect, boolean drawFocus) {
 			OS.SetBkMode (hDC, oldBkMode);
 		}
 	}
-	int chevronSize = ExpandItem.CHEVRON_SIZE;
+	int chevronSize = NativeExpandItem.CHEVRON_SIZE;
 	rect.left = rect.right - chevronSize;
 	rect.top = y;
 	rect.bottom = rect.top + chevronSize;
@@ -274,7 +274,7 @@ void destroyWidget () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Control getControl () {
+public NativeControl getControl () {
 	checkWidget ();
 	return control;
 }
@@ -349,15 +349,15 @@ int getHeightInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public ExpandBar getParent () {
+public NativeExpandBar getParent () {
 	checkWidget ();
 	return parent;
 }
 
 int getPreferredWidth (long hTheme, long hDC) {
-	int width = ExpandItem.TEXT_INSET * 2 + ExpandItem.CHEVRON_SIZE;
+	int width = NativeExpandItem.TEXT_INSET * 2 + NativeExpandItem.CHEVRON_SIZE;
 	if (image != null) {
-		width += ExpandItem.TEXT_INSET + imageWidth;
+		width += NativeExpandItem.TEXT_INSET + imageWidth;
 	}
 	if (text.length() > 0) {
 		RECT rect = new RECT ();
@@ -388,7 +388,7 @@ void redraw (boolean all) {
 	OS.SetRect (rect, left, y, x + width, y + headerHeightInPixels);
 	OS.InvalidateRect (parentHandle, rect, true);
 	if (imageHeightInPixels > headerHeightInPixels) {
-		OS.SetRect (rect, x + ExpandItem.TEXT_INSET, y + headerHeightInPixels - imageHeightInPixels, x + ExpandItem.TEXT_INSET + imageWidthInPixels, y);
+		OS.SetRect (rect, x + NativeExpandItem.TEXT_INSET, y + headerHeightInPixels - imageHeightInPixels, x + NativeExpandItem.TEXT_INSET + imageWidthInPixels, y);
 		OS.InvalidateRect (parentHandle, rect, true);
 	}
 	if (!parent.isAppThemed ()) {
@@ -448,7 +448,7 @@ void setBoundsInPixels (int x, int y, int width, int height, boolean move, boole
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setControl (Control control) {
+public void setControl (NativeControl control) {
 	checkWidget ();
 	if (control != null) {
 		if (control.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -534,7 +534,7 @@ public void setText (String string) {
 }
 
 private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-	if (!(widget instanceof ExpandItem item)) {
+	if (!(Widget.checkNative(widget) instanceof NativeExpandItem item)) {
 		return;
 	}
 	if (item.height != 0 || item.width != 0) {
@@ -543,4 +543,8 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 		item.setBoundsInPixels(item.x, item.y, newWidth, newHeight, true, true);
 	}
 }
+
+@Override
+public abstract ExpandItem getWrapper();
+
 }

@@ -41,7 +41,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class List extends Scrollable {
+public abstract class NativeList extends NativeScrollable implements IList {
 	static final int INSET = 3;
 	static final long ListProc;
 	static final TCHAR ListClass = new TCHAR (0, "LISTBOX", true);
@@ -50,7 +50,7 @@ public class List extends Scrollable {
 		WNDCLASS lpWndClass = new WNDCLASS ();
 		OS.GetClassInfo (0, ListClass, lpWndClass);
 		ListProc = lpWndClass.lpfnWndProc;
-		DPIZoomChangeRegistry.registerHandler(List::handleDPIChange, List.class);
+		DPIZoomChangeRegistry.registerHandler(NativeList::handleDPIChange, List.class);
 	}
 
 /**
@@ -79,10 +79,10 @@ public class List extends Scrollable {
  *
  * @see SWT#SINGLE
  * @see SWT#MULTI
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public List (Composite parent, int style) {
+protected NativeList (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 }
 /**
@@ -103,6 +103,7 @@ public List (Composite parent, int style) {
  *
  * @see #add(String,int)
  */
+@Override
 public void add (String string) {
 	checkWidget ();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -138,6 +139,7 @@ public void add (String string) {
  *
  * @see #add(String)
  */
+@Override
 public void add (String string, int index) {
 	checkWidget ();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -180,6 +182,7 @@ public void add (String string, int index) {
  * @see #removeSelectionListener
  * @see SelectionEvent
  */
+@Override
 public void addSelectionListener(SelectionListener listener) {
 	addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 }
@@ -290,6 +293,7 @@ int defaultBackground () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void deselect (int [] indices) {
 	checkWidget ();
 	if (indices == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -324,6 +328,7 @@ public void deselect (int [] indices) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void deselect (int index) {
 	checkWidget ();
 	if (index == -1) return;
@@ -351,6 +356,7 @@ public void deselect (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void deselect (int start, int end) {
 	checkWidget ();
 	if (start > end) return;
@@ -384,6 +390,7 @@ public void deselect (int start, int end) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void deselectAll () {
 	checkWidget ();
 	if ((style & SWT.SINGLE) != 0) {
@@ -404,6 +411,7 @@ public void deselectAll () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getFocusIndex () {
 	checkWidget ();
 	int result = (int)OS.SendMessage (handle, OS.LB_GETCARETINDEX, 0, 0);
@@ -429,6 +437,7 @@ public int getFocusIndex () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public String getItem (int index) {
 	checkWidget ();
 	int length = (int)OS.SendMessage (handle, OS.LB_GETTEXTLEN, index, 0);
@@ -453,6 +462,7 @@ public String getItem (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getItemCount () {
 	checkWidget ();
 	int result = (int)OS.SendMessage (handle, OS.LB_GETCOUNT, 0, 0);
@@ -471,6 +481,7 @@ public int getItemCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getItemHeight () {
 	checkWidget ();
 	return DPIUtil.scaleDown(getItemHeightInPixels(), getZoom());
@@ -498,6 +509,7 @@ int getItemHeightInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public String [] getItems () {
 	checkWidget ();
 	int count = getItemCount ();
@@ -522,6 +534,7 @@ public String [] getItems () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public String [] getSelection () {
 	checkWidget ();
 	int [] indices = getSelectionIndices ();
@@ -542,6 +555,7 @@ public String [] getSelection () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getSelectionCount () {
 	checkWidget ();
 	if ((style & SWT.SINGLE) != 0) {
@@ -565,6 +579,7 @@ public int getSelectionCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getSelectionIndex () {
 	checkWidget ();
 	if ((style & SWT.SINGLE) != 0) {
@@ -599,6 +614,7 @@ public int getSelectionIndex () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int [] getSelectionIndices () {
 	checkWidget ();
 	if ((style & SWT.SINGLE) != 0) {
@@ -626,6 +642,7 @@ public int [] getSelectionIndices () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getTopIndex () {
 	checkWidget ();
 	return (int)OS.SendMessage (handle, OS.LB_GETTOPINDEX, 0, 0);
@@ -650,6 +667,7 @@ public int getTopIndex () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int indexOf (String string) {
 	return indexOf (string, 0);
 }
@@ -673,6 +691,7 @@ public int indexOf (String string) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int indexOf (String string, int start) {
 	checkWidget ();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -716,6 +735,7 @@ public int indexOf (String string, int start) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public boolean isSelected (int index) {
 	checkWidget ();
 	int result = (int)OS.SendMessage (handle, OS.LB_GETSEL, index, 0);
@@ -742,6 +762,7 @@ boolean isUseWsBorder () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void remove (int [] indices) {
 	checkWidget ();
 	if (indices == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -815,6 +836,7 @@ public void remove (int [] indices) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void remove (int index) {
 	checkWidget ();
 	char [] buffer = null;
@@ -863,6 +885,7 @@ public void remove (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void remove (int start, int end) {
 	checkWidget ();
 	if (start > end) return;
@@ -932,6 +955,7 @@ public void remove (int start, int end) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void remove (String string) {
 	checkWidget ();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -948,6 +972,7 @@ public void remove (String string) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void removeAll () {
 	checkWidget ();
 	OS.SendMessage (handle, OS.LB_RESETCONTENT, 0, 0);
@@ -973,6 +998,7 @@ public void removeAll () {
  * @see SelectionListener
  * @see #addSelectionListener
  */
+@Override
 public void removeSelectionListener(SelectionListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1001,8 +1027,9 @@ public void removeSelectionListener(SelectionListener listener) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see List#setSelection(int[])
+ * @see NativeList#setSelection(int[])
  */
+@Override
 public void select (int [] indices) {
 	checkWidget ();
 	if (indices == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1035,6 +1062,7 @@ void select (int [] indices, boolean scroll) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void select (int index) {
 	checkWidget ();
 	select (index, false);
@@ -1108,8 +1136,9 @@ void select (int index, boolean scroll) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see List#setSelection(int,int)
+ * @see NativeList#setSelection(int,int)
  */
+@Override
 public void select (int start, int end) {
 	checkWidget ();
 	if (end < 0 || start > end || ((style & SWT.SINGLE) != 0 && start != end)) return;
@@ -1147,6 +1176,7 @@ void select (int start, int end, boolean scroll) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void selectAll () {
 	checkWidget ();
 	if ((style & SWT.SINGLE) != 0) return;
@@ -1183,6 +1213,7 @@ public void setFont (Font font) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setItem (int index, String string) {
 	checkWidget ();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1208,6 +1239,7 @@ public void setItem (int index, String string) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setItems (String... items) {
 	checkWidget ();
 	if (items == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1341,9 +1373,10 @@ void setScrollWidth (int newWidth, boolean grow) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see List#deselectAll()
- * @see List#select(int[])
+ * @see NativeList#deselectAll()
+ * @see NativeList#select(int[])
  */
+@Override
 public void setSelection(int [] indices) {
 	checkWidget ();
 	if (indices == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1376,10 +1409,11 @@ public void setSelection(int [] indices) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see List#deselectAll()
- * @see List#select(int[])
- * @see List#setSelection(int[])
+ * @see NativeList#deselectAll()
+ * @see NativeList#select(int[])
+ * @see NativeList#setSelection(int[])
  */
+@Override
 public void setSelection (String [] items) {
 	checkWidget ();
 	if (items == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1422,9 +1456,10 @@ public void setSelection (String [] items) {
  *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
- * @see List#deselectAll()
- * @see List#select(int)
+ * @see NativeList#deselectAll()
+ * @see NativeList#select(int)
  */
+@Override
 public void setSelection (int index) {
 	checkWidget ();
 	deselectAll ();
@@ -1453,9 +1488,10 @@ public void setSelection (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see List#deselectAll()
- * @see List#select(int,int)
+ * @see NativeList#deselectAll()
+ * @see NativeList#select(int,int)
  */
+@Override
 public void setSelection (int start, int end) {
 	checkWidget ();
 	deselectAll ();
@@ -1484,6 +1520,7 @@ public void setSelection (int start, int end) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setTopIndex (int index) {
 	checkWidget ();
 	int result = (int)OS.SendMessage (handle, OS.LB_SETTOPINDEX, index, 0);
@@ -1504,6 +1541,7 @@ public void setTopIndex (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void showSelection () {
 	checkWidget ();
 	int index;
@@ -1853,7 +1891,7 @@ LRESULT wmCommandChild (long wParam, long lParam) {
 }
 
 private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-	if (!(widget instanceof List list)) {
+	if (!(Widget.checkNative(widget) instanceof NativeList list)) {
 		return;
 	}
 	if((list.style & SWT.H_SCROLL) != 0) {
@@ -1861,4 +1899,8 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 		list.setScrollWidth();
 	}
 }
+
+@Override
+public abstract List getWrapper();
+
 }

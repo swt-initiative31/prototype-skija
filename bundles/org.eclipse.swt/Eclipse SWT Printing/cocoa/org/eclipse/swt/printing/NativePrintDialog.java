@@ -31,7 +31,7 @@ import org.eclipse.swt.widgets.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class PrintDialog extends Dialog {
+public class NativePrintDialog extends NativeDialog {
 	PrinterData printerData = new PrinterData();
 	int returnCode;
 
@@ -54,10 +54,10 @@ public class PrintDialog extends Dialog {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public PrintDialog (Shell parent) {
+public NativePrintDialog (NativeShell parent) {
 	this (parent, SWT.PRIMARY_MODAL);
 }
 
@@ -86,15 +86,15 @@ public PrintDialog (Shell parent) {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public PrintDialog (Shell parent, int style) {
+public NativePrintDialog (NativeShell parent, int style) {
 	super (parent, checkStyle(parent, style));
 	checkSubclass ();
 }
 
-static int checkStyle (Shell parent, int style) {
+static int checkStyle (NativeShell parent, int style) {
 	int mask = SWT.PRIMARY_MODAL | SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL;
 	if ((style & SWT.SHEET) != 0) {
 		if (getSheetEnabled ()) {
@@ -189,7 +189,7 @@ public PrinterData open() {
 	printInfo.setSelectionOnly (printerData.scope == PrinterData.SELECTION);
 	panel.setOptions(OS.NSPrintPanelShowsPageSetupAccessory | OS.NSPrintPanelShowsPrintSelection | panel.options());
 
-	Shell parent = getParent();
+	NativeShell parent = getParent();
 	Display display = parent != null ? parent.getDisplay() : Display.getCurrent();
 	int response;
 	if ((getStyle () & SWT.SHEET) != 0) {
@@ -277,7 +277,7 @@ static long dialogProc(long id, long sel, long arg0, long arg1, long arg2) {
 	OS.object_getInstanceVariable(id, SWT_OBJECT, jniRef);
 	if (jniRef[0] == 0) return 0;
 	if (sel == OS.sel_panelDidEnd_returnCode_contextInfo_) {
-		PrintDialog dialog = (PrintDialog)OS.JNIGetObject(jniRef[0]);
+		NativePrintDialog dialog = (NativePrintDialog)OS.JNIGetObject(jniRef[0]);
 		if (dialog == null) return 0;
 		dialog.panelDidEnd_returnCode_contextInfo(id, sel, arg0, arg1, arg2);
 	}
@@ -401,7 +401,7 @@ public void setPrintToFile(boolean printToFile) {
 @Override
 protected void checkSubclass() {
 	String name = getClass().getName();
-	String validName = PrintDialog.class.getName();
+	String validName = NativePrintDialog.class.getName();
 	if (!validName.equals(name)) {
 		SWT.error(SWT.ERROR_INVALID_SUBCLASS);
 	}

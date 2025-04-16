@@ -145,11 +145,12 @@ public static Frame getFrame (Composite parent) {
  * @since 3.0
  */
 public static Frame new_Frame (final Composite parent) {
-	if (parent == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
-	if ((parent.getStyle () & SWT.EMBEDDED) == 0) {
+	NativeComposite nativeParent = Widget.checkNative(parent);
+	if (nativeParent == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
+	if ((nativeParent.getStyle () & SWT.EMBEDDED) == 0) {
 		SWT.error (SWT.ERROR_INVALID_ARGUMENT);
 	}
-	long handle = parent.embeddedHandle;
+	long handle = nativeParent.embeddedHandle;
 	/*
 	 * Some JREs have implemented the embedded frame constructor to take an integer
 	 * and other JREs take a long.  To handle this binary incompatibility, use
@@ -173,7 +174,7 @@ public static Frame new_Frame (final Composite parent) {
 		SWT.error (SWT.ERROR_UNSPECIFIED , new Throwable(), " [Error while starting AWT]");
 	}
 	frame[0] = (Frame) object;
-	parent.setData(EMBEDDED_FRAME_KEY, frame[0]);
+	nativeParent.setData(EMBEDDED_FRAME_KEY, frame[0]);
 	if (Device.DEBUG) {
 		setDebug(frame[0], true);
 	}
@@ -184,9 +185,9 @@ public static Frame new_Frame (final Composite parent) {
 		if (event.getID() == WindowEvent.WINDOW_OPENED) {
 			final Window window = (Window) event.getSource();
 			if (window.getParent() == frame[0]) {
-				parent.getDisplay().asyncExec(() -> {
-					if (parent.isDisposed()) return;
-					Shell shell = parent.getShell();
+				nativeParent.getDisplay().asyncExec(() -> {
+					if (nativeParent.isDisposed()) return;
+					NativeShell shell = nativeParent.getShell();
 					long awtHandle = getAWTHandle(window);
 					if (awtHandle == 0) return;
 
@@ -214,34 +215,34 @@ public static Frame new_Frame (final Composite parent) {
 				break;
 		}
 	};
-	Shell shell = parent.getShell ();
+	NativeShell shell = nativeParent.getShell ();
 	shell.addListener (SWT.Deiconify, shellListener);
 	shell.addListener (SWT.Iconify, shellListener);
 
 	Listener listener = e -> {
 		switch (e.type) {
 			case SWT.Dispose:
-				Shell shell1 = parent.getShell ();
+				NativeShell shell1 = nativeParent.getShell ();
 				shell1.removeListener (SWT.Deiconify, shellListener);
 				shell1.removeListener (SWT.Iconify, shellListener);
-				parent.setVisible(false);
+				nativeParent.setVisible(false);
 				EventQueue.invokeLater(() -> {
 					frame[0].getToolkit().removeAWTEventListener(awtListener);
 					frame[0].dispose ();
 				});
 				break;
 			case SWT.Resize:
-				final Rectangle clientArea = DPIUtil.autoScaleUp(parent.getClientArea());
+				final Rectangle clientArea = DPIUtil.autoScaleUp(nativeParent.getClientArea());
 				EventQueue.invokeLater(() -> frame[0].setSize (clientArea.width, clientArea.height));
 				break;
 		}
 	};
-	parent.addListener (SWT.Dispose, listener);
-	parent.addListener (SWT.Resize, listener);
+	nativeParent.addListener (SWT.Dispose, listener);
+	nativeParent.addListener (SWT.Resize, listener);
 
-	parent.getDisplay().asyncExec(() -> {
-		if (parent.isDisposed()) return;
-		final Rectangle clientArea = DPIUtil.autoScaleUp(parent.getClientArea());
+	nativeParent.getDisplay().asyncExec(() -> {
+		if (nativeParent.isDisposed()) return;
+		final Rectangle clientArea = DPIUtil.autoScaleUp(nativeParent.getClientArea());
 		EventQueue.invokeLater(() -> {
 			frame[0].setSize (clientArea.width, clientArea.height);
 			frame[0].validate ();
@@ -278,7 +279,7 @@ public static Shell new_Shell (final Display display, final Canvas parent) {
 	}
 	if (handle == 0) SWT.error (SWT.ERROR_INVALID_ARGUMENT, null, " [peer not created]");
 
-	final Shell shell = Shell.gtk_new (display, handle);
+	final Shell shell = NativeShell.gtk_new (display, handle);
 	final ComponentListener listener = new ComponentAdapter () {
 		@Override
 		public void componentResized (ComponentEvent e) {

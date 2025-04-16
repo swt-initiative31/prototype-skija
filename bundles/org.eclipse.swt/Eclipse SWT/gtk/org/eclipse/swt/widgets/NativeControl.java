@@ -51,8 +51,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class Control extends Widget implements Drawable {
-
+public abstract class NativeControl extends NativeWidget implements Drawable, IControl {
 	// allows to disable context menu entry for "insert emoji"
 	static final boolean DISABLE_EMOJI = Boolean.getBoolean("SWT_GTK_INPUT_HINT_NO_EMOJI");
 
@@ -62,9 +61,9 @@ public abstract class Control extends Widget implements Drawable {
 	long redrawWindow, enableWindow, provider;
 	int drawCount, backgroundAlpha = 255;
 	long dragGesture, zoomGesture, rotateGesture, panGesture;
-	Composite parent;
+	NativeComposite parent;
 	Cursor cursor;
-	Menu menu;
+	NativeMenu menu;
 	Image backgroundImage;
 	Font font;
 	Region region;
@@ -77,7 +76,7 @@ public abstract class Control extends Widget implements Drawable {
 	String toolTipText;
 	Object layoutData;
 	Accessible accessible;
-	Control labelRelation;
+	NativeControl labelRelation;
 	String cssBackground, cssForeground = " ";
 	boolean drawRegion;
 	/**
@@ -97,15 +96,15 @@ public abstract class Control extends Widget implements Drawable {
 
 	static Callback gestureZoom, gestureRotation, gestureSwipe, gestureBegin, gestureEnd;
 	static {
-		gestureZoom = new Callback (Control.class, "magnifyProc", void.class, new Type[] {
+		gestureZoom = new Callback (NativeControl.class, "magnifyProc", void.class, new Type[] {
 				long.class, double.class, long.class}); //$NON-NLS-1$
-		gestureRotation = new Callback (Control.class, "rotateProc", void.class, new Type[] {
+		gestureRotation = new Callback (NativeControl.class, "rotateProc", void.class, new Type[] {
 				long.class, double.class, double.class, long.class}); //$NON-NLS-1$
-		gestureSwipe = new Callback (Control.class, "swipeProc", void.class, new Type[] {
+		gestureSwipe = new Callback (NativeControl.class, "swipeProc", void.class, new Type[] {
 				long.class, double.class, double.class, long.class}); //$NON-NLS-1$
-		gestureBegin = new Callback (Control.class, "gestureBeginProc", void.class, new Type[] {
+		gestureBegin = new Callback (NativeControl.class, "gestureBeginProc", void.class, new Type[] {
 				long.class, long.class, long.class}); //$NON-NLS-1$
-		gestureEnd = new Callback (Control.class, "gestureEndProc", void.class, new Type[] {
+		gestureEnd = new Callback (NativeControl.class, "gestureEndProc", void.class, new Type[] {
 				long.class, long.class, long.class}); //$NON-NLS-1$
 	}
 	/**
@@ -129,7 +128,7 @@ public abstract class Control extends Widget implements Drawable {
 	 */
 	boolean autoScale = true;
 
-Control () {
+NativeControl () {
 }
 
 /**
@@ -159,10 +158,10 @@ Control () {
  * @see SWT#BORDER
  * @see SWT#LEFT_TO_RIGHT
  * @see SWT#RIGHT_TO_LEFT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Control (Composite parent, int style) {
+protected NativeControl (NativeComposite parent, int style) {
 	super (parent, style);
 	this.parent = parent;
 	createWidget (0);
@@ -184,7 +183,7 @@ void deregister () {
 	if (imHandle != 0) display.removeWidget (imHandle);
 }
 
-void drawBackground (Control control, long gdkResource, long cr, int x, int y, int width, int height) {
+void drawBackground (NativeControl control, long gdkResource, long cr, int x, int y, int width, int height) {
 	long cairo = 0;
 	long region = 0;
 	if (GTK.GTK4) {
@@ -316,9 +315,9 @@ static int fixGdkEventTypeValues(int eventType) {
 	return eventType;
 }
 
-void fixFocus (Control focusControl) {
-	Shell shell = getShell ();
-	Control control = this;
+void fixFocus (NativeControl focusControl) {
+	NativeShell shell = getShell ();
+	NativeControl control = this;
 	while (control != shell && (control = control.parent) != null) {
 		if (control.setFocus ()) return;
 	}
@@ -376,6 +375,7 @@ long gestureHandle () {
  *
  * @since 3.7
  */
+@Override
 public int getOrientation () {
 	checkWidget();
 	return style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
@@ -394,6 +394,7 @@ public int getOrientation () {
  *
  * @since 3.102
  */
+@Override
 public int getTextDirection() {
 	checkWidget ();
 	/* return the widget orientation */
@@ -401,7 +402,7 @@ public int getTextDirection() {
 }
 
 boolean hasFocus () {
-	return this == display.getFocusControl();
+	return this == display.getNativeFocusControl();
 }
 
 @Override
@@ -626,6 +627,7 @@ long paintSurface () {
  *
  * @since 3.4
  */
+@Override
 public boolean print (GC gc) {
 	checkWidget ();
 
@@ -658,7 +660,7 @@ void printWidget (GC gc, long drawable, int depth, int x, int y) {
 	if (obscured) state |= OBSCURED;
 }
 
-void printWindow (boolean first, Control control, GC gc, long drawable, int depth, long window, int x, int y) {
+void printWindow (boolean first, NativeControl control, GC gc, long drawable, int depth, long window, int x, int y) {
 	/*
 	 * TODO: this needs to be re-implemented for GTK3 as it uses GdkDrawable which is gone.
 	 * See: https://developer.gnome.org/gtk3/stable/ch26s02.html#id-1.6.3.4.7
@@ -693,6 +695,7 @@ void printWindow (boolean first, Control control, GC gc, long drawable, int dept
  * @see #pack(boolean)
  * @see "computeTrim, getClientArea for controls that implement them"
  */
+@Override
 public Point computeSize (int wHint, int hHint) {
 	return computeSize (wHint, hHint, true);
 }
@@ -701,22 +704,22 @@ Point computeSizeInPixels (int wHint, int hHint) {
 	return computeSizeInPixels (wHint, hHint, true);
 }
 
-Widget computeTabGroup () {
+NativeWidget computeTabGroup () {
 	if (isTabGroup()) return this;
 	return parent.computeTabGroup ();
 }
 
-Widget[] computeTabList() {
+NativeWidget[] computeTabList() {
 	if (isTabGroup()) {
 		if (getVisible() && getEnabled()) {
-			return new Widget[] {this};
+			return new NativeWidget[] {this};
 		}
 	}
-	return new Widget[0];
+	return new NativeWidget[0];
 }
 
-Control computeTabRoot () {
-	Control[] tabList = parent._getTabList();
+NativeControl computeTabRoot () {
+	NativeControl[] tabList = parent._getTabList();
 	if (tabList != null) {
 		int index = 0;
 		while (index < tabList.length) {
@@ -735,15 +738,15 @@ void checkBuffered () {
 }
 
 void checkBackground () {
-	Shell shell = getShell ();
+	NativeShell shell = getShell ();
 	if (this == shell) return;
 	state &= ~PARENT_BACKGROUND;
-	Composite composite = parent;
+	NativeComposite composite = parent;
 	do {
 		int mode = composite.backgroundMode;
 		if (mode != SWT.INHERIT_NONE || backgroundAlpha == 0) {
 			if (mode == SWT.INHERIT_DEFAULT || backgroundAlpha == 0) {
-				Control control = this;
+				NativeControl control = this;
 				do {
 					if ((control.state & THEME_BACKGROUND) == 0) {
 						return;
@@ -832,6 +835,7 @@ void createWidget(int index) {
  * @see #pack(boolean)
  * @see "computeTrim, getClientArea for controls that implement them"
  */
+@Override
 public Point computeSize (int wHint, int hHint, boolean changed) {
 	checkWidget();
 	if (wHint != SWT.DEFAULT && wHint < 0) wHint = 0;
@@ -910,6 +914,7 @@ void forceResize () {
  *
  * @since 2.0
  */
+@Override
 public Accessible getAccessible () {
 	checkWidget ();
 	return _getAccessible ();
@@ -935,6 +940,7 @@ Accessible _getAccessible () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Rectangle getBounds () {
 	checkWidget();
 	return DPIUtil.autoScaleDown(getBoundsInPixels());
@@ -976,6 +982,7 @@ Rectangle getBoundsInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setBounds (Rectangle rect) {
 	checkWidget ();
 	if (rect == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1017,6 +1024,7 @@ void setBoundsInPixels (Rectangle rect) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setBounds (int x, int y, int width, int height) {
 	checkWidget();
 	Rectangle rect = DPIUtil.autoScaleUp(new Rectangle (x, y, width, height));
@@ -1151,7 +1159,7 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
 		 * gtk_widget_hide call or avoid setting bounds on invisible widgets.
 		 */
 		if (!GTK.gtk_widget_get_visible(topHandle))  {
-			Control focusControl = display.getFocusControl();
+			NativeControl focusControl = display.getNativeFocusControl();
 			GTK.gtk_widget_show(topHandle);
 			gtk_widget_get_preferred_size (topHandle, requisition);
 			gtk_widget_size_allocate(topHandle, allocation, -1);
@@ -1159,7 +1167,7 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
 			/* Bug 540002: Showing and hiding widget causes original focused control to loose focus,
 			 * Reset focus to original focused control after dealing with allocation.
 			 */
-			if (focusControl != null && display.getFocusControl() != focusControl) {
+			if (focusControl != null && display.getNativeFocusControl() != focusControl) {
 				focusControl.setFocus();
 			}
 		} else {
@@ -1204,7 +1212,7 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
 	}
 	int result = 0;
 	if (move && !sameOrigin) {
-		Control control = findBackgroundControl ();
+		NativeControl control = findBackgroundControl ();
 		if (control != null && control.backgroundImage != null) {
 			if (isVisible ()) redrawWidget (0, 0, 0, 0, true, true, true);
 		}
@@ -1231,6 +1239,7 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Point getLocation () {
 	checkWidget();
 	return DPIUtil.autoScaleDown(getLocationInPixels());
@@ -1264,6 +1273,7 @@ Point getLocationInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setLocation (Point location) {
 	checkWidget ();
 	if (location == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1292,6 +1302,7 @@ void setLocationInPixels (Point location) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setLocation(int x, int y) {
 	checkWidget();
 	Point loc = DPIUtil.autoScaleUp(new Point (x, y));
@@ -1316,6 +1327,7 @@ void setLocationInPixels(int x, int y) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Point getSize () {
 	checkWidget();
 	return DPIUtil.autoScaleDown(getSizeInPixels());
@@ -1354,6 +1366,7 @@ Point getSizeInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setSize (Point size) {
 	checkWidget ();
 	if (size == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1384,6 +1397,7 @@ void setSizeInPixels (Point size) {
  *
  * @since 3.4
  */
+@Override
 public void setRegion (Region region) {
 	checkWidget ();
 	if (region != null && region.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -1443,10 +1457,10 @@ void setRelations () {
 	}
 
 	if (handle != 0) {
-		Widget widget = display.getWidget (handle);
+		NativeWidget widget = display.getWidget (handle);
 		if (widget != null && widget != this) {
-			if (widget instanceof Control) {
-				Control sibling = (Control)widget;
+			if (widget instanceof NativeControl) {
+				NativeControl sibling = (NativeControl)widget;
 				sibling.addRelation (this);
 			}
 		}
@@ -1474,6 +1488,7 @@ void setRelations () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setSize (int width, int height) {
 	checkWidget();
 	Point size = DPIUtil.autoScaleUp(new Point (width, height));
@@ -1516,7 +1531,7 @@ boolean isFocusHandle (long widget) {
  * the top of the drawing order will not be covered by other
  * controls even if they occupy intersecting areas.
  *
- * @param control the sibling control (or null)
+ * @param controlWrapper the sibling control (or null)
  *
  * @exception IllegalArgumentException <ul>
  *    <li>ERROR_INVALID_ARGUMENT - if the control has been disposed</li>
@@ -1526,10 +1541,12 @@ boolean isFocusHandle (long widget) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Control#moveBelow
- * @see Composite#getChildren
+ * @see NativeControl#moveBelow
+ * @see NativeComposite#getChildren
  */
-public void moveAbove (Control control) {
+@Override
+public void moveAbove (Control controlWrapper) {
+	NativeControl control = Widget.checkNative(controlWrapper);
 	checkWidget();
 	if (control != null) {
 		if (control.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -1546,7 +1563,7 @@ public void moveAbove (Control control) {
  * the bottom of the drawing order will be covered by all other
  * controls which occupy intersecting areas.
  *
- * @param control the sibling control (or null)
+ * @param controlWrapper the sibling control (or null)
  *
  * @exception IllegalArgumentException <ul>
  *    <li>ERROR_INVALID_ARGUMENT - if the control has been disposed</li>
@@ -1556,10 +1573,12 @@ public void moveAbove (Control control) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Control#moveAbove
- * @see Composite#getChildren
+ * @see NativeControl#moveAbove
+ * @see NativeComposite#getChildren
  */
-public void moveBelow (Control control) {
+@Override
+public void moveBelow (Control controlWrapper) {
+	NativeControl control = Widget.checkNative(controlWrapper);
 	checkWidget();
 	if (control != null) {
 		if (control.isDisposed ()) error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1584,6 +1603,7 @@ void moveChildren (int oldWidth) {
  *
  * @see #computeSize(int, int, boolean)
  */
+@Override
 public void pack () {
 	pack (true);
 }
@@ -1609,6 +1629,7 @@ public void pack () {
  *
  * @see #computeSize(int, int, boolean)
  */
+@Override
 public void pack (boolean changed) {
 	setSize (computeSize (SWT.DEFAULT, SWT.DEFAULT, changed));
 }
@@ -1623,6 +1644,7 @@ public void pack (boolean changed) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setLayoutData (Object layoutData) {
 	checkWidget();
 	this.layoutData = layoutData;
@@ -1634,7 +1656,7 @@ public void setLayoutData (Object layoutData) {
  * to coordinates relative to the receiver.
  * <p>
  * NOTE: To properly map a rectangle or a corner of a rectangle on a right-to-left platform, use
- * {@link Display#map(Control, Control, Rectangle)}.
+ * {@link Display#map(NativeControl, NativeControl, Rectangle)}.
  * </p>
  *
  * @param x the x coordinate in points to be translated
@@ -1648,6 +1670,7 @@ public void setLayoutData (Object layoutData) {
  *
  * @since 2.1
  */
+@Override
 public Point toControl(int x, int y) {
 	checkWidget();
 	int[] origin_x = new int[1], origin_y = new int[1];
@@ -1673,7 +1696,7 @@ public Point toControl(int x, int y) {
  * to coordinates relative to the receiver.
  * <p>
  * NOTE: To properly map a rectangle or a corner of a rectangle on a right-to-left platform, use
- * {@link Display#map(Control, Control, Rectangle)}.
+ * {@link Display#map(NativeControl, NativeControl, Rectangle)}.
  * </p>
  *
  * @param point the point to be translated (must not be null)
@@ -1687,6 +1710,7 @@ public Point toControl(int x, int y) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Point toControl (Point point) {
 	checkWidget ();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1699,7 +1723,7 @@ public Point toControl (Point point) {
  * the receiver, to display relative coordinates.
  * <p>
  * NOTE: To properly map a rectangle or a corner of a rectangle on a right-to-left platform, use
- * {@link Display#map(Control, Control, Rectangle)}.
+ * {@link Display#map(NativeControl, NativeControl, Rectangle)}.
  * </p>
  *
  * @param x the x coordinate to be translated
@@ -1713,6 +1737,7 @@ public Point toControl (Point point) {
  *
  * @since 2.1
  */
+@Override
 public Point toDisplay(int x, int y) {
 	checkWidget();
 	int[] origin_x = new int[1], origin_y = new int[1];
@@ -1758,7 +1783,7 @@ Point toDisplayInPixels(int x, int y) {
  * the receiver, to display relative coordinates.
  * <p>
  * NOTE: To properly map a rectangle or a corner of a rectangle on a right-to-left platform, use
- * {@link Display#map(Control, Control, Rectangle)}.
+ * {@link Display#map(NativeControl, NativeControl, Rectangle)}.
  * </p>
  *
  * @param point the point to be translated (must not be null)
@@ -1772,6 +1797,7 @@ Point toDisplayInPixels(int x, int y) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Point toDisplay (Point point) {
 	checkWidget();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -1814,6 +1840,7 @@ Point getControlOrigin() {
  * @see ControlListener
  * @see #removeControlListener
  */
+@Override
 public void addControlListener(ControlListener listener) {
 	addTypedListener(listener, SWT.Resize, SWT.Move);
 }
@@ -1839,6 +1866,7 @@ public void addControlListener(ControlListener listener) {
  *
  * @since 3.3
  */
+@Override
 public void addDragDetectListener (DragDetectListener listener) {
 	addTypedListener(listener, SWT.DragDetect);
 }
@@ -1862,6 +1890,7 @@ public void addDragDetectListener (DragDetectListener listener) {
  * @see FocusListener
  * @see #removeFocusListener
  */
+@Override
 public void addFocusListener(FocusListener listener) {
 	addTypedListener(listener, SWT.FocusIn, SWT.FocusOut);
 }
@@ -1898,6 +1927,7 @@ public void addFocusListener(FocusListener listener) {
  *
  * @since 3.7
  */
+@Override
 public void addGestureListener (GestureListener listener) {
 	addTypedListener(listener, SWT.Gesture);
 }
@@ -1921,6 +1951,7 @@ public void addGestureListener (GestureListener listener) {
  * @see HelpListener
  * @see #removeHelpListener
  */
+@Override
 public void addHelpListener (HelpListener listener) {
 	addTypedListener(listener, SWT.Help);
 }
@@ -1955,6 +1986,7 @@ public void addHelpListener (HelpListener listener) {
  * @see KeyListener
  * @see #removeKeyListener
  */
+@Override
 public void addKeyListener(KeyListener listener) {
 	addTypedListener(listener, SWT.KeyUp, SWT.KeyDown);
 }
@@ -1980,6 +2012,7 @@ public void addKeyListener(KeyListener listener) {
  *
  * @since 3.3
  */
+@Override
 public void addMenuDetectListener (MenuDetectListener listener) {
 	addTypedListener(listener, SWT.MenuDetect);
 }
@@ -2003,6 +2036,7 @@ public void addMenuDetectListener (MenuDetectListener listener) {
  * @see MouseListener
  * @see #removeMouseListener
  */
+@Override
 public void addMouseListener(MouseListener listener) {
 	addTypedListener(listener, SWT.MouseDown, SWT.MouseUp, SWT.MouseDoubleClick);
 }
@@ -2026,6 +2060,7 @@ public void addMouseListener(MouseListener listener) {
  * @see MouseMoveListener
  * @see #removeMouseMoveListener
  */
+@Override
 public void addMouseMoveListener(MouseMoveListener listener) {
 	addTypedListener(listener, SWT.MouseMove);
 }
@@ -2049,6 +2084,7 @@ public void addMouseMoveListener(MouseMoveListener listener) {
  * @see MouseTrackListener
  * @see #removeMouseTrackListener
  */
+@Override
 public void addMouseTrackListener (MouseTrackListener listener) {
 	addTypedListener(listener, SWT.MouseEnter, SWT.MouseExit, SWT.MouseHover);
 }
@@ -2074,6 +2110,7 @@ public void addMouseTrackListener (MouseTrackListener listener) {
  *
  * @since 3.3
  */
+@Override
 public void addMouseWheelListener (MouseWheelListener listener) {
 	addTypedListener(listener, SWT.MouseWheel);
 }
@@ -2097,6 +2134,7 @@ public void addMouseWheelListener (MouseWheelListener listener) {
  * @see PaintListener
  * @see #removePaintListener
  */
+@Override
 public void addPaintListener(PaintListener listener) {
 	addTypedListener(listener, SWT.Paint);
 }
@@ -2110,7 +2148,7 @@ public void addPaintListener(PaintListener listener) {
 void adjustChildClipping (long widget) {
 }
 
-void addRelation (Control control) {
+void addRelation (NativeControl control) {
 }
 
 /**
@@ -2144,6 +2182,7 @@ void addRelation (Control control) {
  *
  * @since 3.7
  */
+@Override
 public void addTouchListener (TouchListener listener) {
 	addTypedListener(listener, SWT.Touch);
 }
@@ -2167,6 +2206,7 @@ public void addTouchListener (TouchListener listener) {
  * @see TraverseListener
  * @see #removeTraverseListener
  */
+@Override
 public void addTraverseListener (TraverseListener listener) {
 	addTypedListener(listener, SWT.Traverse);
 }
@@ -2188,6 +2228,7 @@ public void addTraverseListener (TraverseListener listener) {
  * @see ControlListener
  * @see #addControlListener
  */
+@Override
 public void removeControlListener (ControlListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2215,6 +2256,7 @@ public void removeControlListener (ControlListener listener) {
  *
  * @since 3.3
  */
+@Override
 public void removeDragDetectListener(DragDetectListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2239,6 +2281,7 @@ public void removeDragDetectListener(DragDetectListener listener) {
  * @see FocusListener
  * @see #addFocusListener
  */
+@Override
 public void removeFocusListener(FocusListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2265,6 +2308,7 @@ public void removeFocusListener(FocusListener listener) {
  *
  * @since 3.7
  */
+@Override
 public void removeGestureListener (GestureListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2288,6 +2332,7 @@ public void removeGestureListener (GestureListener listener) {
  * @see HelpListener
  * @see #addHelpListener
  */
+@Override
 public void removeHelpListener (HelpListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2311,6 +2356,7 @@ public void removeHelpListener (HelpListener listener) {
  * @see KeyListener
  * @see #addKeyListener
  */
+@Override
 public void removeKeyListener(KeyListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2338,6 +2384,7 @@ public void removeKeyListener(KeyListener listener) {
  *
  * @since 3.3
  */
+@Override
 public void removeMenuDetectListener (MenuDetectListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2361,6 +2408,7 @@ public void removeMenuDetectListener (MenuDetectListener listener) {
  * @see MouseListener
  * @see #addMouseListener
  */
+@Override
 public void removeMouseListener (MouseListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2386,6 +2434,7 @@ public void removeMouseListener (MouseListener listener) {
  * @see MouseMoveListener
  * @see #addMouseMoveListener
  */
+@Override
 public void removeMouseMoveListener(MouseMoveListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2410,6 +2459,7 @@ public void removeMouseMoveListener(MouseMoveListener listener) {
  * @see MouseTrackListener
  * @see #addMouseTrackListener
  */
+@Override
 public void removeMouseTrackListener(MouseTrackListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2438,6 +2488,7 @@ public void removeMouseTrackListener(MouseTrackListener listener) {
  *
  * @since 3.3
  */
+@Override
 public void removeMouseWheelListener (MouseWheelListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2462,6 +2513,7 @@ public void removeMouseWheelListener (MouseWheelListener listener) {
  * @see PaintListener
  * @see #addPaintListener
  */
+@Override
 public void removePaintListener(PaintListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2499,6 +2551,7 @@ void removeRelation () {
  *
  * @since 3.7
  */
+@Override
 public void removeTouchListener(TouchListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2523,6 +2576,7 @@ public void removeTouchListener(TouchListener listener) {
  * @see TraverseListener
  * @see #addTraverseListener
  */
+@Override
 public void removeTraverseListener(TraverseListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2566,6 +2620,7 @@ public void removeTraverseListener(TraverseListener listener) {
  *
  * @since 3.3
  */
+@Override
 public boolean dragDetect (Event event) {
 	checkWidget ();
 	if (event == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2608,6 +2663,7 @@ public boolean dragDetect (Event event) {
  *
  * @since 3.3
  */
+@Override
 public boolean dragDetect (MouseEvent event) {
 	checkWidget ();
 	if (event == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2798,17 +2854,17 @@ boolean filterKey (long event) {
 	return false;
 }
 
-Control findBackgroundControl () {
+NativeControl findBackgroundControl () {
 	if (((state & BACKGROUND) != 0 || backgroundImage != null) && backgroundAlpha > 0) return this;
 	return (parent != null && (state & PARENT_BACKGROUND) != 0) ? parent.findBackgroundControl () : null;
 }
 
-Menu [] findMenus (Control control) {
-	if (menu != null && this != control) return new Menu [] {menu};
-	return new Menu [0];
+NativeMenu [] findMenus (NativeControl control) {
+	if (menu != null && this != control) return new NativeMenu [] {menu};
+	return new NativeMenu [0];
 }
 
-void fixChildren (Shell newShell, Shell oldShell, Decorations newDecorations, Decorations oldDecorations, Menu [] menus) {
+void fixChildren (NativeShell newShell, NativeShell oldShell, NativeDecorations newDecorations, NativeDecorations oldDecorations, NativeMenu [] menus) {
 	oldShell.fixShell (newShell, this);
 	oldDecorations.fixDecorations (newDecorations, this, menus);
 }
@@ -2838,7 +2894,7 @@ void fixParentGdkResource() {
  * @param control that should be reparented.
  * @param newParentHandle pointer/handle to the new GtkWidget parent.
  */
-static void gtk_widget_reparent (Control control, long newParentHandle) {
+static void gtk_widget_reparent (NativeControl control, long newParentHandle) {
 	// Changes to this method should be verified via both parts in:
 	// org.eclipse.swt.tests.gtk/*/Bug510803_TabFolder_TreeEditor_Regression.java
 	long widget = control.topHandle();
@@ -2891,13 +2947,14 @@ void fixModal(long group, long modalGroup) {
  *
  * @see #setFocus
  */
+@Override
 public boolean forceFocus () {
 	checkWidget();
 	if (display.focusEvent == SWT.FocusOut) return false;
-	Shell shell = getShell ();
+	NativeShell shell = getShell ();
 	shell.setSavedFocus (this);
 	if (!isEnabled () || !isVisible ()) return false;
-	if (display.getActiveShell() != shell && !Display.isActivateShellOnForceFocus()) return false;
+	if (display.getActiveShell() != shell.getWrapper() && !Display.isActivateShellOnForceFocus()) return false;
 	shell.bringToTop (false);
 	return forceFocus (focusHandle ());
 }
@@ -2909,7 +2966,7 @@ boolean forceFocus (long focusHandle) {
 	GTK.gtk_widget_grab_focus (focusHandle);
 	// widget could be disposed at this point
 	if (isDisposed ()) return false;
-	Shell shell = getShell ();
+	NativeShell shell = getShell ();
 	long shellHandle = shell.shellHandle;
 	long handle = GTK.gtk_window_get_focus (shellHandle);
 	while (handle != 0) {
@@ -2918,8 +2975,8 @@ boolean forceFocus (long focusHandle) {
 			display.ignoreFocus = false;
 			return true;
 		}
-		Widget widget = display.getWidget (handle);
-		if (widget != null && widget instanceof Control) {
+		NativeWidget widget = display.getWidget (handle);
+		if (widget != null && widget instanceof NativeControl) {
 			return widget == this;
 		}
 		handle = GTK.gtk_widget_get_parent (handle);
@@ -2941,6 +2998,7 @@ boolean forceFocus (long focusHandle) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Color getBackground () {
 	checkWidget();
 	Color color;
@@ -2948,7 +3006,7 @@ public Color getBackground () {
 		color = Color.gtk_new (display, this.getBackgroundGdkRGBA (), 0);
 		return color;
 	} else {
-		Control control = findBackgroundControl ();
+		NativeControl control = findBackgroundControl ();
 		if (control == null) control = this;
 		return Color.gtk_new (display, control.getBackgroundGdkRGBA (), backgroundAlpha);
 	}
@@ -2970,9 +3028,10 @@ GdkRGBA getBackgroundGdkRGBA () {
  *
  * @since 3.2
  */
+@Override
 public Image getBackgroundImage () {
 	checkWidget ();
-	Control control = findBackgroundControl ();
+	NativeControl control = findBackgroundControl ();
 	if (control == null) control = this;
 	return control.backgroundImage;
 }
@@ -3010,6 +3069,7 @@ GdkRGBA getBaseGdkRGBA () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getBorderWidth () {
 	return DPIUtil.autoScaleDown(getBorderWidthInPixels());
 }
@@ -3042,6 +3102,7 @@ int getClientWidth () {
  *
  * @since 3.3
  */
+@Override
 public Cursor getCursor () {
 	checkWidget ();
 	return cursor;
@@ -3060,6 +3121,7 @@ public Cursor getCursor () {
  *
  * @since 3.3
  */
+@Override
 public boolean getDragDetect () {
 	checkWidget ();
 	return (state & DRAG_DETECT) != 0;
@@ -3080,6 +3142,7 @@ public boolean getDragDetect () {
  *
  * @see #isEnabled
  */
+@Override
 public boolean getEnabled () {
 	checkWidget ();
 	return (state & DISABLED) == 0;
@@ -3095,6 +3158,7 @@ public boolean getEnabled () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Font getFont () {
 	checkWidget();
 	return font != null ? font : defaultFont ();
@@ -3149,6 +3213,7 @@ long getFontDescription () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Color getForeground () {
 	checkWidget();
 	Color color;
@@ -3174,6 +3239,7 @@ Point getIMCaretPos () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Object getLayoutData () {
 	checkWidget();
 	return layoutData;
@@ -3194,9 +3260,10 @@ public Object getLayoutData () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Menu getMenu () {
 	checkWidget();
-	return menu;
+	return menu != null ? menu.getWrapper() : null;
 }
 
 /**
@@ -3211,6 +3278,7 @@ public Menu getMenu () {
  *
  * @since 3.0
  */
+@Override
 public Monitor getMonitor () {
 	checkWidget ();
 	Monitor[] monitors = display.getMonitors ();
@@ -3245,21 +3313,22 @@ public Monitor getMonitor () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Composite getParent () {
 	checkWidget();
-	return parent;
+	return parent != null ? parent.getWrapper() : null;
 }
 
-Control [] getPath () {
+NativeControl [] getPath () {
 	int count = 0;
-	Shell shell = getShell ();
-	Control control = this;
+	NativeShell shell = getShell ();
+	NativeControl control = this;
 	while (control != shell) {
 		count++;
 		control = control.parent;
 	}
 	control = this;
-	Control [] result = new Control [count];
+	NativeControl [] result = new NativeControl [count];
 	while (control != shell) {
 		result [--count] = control;
 		control = control.parent;
@@ -3280,6 +3349,7 @@ Control [] getPath () {
  *
  * @since 3.4
  */
+@Override
 public Region getRegion () {
 	checkWidget ();
 	return region;
@@ -3300,12 +3370,12 @@ public Region getRegion () {
  *
  * @see #getParent
  */
-public Shell getShell() {
+public NativeShell getShell() {
 	checkWidget();
 	return _getShell();
 }
 
-Shell _getShell() {
+NativeShell _getShell() {
 	return parent._getShell();
 }
 
@@ -3320,6 +3390,7 @@ Shell _getShell() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public String getToolTipText () {
 	checkWidget();
 	return toolTipText;
@@ -3345,6 +3416,7 @@ public String getToolTipText () {
  *
  * @since 3.7
  */
+@Override
 public boolean getTouchEnabled() {
 	checkWidget();
 	return false;
@@ -3367,6 +3439,7 @@ public boolean getTouchEnabled() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public boolean getVisible () {
 	checkWidget();
 	return (state & HIDDEN) == 0;
@@ -3494,7 +3567,7 @@ long gtk_button_press_event (long widget, long event, boolean sendMouseDown) {
 	* the client area or on the border or a control within the
 	* shell that does not take focus.
 	*/
-	Shell shell = _getShell ();
+	NativeShell shell = _getShell ();
 	if (((shell.style & SWT.ON_TOP) != 0) && (((shell.style & SWT.NO_FOCUS) == 0) || ((style & SWT.NO_FOCUS) == 0))) {
 		shell.forceActive();
 	}
@@ -3799,7 +3872,7 @@ void cairoClipRegion (long cairo) {
 	long actualRegion = Cairo.cairo_region_create_rectangle(cairoRect);
 	Cairo.cairo_region_subtract(actualRegion, regionHandle);
 	// Draw the Shell bg using cairo, only if it's a different color
-	Shell shell = getShell();
+	NativeShell shell = getShell();
 	Color shellBg = shell.getBackground();
 	if (shellBg != this.getBackground()) {
 		GdkRGBA rgba = shellBg.handle;
@@ -3894,7 +3967,7 @@ long gtk_focus (long widget, long directionType) {
 long gtk_focus_in_event (long widget, long event) {
 	// widget could be disposed at this point
 	if (handle != 0) {
-		Control oldControl = display.imControl;
+		NativeControl oldControl = display.imControl;
 		if (oldControl != this)  {
 			if (oldControl != null && !oldControl.isDisposed ()) {
 				long oldIMHandle = oldControl.imHandle ();
@@ -4080,7 +4153,7 @@ long gtk_mnemonic_activate (long widget, long arg1) {
 		int type = GDK.gdk_event_get_event_type(eventPtr);
 		type = fixGdkEventTypeValues(type);
 		if (type == GDK.GDK_KEY_PRESS) {
-			Control focusControl = display.getFocusControl ();
+			NativeControl focusControl = display.getNativeFocusControl ();
 			long focusHandle = focusControl != null ? focusControl.focusHandle () : 0;
 			if (focusHandle != 0) {
 				display.mnemonicControl = this;
@@ -4416,7 +4489,7 @@ public long internal_new_GC (GCData data) {
 		data.drawable = gdkResource;
 		data.device = display;
 
-		Control control = findBackgroundControl ();
+		NativeControl control = findBackgroundControl ();
 		if (control == null) control = this;
 		data.font = font != null ? font : defaultFont ();
 		data.foregroundRGBA = getForegroundGdkRGBA ();
@@ -4461,6 +4534,7 @@ public void internal_dispose_GC (long hDC, GCData data) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public boolean isReparentable () {
 	checkWidget();
 	return true;
@@ -4471,7 +4545,7 @@ boolean isShowing () {
 	* widget is obscurred by a parent or sibling.
 	*/
 	if (!isVisible ()) return false;
-	Control control = this;
+	NativeControl control = this;
 	while (control != null) {
 		Point size = control.getSizeInPixels ();
 		if (size.x == 0 || size.y == 0) {
@@ -4482,7 +4556,7 @@ boolean isShowing () {
 	return true;
 }
 boolean isTabGroup () {
-	Control [] tabList = parent._getTabList ();
+	NativeControl [] tabList = parent._getTabList ();
 	if (tabList != null) {
 		for (int i=0; i<tabList.length; i++) {
 			if (tabList [i] == this) return true;
@@ -4493,7 +4567,7 @@ boolean isTabGroup () {
 	return (code & (SWT.TRAVERSE_TAB_PREVIOUS | SWT.TRAVERSE_TAB_NEXT)) != 0;
 }
 boolean isTabItem () {
-	Control [] tabList = parent._getTabList ();
+	NativeControl [] tabList = parent._getTabList ();
 	if (tabList != null) {
 		for (int i=0; i<tabList.length; i++) {
 			if (tabList [i] == this) return false;
@@ -4519,13 +4593,14 @@ boolean isTabItem () {
  *
  * @see #getEnabled
  */
+@Override
 public boolean isEnabled () {
 	checkWidget ();
 	return getEnabled () && parent.isEnabled ();
 }
 
-boolean isFocusAncestor (Control control) {
-	while (control != null && control != this && !(control instanceof Shell)) {
+boolean isFocusAncestor (NativeControl control) {
+	while (control != null && control != this && !(control instanceof NativeShell)) {
 		control = control.parent;
 	}
 	return control == this;
@@ -4542,9 +4617,10 @@ boolean isFocusAncestor (Control control) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public boolean isFocusControl () {
 	checkWidget();
-	Control focusControl = display.focusControl;
+	NativeControl focusControl = display.focusControl;
 	if (focusControl != null && !focusControl.isDisposed ()) {
 		return this == focusControl;
 	}
@@ -4565,12 +4641,13 @@ public boolean isFocusControl () {
  *
  * @see #getVisible
  */
+@Override
 public boolean isVisible () {
 	checkWidget();
 	return getVisible () && parent.isVisible ();
 }
 
-Decorations menuShell () {
+NativeDecorations menuShell () {
 	return parent.menuShell ();
 }
 
@@ -4605,8 +4682,9 @@ void register () {
  *
  * @since 3.105
  */
+@Override
 public void requestLayout () {
-	getShell ().layout (new Control[] {this}, SWT.DEFER);
+	getShell ().layout (new Control[] {this.getWrapper()}, SWT.DEFER);
 }
 
 /**
@@ -4635,6 +4713,7 @@ public void requestLayout () {
  * @see SWT#NO_MERGE_PAINTS
  * @see SWT#DOUBLE_BUFFERED
  */
+@Override
 public void redraw () {
 	checkWidget();
 	redraw (false);
@@ -4683,6 +4762,7 @@ void redraw (boolean all) {
  * @see SWT#NO_MERGE_PAINTS
  * @see SWT#DOUBLE_BUFFERED
  */
+@Override
 public void redraw (int x, int y, int width, int height, boolean all) {
 	checkWidget();
 	Rectangle rect = DPIUtil.autoScaleUp(new Rectangle(x, y, width, height));
@@ -4737,9 +4817,9 @@ void redrawWidget (int x, int y, int width, int height, boolean redrawAll, boole
 
 @Override
 void release (boolean destroy) {
-	Control next = null, previous = null;
+	NativeControl next = null, previous = null;
 	if (destroy && parent != null) {
-		Control[] children = parent._getChildren ();
+		NativeControl[] children = parent._getChildren ();
 		int index = 0;
 		while (index < children.length) {
 			if (children [index] == this) break;
@@ -4775,7 +4855,7 @@ void releaseParent () {
 
 @Override
 void releaseWidget () {
-	boolean hadFocus = display.getFocusControl() == this;
+	boolean hadFocus = display.getNativeFocusControl() == this;
 	super.releaseWidget ();
 	if (hadFocus) fixFocus (this);
 	if (display.currentControl == this) display.currentControl = null;
@@ -4883,7 +4963,7 @@ boolean sendDragEvent (int button, int stateMask, int x, int y, boolean isStateM
 }
 
 void sendFocusEvent (int type) {
-	Shell shell = _getShell ();
+	NativeShell shell = _getShell ();
 	Display display = this.display;
 	display.focusControl = this;
 	display.focusEvent = type;
@@ -4970,7 +5050,7 @@ boolean sendGestureEvent (int stateMask, int detail, int x, int y, double rotati
 }
 
 boolean sendHelpEvent (long helpType) {
-	Control control = this;
+	NativeControl control = this;
 	while (control != null) {
 		if (control.hooks (SWT.Help)) {
 			control.postEvent (SWT.Help);
@@ -5177,6 +5257,7 @@ void setBackground () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setBackground (Color color) {
 	checkWidget ();
 	_setBackground (color);
@@ -5248,7 +5329,7 @@ void setBackgroundGdkRGBA (long handle, GdkRGBA rgba) {
 	if (rgba == null) {
 		if ((state & PARENT_BACKGROUND) != 0) {
 			alpha = 0;
-			Control control = findBackgroundControl();
+			NativeControl control = findBackgroundControl();
 			if (control == null) control = this;
 			rgba = control.getBackgroundGdkRGBA();
 		}
@@ -5285,6 +5366,7 @@ void setBackgroundGdkRGBA (long handle, GdkRGBA rgba) {
  *
  * @since 3.2
  */
+@Override
 public void setBackgroundImage (Image image) {
 	checkWidget ();
 	if (image != null && image.isDisposed ()) error(SWT.ERROR_INVALID_ARGUMENT);
@@ -5316,6 +5398,7 @@ void setBackgroundSurface (Image image) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setCapture (boolean capture) {
 	checkWidget();
 	/* FIXME !!!!! */
@@ -5346,6 +5429,7 @@ public void setCapture (boolean capture) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setCursor (Cursor cursor) {
 	checkWidget();
 	if (cursor != null && cursor.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -5380,6 +5464,7 @@ void setCursor (long cursor) {
  *
  * @since 3.3
  */
+@Override
 public void setDragDetect (boolean dragDetect) {
 	checkWidget ();
 	if (dragDetect) {
@@ -5402,14 +5487,15 @@ public void setDragDetect (boolean dragDetect) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setEnabled (boolean enabled) {
 	checkWidget();
 	if (((state & DISABLED) == 0) == enabled) return;
-	Control control = null;
+	NativeControl control = null;
 	boolean fixFocus = false;
 	if (!enabled) {
 		if (display.focusEvent != SWT.FocusOut) {
-			control = display.getFocusControl ();
+			control = display.getNativeFocusControl ();
 			fixFocus = isFocusAncestor (control);
 		}
 	}
@@ -5473,6 +5559,7 @@ void cleanupEnableWindow() {
  *
  * @see #forceFocus
  */
+@Override
 public boolean setFocus () {
 	checkWidget();
 	if ((style & SWT.NO_FOCUS) != 0) return false;
@@ -5494,6 +5581,7 @@ public boolean setFocus () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setFont (Font font) {
 	checkWidget();
 	if (((state & FONT) == 0) && font == null) return;
@@ -5534,6 +5622,7 @@ void setFontDescription (long font) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setForeground (Color color) {
 	checkWidget();
 	if (((state & FOREGROUND) == 0) && color == null) return;
@@ -5672,12 +5761,12 @@ private void setZoomGesture() {
 	return;
 }
 
-static Control getControl(long handle) {
+static NativeControl getControl(long handle) {
 	Display display = Display.findDisplay(Thread.currentThread());
 	if (display ==null || display.isDisposed()) return null;
-	Widget widget = display.findWidget(handle);
+	NativeWidget widget = display.findWidget(handle);
 	if (widget == null) return null;
-	return (Control) widget;
+	return (NativeControl) widget;
 }
 
 static void rotateProc(long gesture, double angle, double angle_delta, long user_data) {
@@ -5694,7 +5783,7 @@ static void rotateProc(long gesture, double angle, double angle_delta, long user
 		 * correctly (inverted).
 		 */
 		double delta = -(GTK.gtk_gesture_rotate_get_angle_delta(gesture)*100);
-		Control control = getControl(user_data);
+		NativeControl control = getControl(user_data);
 		control.sendGestureEvent(state[0], SWT.GESTURE_ROTATE, (int) x[0], (int) y[0], delta);
 	}
 }
@@ -5707,7 +5796,7 @@ static void magnifyProc(long gesture, double zoom, long user_data) {
 		GTK3.gtk_get_current_event_state(state);
 		GTK.gtk_gesture_get_point(gesture, GTK.gtk_gesture_get_last_updated_sequence(gesture), x, y);
 		double delta = GTK.gtk_gesture_zoom_get_scale_delta(gesture);
-		Control control = getControl(user_data);
+		NativeControl control = getControl(user_data);
 		control.sendGestureEvent(state[0], SWT.GESTURE_MAGNIFY, (int) x[0], (int) y[0], delta);
 	}
 }
@@ -5722,7 +5811,7 @@ static void swipeProc(long gesture, double velocity_x, double velocity_y, long u
 			double [] y = new double[1];
 			GTK3.gtk_get_current_event_state(state);
 			GTK.gtk_gesture_get_point(gesture, GTK.gtk_gesture_get_last_updated_sequence(gesture), x, y);
-			Control control = getControl(user_data);
+			NativeControl control = getControl(user_data);
 			control.sendGestureEvent(state[0], SWT.GESTURE_SWIPE, (int) x[0], (int) y[0], xVelocity[0], yVelocity[0]);
 		}
 	}
@@ -5735,7 +5824,7 @@ static void gestureBeginProc(long gesture, long sequence, long user_data) {
 		double [] y = new double[1];
 		GTK3.gtk_get_current_event_state(state);
 		GTK.gtk_gesture_get_point(gesture, sequence, x, y);
-		Control control = getControl(user_data);
+		NativeControl control = getControl(user_data);
 		control.sendGestureEvent(state[0], SWT.GESTURE_BEGIN, (int) x[0], (int) y[0], 0);
 	}
 }
@@ -5747,7 +5836,7 @@ static void gestureEndProc(long gesture, long sequence, long user_data) {
 		double [] y = new double[1];
 		GTK3.gtk_get_current_event_state(state);
 		GTK.gtk_gesture_get_point(gesture, GTK.gtk_gesture_get_last_updated_sequence(gesture), x, y);
-		Control control = getControl(user_data);
+		NativeControl control = getControl(user_data);
 		control.sendGestureEvent(state[0], SWT.GESTURE_END, (int) x[0], (int) y[0], 0);
 	}
 }
@@ -5764,7 +5853,7 @@ static void gestureEndProc(long gesture, long sequence, long user_data) {
  * menu to null before the control is disposed.
  * </p>
  *
- * @param menu the new pop up menu
+ * @param menuWrapper the new pop up menu
  *
  * @exception IllegalArgumentException <ul>
  *    <li>ERROR_MENU_NOT_POP_UP - the menu is not a pop up menu</li>
@@ -5776,7 +5865,9 @@ static void gestureEndProc(long gesture, long sequence, long user_data) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setMenu (Menu menu) {
+@Override
+public void setMenu (Menu menuWrapper) {
+	NativeMenu menu = Widget.checkNative(menuWrapper);
 	checkWidget();
 	if (menu != null) {
 		if ((menu.style & SWT.POP_UP) == 0) {
@@ -5811,6 +5902,7 @@ void setOrientation (boolean create) {
  *
  * @since 3.7
  */
+@Override
 public void setOrientation (int orientation) {
 	checkWidget ();
 	int flags = SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT;
@@ -5826,7 +5918,7 @@ public void setOrientation (int orientation) {
  * Changes the parent of the widget to be the one provided.
  * Returns <code>true</code> if the parent is successfully changed.
  *
- * @param parent the new parent for the control.
+ * @param parentWrapper the new parent for the control.
  * @return <code>true</code> if the parent is changed and <code>false</code> otherwise.
  *
  * @exception IllegalArgumentException <ul>
@@ -5838,7 +5930,9 @@ public void setOrientation (int orientation) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  *	</ul>
  */
-public boolean setParent (Composite parent) {
+@Override
+public boolean setParent (Composite parentWrapper) {
+	NativeComposite parent = Widget.checkNative(parentWrapper);
 	checkWidget ();
 	if (parent == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (parent.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -5859,9 +5953,9 @@ public boolean setParent (Composite parent) {
 		x = parent.getClientWidth () - width - x;
 	}
 	releaseParent ();
-	Shell newShell = parent.getShell (), oldShell = getShell ();
-	Decorations newDecorations = parent.menuShell (), oldDecorations = menuShell ();
-	Menu [] menus = oldShell.findMenus (this);
+	NativeShell newShell = parent.getShell (), oldShell = getShell ();
+	NativeDecorations newDecorations = parent.menuShell (), oldDecorations = menuShell ();
+	NativeMenu [] menus = oldShell.findMenus (this);
 	if (oldShell != newShell || oldDecorations != newDecorations) {
 		fixChildren (newShell, oldShell, newDecorations, oldDecorations, menus);
 
@@ -5900,7 +5994,7 @@ void setParentBackground () {
 	if (fixedHandle != 0) setBackgroundGdkRGBA (fixedHandle, null);
 }
 
-void setParentGdkResource (Control child) {
+void setParentGdkResource (NativeControl child) {
 }
 
 boolean setRadioSelection (boolean value) {
@@ -5930,6 +6024,7 @@ boolean setRadioSelection (boolean value) {
  * @see #redraw(int, int, int, int, boolean)
  * @see #update()
  */
+@Override
 public void setRedraw (boolean redraw) {
 	checkWidget();
 	if (redraw) {
@@ -6005,6 +6100,7 @@ boolean setTabItemFocus (boolean next) {
  *
  * @since 3.102
  */
+@Override
 public void setTextDirection(int textDirection) {
 	checkWidget ();
 }
@@ -6034,6 +6130,7 @@ public void setTextDirection(int textDirection) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setToolTipText(String string) {
 	checkWidget();
 
@@ -6043,7 +6140,7 @@ public void setToolTipText(String string) {
 	}
 }
 
-void setToolTipText(Shell shell, String newString) {
+void setToolTipText(NativeShell shell, String newString) {
 	/*
 	* Feature in GTK.  In order to prevent children widgets
 	* from inheriting their parent's tooltip, the tooltip is
@@ -6078,6 +6175,7 @@ void setToolTipText(Shell shell, String newString) {
  *
  * @since 3.7
  */
+@Override
 public void setTouchEnabled(boolean enabled) {
 	checkWidget();
 }
@@ -6098,6 +6196,7 @@ public void setTouchEnabled(boolean enabled) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setVisible (boolean visible) {
 	checkWidget();
 	if (((state & HIDDEN) == 0) == visible) return;
@@ -6127,10 +6226,10 @@ public void setVisible (boolean visible) {
 		* NOTE: In order to stop the same widget from taking focus,
 		* temporarily clear and set the GTK_VISIBLE flag.
 		*/
-		Control control = null;
+		NativeControl control = null;
 		boolean fixFocus = false;
 		if (display.focusEvent != SWT.FocusOut) {
-			control = display.getFocusControl ();
+			control = display.getNativeFocusControl ();
 			fixFocus = isFocusAncestor (control);
 		}
 		state |= HIDDEN;
@@ -6150,13 +6249,13 @@ public void setVisible (boolean visible) {
 	}
 }
 
-void setZOrder (Control sibling, boolean above, boolean fixRelations) {
+void setZOrder (NativeControl sibling, boolean above, boolean fixRelations) {
 	setZOrder (sibling, above, fixRelations, true);
 }
 
-void setZOrder (Control sibling, boolean above, boolean fixRelations, boolean fixChildren) {
+void setZOrder (NativeControl sibling, boolean above, boolean fixRelations, boolean fixChildren) {
 	int index = 0, siblingIndex = 0, oldNextIndex = -1;
-	Control[] children = null;
+	NativeControl[] children = null;
 	if (fixRelations) {
 		/* determine the receiver's and sibling's indexes in the parent */
 		children = parent._getChildren ();
@@ -6366,6 +6465,7 @@ void sort (int [] items) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public boolean traverse (int traversal) {
 	checkWidget ();
 	Event event = new Event ();
@@ -6406,6 +6506,7 @@ public boolean traverse (int traversal) {
  *
  * @since 3.6
  */
+@Override
 public boolean traverse (int traversal, Event event) {
 	checkWidget ();
 	if (event == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -6444,6 +6545,7 @@ public boolean traverse (int traversal, Event event) {
  *
  * @since 3.6
  */
+@Override
 public boolean traverse (int traversal, KeyEvent event) {
 	checkWidget ();
 	if (event == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -6511,7 +6613,7 @@ boolean traverse (int traversal, char character, int keyCode, int keyLocation, i
 	event.keyCode = keyCode;
 	event.keyLocation = keyLocation;
 	event.stateMask = stateMask;
-	Shell shell = getShell ();
+	NativeShell shell = getShell ();
 
 	boolean all = false;
 	switch (traversal) {
@@ -6538,7 +6640,7 @@ boolean traverse (int traversal, char character, int keyCode, int keyLocation, i
 		}
 	}
 
-	Control control = this;
+	NativeControl control = this;
 	do {
 		if (control.traverse (event)) return true;
 		if (!event.doit && control.hooks (SWT.Traverse)) return false;
@@ -6548,7 +6650,7 @@ boolean traverse (int traversal, char character, int keyCode, int keyLocation, i
 	return false;
 }
 
-boolean translateMnemonic (Event event, Control control) {
+boolean translateMnemonic (Event event, NativeControl control) {
 	if (control == this) return false;
 	if (!isVisible () || !isEnabled ()) return false;
 	event.doit = this == display.mnemonicControl || mnemonicMatch (event.character);
@@ -6569,7 +6671,7 @@ boolean translateMnemonic (int keyval, long event) {
 		int code = traversalCode (keyval, event);
 		if ((code & SWT.TRAVERSE_MNEMONIC) == 0) return false;
 	} else {
-		Shell shell = _getShell ();
+		NativeShell shell = _getShell ();
 		int mask = GDK.GDK_CONTROL_MASK | GDK.GDK_SHIFT_MASK | GDK.GDK_MOD1_MASK;
 		if (GTK.GTK4) {
 			if (state[0] != GDK.GDK_MOD1_MASK) return false;
@@ -6577,7 +6679,7 @@ boolean translateMnemonic (int keyval, long event) {
 			if ((state[0] & mask) != GTK3.gtk_window_get_mnemonic_modifier (shell.shellHandle)) return false;
 		}
 	}
-	Decorations shell = menuShell ();
+	NativeDecorations shell = menuShell ();
 	if (shell.isVisible () && shell.isEnabled ()) {
 		Event javaEvent = new Event ();
 		javaEvent.detail = SWT.TRAVERSE_MNEMONIC;
@@ -6647,8 +6749,8 @@ boolean translateTraversal (long event) {
 	javaEvent.detail = detail;
 	javaEvent.time = GDK.gdk_event_get_time(event);
 	if (!setKeyState (javaEvent, event)) return false;
-	Shell shell = getShell ();
-	Control control = this;
+	NativeShell shell = getShell ();
+	NativeControl control = this;
 	do {
 		if (control.traverse (javaEvent)) return true;
 		if (!javaEvent.doit && control.hooks (SWT.Traverse)) return false;
@@ -6660,7 +6762,7 @@ boolean translateTraversal (long event) {
 
 int traversalCode (int key, long event) {
 	int code = SWT.TRAVERSE_RETURN | SWT.TRAVERSE_TAB_NEXT |  SWT.TRAVERSE_TAB_PREVIOUS | SWT.TRAVERSE_PAGE_NEXT | SWT.TRAVERSE_PAGE_PREVIOUS;
-	Shell shell = getShell ();
+	NativeShell shell = getShell ();
 	if (shell.parent != null) code |= SWT.TRAVERSE_ESCAPE;
 	return code;
 }
@@ -6695,9 +6797,9 @@ boolean traverseEscape () {
 }
 
 boolean traverseGroup (boolean next) {
-	Control root = computeTabRoot ();
-	Widget group = computeTabGroup ();
-	Widget [] list = root.computeTabList ();
+	NativeControl root = computeTabRoot ();
+	NativeWidget group = computeTabGroup ();
+	NativeWidget [] list = root.computeTabList ();
 	int length = list.length;
 	int index = 0;
 	while (index < length) {
@@ -6713,7 +6815,7 @@ boolean traverseGroup (boolean next) {
 	if (index == length) return false;
 	int start = index, offset = (next) ? 1 : -1;
 	while ((index = ((index + offset + length) % length)) != start) {
-		Widget widget = list [index];
+		NativeWidget widget = list [index];
 		if (!widget.isDisposed () && widget.setTabGroupFocus (next)) {
 			return true;
 		}
@@ -6723,7 +6825,7 @@ boolean traverseGroup (boolean next) {
 }
 
 boolean traverseItem (boolean next) {
-	Control [] children = parent._getChildren ();
+	NativeControl [] children = parent._getChildren ();
 	int length = children.length;
 	int index = 0;
 	while (index < length) {
@@ -6739,7 +6841,7 @@ boolean traverseItem (boolean next) {
 	if (index == length) return false;
 	int start = index, offset = (next) ? 1 : -1;
 	while ((index = (index + offset + length) % length) != start) {
-		Control child = children [index];
+		NativeControl child = children [index];
 		if (!child.isDisposed () && child.isTabItem ()) {
 			if (child.setTabItemFocus (next)) return true;
 		}
@@ -6781,6 +6883,7 @@ boolean traverseMnemonic (char key) {
  * @see PaintListener
  * @see SWT#Paint
  */
+@Override
 public void update () {
 	checkWidget ();
 	update (false, true);
@@ -6812,7 +6915,7 @@ long windowProc (long handle, long arg0, long user_data) {
 	switch ((int)user_data) {
 		case EXPOSE_EVENT_INVERSE: {
 			if ((state & OBSCURED) != 0) break;
-			Control control = findBackgroundControl ();
+			NativeControl control = findBackgroundControl ();
 			boolean draw = control != null && control.backgroundImage != null;
 			if (!draw && (state & CANVAS) != 0) {
 				draw = (state & BACKGROUND) == 0;
@@ -6875,4 +6978,10 @@ Point getSurfaceOrigin () {
 	return success ? new Point((int)originX[0], (int)originY[0]) : new Point(0, 0);
 }
 
+<<<<<<< HEAD:bundles/org.eclipse.swt/Eclipse SWT/gtk/org/eclipse/swt/widgets/Control.java
+=======
+@Override
+public abstract Control getWrapper();
+
+>>>>>>> fa1cdeec5f (Introduce widget facade and adapt Win32 native widgets accordingly):bundles/org.eclipse.swt/Eclipse SWT/gtk/org/eclipse/swt/widgets/NativeControl.java
 }

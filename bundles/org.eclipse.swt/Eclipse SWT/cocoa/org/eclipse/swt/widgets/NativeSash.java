@@ -40,7 +40,7 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Sash extends Control {
+public abstract class NativeSash extends NativeControl implements ISash {
 	Cursor sizeCursor;
 	boolean dragging;
 	int lastX, lastY, startX, startY;
@@ -75,10 +75,10 @@ public class Sash extends Control {
  * @see SWT#HORIZONTAL
  * @see SWT#VERTICAL
  * @see SWT#SMOOTH
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Sash (Composite parent, int style) {
+protected NativeSash (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 	int cursorStyle = (style & SWT.VERTICAL) != 0 ? SWT.CURSOR_SIZEWE : SWT.CURSOR_SIZENS;
 	sizeCursor = new Cursor (display, cursorStyle);
@@ -167,8 +167,8 @@ long accessibilityAttributeValue(long id, long sel, long arg0) {
 	} else if (attributeName.isEqualToString (OS.NSAccessibilityMinValueAttribute)) {
 		return NSNumber.numberWithInt(0).id;
 	} else if (attributeName.isEqualToString (OS.NSAccessibilityNextContentsAttribute)) {
-		Control[] children =  parent._getChildren();
-		Control nextView = null;
+		NativeControl[] children =  parent._getChildren();
+		NativeControl nextView = null;
 		for (int i = 0; i < children.length; i++) {
 			if (children[i] == this) {
 				if (i < children.length - 1) {
@@ -183,8 +183,8 @@ long accessibilityAttributeValue(long id, long sel, long arg0) {
 		else
 			return NSArray.array().id;
 	} else if (attributeName.isEqualToString (OS.NSAccessibilityPreviousContentsAttribute)) {
-		Control[] children =  parent._getChildren();
-		Control nextView = null;
+		NativeControl[] children =  parent._getChildren();
+		NativeControl nextView = null;
 		for (int i = 0; i < children.length; i++) {
 			if (children[i] == this) {
 				if (i > 0) {
@@ -233,6 +233,7 @@ boolean accessibilityIsIgnored(long id, long sel) {
  * @see #removeSelectionListener
  * @see SelectionEvent
  */
+@Override
 public void addSelectionListener(SelectionListener listener) {
 	addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 }
@@ -470,6 +471,7 @@ void releaseWidget () {
  * @see SelectionListener
  * @see #addSelectionListener
  */
+@Override
 public void removeSelectionListener(SelectionListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -490,5 +492,8 @@ void superKeyUp (long id, long sel, long theEvent) {
 int traversalCode (int key, NSEvent theEvent) {
 	return 0;
 }
+
+@Override
+public abstract Sash getWrapper();
 
 }

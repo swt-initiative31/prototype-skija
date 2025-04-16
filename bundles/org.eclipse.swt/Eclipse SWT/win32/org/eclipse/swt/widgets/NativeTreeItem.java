@@ -37,7 +37,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class TreeItem extends Item {
+public abstract class NativeTreeItem extends NativeItem {
 	/**
 	 * the handle to the OS resource
 	 * (Warning: This field is platform dependent)
@@ -51,7 +51,7 @@ public class TreeItem extends Item {
 	 * @noreference This field is not intended to be referenced by clients.
 	 */
 	public long handle;
-	Tree parent;
+	NativeTree parent;
 	String [] strings;
 	Image [] images;
 	Font font;
@@ -61,15 +61,15 @@ public class TreeItem extends Item {
 	int [] cellBackground, cellForeground;
 
 	static {
-		DPIZoomChangeRegistry.registerHandler(TreeItem::handleDPIChange, TreeItem.class);
+		DPIZoomChangeRegistry.registerHandler(NativeTreeItem::handleDPIChange, TreeItem.class);
 	}
 
 /**
  * Constructs <code>TreeItem</code> and <em>inserts</em> it into <code>Tree</code>.
  * Item is inserted as last direct child of the tree.
  * <p>
- * The fastest way to insert many items is documented in {@link TreeItem#TreeItem(Tree,int,int)}
- * and {@link TreeItem#setItemCount}
+ * The fastest way to insert many items is documented in {@link NativeTreeItem#NativeTreeItem(NativeTree,int,int)}
+ * and {@link NativeTreeItem#setItemCount}
  *
  * @param parent a tree control which will be the parent of the new instance (cannot be null)
  * @param style no styles are currently supported, pass SWT.NONE
@@ -83,10 +83,10 @@ public class TreeItem extends Item {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TreeItem (Tree parent, int style) {
+protected NativeTreeItem (NativeTree parent, int style) {
 	this (parent, style, OS.TVI_ROOT, OS.TVI_LAST, 0);
 }
 
@@ -96,7 +96,7 @@ public TreeItem (Tree parent, int style) {
  * <p>
  * The fastest way to insert many items is:
  * <ol>
- * <li>Use {@link Tree#setRedraw} to disable drawing during bulk insert</li>
+ * <li>Use {@link NativeTree#setRedraw} to disable drawing during bulk insert</li>
  * <li>Insert every item at index 0 (insert them in reverse to get the same result)</li>
  * <li>Collapse the parent item before inserting (gives massive improvement on Windows)</li>
  * </ol>
@@ -115,11 +115,11 @@ public TreeItem (Tree parent, int style) {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
- * @see Tree#setRedraw
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
+ * @see NativeTree#setRedraw
  */
-public TreeItem (Tree parent, int style, int index) {
+protected NativeTreeItem (NativeTree parent, int style, int index) {
 	this (parent, style, OS.TVI_ROOT, findPrevious (parent, index), 0);
 }
 
@@ -127,8 +127,8 @@ public TreeItem (Tree parent, int style, int index) {
  * Constructs <code>TreeItem</code> and <em>inserts</em> it into <code>Tree</code>.
  * Item is inserted as last direct child of the specified <code>TreeItem</code>.
  * <p>
- * The fastest way to insert many items is documented in {@link TreeItem#TreeItem(Tree,int,int)}
- * and {@link TreeItem#setItemCount}
+ * The fastest way to insert many items is documented in {@link NativeTreeItem#NativeTreeItem(NativeTree,int,int)}
+ * and {@link NativeTreeItem#setItemCount}
  *
  * @param parentItem a tree control which will be the parent of the new instance (cannot be null)
  * @param style no styles are currently supported, pass SWT.NONE
@@ -142,10 +142,10 @@ public TreeItem (Tree parent, int style, int index) {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TreeItem (TreeItem parentItem, int style) {
+protected NativeTreeItem (NativeTreeItem parentItem, int style) {
 	this (checkNull (parentItem).parent, style, parentItem.handle, OS.TVI_LAST, 0);
 }
 
@@ -153,8 +153,8 @@ public TreeItem (TreeItem parentItem, int style) {
  * Constructs <code>TreeItem</code> and <em>inserts</em> it into <code>Tree</code>.
  * Item is inserted as <code>index</code> direct child of the specified <code>TreeItem</code>.
  * <p>
- * The fastest way to insert many items is documented in {@link TreeItem#TreeItem(Tree,int,int)}
- * and {@link TreeItem#setItemCount}
+ * The fastest way to insert many items is documented in {@link NativeTreeItem#NativeTreeItem(NativeTree,int,int)}
+ * and {@link NativeTreeItem#setItemCount}
  *
  * @param parentItem a tree control which will be the parent of the new instance (cannot be null)
  * @param style no styles are currently supported, pass SWT.NONE
@@ -170,26 +170,26 @@ public TreeItem (TreeItem parentItem, int style) {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
- * @see Tree#setRedraw
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
+ * @see NativeTree#setRedraw
  */
-public TreeItem (TreeItem parentItem, int style, int index) {
+protected NativeTreeItem (NativeTreeItem parentItem, int style, int index) {
 	this (checkNull (parentItem).parent, style, parentItem.handle, findPrevious (parentItem, index), 0);
 }
 
-TreeItem (Tree parent, int style, long hParent, long hInsertAfter, long hItem) {
+NativeTreeItem (NativeTree parent, int style, long hParent, long hInsertAfter, long hItem) {
 	super (parent, style);
 	this.parent = parent;
 	parent.createItem (this, hParent, hInsertAfter, hItem);
 }
 
-static TreeItem checkNull (TreeItem item) {
+static NativeTreeItem checkNull (NativeTreeItem item) {
 	if (item == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	return item;
 }
 
-static long findPrevious (Tree parent, int index) {
+static long findPrevious (NativeTree parent, int index) {
 	if (parent == null) return 0;
 	if (index < 0) SWT.error (SWT.ERROR_INVALID_RANGE);
 	if (index == 0) return OS.TVI_FIRST;
@@ -200,11 +200,11 @@ static long findPrevious (Tree parent, int index) {
 	return hItem;
 }
 
-static long findPrevious (TreeItem parentItem, int index) {
+static long findPrevious (NativeTreeItem parentItem, int index) {
 	if (parentItem == null) return 0;
 	if (index < 0) SWT.error (SWT.ERROR_INVALID_RANGE);
 	if (index == 0) return OS.TVI_FIRST;
-	Tree parent = parentItem.parent;
+	NativeTree parent = parentItem.parent;
 	long hwnd = parent.handle, hParent = parentItem.handle;
 	long hFirstItem = OS.SendMessage (hwnd, OS.TVM_GETNEXTITEM, OS.TVGN_CHILD, hParent);
 	long hItem = parent.findItem (hFirstItem, index - 1);
@@ -213,7 +213,7 @@ static long findPrevious (TreeItem parentItem, int index) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -444,7 +444,7 @@ RECT getBounds (int index, boolean getText, boolean getImage, boolean fullText, 
 		if (getImage && !fullImage) {
 			if (OS.SendMessage (hwnd, OS.TVM_GETIMAGELIST, OS.TVSIL_NORMAL, 0) != 0) {
 				Point size = parent.getImageSize ();
-				rect.left -= size.x + Tree.INSET;
+				rect.left -= size.x + NativeTree.INSET;
 				if (!getText) rect.right = rect.left + size.x;
 			} else {
 				if (!getText) rect.right = rect.left;
@@ -496,7 +496,7 @@ RECT getBounds (int index, boolean getText, boolean getImage, boolean fullText, 
 			}
 			if (getText) {
 				if (fullText && clip) {
-					rect.left = rect.right + Tree.INSET;
+					rect.left = rect.right + NativeTree.INSET;
 					rect.right = headerRect.right;
 				} else {
 					String string = index == 0 ? text : strings != null ? strings [index] : null;
@@ -517,10 +517,10 @@ RECT getBounds (int index, boolean getText, boolean getImage, boolean fullText, 
 							OS.ReleaseDC (hwnd, hNewDC);
 						}
 						if (getImage) {
-							rect.right += textRect.right - textRect.left + Tree.INSET * 3;
+							rect.right += textRect.right - textRect.left + NativeTree.INSET * 3;
 						} else {
-							rect.left = rect.right + Tree.INSET;
-							rect.right = rect.left + (textRect.right - textRect.left) + Tree.INSET;
+							rect.left = rect.right + NativeTree.INSET;
+							rect.right = rect.left + (textRect.right - textRect.left) + NativeTree.INSET;
 						}
 					}
 				}
@@ -530,7 +530,7 @@ RECT getBounds (int index, boolean getText, boolean getImage, boolean fullText, 
 			}
 		}
 	}
-	int gridWidth = parent.linesVisible && columnCount != 0 ? Tree.GRID_WIDTH : 0;
+	int gridWidth = parent.linesVisible && columnCount != 0 ? NativeTree.GRID_WIDTH : 0;
 	if (getText || !getImage) {
 		rect.right = Math.max (rect.left, rect.right - gridWidth);
 	}
@@ -712,7 +712,7 @@ public boolean getGrayed () {
  *
  * @since 3.1
  */
-public TreeItem getItem (int index) {
+public NativeTreeItem getItem (int index) {
 	checkWidget ();
 	if (index < 0) error (SWT.ERROR_INVALID_RANGE);
 	if (!parent.checkData (this, true)) error (SWT.ERROR_WIDGET_DISPOSED);
@@ -760,12 +760,12 @@ public int getItemCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TreeItem [] getItems () {
+public NativeTreeItem [] getItems () {
 	checkWidget ();
 	if (!parent.checkData (this, true)) error (SWT.ERROR_WIDGET_DISPOSED);
 	long hwnd = parent.handle;
 	long hItem = OS.SendMessage (hwnd, OS.TVM_GETNEXTITEM, OS.TVGN_CHILD, handle);
-	if (hItem == 0) return new TreeItem [0];
+	if (hItem == 0) return new NativeTreeItem [0];
 	return parent.getItems (hItem);
 }
 
@@ -837,7 +837,7 @@ Rectangle getImageBoundsInPixels (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Tree getParent () {
+public NativeTree getParent () {
 	checkWidget ();
 	return parent;
 }
@@ -854,7 +854,7 @@ public Tree getParent () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TreeItem getParentItem () {
+public NativeTreeItem getParentItem () {
 	checkWidget ();
 	long hwnd = parent.handle;
 	long hItem = OS.SendMessage (hwnd, OS.TVM_GETNEXTITEM, OS.TVGN_PARENT, handle);
@@ -918,9 +918,9 @@ public Rectangle getTextBounds (int index) {
 Rectangle getTextBoundsInPixels (int index) {
 	if (!parent.checkData (this, true)) error (SWT.ERROR_WIDGET_DISPOSED);
 	RECT rect = getBounds (index, true, false, true);
-	if (index == 0) rect.left += Tree.INSET - 1;
+	if (index == 0) rect.left += NativeTree.INSET - 1;
 	rect.left = Math.min (rect.left, rect.right);
-	rect.right = rect.right - Tree.INSET + 1; // Add 1 px margin to avoid truncation of text seen with "Segoe UI" font
+	rect.right = rect.right - NativeTree.INSET + 1; // Add 1 px margin to avoid truncation of text seen with "Segoe UI" font
 	int width = Math.max (0, rect.right - rect.left);
 	int height = Math.max (0, rect.bottom - rect.top);
 	return new Rectangle (rect.left, rect.top, width, height);
@@ -946,7 +946,7 @@ Rectangle getTextBoundsInPixels (int index) {
  *
  * @since 3.1
  */
-public int indexOf (TreeItem item) {
+public int indexOf (NativeTreeItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1040,7 +1040,7 @@ public void removeAll () {
 	try {
 		while (tvItem.hItem != 0) {
 			OS.SendMessage (hwnd, OS.TVM_GETITEM, 0, tvItem);
-			TreeItem item = tvItem.lParam != -1 ? parent.items [(int)tvItem.lParam] : null;
+			NativeTreeItem item = tvItem.lParam != -1 ? parent.items [(int)tvItem.lParam] : null;
 			if (item != null && !item.isDisposed ()) {
 				item.dispose ();
 			} else {
@@ -1358,7 +1358,7 @@ public void setExpanded (boolean expanded) {
 	if (hNewItem != hOldItem) {
 		Event event = new Event ();
 		if (hNewItem != 0) {
-			event.item = parent._getItem (hNewItem);
+			event.item = parent._getItem (hNewItem).getWrapper();
 			parent.hAnchor = hNewItem;
 		}
 		parent.sendSelectionEvent (SWT.Selection, event, true);
@@ -1388,7 +1388,7 @@ public void setFont (Font font){
 		error (SWT.ERROR_INVALID_ARGUMENT);
 	}
 	Font oldFont = this.font;
-	Shell shell = parent.getShell();
+	NativeShell shell = parent.getShell();
 	Font newFont = (font == null ? font : Font.win32_new(font, shell.nativeZoom));
 	if (oldFont == newFont) return;
 	this.font = newFont;
@@ -1445,7 +1445,7 @@ public void setFont (int index, Font font) {
 	}
 	Font oldFont = cellFont [index];
 	if (oldFont == font) return;
-	Shell shell = parent.getShell();
+	NativeShell shell = parent.getShell();
 	cellFont [index] = font == null ? font : Font.win32_new(font, shell.nativeZoom);
 	if (oldFont != null && oldFont.equals (font)) return;
 	if (font != null) parent.customDraw = true;
@@ -1700,7 +1700,7 @@ public void setImage (Image image) {
  * <p>
  * The fastest way to insert many items is:
  * <ol>
- * <li>Use {@link Tree#setRedraw} to disable drawing during bulk insert</li>
+ * <li>Use {@link NativeTree#setRedraw} to disable drawing during bulk insert</li>
  * <li>Collapse the parent item before inserting (gives massive improvement on Windows)</li>
  * </ol>
  *
@@ -1819,7 +1819,7 @@ String getNameText () {
 }
 
 private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-	if (!(widget instanceof TreeItem treeItem)) {
+	if (!(Widget.checkNative(widget) instanceof NativeTreeItem treeItem)) {
 		return;
 	}
 	Font font = treeItem.font;
@@ -1828,14 +1828,18 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 	}
 	Font[] cellFonts = treeItem.cellFont;
 	if (cellFonts != null) {
-		Shell shell = treeItem.parent.getShell();
+		NativeShell shell = treeItem.parent.getShell();
 		for (int index = 0; index < cellFonts.length; index++) {
 			Font cellFont = cellFonts[index];
 			cellFonts[index] = cellFont == null ? null : Font.win32_new(cellFont, shell.nativeZoom);
 		}
 	}
-	for (TreeItem item : treeItem.getItems()) {
-		DPIZoomChangeRegistry.applyChange(item, newZoom, scalingFactor);
+	for (NativeTreeItem item : treeItem.getItems()) {
+		DPIZoomChangeRegistry.applyChange(item.getWrapper(), newZoom, scalingFactor);
 	}
 }
+
+@Override
+public abstract TreeItem getWrapper();
+
 }

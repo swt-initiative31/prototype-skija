@@ -88,7 +88,7 @@ public class TableDragSourceEffect extends DragSourceEffect {
 		long ptr = C.malloc(NSPoint.sizeof);
 		OS.memmove(ptr, point, NSPoint.sizeof);
 		NSEvent nsEvent = NSApplication.sharedApplication().currentEvent();
-		NSTableView widget = (NSTableView)control.view;
+		NSTableView widget = (NSTableView)Widget.checkNative(control).view;
 		NSImage nsImage = widget.dragImageForRowsWithIndexes(widget.selectedRowIndexes(), widget.tableColumns(), nsEvent, ptr);
 		OS.memmove(point, ptr, NSPoint.sizeof);
 		C.free(ptr);

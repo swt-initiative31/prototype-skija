@@ -40,10 +40,10 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class TableColumn extends Item {
+public abstract class NativeTableColumn extends NativeItem {
 	long headerButtonCSSProvider = 0;
 	long labelHandle, imageHandle, buttonHandle;
-	Table parent;
+	NativeTable parent;
 	int modelIndex, lastButton, lastTime, lastX, lastWidth;
 	boolean customDraw, useFixedWidth;
 	String toolTipText;
@@ -77,10 +77,10 @@ public class TableColumn extends Item {
  * @see SWT#LEFT
  * @see SWT#RIGHT
  * @see SWT#CENTER
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TableColumn (Table parent, int style) {
+protected NativeTableColumn (NativeTable parent, int style) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	createWidget (parent.getColumnCount ());
@@ -120,10 +120,10 @@ public TableColumn (Table parent, int style) {
  * @see SWT#LEFT
  * @see SWT#RIGHT
  * @see SWT#CENTER
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TableColumn (Table parent, int style, int index) {
+protected NativeTableColumn (NativeTable parent, int style, int index) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	createWidget (index);
@@ -185,7 +185,7 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -245,9 +245,9 @@ public int getAlignment () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#getColumnOrder()
- * @see Table#setColumnOrder(int[])
- * @see TableColumn#setMoveable(boolean)
+ * @see NativeTable#getColumnOrder()
+ * @see NativeTable#setColumnOrder(int[])
+ * @see NativeTableColumn#setMoveable(boolean)
  * @see SWT#Move
  *
  * @since 3.1
@@ -267,7 +267,7 @@ public boolean getMoveable() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Table getParent () {
+public NativeTable getParent () {
 	checkWidget();
 	return parent;
 }
@@ -357,7 +357,7 @@ long gtk_clicked (long widget) {
 		}
 
 		int eventType = GDK.gdk_event_get_event_type(eventPtr);
-		eventType = Control.fixGdkEventTypeValues(eventType);
+		eventType = NativeControl.fixGdkEventTypeValues(eventType);
 		int eventTime = GDK.gdk_event_get_time(eventPtr);
 		switch (eventType) {
 			case GDK.GDK_BUTTON_RELEASE: {
@@ -379,7 +379,7 @@ long gtk_clicked (long widget) {
 @Override
 long gtk_event_after (long widget, long gdkEvent) {
 	int eventType = GDK.gdk_event_get_event_type(gdkEvent);
-	eventType = Control.fixGdkEventTypeValues(eventType);
+	eventType = NativeControl.fixGdkEventTypeValues(eventType);
 	switch (eventType) {
 		case GDK.GDK_BUTTON_PRESS: {
 			int [] eventButton = new int [1];
@@ -486,7 +486,7 @@ public void pack () {
 			calcWidth = true;
 		}
 		for (int i=0; i<parent.items.length; i++) {
-			TableItem item = parent.items [i];
+			NativeTableItem item = parent.items [i];
 			if (itemBounds == null && item != null) itemBounds = item.getBounds();
 			boolean isVisible = false;
 			if (!calcWidth && itemBounds != null) {
@@ -676,9 +676,9 @@ public void setResizable (boolean resizable) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#setColumnOrder(int[])
- * @see Table#getColumnOrder()
- * @see TableColumn#getMoveable()
+ * @see NativeTable#setColumnOrder(int[])
+ * @see NativeTable#getColumnOrder()
+ * @see NativeTableColumn#getMoveable()
  * @see SWT#Move
  *
  * @since 3.1
@@ -850,4 +850,8 @@ long dpiChanged(long object, long arg0) {
 
 	return 0;
 }
+
+@Override
+public abstract TableColumn getWrapper();
+
 }

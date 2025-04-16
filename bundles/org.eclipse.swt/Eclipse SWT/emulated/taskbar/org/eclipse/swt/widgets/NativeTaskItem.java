@@ -33,13 +33,13 @@ import org.eclipse.swt.graphics.*;
  *
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class TaskItem extends Item {
-	TaskBar parent;
-	Shell shell;
+public abstract class NativeTaskItem extends NativeItem {
+	NativeTaskBar parent;
+	NativeShell shell;
 	int progress, progressState = SWT.DEFAULT;
 	Image overlayImage;
 	String overlayText = "";
-	Menu menu;
+	NativeMenu menu;
 
 	static final int PROGRESS_MAX = 100;
 /**
@@ -69,17 +69,17 @@ public class TaskItem extends Item {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-TaskItem (TaskBar parent, int style) {
+NativeTaskItem (NativeTaskBar parent, int style) {
 	super (parent, style);
 	this.parent = parent;
 	parent.createItem (this, -1);
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -102,7 +102,7 @@ void destroyWidget () {
  */
 public Menu getMenu () {
 	checkWidget ();
-	return menu;
+	return menu != null ? menu.getWrapper() : null;
 }
 
 /**
@@ -147,7 +147,7 @@ public String getOverlayText () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TaskBar getParent () {
+public NativeTaskBar getParent () {
 	checkWidget ();
 	return parent;
 }
@@ -226,7 +226,7 @@ void releaseWidget () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setMenu (Menu menu) {
+public void setMenu (NativeMenu menu) {
 	checkWidget ();
 	if (menu != null) {
 		if (menu.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -374,5 +374,8 @@ public void setProgress (int progress) {
 	if (this.progress == progress) return;
 	this.progress = progress;
 }
+
+@Override
+public abstract TaskItem getWrapper();
 
 }

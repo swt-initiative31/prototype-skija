@@ -46,8 +46,8 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Tracker extends Widget {
-	Composite parent;
+public abstract class NativeTracker extends NativeWidget {
+	NativeComposite parent;
 	Cursor cursor;
 	long lastCursor, window, overlay;
 	long surface;
@@ -95,10 +95,10 @@ public class Tracker extends Widget {
  * @see SWT#UP
  * @see SWT#DOWN
  * @see SWT#RESIZE
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Tracker (Composite parent, int style) {
+protected NativeTracker (NativeComposite parent, int style) {
 	super (parent, checkStyle(style));
 	this.parent = parent;
 }
@@ -138,7 +138,7 @@ public Tracker (Composite parent, int style) {
  * @see SWT#DOWN
  * @see SWT#RESIZE
  */
-public Tracker (Display display, int style) {
+protected NativeTracker (Display display, int style) {
 	if (display == null) display = Display.getCurrent ();
 	if (display == null) display = Display.getDefault ();
 	if (!display.isValidThread ()) {
@@ -479,7 +479,7 @@ boolean grab () {
 
 @Override
 long gtk_button_release_event (long widget, long event) {
-	Control.mouseDown = false;
+	NativeControl.mouseDown = false;
 	return gtk_mouse (GTK.GTK4 ? GDK.GDK4_BUTTON_RELEASE : GDK.GDK_BUTTON_RELEASE, widget, event);
 }
 
@@ -750,7 +750,7 @@ long gtk_mouse (int eventType, long widget, long eventPtr) {
 		oldX = newX [0];
 		oldY = newY [0];
 	}
-	eventType = Control.fixGdkEventTypeValues(eventType);
+	eventType = NativeControl.fixGdkEventTypeValues(eventType);
 	tracking = eventType != GDK.GDK_BUTTON_RELEASE;
 	return 0;
 }
@@ -853,7 +853,7 @@ public boolean open () {
 
 	/* Tracker behaves like a Dialog with its own OS event loop. */
 	Display display = this.display;
-	Tracker oldTracker = display.tracker;
+	NativeTracker oldTracker = display.tracker;
 	display.tracker = this;
 	try {
 		while (tracking) {
@@ -928,7 +928,7 @@ private void setTrackerBackground(boolean opaque) {
 
 boolean processEvent (long eventPtr) {
 	int eventType = GDK.gdk_event_get_event_type(eventPtr);
-	eventType = Control.fixGdkEventTypeValues(eventType);
+	eventType = NativeControl.fixGdkEventTypeValues(eventType);
 	long widget = GTK3.gtk_get_event_widget (eventPtr);
 	switch (eventType) {
 		case GDK.GDK_MOTION_NOTIFY: gtk_motion_notify_event (widget, eventPtr); break;
@@ -1203,5 +1203,8 @@ void update () {
 		display.update ();
 	}
 }
+
+@Override
+public abstract Tracker getWrapper();
 
 }

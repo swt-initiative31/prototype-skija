@@ -52,7 +52,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class TabFolder extends Composite {
+public abstract class NativeTabFolder extends NativeComposite {
 	/*
 	 * Implementation note (see bug 454936, bug 480794):
 	 *
@@ -79,7 +79,7 @@ public class TabFolder extends Composite {
 	 * because the SWT API allows situation where you create a child control before you create a TabItem.
 	 */
 
-	TabItem [] items;
+	NativeTabItem [] items;
 	ImageList imageList;
 
 /**
@@ -109,10 +109,10 @@ public class TabFolder extends Composite {
  * @see SWT
  * @see SWT#TOP
  * @see SWT#BOTTOM
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TabFolder (Composite parent, int style) {
+protected NativeTabFolder (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
@@ -129,7 +129,7 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -261,10 +261,10 @@ void createHandle (int index) {
 @Override
 void createWidget (int index) {
 	super.createWidget(index);
-	items = new TabItem [4];
+	items = new NativeTabItem [4];
 }
 
-void createItem (TabItem item, int index) {
+void createItem (NativeTabItem item, int index) {
 	int itemCount = 0;
 	if (GTK.GTK4) {
 		itemCount = GTK.gtk_notebook_get_n_pages(handle);
@@ -278,7 +278,7 @@ void createItem (TabItem item, int index) {
 
 	if (!(0 <= index && index <= itemCount)) error (SWT.ERROR_INVALID_RANGE);
 	if (itemCount == items.length) {
-		TabItem [] newItems = new TabItem [items.length + 4];
+		NativeTabItem [] newItems = new NativeTabItem [items.length + 4];
 		System.arraycopy (items, 0, newItems, 0, items.length);
 		items = newItems;
 	}
@@ -331,13 +331,13 @@ void createItem (TabItem item, int index) {
 		GTK.gtk_notebook_set_current_page (handle, 0);
 		OS.g_signal_handlers_unblock_matched (handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, SWITCH_PAGE);
 		Event event = new Event();
-		event.item = items[0];
+		event.item = items [0].getWrapper();
 		sendSelectionEvent (SWT.Selection, event, false);
 		// the widget could be destroyed at this point
 	}
 }
 
-void destroyItem (TabItem item) {
+void destroyItem (NativeTabItem item) {
 	int index = 0;
 	int itemCount = getItemCount();
 	while (index < itemCount) {
@@ -354,13 +354,13 @@ void destroyItem (TabItem item) {
 	if (index == oldIndex) {
 		int newIndex = GTK.gtk_notebook_get_current_page (handle);
 		if (newIndex != -1) {
-			Control control = items [newIndex].getControl ();
+			NativeControl control = items [newIndex].getControl ();
 			if (control != null && !control.isDisposed ()) {
 				control.setBoundsInPixels (getClientAreaInPixels());
 				control.setVisible (true);
 			}
 			Event event = new Event ();
-			event.item = items [newIndex];
+			event.item = items [newIndex].getWrapper();
 			sendSelectionEvent (SWT.Selection, event, true);
 			// the widget could be destroyed at this point
 		}
@@ -373,23 +373,23 @@ long eventHandle () {
 }
 
 @Override
-Control[] _getChildren() {
-	Control[] directChildren = super._getChildren();
+NativeControl[] _getChildren() {
+	NativeControl[] directChildren = super._getChildren();
 	int directCount = directChildren.length;
 	int itemCount = items == null ? 0 : items.length;
-	Control[] children = new Control[itemCount + directCount];
+	NativeControl[] children = new NativeControl[itemCount + directCount];
 
 	int childrenCount = 0;
 	for (int itemIndex = 0; itemIndex < itemCount; itemIndex++) {
-		TabItem tabItem = items[itemIndex];
+		NativeTabItem tabItem = items[itemIndex];
 		if (tabItem != null && !tabItem.isDisposed()) {
 			long parentHandle = tabItem.pageHandle;
 
 			if (GTK.GTK4) {
 				for (long child = GTK4.gtk_widget_get_first_child(parentHandle); child != 0; child = GTK4.gtk_widget_get_next_sibling(child)) {
-					Widget childWidget = display.getWidget(child);
-					if (childWidget != null && childWidget instanceof Control && childWidget != this) {
-						children[childrenCount] = (Control)childWidget;
+					NativeWidget childWidget = display.getWidget(child);
+					if (childWidget != null && childWidget instanceof NativeControl && childWidget != this) {
+						children[childrenCount] = (NativeControl)childWidget;
 						childrenCount++;
 					}
 				}
@@ -398,10 +398,10 @@ Control[] _getChildren() {
 				if (list != 0) {
 					long handle = OS.g_list_data (list);
 					if (handle != 0) {
-						Widget widget = display.getWidget (handle);
+						NativeWidget widget = display.getWidget (handle);
 						if (widget != null && widget != this) {
-							if (widget instanceof Control) {
-								children [childrenCount++] = (Control) widget;
+							if (widget instanceof NativeControl) {
+								children [childrenCount++] = (NativeControl) widget;
 							}
 						}
 					}
@@ -414,11 +414,11 @@ Control[] _getChildren() {
 	if (childrenCount == itemCount + directCount) {
 		return children;
 	} else {
-		Control[] newChildren;
+		NativeControl[] newChildren;
 		if (childrenCount == itemCount) {
 			newChildren = children;
 		} else {
-			newChildren = new Control [childrenCount + directCount];
+			newChildren = new NativeControl [childrenCount + directCount];
 			System.arraycopy (children, 0, newChildren, 0, childrenCount);
 		}
 		System.arraycopy (directChildren, 0, newChildren, childrenCount, directCount);
@@ -441,7 +441,7 @@ Control[] _getChildren() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TabItem getItem (int index) {
+public NativeTabItem getItem (int index) {
 	checkWidget();
 	if (!(0 <= index && index < getItemCount())) error (SWT.ERROR_INVALID_RANGE);
 
@@ -477,12 +477,12 @@ public TabItem getItem (int index) {
  *
  * @since 3.4
  */
-public TabItem getItem(Point point) {
+public NativeTabItem getItem(Point point) {
 	checkWidget();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
 	int itemCount = getItemCount();
 	for (int i = 0; i < itemCount; i++) {
-		TabItem item = items[i];
+		NativeTabItem item = items[i];
 		Rectangle rect = item.getBounds();
 		if (rect.contains(point)) return item;
 	}
@@ -531,10 +531,10 @@ public int getItemCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TabItem [] getItems () {
+public NativeTabItem [] getItems () {
 	checkWidget();
 	int count = getItemCount ();
-	TabItem [] result = new TabItem [count];
+	NativeTabItem [] result = new NativeTabItem [count];
 	System.arraycopy (items, 0, result, 0, count);
 	return result;
 }
@@ -555,11 +555,11 @@ public TabItem [] getItems () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TabItem [] getSelection () {
+public NativeTabItem [] getSelection () {
 	checkWidget();
 	int index = GTK.gtk_notebook_get_current_page (handle);
-	if (index == -1) return new TabItem [0];
-	return new TabItem [] {items [index]};
+	if (index == -1) return new NativeTabItem [0];
+	return new NativeTabItem [] {items [index]};
 }
 
 /**
@@ -585,15 +585,15 @@ long gtk_focus (long widget, long directionType) {
 
 @Override
 long gtk_switch_page(long notebook, long page, int page_num) {
-	TabItem item = items[page_num];
+	NativeTabItem item = items[page_num];
 
 	if (GTK.GTK4) {
-		Control control = item.getControl();
+		NativeControl control = item.getControl();
 		control.setBoundsInPixels(getClientAreaInPixels());
 	} else {
 		int index = GTK.gtk_notebook_get_current_page(handle);
 		if (index != -1) {
-			Control control = items [index].getControl();
+			NativeControl control = items [index].getControl();
 			if (control != null && !control.isDisposed()) {
 				control.setVisible(false);
 			}
@@ -601,7 +601,7 @@ long gtk_switch_page(long notebook, long page, int page_num) {
 			return 0;
 		}
 
-		Control control = item.getControl();
+		NativeControl control = item.getControl();
 		if (control != null && !control.isDisposed()) {
 			control.setBoundsInPixels(getClientAreaInPixels());
 			control.setVisible(true);
@@ -609,7 +609,7 @@ long gtk_switch_page(long notebook, long page, int page_num) {
 	}
 
 	Event event = new Event();
-	event.item = item;
+	event.item = item.getWrapper();
 	sendSelectionEvent(SWT.Selection, event, false);
 
 	return 0;
@@ -638,7 +638,7 @@ void hookEvents () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public int indexOf (TabItem item) {
+public int indexOf (NativeTabItem item) {
 	checkWidget();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 
@@ -655,10 +655,10 @@ public int indexOf (TabItem item) {
 
 @Override
 Point minimumSize (int wHint, int hHint, boolean flushCache) {
-	Control [] children = _getChildren ();
+	NativeControl [] children = _getChildren ();
 	int width = 0, height = 0;
 	for (int i=0; i<children.length; i++) {
-		Control child = children [i];
+		NativeControl child = children [i];
 		int index = 0;
 		int count = getItemCount();
 		while (index < count) {
@@ -706,7 +706,7 @@ boolean mnemonicMatch (char key) {
 void releaseChildren (boolean destroy) {
 	if (items != null) {
 		for (int i=0; i<items.length; i++) {
-			TabItem item = items [i];
+			NativeTabItem item = items [i];
 			if (item != null && !item.isDisposed ()) {
 				item.release (false);
 			}
@@ -724,11 +724,11 @@ void releaseWidget () {
 }
 
 @Override
-void removeControl (Control control) {
+void removeControl (NativeControl control) {
 	super.removeControl (control);
 	int count = getItemCount ();
 	for (int i=0; i<count; i++) {
-		TabItem item = items [i];
+		NativeTabItem item = items [i];
 		if (item.control == control) item.setControl (null);
 	}
 }
@@ -764,7 +764,7 @@ void reskinChildren (int flags) {
 		int count = getItemCount();
 
 		for (int i = 0; i < count; i++) {
-			TabItem item = items [i];
+			NativeTabItem item = items [i];
 			if (item != null) item.reskin(flags);
 		}
 	}
@@ -790,8 +790,8 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
 	if ((result & RESIZED) != 0) {
 		int index = getSelectionIndex ();
 		if (index != -1) {
-			TabItem item = items [index];
-			Control control = item.control;
+			NativeTabItem item = items [index];
+			NativeControl control = item.control;
 			if (control != null && !control.isDisposed ()) {
 				control.setBoundsInPixels (getClientAreaInPixels ());
 			}
@@ -803,7 +803,7 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
 @Override
 void setFontDescription (long font) {
 	super.setFontDescription (font);
-	TabItem [] items = getItems ();
+	NativeTabItem [] items = getItems ();
 	for (int i = 0; i < items.length; i++) {
 		if (items[i] != null) {
 			items[i].setFontDescription (font);
@@ -814,7 +814,7 @@ void setFontDescription (long font) {
 @Override
 void setForegroundGdkRGBA (GdkRGBA rgba) {
 	super.setForegroundGdkRGBA(rgba);
-	TabItem [] items = getItems ();
+	NativeTabItem [] items = getItems ();
 	for (int i = 0; i < items.length; i++) {
 		if (items[i] != null) {
 			items[i].setForegroundRGBA (rgba);
@@ -856,8 +856,8 @@ void setSelection (int index, boolean notify) {
 	int oldIndex = GTK.gtk_notebook_get_current_page (handle);
 	if (oldIndex == index) return;
 	if (oldIndex != -1) {
-		TabItem item = items [oldIndex];
-		Control control = item.control;
+		NativeTabItem item = items [oldIndex];
+		NativeControl control = item.control;
 		if (control != null && !control.isDisposed ()) {
 			control.setVisible (false);
 		}
@@ -867,15 +867,15 @@ void setSelection (int index, boolean notify) {
 	OS.g_signal_handlers_unblock_matched (handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, SWITCH_PAGE);
 	int newIndex = GTK.gtk_notebook_get_current_page (handle);
 	if (newIndex != -1) {
-		TabItem item = items [newIndex];
-		Control control = item.control;
+		NativeTabItem item = items [newIndex];
+		NativeControl control = item.control;
 		if (control != null && !control.isDisposed ()) {
 			control.setBoundsInPixels (getClientAreaInPixels ());
 			control.setVisible (true);
 		}
 		if (notify) {
 			Event event = new Event ();
-			event.item = item;
+			event.item = item.getWrapper();
 			sendSelectionEvent (SWT.Selection, event, true);
 		}
 	}
@@ -898,9 +898,9 @@ void setSelection (int index, boolean notify) {
  *
  * @since 3.2
  */
-public void setSelection (TabItem item) {
+public void setSelection (NativeTabItem item) {
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
-	setSelection (new TabItem [] {item});
+	setSelection (new NativeTabItem [] {item});
 }
 
 /**
@@ -918,7 +918,7 @@ public void setSelection (TabItem item) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setSelection (TabItem [] items) {
+public void setSelection (NativeTabItem [] items) {
 	checkWidget();
 	if (items == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (items.length == 0) {
@@ -940,5 +940,8 @@ boolean traversePage (final boolean next) {
 	}
 	return true;
 }
+
+@Override
+public abstract TabFolder getWrapper();
 
 }

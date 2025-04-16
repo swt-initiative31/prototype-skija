@@ -14,6 +14,7 @@
 package org.eclipse.swt.widgets;
 
 import java.util.*;
+import java.util.concurrent.atomic.*;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
@@ -113,14 +114,14 @@ import org.eclipse.swt.internal.cocoa.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see Decorations
+ * @see NativeDecorations
  * @see SWT
  * @see <a href="http://www.eclipse.org/swt/snippets/#shell">Shell snippets</a>
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Shell extends Decorations {
+public abstract class NativeShell extends NativeDecorations {
 	NSWindow window;
 	SWTWindowDelegate windowDelegate;
 	long hostWindowClass;
@@ -128,14 +129,14 @@ public class Shell extends Decorations {
 	long tooltipOwner, tooltipTag, tooltipUserData;
 	int glContextCount;
 	boolean opened, moved, resized, fullScreen, center, deferFlushing, scrolling, isPopup;
-	Control lastActive;
+	NativeControl lastActive;
 	Rectangle normalBounds;
 	boolean keyInputHappened;
 	NSRect currentFrame;
 	NSRect fullScreenFrame;
 	ToolBar toolBar;
 	Map<NSWindow, Integer> windowEmbedCounts;
-	MenuItem escMenuItem;
+	NativeMenuItem escMenuItem;
 
 	static int DEFAULT_CLIENT_WIDTH = -1;
 	static int DEFAULT_CLIENT_HEIGHT = -1;
@@ -149,7 +150,7 @@ public class Shell extends Decorations {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public Shell () {
+protected NativeShell () {
 	this ((Display) null);
 }
 
@@ -192,7 +193,7 @@ public Shell () {
  * @see SWT#SYSTEM_MODAL
  * @see SWT#SHEET
  */
-public Shell (int style) {
+protected NativeShell (int style) {
 	this ((Display) null, style);
 }
 
@@ -215,7 +216,7 @@ public Shell (int style) {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public Shell (Display display) {
+protected NativeShell (Display display) {
 	this (display, SWT.SHELL_TRIM);
 }
 
@@ -266,11 +267,11 @@ public Shell (Display display) {
  * @see SWT#SYSTEM_MODAL
  * @see SWT#SHEET
  */
-public Shell (Display display, int style) {
+protected NativeShell (Display display, int style) {
 	this (display, null, style, 0, false);
 }
 
-Shell (Display display, Shell parent, int style, long handle, boolean embedded) {
+NativeShell (Display display, NativeShell parent, int style, long handle, boolean embedded) {
 	super ();
 	checkSubclass ();
 	if (display == null) display = Display.getCurrent ();
@@ -321,7 +322,7 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public Shell (Shell parent) {
+protected NativeShell (NativeShell parent) {
 	this (parent, SWT.DIALOG_TRIM);
 }
 
@@ -374,31 +375,8 @@ public Shell (Shell parent) {
  * @see SWT#SYSTEM_MODAL
  * @see SWT#SHEET
  */
-public Shell (Shell parent, int style) {
+protected NativeShell (NativeShell parent, int style) {
 	this (parent != null ? parent.display : null, parent, style, 0, false);
-}
-
-/**
- * Invokes platform specific functionality to allocate a new shell
- * that is not embedded.
- * <p>
- * <b>IMPORTANT:</b> This method is <em>not</em> part of the public
- * API for <code>Shell</code>. It is marked public only so that it
- * can be shared within the packages provided by SWT. It is not
- * available on all platforms, and should never be called from
- * application code.
- * </p>
- *
- * @param display the display for the shell
- * @param handle the handle for the shell
- * @return a new shell object containing the specified display and handle
- *
- * @noreference This method is not intended to be referenced by clients.
- *
- * @since 3.3
- */
-public static Shell internal_new (Display display, long handle) {
-	return new Shell (display, null, SWT.NO_TRIM, handle, false);
 }
 
 /**
@@ -421,12 +399,12 @@ public static Shell internal_new (Display display, long handle) {
  *
  * @since 3.5
  */
-public static Shell cocoa_new (Display display, long handle) {
+protected static Shell cocoa_new (Display display, long handle) {
 	return new Shell (display, null, SWT.NO_TRIM, handle, true);
 }
 
-static int checkStyle (Shell parent, int style) {
-	style = Decorations.checkStyle (style);
+static int checkStyle (NativeShell parent, int style) {
+	style = NativeDecorations.checkStyle (style);
 	style &= ~SWT.TRANSPARENT;
 	int mask = SWT.SYSTEM_MODAL | SWT.APPLICATION_MODAL | SWT.PRIMARY_MODAL;
 	if ((style & SWT.SHEET) != 0) {
@@ -515,7 +493,7 @@ void attachObserversToWindow(NSWindow newWindow) {
 
 @Override
 void becomeKeyWindow (long id, long sel) {
-	Shell modal = getModalShell();
+	NativeShell modal = getModalShell();
 	if (modal != null && modal.window != null) {
 		modal.window.makeKeyAndOrderFront(null);
 		return;
@@ -621,7 +599,7 @@ void closeWidget (boolean force) {
 public Point computeSize (int wHint, int hHint, boolean changed) {
 	Point size = super.computeSize (wHint, hHint, changed);
 	if (toolBar != null) {
-		if (wHint == SWT.DEFAULT && toolBar.itemCount > 0) {
+		if (wHint == SWT.DEFAULT && toolBar.getItemCount() > 0) {
 			Point tbSize = toolBar.computeSize (SWT.DEFAULT, SWT.DEFAULT);
 			size.x = Math.max (tbSize.x, size.x);
 		}
@@ -838,12 +816,12 @@ void drawBackground (long id, NSGraphicsContext context, NSRect rect) {
 }
 
 @Override
-Control findBackgroundControl () {
+NativeControl findBackgroundControl () {
 	return background != null || backgroundImage != null ? this : null;
 }
 
 @Override
-Composite findDeferredControl () {
+NativeComposite findDeferredControl () {
 	return layoutCount > 0 ? this : null;
 }
 
@@ -869,7 +847,7 @@ boolean fixResize () {
 	return false;
 }
 
-void fixShell (Shell newShell, Control control) {
+void fixShell (NativeShell newShell, NativeControl control) {
 	if (this == newShell) return;
 	if (control == lastActive) setActiveControl (null);
 }
@@ -887,13 +865,13 @@ void fixShell (Shell newShell, Control control) {
  * </ul>
  *
  * @since 2.0
- * @see Control#moveAbove
- * @see Control#setFocus
- * @see Control#setVisible
+ * @see NativeControl#moveAbove
+ * @see NativeControl#setFocus
+ * @see NativeControl#setVisible
  * @see Display#getActiveShell
- * @see Decorations#setDefaultButton(Button)
- * @see Shell#open
- * @see Shell#setActive
+ * @see NativeDecorations#setDefaultButton(Button)
+ * @see NativeShell#open
+ * @see NativeShell#setActive
  */
 public void forceActive () {
 	checkWidget ();
@@ -1046,17 +1024,17 @@ public boolean getMaximized () {
 	return !_getFullScreen() && window.isZoomed();
 }
 
-Shell getModalShell () {
-	Shell shell = null;
-	Shell [] modalShells = display.modalShells;
+NativeShell getModalShell () {
+	NativeShell shell = null;
+	NativeShell [] modalShells = display.modalShells;
 	if (modalShells != null) {
 		int bits = SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL;
 		int index = modalShells.length;
 		while (--index >= 0) {
-			Shell modal = modalShells [index];
+			NativeShell modal = modalShells [index];
 			if (modal != null) {
 				if ((modal.style & bits) != 0) {
-					Control control = this;
+					NativeControl control = this;
 					while (control != null) {
 						if (control == modal) break;
 						control = control.parent;
@@ -1164,7 +1142,7 @@ public Region getRegion () {
 }
 
 @Override
-public Shell getShell () {
+public NativeShell getShell () {
 	checkWidget();
 	return this;
 }
@@ -1180,23 +1158,23 @@ public Shell getShell () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Shell [] getShells () {
+public NativeShell [] getShells () {
 	checkWidget ();
 	int count = 0;
-	Shell [] shells = display.getShells ();
-	for (Shell activeshell : shells) {
-		Control shell = activeshell;
+	NativeShell [] shells = display.getNativeShells ();
+	for (NativeShell activeshell : shells) {
+		NativeControl shell = activeshell;
 		do {
-			shell = shell.getParent ();
+			shell = Widget.checkNative(shell.getParent ());
 		} while (shell != null && shell != this);
 		if (shell == this) count++;
 	}
 	int index = 0;
-	Shell [] result = new Shell [count];
-	for (Shell activeshell : shells) {
-		Control shell = activeshell;
+	NativeShell [] result = new NativeShell [count];
+	for (NativeShell activeshell : shells) {
+		NativeControl shell = activeshell;
 		do {
-			shell = shell.getParent ();
+			shell = Widget.checkNative(shell.getParent ());
 		} while (shell != null && shell != this);
 		if (shell == this) {
 			result [index++] = activeshell;
@@ -1235,7 +1213,9 @@ float getThemeAlpha () {
 public ToolBar getToolBar() {
 	checkWidget();
 	if ((style & SWT.NO_TRIM) == 0) {
-		if (toolBar == null) toolBar = new ToolBar(this, SWT.HORIZONTAL | SWT.SMOOTH, true);
+		if (toolBar == null) {
+			toolBar = new ToolBar(this.getWrapper(), SWT.HORIZONTAL | SWT.SMOOTH);
+		}
 	}
 	return toolBar;
 }
@@ -1252,7 +1232,7 @@ boolean hasRegion () {
 
 @Override
 void helpRequested(long id, long sel, long theEvent) {
-	Control control = display.getFocusControl();
+	NativeControl control = display.getNativeFocusControl();
 	while (control != null) {
 		if (control.hooks (SWT.Help)) {
 			control.postEvent (SWT.Help);
@@ -1265,7 +1245,8 @@ void helpRequested(long id, long sel, long theEvent) {
 @Override
 void invalidateVisibleRegion () {
 	resetVisibleRegion ();
-	if (toolBar != null) toolBar.resetVisibleRegion();
+	// TODO Facade readd
+//	if (toolBar != null) toolBar.resetVisibleRegion();
 	invalidateChildrenVisibleRegion ();
 }
 
@@ -1366,13 +1347,13 @@ void noResponderFor(long id, long sel, long selector) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Control#moveAbove
- * @see Control#setFocus
- * @see Control#setVisible
+ * @see NativeControl#moveAbove
+ * @see NativeControl#setFocus
+ * @see NativeControl#setVisible
  * @see Display#getActiveShell
- * @see Decorations#setDefaultButton(Button)
- * @see Shell#setActive
- * @see Shell#forceActive
+ * @see NativeDecorations#setDefaultButton(Button)
+ * @see NativeShell#setActive
+ * @see NativeShell#forceActive
  */
 public void open () {
 	checkWidget();
@@ -1421,9 +1402,9 @@ void register () {
 
 @Override
 void releaseChildren (boolean destroy) {
-	Shell [] shells = getShells ();
+	NativeShell [] shells = getShells ();
 	for (int i=0; i<shells.length; i++) {
-		Shell shell = shells [i];
+		NativeShell shell = shells [i];
 		if (shell != null && !shell.isDisposed ()) {
 			shell.dispose ();
 		}
@@ -1523,9 +1504,9 @@ public void requestLayout () {
 @Override
 void reskinChildren (int flags) {
 	if (toolBar != null) toolBar.reskin(flags);
-	Shell [] shells = getShells ();
+	NativeShell [] shells = getShells ();
 	for (int i=0; i<shells.length; i++) {
-		Shell shell = shells [i];
+		NativeShell shell = shells [i];
 		if (shell != null) shell.reskin (flags);
 	}
 	super.reskinChildren (flags);
@@ -1570,13 +1551,13 @@ void sendToolTipEvent (boolean enter) {
  * </ul>
  *
  * @since 2.0
- * @see Control#moveAbove
- * @see Control#setFocus
- * @see Control#setVisible
+ * @see NativeControl#moveAbove
+ * @see NativeControl#setFocus
+ * @see NativeControl#setVisible
  * @see Display#getActiveShell
- * @see Decorations#setDefaultButton(Button)
- * @see Shell#open
- * @see Shell#setActive
+ * @see NativeDecorations#setDefaultButton(Button)
+ * @see NativeShell#open
+ * @see NativeShell#setActive
  */
 public void setActive () {
 	if (window == null) return;
@@ -1585,11 +1566,11 @@ public void setActive () {
 	makeKeyAndOrderFront ();
 }
 
-void setActiveControl (Control control) {
+void setActiveControl (NativeControl control) {
 	setActiveControl (control, SWT.None);
 }
 
-void setActiveControl (Control control, int type) {
+void setActiveControl (NativeControl control, int type) {
 	if (control != null && control.isDisposed ()) control = null;
 	if (lastActive != null && lastActive.isDisposed ()) lastActive = null;
 	if (lastActive == control) return;
@@ -1599,8 +1580,8 @@ void setActiveControl (Control control, int type) {
 	* deactivated by finding the first common parent
 	* control.
 	*/
-	Control [] activate = (control == null) ? new Control[0] : control.getPath ();
-	Control [] deactivate = (lastActive == null) ? new Control[0] : lastActive.getPath ();
+	NativeControl [] activate = (control == null) ? new NativeControl[0] : control.getPath ();
+	NativeControl [] deactivate = (lastActive == null) ? new NativeControl[0] : lastActive.getPath ();
 	lastActive = control;
 	int index = 0, length = Math.min (activate.length, deactivate.length);
 	while (index < length) {
@@ -1793,10 +1774,10 @@ public void setFullScreen (boolean fullScreen) {
 }
 
 @Override
-public void setMenuBar (Menu menu) {
+public void setMenuBar (NativeMenu menu) {
 	checkWidget();
 	super.setMenuBar (menu);
-	if (display.getActiveShell () == this) {
+	if (display.getActiveNativeShell () == this) {
 		display.setMenuBar (menuBar);
 	}
 }
@@ -2168,9 +2149,9 @@ void setWindowVisible (boolean visible, boolean key) {
 
 	if (isDisposed()) return;
 	NSView[] hitView = new NSView[1];
-	Control control = display.findControl (false, hitView);
+	NativeControl control = display.findControl (false, hitView);
 	if (control != null && (!control.isActive() || !control.isEnabled())) control = null;
-	Control trimControl = control;
+	NativeControl trimControl = control;
 	if (trimControl != null && trimControl.isTrim (hitView[0])) trimControl = null;
 	display.checkEnterExit (trimControl, null, false);
 }
@@ -2188,7 +2169,7 @@ void setZOrder () {
 }
 
 @Override
-void setZOrder (Control control, boolean above) {
+void setZOrder (NativeControl control, boolean above) {
 	if (window == null) return;
 	if (!getVisible ()) return;
 	if (control == null) {
@@ -2214,7 +2195,8 @@ boolean traverseEscape () {
 @Override
 void updateCursorRects(boolean enabled) {
 	super.updateCursorRects(enabled);
-	if (toolBar != null) toolBar.updateCursorRects(enabled);
+	// TODO Facade readd
+//	if (toolBar != null) toolBar.updateCursorRects(enabled);
 };
 
 void updateModal () {
@@ -2251,9 +2233,9 @@ void updateParent (boolean visible) {
 					 * launcher. This hack is a workaround for
 					 * https://bugs.eclipse.org/478975 .
 					 */
-					Shell parentShell = (Shell) parent;
+					NativeShell parentShell = (NativeShell) parent;
 					while (parentShell.parent != null) {
-						parentShell = (Shell) parentShell.parent;
+						parentShell = (NativeShell) parentShell.parent;
 						if (parentShell._getFullScreen()) {
 							window.setLevel(OS.NSSubmenuWindowLevel);
 							break;
@@ -2266,9 +2248,9 @@ void updateParent (boolean visible) {
 			if (parentWindow != null) parentWindow.removeChildWindow (window);
 		}
 	}
-	Shell [] shells = getShells ();
+	NativeShell [] shells = getShells ();
 	for (int i = 0; i < shells.length; i++) {
-		Shell shell = shells [i];
+		NativeShell shell = shells [i];
 		if (shell.parent == this && shell.getVisible ()) {
 			shell.updateParent (visible);
 		}
@@ -2296,9 +2278,9 @@ void updateSystemUIMode () {
 long view_stringForToolTip_point_userData (long id, long sel, long view, long tag, long point, long userData) {
 	NSPoint pt = new NSPoint();
 	OS.memmove (pt, point, NSPoint.sizeof);
-	Control control = display.findControl (false);
+	NativeControl control = display.findControl (false);
 	if (control == null) return 0;
-	Widget target = control.findTooltip (new NSView (view).convertPoint_toView_ (pt, null));
+	NativeWidget target = control.findTooltip (new NSView (view).convertPoint_toView_ (pt, null));
 	String string = target.tooltipText ();
 	if (string == null) return 0;
 	char[] chars = new char [string.length ()];
@@ -2331,9 +2313,9 @@ void windowDidBecomeKey(long id, long sel, long notification) {
 	if (!restoreFocus () && !traverseGroup (true)) setFocus ();
 	if (isDisposed ()) return;
 	if ((window.collectionBehavior() & OS.NSWindowCollectionBehaviorFullScreenPrimary) == 0) {
-		Shell parentShell = this;
+		NativeShell parentShell = this;
 		while (parentShell.parent != null) {
-			parentShell = (Shell) parentShell.parent;
+			parentShell = (NativeShell) parentShell.parent;
 			if (parentShell._getFullScreen ()) {
 				break;
 			}
@@ -2413,10 +2395,10 @@ void windowSendEvent (long id, long sel, long event) {
 		case OS.NSOtherMouseUp:
 		case OS.NSMouseMoved:
 			NSView[] hitView = new NSView[1];
-			Control control = display.findControl (false, hitView);
+			NativeControl control = display.findControl (false, hitView);
 			if (control != null && (!control.isActive() || !control.isEnabled())) control = null;
 			if (type == OS.NSMouseMoved) {
-				Control trimControl = control;
+				NativeControl trimControl = control;
 				if (trimControl != null && trimControl.isTrim (hitView[0])) trimControl = null;
 				display.checkEnterExit (trimControl, nsEvent, false);
 				// Browser will send MouseMoved in response to a DOM event, so don't send it here.
@@ -2426,7 +2408,7 @@ void windowSendEvent (long id, long sel, long event) {
 
 			// Tooltip updating: Find the widget under the cursor. If it changed, clear the tooltip from
 			// the last tracked item and send a tooltip event to make it visible on the new widget.
-			Widget target = null;
+			NativeWidget target = null;
 			if (control != null) {
 				NSPoint eventPoint = nsEvent.locationInWindow();
 				if (hitView[0] != null) {
@@ -2443,9 +2425,9 @@ void windowSendEvent (long id, long sel, long event) {
 			}
 
 			if (display.tooltipControl != control || display.tooltipTarget != target) {
-				Control oldControl = display.tooltipControl;
-				Shell oldShell = oldControl != null && !oldControl.isDisposed() ? oldControl.getShell() : null;
-				Shell shell = control != null && !control.isDisposed() ? control.getShell() : null;
+				NativeControl oldControl = display.tooltipControl;
+				NativeShell oldShell = oldControl != null && !oldControl.isDisposed() ? oldControl.getShell() : null;
+				NativeShell shell = control != null && !control.isDisposed() ? control.getShell() : null;
 				if (oldShell != null) oldShell.sendToolTipEvent (false);
 				if (shell != null) shell.sendToolTipEvent (true);
 			}
@@ -2463,7 +2445,7 @@ void windowSendEvent (long id, long sel, long event) {
 					updateEscMenuItem();
 				}
 				if (escMenuItem != null) {
-					Menu parentMenu = escMenuItem.getParent();
+					NativeMenu parentMenu = escMenuItem.getParent();
 					if (parentMenu != null) {
 						NSMenu escNSMenu = parentMenu.nsMenu;
 						if (escNSMenu != null) {
@@ -2510,18 +2492,18 @@ private void updateEscMenuItem() {
 	}
 }
 
-private boolean searchForEscMenuItem(Menu menu) {
+private boolean searchForEscMenuItem(NativeMenu menu) {
 	if (menu == null || menu.isDisposed()) return false;
-	MenuItem[] items = menu.getItems();
+	NativeMenuItem[] items = menu.getItems();
 	if (items == null) return false;
-	for (MenuItem item:items) {
+	for (NativeMenuItem item:items) {
 		if (item == null || item.isDisposed()) {
 			continue;
 		} else if (item.getAccelerator() == SWT.ESC) {
 			escMenuItem = item;
 			return true;
 		} else if ((item.getStyle() & SWT.CASCADE) != 0) {
-			Menu subMenu = item.getMenu();
+			NativeMenu subMenu = Widget.checkNative(item.getMenu());
 			if (searchForEscMenuItem(subMenu)) return true;
 		}
 	}
@@ -2538,5 +2520,8 @@ boolean windowShouldClose(long id, long sel, long window) {
 void windowWillClose(long id, long sel, long notification) {
 	closeWidget(true);
 }
+
+@Override
+public abstract Shell getWrapper();
 
 }

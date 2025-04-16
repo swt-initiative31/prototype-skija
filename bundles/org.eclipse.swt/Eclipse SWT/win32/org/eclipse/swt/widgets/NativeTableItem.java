@@ -36,8 +36,8 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class TableItem extends Item {
-	Table parent;
+public abstract class NativeTableItem extends NativeItem {
+	NativeTable parent;
 	String [] strings;
 	Image [] images;
 	Font font;
@@ -47,7 +47,7 @@ public class TableItem extends Item {
 	int [] cellBackground, cellForeground;
 
 	static {
-		DPIZoomChangeRegistry.registerHandler(TableItem::handleDPIChange, TableItem.class);
+		DPIZoomChangeRegistry.registerHandler(NativeTableItem::handleDPIChange, TableItem.class);
 	}
 
 /**
@@ -77,10 +77,10 @@ public class TableItem extends Item {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TableItem (Table parent, int style) {
+protected NativeTableItem (NativeTable parent, int style) {
 	this (parent, style, checkNull (parent).getItemCount (), true);
 }
 
@@ -113,26 +113,26 @@ public TableItem (Table parent, int style) {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TableItem (Table parent, int style, int index) {
+protected NativeTableItem (NativeTable parent, int style, int index) {
 	this (parent, style, index, true);
 }
 
-TableItem (Table parent, int style, int index, boolean create) {
+NativeTableItem (NativeTable parent, int style, int index, boolean create) {
 	super (parent, style);
 	this.parent = parent;
 	if (create) parent.createItem (this, index);
 }
 
-static Table checkNull (Table control) {
+static NativeTable checkNull (NativeTable control) {
 	if (control == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	return control;
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -300,7 +300,7 @@ RECT getBounds (int row, int column, boolean getText, boolean getImage, boolean 
 					}
 				}
 				if (!getImage) rect.left = rect.right;
-				rect.right += width + Table.INSET * 2;
+				rect.right += width + NativeTable.INSET * 2;
 			}
 		} else {
 			if (getText) {
@@ -377,7 +377,7 @@ RECT getBounds (int row, int column, boolean getText, boolean getImage, boolean 
 					iconRect.top = column;
 					iconRect.left = OS.LVIR_ICON;
 					if (OS.SendMessage (hwnd, OS. LVM_GETSUBITEMRECT, row, iconRect) != 0) {
-						rect.left = iconRect.right + Table.INSET / 2;
+						rect.left = iconRect.right + NativeTable.INSET / 2;
 					}
 				}
 			} else {
@@ -404,7 +404,7 @@ RECT getBounds (int row, int column, boolean getText, boolean getImage, boolean 
 					char [] buffer = string.toCharArray ();
 					int flags = OS.DT_NOPREFIX | OS.DT_SINGLELINE | OS.DT_CALCRECT;
 					OS.DrawText (hDC, buffer, buffer.length, textRect, flags);
-					rect.right += textRect.right - textRect.left + Table.INSET * 3 + 2;
+					rect.right += textRect.right - textRect.left + NativeTable.INSET * 3 + 2;
 				}
 			}
 		}
@@ -415,7 +415,7 @@ RECT getBounds (int row, int column, boolean getText, boolean getImage, boolean 
 	* the grid width when the grid is visible.  The fix is to
 	* move the top of the rectangle up by the grid width.
 	*/
-	int gridWidth = parent.getLinesVisible () ? Table.GRID_WIDTH : 0;
+	int gridWidth = parent.getLinesVisible () ? NativeTable.GRID_WIDTH : 0;
 	rect.top -= gridWidth;
 	if (column != 0) rect.left += gridWidth;
 	rect.right = Math.max (rect.right, rect.left);
@@ -636,7 +636,7 @@ String getNameText () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Table getParent () {
+public NativeTable getParent () {
 	checkWidget();
 	return parent;
 }
@@ -700,9 +700,9 @@ Rectangle getTextBoundsInPixels (int index) {
 	if (itemIndex == -1) return new Rectangle (0, 0, 0, 0);
 	RECT rect = getBounds (itemIndex, index, true, false, true);
 	rect.left += 2;
-	if (index != 0) rect.left += Table.INSET;
+	if (index != 0) rect.left += NativeTable.INSET;
 	rect.left = Math.min (rect.left, rect.right);
-	rect.right = rect.right - Table.INSET;
+	rect.right = rect.right - NativeTable.INSET;
 	int width = Math.max (0, rect.right - rect.left);
 	int height = Math.max (0, rect.bottom - rect.top);
 	return new Rectangle (rect.left, rect.top, width, height);
@@ -840,7 +840,7 @@ void setChecked (boolean checked, boolean notify) {
 	if ((parent.style & SWT.VIRTUAL) != 0) cached = true;
 	if (notify) {
 		Event event = new Event();
-		event.item = this;
+		event.item = this.getWrapper();
 		event.detail = SWT.CHECK;
 		parent.sendSelectionEvent (SWT.Selection, event, false);
 	}
@@ -870,7 +870,7 @@ public void setFont (Font font){
 		error (SWT.ERROR_INVALID_ARGUMENT);
 	}
 	Font oldFont = this.font;
-	Shell shell = parent.getShell();
+	NativeShell shell = parent.getShell();
 	Font newFont = (font == null ? font : Font.win32_new(font, shell.nativeZoom));
 	if (oldFont == newFont) return;
 	this.font = newFont;
@@ -1273,7 +1273,7 @@ public void setText (String string) {
 }
 
 private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-	if (!(widget instanceof TableItem tableItem)) {
+	if (!(Widget.checkNative(widget) instanceof NativeTableItem tableItem)) {
 		return;
 	}
 	Font font = tableItem.font;
@@ -1282,11 +1282,15 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 	}
 	Font[] cellFonts = tableItem.cellFont;
 	if (cellFonts != null) {
-		Shell shell = tableItem.parent.getShell();
+		NativeShell shell = tableItem.parent.getShell();
 		for (int index = 0; index < cellFonts.length; index++) {
 			Font cellFont = cellFonts[index];
 			cellFonts[index] = cellFont == null ? null : Font.win32_new(cellFont, shell.nativeZoom);
 		}
 	}
 }
+
+@Override
+public abstract TableItem getWrapper();
+
 }

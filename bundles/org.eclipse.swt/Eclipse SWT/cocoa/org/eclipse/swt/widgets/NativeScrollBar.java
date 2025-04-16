@@ -78,25 +78,30 @@ import org.eclipse.swt.internal.cocoa.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see Slider
- * @see Scrollable
- * @see Scrollable#getHorizontalBar
- * @see Scrollable#getVerticalBar
+ * @see NativeSlider
+ * @see NativeScrollable
+ * @see NativeScrollable#getHorizontalBar
+ * @see NativeScrollable#getVerticalBar
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class ScrollBar extends Widget {
+public abstract class NativeScrollBar extends NativeWidget {
 	NSScroller view;
-	Scrollable parent;
+	NativeScrollable parent;
 	int minimum, maximum = 100, thumb = 10;
 	int increment = 1;
 	int pageIncrement = 10;
 	id target;
 	long actionSelector;
 
-ScrollBar () {
+NativeScrollBar () {
 	/* Do nothing */
+}
+
+// Added for cross-OS compatibility of facade layer
+NativeScrollBar (NativeScrollable parent, int style) {
+	super ();
 }
 
 /**
@@ -244,7 +249,7 @@ public int getPageIncrement () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Scrollable getParent () {
+public NativeScrollable getParent () {
 	checkWidget ();
 	return parent;
 }
@@ -295,7 +300,7 @@ public Point getSize () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see ScrollBar
+ * @see NativeScrollBar
  */
 public int getThumb () {
 	checkWidget();
@@ -325,7 +330,7 @@ public Rectangle getThumbBounds () {
 /**
  * Returns a rectangle describing the size and location of the
  * receiver's thumb track relative to its parent. This rectangle
- * comprises the areas 2, 3, and 4 as described in {@link ScrollBar}.
+ * comprises the areas 2, 3, and 4 as described in {@link NativeScrollBar}.
  *
  * @return the thumb track bounds, relative to the {@link #getParent() parent}
  *
@@ -748,4 +753,6 @@ void updateBar (int selection, int minimum, int maximum, int thumb) {
 	}
 }
 
+@Override
+public abstract ScrollBar getWrapper();
 }

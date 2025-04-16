@@ -39,7 +39,7 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class DirectoryDialog extends Dialog {
+public class NativeDirectoryDialog extends NativeDialog {
 	Callback callback_performKeyEquivalent;
 	Callback completion_handler_callback;
 	NSOpenPanel panel;
@@ -61,7 +61,7 @@ public class DirectoryDialog extends Dialog {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public DirectoryDialog (Shell parent) {
+public NativeDirectoryDialog (NativeShell parent) {
 	this (parent, SWT.APPLICATION_MODAL);
 }
 
@@ -89,7 +89,7 @@ public DirectoryDialog (Shell parent) {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public DirectoryDialog (Shell parent, int style) {
+public NativeDirectoryDialog (NativeShell parent, int style) {
 	super (parent, checkStyle (parent, style));
 	if (Display.getSheetEnabled ()) {
 		if (parent != null && (style & SWT.SHEET) != 0) this.style |= SWT.SHEET;
@@ -178,7 +178,7 @@ public String open () {
 
 /**
  * Makes the dialog visible and brings it to the front of the display.
- * Equal to {@link DirectoryDialog#open()} but also exposes for state information like user cancellation.
+ * Equal to {@link NativeDirectoryDialog#open()} but also exposes for state information like user cancellation.
  *
  * @return an Optional that either contains the absolute path of the selected directory
  *         or is empty in case the dialog was canceled

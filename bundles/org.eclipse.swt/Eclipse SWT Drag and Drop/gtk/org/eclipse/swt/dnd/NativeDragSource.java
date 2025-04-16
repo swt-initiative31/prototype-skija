@@ -107,10 +107,10 @@ import org.eclipse.swt.widgets.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class DragSource extends Widget {
-
+public abstract class NativeDragSource extends NativeWidget {
 	// info for registering as a drag source
-	Control control;
+	NativeControl control;
+	Control controlWrapper;
 	Listener controlListener;
 	Transfer[] transferAgents = new Transfer[0];
 	DragSourceEffect dragEffect;
@@ -130,14 +130,14 @@ public class DragSource extends Widget {
 
 	static {
 		if (GTK.GTK4) {
-			dragBeginProc = new Callback(DragSource.class, "dragBeginProc", void.class, new Type[] { long.class, long.class });
-			dragPrepareProc = new Callback(DragSource.class, "dragPrepareProc", long.class, new Type[] { long.class, double.class, double.class });
-			dragEndProc = new Callback(DragSource.class, "dragEndProc", void.class, new Type[] { long.class, long.class, boolean.class });
+			dragBeginProc = new Callback(NativeDragSource.class, "dragBeginProc", void.class, new Type[] { long.class, long.class });
+			dragPrepareProc = new Callback(NativeDragSource.class, "dragPrepareProc", long.class, new Type[] { long.class, double.class, double.class });
+			dragEndProc = new Callback(NativeDragSource.class, "dragEndProc", void.class, new Type[] { long.class, long.class, boolean.class });
 		} else {
-			DragBegin = new Callback(DragSource.class, "DragBegin", 2); //$NON-NLS-1$
-			DragGetData = new Callback(DragSource.class, "DragGetData", 5);	 //$NON-NLS-1$
-			DragEnd = new Callback(DragSource.class, "DragEnd", 2); //$NON-NLS-1$
-			DragDataDelete = new Callback(DragSource.class, "DragDataDelete", 2); //$NON-NLS-1$
+			DragBegin = new Callback(NativeDragSource.class, "DragBegin", 2); //$NON-NLS-1$
+			DragGetData = new Callback(NativeDragSource.class, "DragGetData", 5);	 //$NON-NLS-1$
+			DragEnd = new Callback(NativeDragSource.class, "DragEnd", 2); //$NON-NLS-1$
+			DragDataDelete = new Callback(NativeDragSource.class, "DragDataDelete", 2); //$NON-NLS-1$
 		}
 	}
 
@@ -146,7 +146,7 @@ public class DragSource extends Widget {
  * Creating an instance of a DragSource may cause system resources to be allocated depending on the platform.
  * It is therefore mandatory that the DragSource instance be disposed when no longer required.
  *
- * @param control the <code>Control</code> that the user clicks on to initiate the drag
+ * @param controlWrapper the <code>Control</code> that the user clicks on to initiate the drag
  * @param style the bitwise OR'ing of allowed operations; this may be a combination of any of
  *					DND.DROP_NONE, DND.DROP_COPY, DND.DROP_MOVE, DND.DROP_LINK
  *
@@ -163,16 +163,17 @@ public class DragSource extends Widget {
  * <p>NOTE: ERROR_CANNOT_INIT_DRAG should be an SWTException, since it is a
  * recoverable error, but can not be changed due to backward compatibility.</p>
  *
- * @see Widget#dispose
- * @see DragSource#checkSubclass
+ * @see NativeWidget#dispose
+ * @see NativeDragSource#checkSubclass
  * @see DND#DROP_NONE
  * @see DND#DROP_COPY
  * @see DND#DROP_MOVE
  * @see DND#DROP_LINK
  */
-public DragSource(Control control, int style) {
-	super (control, checkStyle(style));
-	this.control = control;
+protected NativeDragSource(Control controlWrapper, int style) {
+	super (Widget.checkNative(controlWrapper), checkStyle(style));
+	this.control = Widget.checkNative(controlWrapper);
+	this.controlWrapper = controlWrapper;
 
 	if (GTK.GTK4) {
 		if (dragBeginProc == null || dragPrepareProc == null || dragEndProc == null) {
@@ -181,7 +182,7 @@ public DragSource(Control control, int style) {
 		if (control.getData(DND.DRAG_SOURCE_KEY) != null) {
 			DND.error(DND.ERROR_CANNOT_INIT_DRAG);
 		}
-		control.setData(DND.DRAG_SOURCE_KEY, this);
+		control.setData(DND.DRAG_SOURCE_KEY, this.getWrapper());
 
 		long dragSourceController = GTK4.gtk_drag_source_new();
 		GTK4.gtk_widget_add_controller(control.handle, dragSourceController);
@@ -200,7 +201,7 @@ public DragSource(Control control, int style) {
 		if (control.getData(DND.DRAG_SOURCE_KEY) != null) {
 			DND.error(DND.ERROR_CANNOT_INIT_DRAG);
 		}
-		control.setData(DND.DRAG_SOURCE_KEY, this);
+		control.setData(DND.DRAG_SOURCE_KEY, this.getWrapper());
 
 		// There's a native GTK snippet available, find 'Issue0400_WaylandDndEvents.cpp' in this repo.
 		// It may be helpful in understanding / debugging bugs.
@@ -211,13 +212,13 @@ public DragSource(Control control, int style) {
 
 		controlListener = event -> {
 			if (event.type == SWT.Dispose) {
-				if (!DragSource.this.isDisposed()) {
-					DragSource.this.dispose();
+				if (!NativeDragSource.this.isDisposed()) {
+					NativeDragSource.this.dispose();
 				}
 			}
 			if (event.type == SWT.DragDetect) {
-				if (!DragSource.this.isDisposed()) {
-					DragSource.this.drag(event);
+				if (!NativeDragSource.this.isDisposed()) {
+					NativeDragSource.this.drag(event);
 				}
 			}
 		};
@@ -227,12 +228,12 @@ public DragSource(Control control, int style) {
 		Object effect = control.getData(DEFAULT_DRAG_SOURCE_EFFECT);
 		if (effect instanceof DragSourceEffect) {
 			dragEffect = (DragSourceEffect) effect;
-		} else if (control instanceof Tree) {
-			dragEffect = new TreeDragSourceEffect((Tree) control);
-		} else if (control instanceof Table) {
-			dragEffect = new TableDragSourceEffect((Table) control);
-		} else if (control instanceof List) {
-			dragEffect = new ListDragSourceEffect((List) control);
+		} else if (controlWrapper instanceof Tree) {
+			dragEffect = new TreeDragSourceEffect((Tree) controlWrapper);
+		} else if (controlWrapper instanceof Table) {
+			dragEffect = new TableDragSourceEffect((Table) controlWrapper);
+		} else if (controlWrapper instanceof List) {
+			dragEffect = new ListDragSourceEffect((List) controlWrapper);
 		}
 
 		this.addListener(SWT.Dispose, e -> onDispose());
@@ -246,7 +247,7 @@ static int checkStyle (int style) {
 
 static void dragBeginProc(long source, long drag) {
 	long widgetHandle = GTK.gtk_event_controller_get_widget(source);
-	DragSource dragSource = FindDragSource(widgetHandle);
+	NativeDragSource dragSource = FindDragSource(widgetHandle);
 	if (dragSource == null) return;
 
 	dragSource.dragBeginGtk4(source);
@@ -254,7 +255,7 @@ static void dragBeginProc(long source, long drag) {
 
 void dragBeginGtk4(long source) {
 	DNDEvent event = new DNDEvent();
-	event.widget = this;
+	event.widget = this.getWrapper();
 	event.doit = true;
 	notifyListeners(DND.DragStart, event);
 	if (!event.doit || transferAgents == null || transferAgents.length == 0) return;
@@ -271,7 +272,7 @@ void dragBeginGtk4(long source) {
 
 static long dragPrepareProc(long source, double x, double y) {
 	long widgetHandle = GTK.gtk_event_controller_get_widget(source);
-	DragSource dragSource = FindDragSource(widgetHandle);
+	NativeDragSource dragSource = FindDragSource(widgetHandle);
 	if (dragSource == null) return 0;
 
 	return dragSource.dragPrepare();
@@ -281,7 +282,7 @@ long dragPrepare() {
 	TransferData transferData = new TransferData();
 
 	DNDEvent event = new DNDEvent();
-	event.widget = this;
+	event.widget = this.getWrapper();
 	event.dataType = transferData;
 	notifyListeners(DND.DragSetData, event);
 	if (!event.doit) return 0;
@@ -296,39 +297,39 @@ static void dragEndProc(long source, long drag, boolean delete_data) {
 }
 
 static long DragBegin(long widget, long context){
-	DragSource source = FindDragSource(widget);
+	NativeDragSource source = FindDragSource(widget);
 	if (source == null) return 0;
 	source.dragBegin(widget, context);
 	return 0;
 }
 
 static long DragDataDelete(long widget, long context){
-	DragSource source = FindDragSource(widget);
+	NativeDragSource source = FindDragSource(widget);
 	if (source == null) return 0;
 	source.dragDataDelete(widget, context);
 	return 0;
 }
 
 static long DragEnd(long widget, long context){
-	DragSource source = FindDragSource(widget);
+	NativeDragSource source = FindDragSource(widget);
 	if (source == null) return 0;
 	source.dragEnd(widget, context);
 	return 0;
 }
 
 static long DragGetData(long widget, long context, long selection_data,  long info, long time){
-	DragSource source = FindDragSource(widget);
+	NativeDragSource source = FindDragSource(widget);
 	if (source == null) return 0;
 	source.dragGetData(widget, context, selection_data, (int)info, (int)time);
 	return 0;
 }
 
-static DragSource FindDragSource(long handle) {
+static NativeDragSource FindDragSource(long handle) {
 	Display display = Display.findDisplay(Thread.currentThread());
 	if (display == null || display.isDisposed()) return null;
-	Widget widget = display.findWidget(handle);
+	NativeWidget widget = display.findWidget(handle);
 	if (widget == null) return null;
-	return (DragSource)widget.getData(DND.DRAG_SOURCE_KEY);
+	return ((DragSource)widget.getData(DND.DRAG_SOURCE_KEY)).getWrappedWidget();
 }
 
 /**
@@ -364,17 +365,17 @@ static DragSource FindDragSource(long handle) {
 public void addDragListener(DragSourceListener listener) {
 	if (listener == null) DND.error (SWT.ERROR_NULL_ARGUMENT);
 	DNDListener typedListener = new DNDListener (listener);
-	typedListener.dndWidget = this;
+	typedListener.dndWidget = this.getWrapper();
 	addListener (DND.DragStart, typedListener);
 	addListener (DND.DragSetData, typedListener);
 	addListener (DND.DragEnd, typedListener);
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	String name = getClass().getName ();
-	String validName = DragSource.class.getName();
-	if (!validName.equals(name)) {
+	String validName = NativeDragSource.class.getPackageName();
+	if (!name.startsWith(validName)) {
 		DND.error (SWT.ERROR_INVALID_SUBCLASS);
 	}
 }
@@ -388,7 +389,7 @@ boolean canBeginDrag() {
 void drag(Event dragEvent) {
 	moveData = false;
 	DNDEvent event = new DNDEvent();
-	event.widget = this;
+	event.widget = this.getWrapper();
 	event.x = dragEvent.x;
 	event.y = dragEvent.y;
 	event.time = dragEvent.time;
@@ -411,11 +412,11 @@ void dragBegin(long widget, long context) {
 	 * When we recieve the signal from GTK of DragBegin, we will
 	 * notify SWT that a drag has occurred.
 	 */
-	if (this.control instanceof Text) {
+	if (this.control instanceof NativeText) {
 		DNDEvent event = new DNDEvent();
 		Display display = Display.getCurrent();
 		Point loc = display.getCursorLocation();
-		event.widget = this;
+		event.widget = this.getWrapper();
 		event.doit = true;
 		event.x = loc.x;
 		event.y = loc.y;
@@ -483,7 +484,7 @@ void dragEnd(long widget, long context){
 		}
 	}
 	DNDEvent event = new DNDEvent();
-	event.widget = this;
+	event.widget = this.getWrapper();
 	//event.time = ???
 	event.doit = operation != 0;
 	event.detail = operation;
@@ -496,9 +497,9 @@ void dragEnd(long widget, long context){
 		 * Widgets (tree, table, list), the selection function needs to be set back to
 		 * true on dragEnd as well as release_event(). See bug 503431.
 		 */
-		if (this.control instanceof Table
-				|| this.control instanceof Tree
-				|| this.control instanceof List) {
+		if (this.control instanceof NativeTable
+				|| this.control instanceof NativeTree
+				|| this.control instanceof NativeList) {
 			long selection = GTK.gtk_tree_view_get_selection (widget);
 			GTK.gtk_tree_selection_set_select_function(selection,0,0,0);
 		}
@@ -521,7 +522,7 @@ void dragGetData(long widget, long context, long selection_data,  int info, int 
 	transferData.format = format;
 
 	DNDEvent event = new DNDEvent();
-	event.widget = this;
+	event.widget = this.getWrapper();
 	event.time = time;
 	event.dataType = transferData;
 	notifyListeners(DND.DragSetData, event);
@@ -553,7 +554,7 @@ void dragDataDelete(long widget, long context){
  * @return the Control which is registered for this DragSource
  */
 public Control getControl () {
-	return control;
+	return controlWrapper;
 }
 
 /**
@@ -730,4 +731,8 @@ public void setTransfer(Transfer... transferAgents){
 		}
 	}
 }
+
+@Override
+public abstract DragSource getWrapper();
+
 }

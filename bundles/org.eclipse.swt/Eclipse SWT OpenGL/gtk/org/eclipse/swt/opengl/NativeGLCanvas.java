@@ -31,7 +31,7 @@ import org.eclipse.swt.widgets.*;
  * @since 3.2
  */
 
-public class GLCanvas extends Canvas {
+public abstract class NativeGLCanvas extends NativeCanvas {
 	long context;
 	long xWindow;
 	long glWindow;
@@ -51,7 +51,7 @@ public class GLCanvas extends Canvas {
  *     <li>ERROR_UNSUPPORTED_DEPTH when the requested attributes cannot be provided</li>
  * </ul>
  */
-public GLCanvas (Composite parent, int style, GLData data) {
+protected NativeGLCanvas (NativeComposite parent, int style, GLData data) {
 	super (parent, style);
 	if (data == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	int glxAttrib [] = new int [MAX_ATTRIBUTES];
@@ -122,7 +122,7 @@ public GLCanvas (Composite parent, int style, GLData data) {
 	OS.XFree (infoPtr);
 	long screen = GDK.gdk_screen_get_default ();
 	long gdkvisual = GDK.gdk_x11_screen_lookup_visual (screen, vinfo.visualid);
-	long share = data.shareContext != null ? data.shareContext.context : 0;
+	long share = data.shareContext != null ? data.shareContext.getWrappedWidget().context : 0;
 	context = GLX.glXCreateContext (xDisplay, vinfo, share, true);
 	if (context == 0) SWT.error (SWT.ERROR_NO_HANDLES);
 	GdkWindowAttr attrs = new GdkWindowAttr ();
@@ -287,4 +287,8 @@ public void swapBuffers () {
 private long gdk_x11_display_get_xdisplay(long window) {
 	return GDK.gdk_x11_display_get_xdisplay(GDK.gdk_window_get_display(window));
 }
+
+@Override
+public abstract GLCanvas getWrapper();
+
 }

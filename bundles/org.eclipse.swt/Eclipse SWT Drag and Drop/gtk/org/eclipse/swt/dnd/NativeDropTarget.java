@@ -78,9 +78,9 @@ import org.eclipse.swt.widgets.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class DropTarget extends Widget {
-
-	Control control;
+public abstract class NativeDropTarget extends NativeWidget {
+	NativeControl control;
+	Control controlWrapper;
 	Listener controlListener;
 	Transfer[] transferAgents = new Transfer[0];
 	DropTargetEffect dropEffect;
@@ -112,10 +112,10 @@ public class DropTarget extends Widget {
 	static Callback Drag_Drop;
 
 	static {
-		Drag_Motion = new Callback(DropTarget.class, "Drag_Motion", 5); //$NON-NLS-1$
-		Drag_Leave = new Callback(DropTarget.class, "Drag_Leave", 3); //$NON-NLS-1$
-		Drag_Data_Received = new Callback(DropTarget.class, "Drag_Data_Received", 7); //$NON-NLS-1$
-		Drag_Drop = new Callback(DropTarget.class, "Drag_Drop", 5); //$NON-NLS-1$
+		Drag_Motion = new Callback(NativeDropTarget.class, "Drag_Motion", 5); //$NON-NLS-1$
+		Drag_Leave = new Callback(NativeDropTarget.class, "Drag_Leave", 3); //$NON-NLS-1$
+		Drag_Data_Received = new Callback(NativeDropTarget.class, "Drag_Data_Received", 7); //$NON-NLS-1$
+		Drag_Drop = new Callback(NativeDropTarget.class, "Drag_Drop", 5); //$NON-NLS-1$
 	}
 
 	/* GTK4 specific */
@@ -128,7 +128,7 @@ public class DropTarget extends Widget {
  * depending on the platform.  It is therefore mandatory that the DropTarget instance
  * be disposed when no longer required.
  *
- * @param control the <code>Control</code> over which the user positions the cursor to drop the data
+ * @param controlWrapper the <code>Control</code> over which the user positions the cursor to drop the data
  * @param style the bitwise OR'ing of allowed operations; this may be a combination of any of
  *		   DND.DROP_NONE, DND.DROP_COPY, DND.DROP_MOVE, DND.DROP_LINK
  *
@@ -145,16 +145,17 @@ public class DropTarget extends Widget {
  * <p>NOTE: ERROR_CANNOT_INIT_DROP should be an SWTException, since it is a
  * recoverable error, but can not be changed due to backward compatibility.</p>
  *
- * @see Widget#dispose
- * @see DropTarget#checkSubclass
+ * @see NativeWidget#dispose
+ * @see NativeDropTarget#checkSubclass
  * @see DND#DROP_NONE
  * @see DND#DROP_COPY
  * @see DND#DROP_MOVE
  * @see DND#DROP_LINK
  */
-public DropTarget(Control control, int style) {
-	super(control, checkStyle(style));
-	this.control = control;
+protected NativeDropTarget(Control controlWrapper, int style) {
+	super(Widget.checkNative(controlWrapper), checkStyle(style));
+	this.control = Widget.checkNative(controlWrapper);
+	this.controlWrapper = controlWrapper;
 
 	if (GTK.GTK4) {
 		int actions = opToOsOp(style);
@@ -168,7 +169,7 @@ public DropTarget(Control control, int style) {
 		if (control.getData(DND.DROP_TARGET_KEY) != null) {
 			DND.error(DND.ERROR_CANNOT_INIT_DROP);
 		}
-		control.setData(DND.DROP_TARGET_KEY, this);
+		control.setData(DND.DROP_TARGET_KEY, this.getWrapper());
 
 		// There's a native GTK snippet available, find 'Issue0400_WaylandDndEvents.cpp' in this repo.
 		// It may be helpful in understanding / debugging bugs.
@@ -179,8 +180,8 @@ public DropTarget(Control control, int style) {
 
 		// Dispose listeners
 		controlListener = event -> {
-			if (!DropTarget.this.isDisposed()){
-				DropTarget.this.dispose();
+			if (!NativeDropTarget.this.isDisposed()){
+				NativeDropTarget.this.dispose();
 			}
 		};
 		control.addListener(SWT.Dispose, controlListener);
@@ -190,14 +191,14 @@ public DropTarget(Control control, int style) {
 		Object effect = control.getData(DEFAULT_DROP_TARGET_EFFECT);
 		if (effect instanceof DropTargetEffect) {
 			dropEffect = (DropTargetEffect) effect;
-		} else if (control instanceof Table) {
-			dropEffect = new TableDropTargetEffect((Table) control);
-		} else if (control instanceof Tree) {
-			dropEffect = new TreeDropTargetEffect((Tree) control);
+		} else if (controlWrapper instanceof Table) {
+			dropEffect = new TableDropTargetEffect((Table) controlWrapper);
+		} else if (controlWrapper instanceof Tree) {
+			dropEffect = new TreeDropTargetEffect((Tree) controlWrapper);
 		}
 
 		dragOverHeartbeat = () -> {
-			Control control1 = DropTarget.this.control;
+			NativeControl control1 = NativeDropTarget.this.control;
 			if (control1 == null || control1.isDisposed() || dragOverStart == 0) return;
 			long time = System.currentTimeMillis();
 			int delay = DRAGOVER_HYSTERESIS;
@@ -239,7 +240,7 @@ public DropTarget(Control control, int style) {
 					selectedOperation = event.detail;
 				}
 			}
-			control1 = DropTarget.this.control;
+			control1 = NativeDropTarget.this.control;
 			if (control1 == null || control1.isDisposed()) return;
 			control1.getDisplay().timerExec(delay, dragOverHeartbeat);
 		};
@@ -252,37 +253,37 @@ static int checkStyle (int style) {
 }
 
 static long Drag_Data_Received ( long widget, long context, long x, long y, long data, long info, long time){
-	DropTarget target = FindDropTarget(widget);
+	NativeDropTarget target = FindDropTarget(widget);
 	if (target == null) return 0;
 	target.drag_data_received (widget, context, (int)x, (int)y, data, (int)info, (int)time);
 	return 0;
 }
 
 static long Drag_Drop(long widget, long context, long x, long y, long time) {
-	DropTarget target = FindDropTarget(widget);
+	NativeDropTarget target = FindDropTarget(widget);
 	if (target == null) return 0;
 	return target.drag_drop (widget, context, (int)x, (int)y, (int)time) ? 1 : 0;
 }
 
 static long Drag_Leave ( long widget, long context, long time){
-	DropTarget target = FindDropTarget(widget);
+	NativeDropTarget target = FindDropTarget(widget);
 	if (target == null) return 0;
 	target.drag_leave (widget, context, (int)time);
 	return 0;
 }
 
 static long Drag_Motion ( long widget, long context, long x, long y, long time){
-	DropTarget target = FindDropTarget(widget);
+	NativeDropTarget target = FindDropTarget(widget);
 	if (target == null) return 0;
 	return target.drag_motion (widget, context, (int)x, (int)y, (int)time) ? 1 : 0;
 }
 
-static DropTarget FindDropTarget(long handle) {
+static NativeDropTarget FindDropTarget(long handle) {
 	Display display = Display.findDisplay(Thread.currentThread());
 	if (display == null || display.isDisposed()) return null;
-	Widget widget = display.findWidget(handle);
+	NativeWidget widget = display.findWidget(handle);
 	if (widget == null) return null;
-	return (DropTarget)widget.getData(DND.DROP_TARGET_KEY);
+	return ((DropTarget)widget.getData(DND.DROP_TARGET_KEY)).getWrappedWidget();
 }
 
 /**
@@ -321,7 +322,7 @@ static DropTarget FindDropTarget(long handle) {
 public void addDropListener(DropTargetListener listener) {
 	if (listener == null) DND.error (SWT.ERROR_NULL_ARGUMENT);
 	DNDListener typedListener = new DNDListener (listener);
-	typedListener.dndWidget = this;
+	typedListener.dndWidget = this.getWrapper();
 	addListener (DND.DragEnter, typedListener);
 	addListener (DND.DragLeave, typedListener);
 	addListener (DND.DragOver, typedListener);
@@ -331,10 +332,10 @@ public void addDropListener(DropTargetListener listener) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	String name = getClass().getName ();
-	String validName = DropTarget.class.getName();
-	if (!validName.equals(name)) {
+	String validName = NativeDropTarget.class.getPackageName();
+	if (!name.startsWith(validName)) {
 		DND.error (SWT.ERROR_INVALID_SUBCLASS);
 	}
 }
@@ -433,7 +434,7 @@ void drag_leave ( long widget, long context, int time){
 	keyOperation = -1;
 
 	DNDEvent event = new DNDEvent();
-	event.widget = this;
+	event.widget = this.getWrapper();
 	event.time = time;
 	event.detail = DND.DROP_NONE;
 	notifyListeners(DND.DragLeave, event);
@@ -522,7 +523,7 @@ boolean drag_motion ( long widget, long context, int x, int y, int time){
  * @return the Control which is registered for this DropTarget
  */
 public Control getControl () {
-	return control;
+	return controlWrapper;
 }
 
 /**
@@ -715,7 +716,7 @@ public void setTransfer(Transfer... transferAgents){
 		}
 
 		int actions = opToOsOp(getStyle());
-		if (control instanceof Combo) {
+		if (control instanceof NativeCombo) {
 			if ((control.getStyle() & SWT.READ_ONLY) == 0) {
 				long entryHandle = GTK3.gtk_bin_get_child (control.handle);
 				if (entryHandle != 0) {
@@ -794,7 +795,7 @@ boolean setEventData(long context, int x, int y, int time, DNDEvent event) {
 	}
 	Point coordinates = DPIUtil.autoScaleDown(new Point(origin_x[0] + x, origin_y[0] + y));
 
-	event.widget = this;
+	event.widget = this.getWrapper();
 	event.x = coordinates.x;
 	event.y = coordinates.y;
 	event.time = time;
@@ -825,4 +826,8 @@ void updateDragOverHover(long delay, DNDEvent event) {
 	dragOverEvent.operations = event.operations;
 	dragOverEvent.time = event.time;
 }
+
+@Override
+public abstract DropTarget getWrapper();
+
 }

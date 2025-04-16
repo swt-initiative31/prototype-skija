@@ -14,6 +14,8 @@
 package org.eclipse.swt.widgets;
 
 
+import java.util.concurrent.atomic.*;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
@@ -36,8 +38,8 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class Scrollable extends Control {
-	ScrollBar horizontalBar, verticalBar;
+public abstract class NativeScrollable extends NativeControl implements IScrollable {
+	NativeScrollBar horizontalBar, verticalBar;
 
 	/**
 	 * The regular expression used to determine the string which should be deleted
@@ -49,7 +51,7 @@ public abstract class Scrollable extends Control {
 /**
  * Prevents uninitialized instances from being created outside the package.
  */
-Scrollable () {
+NativeScrollable () {
 }
 
 /**
@@ -78,10 +80,10 @@ Scrollable () {
  *
  * @see SWT#H_SCROLL
  * @see SWT#V_SCROLL
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Scrollable (Composite parent, int style) {
+protected NativeScrollable (NativeComposite parent, int style) {
 	super (parent, style);
 }
 
@@ -118,6 +120,7 @@ long callWindowProc (long hwnd, int msg, long wParam, long lParam) {
  *
  * @see #getClientArea
  */
+@Override
 public Rectangle computeTrim (int x, int y, int width, int height) {
 	checkWidget ();
 	int zoom = getZoom();
@@ -144,8 +147,16 @@ void createHandle () {
 	maybeEnableDarkSystemTheme();
 }
 
-ScrollBar createScrollBar (int type) {
-	ScrollBar bar = new ScrollBar (this, type);
+NativeScrollBar createScrollBar (int type) {
+	AtomicReference<ScrollBar> wrapperBar = new AtomicReference<>();
+	NativeScrollBar bar = new NativeScrollBar (this, type) {
+		@Override
+		public ScrollBar getWrapper() {
+			return wrapperBar.get();
+		}
+	};
+	wrapperBar.set(new ScrollBar(bar));
+
 	if ((state & CANVAS) != 0) {
 		bar.setMaximum (100);
 		bar.setThumb (10);
@@ -208,6 +219,7 @@ void destroyScrollBar (int type) {
  *
  * @see #computeTrim
  */
+@Override
 public Rectangle getClientArea () {
 	checkWidget ();
 	return DPIUtil.scaleDown(getClientAreaInPixels(), getZoom());
@@ -241,9 +253,10 @@ Rectangle getClientAreaInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public ScrollBar getHorizontalBar () {
 	checkWidget ();
-	return horizontalBar;
+	return horizontalBar != null ? horizontalBar.getWrapper() : null;
 }
 
 /**
@@ -269,6 +282,7 @@ public ScrollBar getHorizontalBar () {
  *
  * @since 3.8
  */
+@Override
 public int getScrollbarsMode () {
 	checkWidget();
 	return SWT.NONE;
@@ -295,6 +309,7 @@ public int getScrollbarsMode () {
  *
  * @since 3.126
  */
+@Override
 public void setScrollbarsMode (int mode) {
 	checkWidget();
 }
@@ -310,9 +325,10 @@ public void setScrollbarsMode (int mode) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public ScrollBar getVerticalBar () {
 	checkWidget ();
-	return verticalBar;
+	return verticalBar != null ? verticalBar.getWrapper() : null;
 }
 
 @Override
@@ -419,7 +435,7 @@ LRESULT wmScrollWheel (boolean update, long wParam, long lParam, boolean horzWhe
 			return null;
 		}
 
-		ScrollBar bar = vertical ? verticalBar : horizontalBar;
+		NativeScrollBar bar = vertical ? verticalBar : horizontalBar;
 		MouseWheelData wheelData = new MouseWheelData(vertical, bar, wParam, display.scrollRemainderBar);
 
 		if (wheelData.count == 0) return null;
@@ -469,7 +485,7 @@ LRESULT wmScrollWheel (boolean update, long wParam, long lParam, boolean horzWhe
 	return new LRESULT (code);
 }
 
-LRESULT wmScroll (ScrollBar bar, boolean update, long hwnd, int msg, long wParam, long lParam) {
+LRESULT wmScroll (NativeScrollBar bar, boolean update, long hwnd, int msg, long wParam, long lParam) {
 	LRESULT result = null;
 	if (update) {
 		int type = msg == OS.WM_HSCROLL ? OS.SB_HORZ : OS.SB_VERT;
@@ -514,5 +530,8 @@ LRESULT wmScroll (ScrollBar bar, boolean update, long hwnd, int msg, long wParam
 	bar.wmScrollChild (wParam, lParam);
 	return result;
 }
+
+@Override
+public abstract Scrollable getWrapper();
 
 }

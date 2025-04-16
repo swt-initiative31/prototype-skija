@@ -36,19 +36,19 @@ import org.eclipse.swt.internal.win32.*;
  * methods.
  * </p>
  *
- * @see Composite
+ * @see NativeComposite
  * @see <a href="http://www.eclipse.org/swt/snippets/#canvas">Canvas snippets</a>
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public class Canvas extends Composite {
-	Caret caret;
-	IME ime;
+public abstract class NativeCanvas extends NativeComposite implements ICanvas {
+	NativeCaret caret;
+	NativeIME ime;
 
 /**
  * Prevents uninitialized instances from being created outside the package.
  */
-Canvas () {
+NativeCanvas () {
 }
 
 /**
@@ -75,9 +75,9 @@ Canvas () {
  * </ul>
  *
  * @see SWT
- * @see Widget#getStyle
+ * @see NativeWidget#getStyle
  */
-public Canvas (Composite parent, int style) {
+protected NativeCanvas (NativeComposite parent, int style) {
 	super (parent, style);
 }
 
@@ -102,6 +102,7 @@ public Canvas (Composite parent, int style) {
  *
  * @since 3.2
  */
+@Override
 public void drawBackground (GC gc, int x, int y, int width, int height) {
 	int zoom = getZoom();
 	Rectangle rectangle = DPIUtil.scaleUp(new Rectangle(x, y, width, height), zoom);
@@ -126,9 +127,10 @@ public void drawBackground (GC gc, int x, int y, int width, int height) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Caret getCaret () {
 	checkWidget ();
-	return caret;
+	return caret != null ? caret.getWrapper() : null;
 }
 
 /**
@@ -143,9 +145,10 @@ public Caret getCaret () {
  *
  * @since 3.4
  */
+@Override
 public IME getIME () {
 	checkWidget ();
-	return ime;
+	return ime != null ? ime.getWrapper() : null;
 }
 
 @Override
@@ -195,6 +198,7 @@ void reskinChildren (int flags) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void scroll (int destX, int destY, int x, int y, int width, int height, boolean all) {
 	checkWidget ();
 	int zoom = getZoom();
@@ -243,7 +247,7 @@ void scrollInPixels (int destX, int destY, int x, int y, int width, int height, 
 		OS.ScrollWindowEx (handle, deltaX, deltaY, sourceRect, null, 0, null, flags);
 	}
 	if (all) {
-		for (Control child : _getChildren ()) {
+		for (NativeControl child : _getChildren ()) {
 			Rectangle rect = child.getBoundsInPixels ();
 			if (Math.min (x + width, rect.x + rect.width) >= Math.max (x, rect.x) &&
 				Math.min (y + height, rect.y + rect.height) >= Math.max (y, rect.y)) {
@@ -274,10 +278,15 @@ void scrollInPixels (int destX, int destY, int x, int y, int width, int height, 
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setCaret (Caret caret) {
+	setCaret(Widget.checkNative(caret));
+}
+
+void setCaret (NativeCaret caret) {
 	checkWidget ();
-	Caret newCaret = caret;
-	Caret oldCaret = this.caret;
+	NativeCaret newCaret = caret;
+	NativeCaret oldCaret = this.caret;
 	this.caret = newCaret;
 	if (hasFocus ()) {
 		if (oldCaret != null) oldCaret.killFocus ();
@@ -310,7 +319,12 @@ public void setFont (Font font) {
  *
  * @since 3.4
  */
+@Override
 public void setIME (IME ime) {
+	setIME(Widget.checkNative(ime));
+}
+
+void setIME (NativeIME ime) {
 	checkWidget ();
 	if (ime != null && ime.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
 	this.ime = ime;
@@ -413,7 +427,7 @@ LRESULT WM_KILLFOCUS (long wParam, long lParam) {
 		LRESULT result = ime.WM_KILLFOCUS (wParam, lParam);
 		if (result != null) return result;
 	}
-	Caret caret = this.caret;
+	NativeCaret caret = this.caret;
 	LRESULT result  = super.WM_KILLFOCUS (wParam, lParam);
 	if (caret != null) caret.killFocus ();
 	return result;
@@ -473,5 +487,8 @@ LRESULT WM_WINDOWPOSCHANGING (long wParam, long lParam) {
 	if (isFocus) caret.killFocus ();
 	return result;
 }
+
+@Override
+public abstract Canvas getWrapper();
 
 }

@@ -52,10 +52,10 @@ import org.eclipse.swt.ole.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class Control extends Widget implements Drawable {
+public abstract class NativeControl extends NativeWidget implements Drawable, IControl {
 
 	static {
-		DPIZoomChangeRegistry.registerHandler(Control::handleDPIChange, Control.class);
+		DPIZoomChangeRegistry.registerHandler(NativeControl::handleDPIChange, Control.class);
 	}
 
 	/**
@@ -71,9 +71,9 @@ public abstract class Control extends Widget implements Drawable {
 	 * @noreference This field is not intended to be referenced by clients.
 	 */
 	public long handle;
-	Composite parent;
+	NativeComposite parent;
 	Cursor cursor;
-	Menu menu, activeMenu;
+	NativeMenu menu, activeMenu;
 	String toolTipText;
 	Object layoutData;
 	Accessible accessible;
@@ -85,7 +85,7 @@ public abstract class Control extends Widget implements Drawable {
 /**
  * Prevents uninitialized instances from being created outside the package.
  */
-Control () {
+NativeControl () {
 }
 
 /**
@@ -115,10 +115,10 @@ Control () {
  * @see SWT#BORDER
  * @see SWT#LEFT_TO_RIGHT
  * @see SWT#RIGHT_TO_LEFT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Control (Composite parent, int style) {
+protected NativeControl (NativeComposite parent, int style) {
 	super (parent, style);
 	this.parent = parent;
 	createWidget ();
@@ -143,6 +143,7 @@ public Control (Composite parent, int style) {
  * @see ControlListener
  * @see #removeControlListener
  */
+@Override
 public void addControlListener(ControlListener listener) {
 	addTypedListener(listener, SWT.Resize, SWT.Move);
 }
@@ -168,6 +169,7 @@ public void addControlListener(ControlListener listener) {
  *
  * @since 3.3
  */
+@Override
 public void addDragDetectListener (DragDetectListener listener) {
 	addTypedListener(listener, SWT.DragDetect);
 }
@@ -191,6 +193,7 @@ public void addDragDetectListener (DragDetectListener listener) {
  * @see FocusListener
  * @see #removeFocusListener
  */
+@Override
 public void addFocusListener (FocusListener listener) {
 	addTypedListener(listener, SWT.FocusIn, SWT.FocusOut);
 }
@@ -227,6 +230,7 @@ public void addFocusListener (FocusListener listener) {
  *
  * @since 3.7
  */
+@Override
 public void addGestureListener (GestureListener listener) {
 	addTypedListener(listener, SWT.Gesture);
 }
@@ -250,6 +254,7 @@ public void addGestureListener (GestureListener listener) {
  * @see HelpListener
  * @see #removeHelpListener
  */
+@Override
 public void addHelpListener (HelpListener listener) {
 	addTypedListener(listener, SWT.Help);
 }
@@ -284,6 +289,7 @@ public void addHelpListener (HelpListener listener) {
  * @see KeyListener
  * @see #removeKeyListener
  */
+@Override
 public void addKeyListener (KeyListener listener) {
 	addTypedListener(listener, SWT.KeyUp, SWT.KeyDown);
 }
@@ -309,6 +315,7 @@ public void addKeyListener (KeyListener listener) {
  *
  * @since 3.3
  */
+@Override
 public void addMenuDetectListener (MenuDetectListener listener) {
 	addTypedListener(listener, SWT.MenuDetect);
 }
@@ -332,6 +339,7 @@ public void addMenuDetectListener (MenuDetectListener listener) {
  * @see MouseListener
  * @see #removeMouseListener
  */
+@Override
 public void addMouseListener (MouseListener listener) {
 	addTypedListener(listener, SWT.MouseDown, SWT.MouseUp, SWT.MouseDoubleClick);
 }
@@ -355,6 +363,7 @@ public void addMouseListener (MouseListener listener) {
  * @see MouseTrackListener
  * @see #removeMouseTrackListener
  */
+@Override
 public void addMouseTrackListener (MouseTrackListener listener) {
 	addTypedListener(listener, SWT.MouseEnter, SWT.MouseExit, SWT.MouseHover);
 }
@@ -378,6 +387,7 @@ public void addMouseTrackListener (MouseTrackListener listener) {
  * @see MouseMoveListener
  * @see #removeMouseMoveListener
  */
+@Override
 public void addMouseMoveListener (MouseMoveListener listener) {
 	addTypedListener(listener, SWT.MouseMove);
 }
@@ -403,6 +413,7 @@ public void addMouseMoveListener (MouseMoveListener listener) {
  *
  * @since 3.3
  */
+@Override
 public void addMouseWheelListener (MouseWheelListener listener) {
 	addTypedListener(listener, SWT.MouseWheel);
 }
@@ -426,6 +437,7 @@ public void addMouseWheelListener (MouseWheelListener listener) {
  * @see PaintListener
  * @see #removePaintListener
  */
+@Override
 public void addPaintListener (PaintListener listener) {
 	addTypedListener(listener, SWT.Paint);
 }
@@ -461,6 +473,7 @@ public void addPaintListener (PaintListener listener) {
  *
  * @since 3.7
  */
+@Override
 public void addTouchListener (TouchListener listener) {
 	addTypedListener(listener, SWT.Touch);
 }
@@ -484,6 +497,7 @@ public void addTouchListener (TouchListener listener) {
  * @see TraverseListener
  * @see #removeTraverseListener
  */
+@Override
 public void addTraverseListener (TraverseListener listener) {
 	addTypedListener(listener, SWT.Traverse);
 }
@@ -507,15 +521,15 @@ long borderHandle () {
 }
 
 void checkBackground () {
-	Shell shell = getShell ();
+	NativeShell shell = getShell ();
 	if (this == shell) return;
 	state &= ~PARENT_BACKGROUND;
-	Composite composite = parent;
+	NativeComposite composite = parent;
 	do {
 		int mode = composite.backgroundMode;
 		if (mode != 0 || backgroundAlpha == 0) {
 			if (mode == SWT.INHERIT_DEFAULT || backgroundAlpha == 0) {
-				Control control = this;
+				NativeControl control = this;
 				do {
 					if ((control.state & THEME_BACKGROUND) == 0) {
 						return;
@@ -577,6 +591,7 @@ void checkMirrored () {
  * @see #pack(boolean)
  * @see "computeTrim, getClientArea for controls that implement them"
  */
+@Override
 public Point computeSize (int wHint, int hHint) {
 	return computeSize(wHint, hHint, true);
 }
@@ -615,6 +630,7 @@ public Point computeSize (int wHint, int hHint) {
  * @see #pack(boolean)
  * @see "computeTrim, getClientArea for controls that implement them"
  */
+@Override
 public Point computeSize (int wHint, int hHint, boolean changed){
 	checkWidget ();
 	int zoom = getZoom();
@@ -634,13 +650,13 @@ Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
 	return new Point (width, height);
 }
 
-Widget computeTabGroup () {
+NativeWidget computeTabGroup () {
 	if (isTabGroup ()) return this;
 	return parent.computeTabGroup ();
 }
 
-Control computeTabRoot () {
-	Control [] tabList = parent._getTabList ();
+NativeControl computeTabRoot () {
+	NativeControl [] tabList = parent._getTabList ();
 	if (tabList != null) {
 		int index = 0;
 		while (index < tabList.length) {
@@ -654,13 +670,13 @@ Control computeTabRoot () {
 	return parent.computeTabRoot ();
 }
 
-Widget [] computeTabList () {
+NativeWidget [] computeTabList () {
 	if (isTabGroup ()) {
 		if (getVisible () && getEnabled ()) {
-			return new Widget [] {this};
+			return new NativeWidget [] {this};
 		}
 	}
-	return new Widget [0];
+	return new NativeWidget [0];
 }
 
 void createHandle () {
@@ -777,6 +793,7 @@ void destroyWidget () {
  *
  * @since 3.3
  */
+@Override
 public boolean dragDetect (Event event) {
 	checkWidget ();
 	if (event == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -821,6 +838,7 @@ public boolean dragDetect (Event event) {
  *
  * @since 3.3
  */
+@Override
 public boolean dragDetect (MouseEvent event) {
 	checkWidget ();
 	if (event == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -884,7 +902,7 @@ void drawBackground (long hDC, RECT rect) {
 }
 
 void drawBackground (long hDC, RECT rect, int pixel, int tx, int ty) {
-	Control control = findBackgroundControl ();
+	NativeControl control = findBackgroundControl ();
 	if (control != null) {
 		if (control.backgroundImage != null) {
 			fillImageBackground (hDC, control, rect, tx, ty);
@@ -942,7 +960,7 @@ void fillBackground (long hDC, int pixel, RECT rect) {
 	OS.FillRect (hDC, rect, findBrush (pixel, OS.BS_SOLID));
 }
 
-void fillImageBackground (long hDC, Control control, RECT rect, int tx, int ty) {
+void fillImageBackground (long hDC, NativeControl control, RECT rect, int tx, int ty) {
 	if (rect.left > rect.right || rect.top > rect.bottom) return;
 	if (control != null) {
 		Image image = control.backgroundImage;
@@ -952,14 +970,14 @@ void fillImageBackground (long hDC, Control control, RECT rect, int tx, int ty) 
 	}
 }
 
-void fillThemeBackground (long hDC, Control control, RECT rect) {
+void fillThemeBackground (long hDC, NativeControl control, RECT rect) {
 	if (rect.left > rect.right || rect.top > rect.bottom) return;
 	if (control != null) {
 		control.drawThemeBackground (hDC, handle, rect);
 	}
 }
 
-Control findBackgroundControl () {
+NativeControl findBackgroundControl () {
 	if ((background != -1 || backgroundImage != null) && backgroundAlpha > 0) return this;
 	return (parent != null && (state & PARENT_BACKGROUND) != 0) ? parent.findBackgroundControl () : null;
 }
@@ -973,18 +991,18 @@ Cursor findCursor () {
 	return parent.findCursor ();
 }
 
-Control findImageControl () {
-	Control control = findBackgroundControl ();
+NativeControl findImageControl () {
+	NativeControl control = findBackgroundControl ();
 	return control != null && control.backgroundImage != null ? control : null;
 }
 
-Control findThemeControl () {
+NativeControl findThemeControl () {
 	return background == -1 && backgroundImage == null ? parent.findThemeControl () : null;
 }
 
-Menu [] findMenus (Control control) {
-	if (menu != null && this != control) return new Menu [] {menu};
-	return new Menu [0];
+NativeMenu [] findMenus (NativeControl control) {
+	if (menu != null && this != control) return new NativeMenu [] {menu};
+	return new NativeMenu [0];
 }
 
 char findMnemonic (String string) {
@@ -999,14 +1017,14 @@ char findMnemonic (String string) {
 	return '\0';
 }
 
-void fixChildren (Shell newShell, Shell oldShell, Decorations newDecorations, Decorations oldDecorations, Menu [] menus) {
+void fixChildren (NativeShell newShell, NativeShell oldShell, NativeDecorations newDecorations, NativeDecorations oldDecorations, NativeMenu [] menus) {
 	oldShell.fixShell (newShell, this);
 	oldDecorations.fixDecorations (newDecorations, this, menus);
 }
 
-void fixFocus (Control focusControl) {
-	Shell shell = getShell ();
-	Control control = this;
+void fixFocus (NativeControl focusControl) {
+	NativeShell shell = getShell ();
+	NativeControl control = this;
 	while (control != shell && (control = control.parent) != null) {
 			if (control.setFocus ()) return;
 	}
@@ -1027,13 +1045,14 @@ void fixFocus (Control focusControl) {
  *
  * @see #setFocus
  */
+@Override
 public boolean forceFocus () {
 	checkWidget ();
 	if (display.focusEvent == SWT.FocusOut) return false;
-	Decorations shell = menuShell ();
+	NativeDecorations shell = menuShell ();
 	shell.setSavedFocus (this);
 	if (!isEnabled () || !isVisible () || !isActive ()) return false;
-	if (display.getActiveShell() != shell && !Display.isActivateShellOnForceFocus()) return false;
+	if (Widget.checkNative(display.getActiveShell()) != shell && !Display.isActivateShellOnForceFocus()) return false;
 	if (isFocusControl ()) return true;
 	shell.setSavedFocus (null);
 	/*
@@ -1091,6 +1110,7 @@ void forceResize () {
  *
  * @since 2.0
  */
+@Override
 public Accessible getAccessible () {
 	checkWidget ();
 	if (accessible == null) accessible = new_Accessible (this);
@@ -1111,6 +1131,7 @@ public Accessible getAccessible () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Color getBackground () {
 	checkWidget ();
 	if (backgroundAlpha == 0) {
@@ -1118,7 +1139,7 @@ public Color getBackground () {
 		return color;
 	}
 	else {
-		Control control = findBackgroundControl ();
+		NativeControl control = findBackgroundControl ();
 		if (control == null) control = this;
 		return Color.win32_new (display, control.getBackgroundPixel (), backgroundAlpha);
 	}
@@ -1136,9 +1157,10 @@ public Color getBackground () {
  *
  * @since 3.2
  */
+@Override
 public Image getBackgroundImage () {
 	checkWidget ();
-	Control control = findBackgroundControl ();
+	NativeControl control = findBackgroundControl ();
 	if (control == null) control = this;
 	return control.backgroundImage;
 }
@@ -1157,6 +1179,7 @@ int getBackgroundPixel () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getBorderWidth () {
 	checkWidget ();
 	return DPIUtil.scaleDown(getBorderWidthInPixels (), getZoom());
@@ -1197,6 +1220,7 @@ int getBorderWidthInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Rectangle getBounds (){
 	checkWidget ();
 	return DPIUtil.scaleDown(getBoundsInPixels (), getZoom());
@@ -1253,6 +1277,7 @@ String getClipboardText () {
  *
  * @since 3.3
  */
+@Override
 public Cursor getCursor () {
 	checkWidget ();
 	return cursor;
@@ -1271,6 +1296,7 @@ public Cursor getCursor () {
  *
  * @since 3.3
  */
+@Override
 public boolean getDragDetect () {
 	checkWidget ();
 	return (state & DRAG_DETECT) != 0;
@@ -1295,6 +1321,7 @@ boolean getDrawing () {
  *
  * @see #isEnabled
  */
+@Override
 public boolean getEnabled () {
 	checkWidget ();
 	return OS.IsWindowEnabled (handle);
@@ -1310,6 +1337,7 @@ public boolean getEnabled () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Font getFont () {
 	checkWidget ();
 	if (font != null) return font;
@@ -1328,6 +1356,7 @@ public Font getFont () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Color getForeground () {
 	checkWidget ();
 	return Color.win32_new (display, getForegroundPixel ());
@@ -1347,6 +1376,7 @@ int getForegroundPixel () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Object getLayoutData () {
 	checkWidget ();
 	return layoutData;
@@ -1365,6 +1395,7 @@ public Object getLayoutData () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Point getLocation () {
 	checkWidget ();
 	return DPIUtil.scaleDown(getLocationInPixels(), getZoom());
@@ -1397,7 +1428,7 @@ Point getLocationInPixels () {
 @Override
 public Menu getMenu () {
 	checkWidget ();
-	return menu;
+	return menu != null ? menu.getWrapper() : null;
 }
 
 /**
@@ -1412,6 +1443,7 @@ public Menu getMenu () {
  *
  * @since 3.0
  */
+@Override
 public Monitor getMonitor () {
 	checkWidget ();
 	long hmonitor = OS.MonitorFromWindow (handle, OS.MONITOR_DEFAULTTONEAREST);
@@ -1431,6 +1463,7 @@ public Monitor getMonitor () {
  *
  * @since 3.7
  */
+@Override
 public int getOrientation () {
 	checkWidget ();
 	return style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
@@ -1448,21 +1481,22 @@ public int getOrientation () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Composite getParent () {
 	checkWidget ();
-	return parent;
+	return parent != null ? parent.getWrapper() : null;
 }
 
-Control [] getPath () {
+NativeControl [] getPath () {
 	int count = 0;
-	Shell shell = getShell ();
-	Control control = this;
+	NativeShell shell = getShell ();
+	NativeControl control = this;
 	while (control != shell) {
 		count++;
 		control = control.parent;
 	}
 	control = this;
-	Control [] result = new Control [count];
+	NativeControl [] result = new NativeControl [count];
 	while (control != shell) {
 		result [--count] = control;
 		control = control.parent;
@@ -1483,6 +1517,7 @@ Control [] getPath () {
  *
  * @since 3.4
  */
+@Override
 public Region getRegion () {
 	checkWidget ();
 	return region;
@@ -1503,7 +1538,7 @@ public Region getRegion () {
  *
  * @see #getParent
  */
-public Shell getShell () {
+public NativeShell getShell () {
 	checkWidget ();
 	return parent.getShell ();
 }
@@ -1521,6 +1556,7 @@ public Shell getShell () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Point getSize (){
 	checkWidget ();
 	return DPIUtil.scaleDown(getSizeInPixels (), getZoom());
@@ -1602,6 +1638,7 @@ int getSlightlyDifferentBackgroundColor(int pixel) {
  *
  * @since 3.102
  */
+@Override
 public int getTextDirection() {
 	checkWidget ();
 	int flags = OS.WS_EX_LAYOUTRTL | OS.WS_EX_RTLREADING;
@@ -1620,6 +1657,7 @@ public int getTextDirection() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public String getToolTipText () {
 	checkWidget ();
 	return toolTipText;
@@ -1645,6 +1683,7 @@ public String getToolTipText () {
  *
  * @since 3.7
  */
+@Override
 public boolean getTouchEnabled () {
 	checkWidget ();
 	return OS.IsTouchWindow (handle, null);
@@ -1667,6 +1706,7 @@ public boolean getTouchEnabled () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public boolean getVisible () {
 	checkWidget ();
 	if (!getDrawing()) return (state & HIDDEN) == 0;
@@ -1751,7 +1791,7 @@ public long internal_new_GC (GCData data) {
 		data.nativeZoom = nativeZoom;
 		int foreground = getForegroundPixel ();
 		if (foreground != OS.GetTextColor (hDC)) data.foreground = foreground;
-		Control control = findBackgroundControl ();
+		NativeControl control = findBackgroundControl ();
 		if (control == null) control = this;
 		int background = control.getBackgroundPixel ();
 		if (background != OS.GetBkColor (hDC)) data.background = background;
@@ -1791,23 +1831,23 @@ public void internal_dispose_GC (long hDC, GCData data) {
 }
 
 boolean isActive () {
-	Dialog dialog = display.getModalDialog ();
+	NativeDialog dialog = display.getModalDialog ();
 	if (dialog != null) {
-		Shell dialogShell = dialog.parent;
+		NativeShell dialogShell = dialog.parent;
 		if (dialogShell != null && !dialogShell.isDisposed ()) {
 			if (dialogShell != getShell ()) return false;
 		}
 	}
-	Shell shell = null;
-	Shell [] modalShells = display.modalShells;
+	NativeShell shell = null;
+	NativeShell [] modalShells = display.modalShells;
 	if (modalShells != null) {
 		int bits = SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL;
 		int index = modalShells.length;
 		while (--index >= 0) {
-			Shell modal = modalShells [index];
+			NativeShell modal = modalShells [index];
 			if (modal != null) {
 				if ((modal.style & bits) != 0) {
-					Control control = this;
+					NativeControl control = this;
 					while (control != null) {
 						if (control == modal) break;
 						control = control.parent;
@@ -1842,6 +1882,7 @@ boolean isActive () {
  *
  * @see #getEnabled
  */
+@Override
 public boolean isEnabled () {
 	checkWidget ();
 	return getEnabled () && parent.isEnabled ();
@@ -1858,17 +1899,18 @@ public boolean isEnabled () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public boolean isFocusControl () {
 	checkWidget ();
-	Control focusControl = display.focusControl;
+	NativeControl focusControl = display.focusControl;
 	if (focusControl != null && !focusControl.isDisposed ()) {
 		return this == focusControl;
 	}
 	return hasFocus ();
 }
 
-boolean isFocusAncestor (Control control) {
-	while (control != null && control != this && !(control instanceof Shell)) {
+boolean isFocusAncestor (NativeControl control) {
+	while (control != null && control != this && !(control instanceof NativeShell)) {
 		control = control.parent;
 	}
 	return control == this;
@@ -1885,6 +1927,7 @@ boolean isFocusAncestor (Control control) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public boolean isReparentable () {
 	checkWidget ();
 	return true;
@@ -1896,7 +1939,7 @@ boolean isShowing () {
 	* widget is obscured by a parent or sibling.
 	*/
 	if (!isVisible ()) return false;
-	Control control = this;
+	NativeControl control = this;
 	while (control != null) {
 		Point size = control.getSizeInPixels ();
 		if (size.x == 0 || size.y == 0) {
@@ -1917,9 +1960,9 @@ boolean isShowing () {
 }
 
 boolean isTabGroup () {
-	Control [] tabList = parent._getTabList ();
+	NativeControl [] tabList = parent._getTabList ();
 	if (tabList != null) {
-		for (Control element : tabList) {
+		for (NativeControl element : tabList) {
 			if (element == this) return true;
 		}
 	}
@@ -1928,9 +1971,9 @@ boolean isTabGroup () {
 }
 
 boolean isTabItem () {
-	Control [] tabList = parent._getTabList ();
+	NativeControl [] tabList = parent._getTabList ();
 	if (tabList != null) {
-		for (Control element : tabList) {
+		for (NativeControl element : tabList) {
 			if (element == this) return false;
 		}
 	}
@@ -1958,6 +2001,7 @@ boolean isTabItem () {
  *
  * @see #getVisible
  */
+@Override
 public boolean isVisible () {
 	checkWidget ();
 	if (OS.IsWindowVisible (handle)) return true;
@@ -1989,7 +2033,7 @@ void markLayout (boolean changed, boolean all) {
 	/* Do nothing */
 }
 
-Decorations menuShell () {
+NativeDecorations menuShell () {
 	return parent.menuShell ();
 }
 
@@ -2008,7 +2052,7 @@ boolean mnemonicMatch (char key) {
  * the top of the drawing order will not be covered by other
  * controls even if they occupy intersecting areas.
  *
- * @param control the sibling control (or null)
+ * @param controlWrapper the sibling control (or null)
  *
  * @exception IllegalArgumentException <ul>
  *    <li>ERROR_INVALID_ARGUMENT - if the control has been disposed</li>
@@ -2018,10 +2062,12 @@ boolean mnemonicMatch (char key) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Control#moveBelow
- * @see Composite#getChildren
+ * @see NativeControl#moveBelow
+ * @see NativeComposite#getChildren
  */
-public void moveAbove (Control control) {
+@Override
+public void moveAbove (Control controlWrapper) {
+	NativeControl control = Widget.checkNative(controlWrapper);
 	checkWidget ();
 	long topHandle = topHandle (), hwndAbove = OS.HWND_TOP;
 	if (control != null) {
@@ -2052,7 +2098,7 @@ public void moveAbove (Control control) {
  * the bottom of the drawing order will be covered by all other
  * controls which occupy intersecting areas.
  *
- * @param control the sibling control (or null)
+ * @param controlWrapper the sibling control (or null)
  *
  * @exception IllegalArgumentException <ul>
  *    <li>ERROR_INVALID_ARGUMENT - if the control has been disposed</li>
@@ -2062,10 +2108,12 @@ public void moveAbove (Control control) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Control#moveAbove
- * @see Composite#getChildren
+ * @see NativeControl#moveAbove
+ * @see NativeComposite#getChildren
  */
-public void moveBelow (Control control) {
+@Override
+public void moveBelow (Control controlWrapper) {
+	NativeControl control = Widget.checkNative(controlWrapper);
 	checkWidget ();
 	long topHandle = topHandle (), hwndAbove = OS.HWND_BOTTOM;
 	if (control != null) {
@@ -2081,7 +2129,7 @@ public void moveBelow (Control control) {
 		* to the bottom of the dialog window stack by
 		* moving behind the first dialog child.
 		*/
-		Shell shell = getShell ();
+		NativeShell shell = getShell ();
 		if (this == shell && parent != null) {
 			/*
 			* Bug in Windows.  For some reason, when GetWindow ()
@@ -2105,7 +2153,7 @@ public void moveBelow (Control control) {
 	OS.SetWindowPos (topHandle, hwndAbove, 0, 0, 0, 0, flags);
 }
 
-Accessible new_Accessible (Control control) {
+Accessible new_Accessible (NativeControl control) {
 	return Accessible.internal_new_Accessible (this);
 }
 
@@ -2126,6 +2174,7 @@ GC new_GC (GCData data) {
  *
  * @see #computeSize(int, int, boolean)
  */
+@Override
 public void pack () {
 	checkWidget ();
 	pack (true);
@@ -2152,6 +2201,7 @@ public void pack () {
  *
  * @see #computeSize(int, int, boolean)
  */
+@Override
 public void pack (boolean changed) {
 	checkWidget ();
 	/*
@@ -2178,6 +2228,7 @@ public void pack (boolean changed) {
  *
  * @since 3.4
  */
+@Override
 public boolean print (GC gc) {
 	checkWidget ();
 	if (gc == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2302,8 +2353,8 @@ void printWidget (long hwnd, long hdc, GC gc) {
 			OS.SetWindowPos (hwnd, 0, x + width, y + height, 0, 0, flags);
 			OS.SetWindowLong (hwnd, OS.GWL_STYLE, (bits1 & ~OS.WS_CHILD) | OS.WS_POPUP);
 			OS.SetWindowLong (hwnd, OS.GWL_EXSTYLE, bits2 | OS.WS_EX_TOOLWINDOW);
-			Shell shell = getShell ();
-			Control savedFocus = shell.savedFocus;
+			NativeShell shell = getShell ();
+			NativeControl savedFocus = shell.savedFocus;
 			OS.SetParent (hwnd, 0);
 			shell.setSavedFocus (savedFocus);
 			if ((bits1 & OS.WS_VISIBLE) != 0) {
@@ -2361,8 +2412,9 @@ void printWidget (long hwnd, long hdc, GC gc) {
  *
  * @since 3.105
  */
+@Override
 public void requestLayout () {
-	getShell ().layout (new Control[] {this}, SWT.DEFER);
+	getShell ().layout (new Control[] {this.getWrapper()}, SWT.DEFER);
 }
 
 /**
@@ -2391,6 +2443,7 @@ public void requestLayout () {
  * @see SWT#NO_MERGE_PAINTS
  * @see SWT#DOUBLE_BUFFERED
  */
+@Override
 public void redraw () {
 	checkWidget ();
 	redrawInPixels (null,false);
@@ -2433,6 +2486,7 @@ public void redraw () {
  * @see SWT#NO_MERGE_PAINTS
  * @see SWT#DOUBLE_BUFFERED
  */
+@Override
 public void redraw (int x, int y, int width, int height, boolean all) {
 	checkWidget ();
 	int zoom = getZoom();
@@ -2460,7 +2514,7 @@ void redrawInPixels (RECT rect, boolean all) {
 
 boolean redrawChildren () {
 	if (!OS.IsWindowVisible (handle)) return false;
-	Control control = findBackgroundControl ();
+	NativeControl control = findBackgroundControl ();
 	if (control == null) {
 		if ((state & THEME_BACKGROUND) != 0) {
 			if (OS.IsAppThemed ()) {
@@ -2534,6 +2588,7 @@ void releaseWidget () {
  * @see ControlListener
  * @see #addControlListener
  */
+@Override
 public void removeControlListener (ControlListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2561,6 +2616,7 @@ public void removeControlListener (ControlListener listener) {
  *
  * @since 3.3
  */
+@Override
 public void removeDragDetectListener(DragDetectListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2585,6 +2641,7 @@ public void removeDragDetectListener(DragDetectListener listener) {
  * @see FocusListener
  * @see #addFocusListener
  */
+@Override
 public void removeFocusListener(FocusListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2612,6 +2669,7 @@ public void removeFocusListener(FocusListener listener) {
  *
  * @since 3.7
  */
+@Override
 public void removeGestureListener (GestureListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2636,6 +2694,7 @@ public void removeGestureListener (GestureListener listener) {
  * @see HelpListener
  * @see #addHelpListener
  */
+@Override
 public void removeHelpListener (HelpListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2660,6 +2719,7 @@ public void removeHelpListener (HelpListener listener) {
  * @see KeyListener
  * @see #addKeyListener
  */
+@Override
 public void removeKeyListener(KeyListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2688,6 +2748,7 @@ public void removeKeyListener(KeyListener listener) {
  *
  * @since 3.3
  */
+@Override
 public void removeMenuDetectListener (MenuDetectListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2712,6 +2773,7 @@ public void removeMenuDetectListener (MenuDetectListener listener) {
  * @see MouseTrackListener
  * @see #addMouseTrackListener
  */
+@Override
 public void removeMouseTrackListener(MouseTrackListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2738,6 +2800,7 @@ public void removeMouseTrackListener(MouseTrackListener listener) {
  * @see MouseListener
  * @see #addMouseListener
  */
+@Override
 public void removeMouseListener (MouseListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2764,6 +2827,7 @@ public void removeMouseListener (MouseListener listener) {
  * @see MouseMoveListener
  * @see #addMouseMoveListener
  */
+@Override
 public void removeMouseMoveListener(MouseMoveListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2790,6 +2854,7 @@ public void removeMouseMoveListener(MouseMoveListener listener) {
  *
  * @since 3.3
  */
+@Override
 public void removeMouseWheelListener (MouseWheelListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2814,6 +2879,7 @@ public void removeMouseWheelListener (MouseWheelListener listener) {
  * @see PaintListener
  * @see #addPaintListener
  */
+@Override
 public void removePaintListener(PaintListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2840,6 +2906,7 @@ public void removePaintListener(PaintListener listener) {
  *
  * @since 3.7
  */
+@Override
 public void removeTouchListener(TouchListener listener) {
 	checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2864,6 +2931,7 @@ public void removeTouchListener(TouchListener listener) {
  * @see TraverseListener
  * @see #addTraverseListener
  */
+@Override
 public void removeTraverseListener(TraverseListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -2887,7 +2955,7 @@ void showWidget (boolean visible) {
 
 @Override
 boolean sendFocusEvent (int type) {
-	Shell shell = getShell ();
+	NativeShell shell = getShell ();
 
 	/*
 	* Feature in Windows.  During the processing of WM_KILLFOCUS,
@@ -2919,7 +2987,7 @@ boolean sendFocusEvent (int type) {
 				shell.setActiveControl (this);
 				break;
 			case SWT.FocusOut:
-				if (shell != display.getActiveShell ()) {
+				if (shell != Widget.checkNative(display.getActiveShell ())) {
 					shell.setActiveControl (null);
 				}
 				break;
@@ -3041,10 +3109,10 @@ void sendTouchEvent (TOUCHINPUT touchInput []) {
 }
 
 void setBackground () {
-	Control control = findBackgroundControl ();
+	NativeControl control = findBackgroundControl ();
 	if (control == null) control = this;
 	if (control.backgroundImage != null) {
-		Shell shell = getShell ();
+		NativeShell shell = getShell ();
 		shell.releaseBrushes ();
 		setBackgroundImage (Image.win32_getHandle(control.backgroundImage, getZoom()));
 	} else {
@@ -3069,6 +3137,7 @@ void setBackground () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setBackground (Color color) {
 	checkWidget ();
 	_setBackground (color);
@@ -3114,6 +3183,7 @@ private void _setBackground (Color color) {
  *
  * @since 3.2
  */
+@Override
 public void setBackgroundImage (Image image) {
 	checkWidget ();
 	if (image != null) {
@@ -3123,7 +3193,7 @@ public void setBackgroundImage (Image image) {
 	if (backgroundImage == image && backgroundAlpha > 0) return;
 	backgroundAlpha = 255;
 	backgroundImage = image;
-	Shell shell = getShell ();
+	NativeShell shell = getShell ();
 	shell.releaseBrushes ();
 	updateBackgroundImage ();
 }
@@ -3166,6 +3236,7 @@ void setBackgroundPixel (int pixel) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setBounds(int x, int y, int width, int height) {
 	setBounds(new Rectangle(x, y, width, height));
 }
@@ -3241,6 +3312,7 @@ void setBoundsInPixels (int x, int y, int width, int height, int flags, boolean 
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setBounds (Rectangle rect) {
 	checkWidget ();
 	if (rect == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -3264,6 +3336,7 @@ void setBoundsInPixels (Rectangle rect) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setCapture (boolean capture) {
 	checkWidget ();
 	if (capture) {
@@ -3299,6 +3372,7 @@ void setCursor () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setCursor (Cursor cursor) {
 	checkWidget ();
 	if (cursor != null && cursor.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
@@ -3313,7 +3387,7 @@ public void setCursor (Cursor cursor) {
 		}
 		if (hwnd == 0) return;
 	}
-	Control control = display.getControl (hwndCursor);
+	NativeControl control = display.getControl (hwndCursor);
 	if (control == null) control = this;
 	control.setCursor ();
 }
@@ -3337,6 +3411,7 @@ void setDefaultFont () {
  *
  * @since 3.3
  */
+@Override
 public void setDragDetect (boolean dragDetect) {
 	checkWidget ();
 	if (dragDetect) {
@@ -3360,6 +3435,7 @@ public void setDragDetect (boolean dragDetect) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setEnabled (boolean enabled) {
 	checkWidget ();
 	/*
@@ -3369,11 +3445,11 @@ public void setEnabled (boolean enabled) {
 	* focus.  If no window will take focus, set focus to the
 	* desktop.
 	*/
-	Control control = null;
+	NativeControl control = null;
 	boolean fixFocus = false;
 	if (!enabled) {
 		if (display.focusEvent != SWT.FocusOut) {
-			control = display.getFocusControl ();
+			control = display.getNativeFocusControl ();
 			fixFocus = isFocusAncestor (control);
 		}
 	}
@@ -3395,6 +3471,7 @@ public void setEnabled (boolean enabled) {
  *
  * @see #forceFocus
  */
+@Override
 public boolean setFocus () {
 	checkWidget ();
 	if ((style & SWT.NO_FOCUS) != 0) return false;
@@ -3416,6 +3493,7 @@ public boolean setFocus () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setFont (Font font) {
 	checkWidget ();
 	Font newFont = font;
@@ -3450,6 +3528,7 @@ public void setFont (Font font) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setForeground (Color color) {
 	checkWidget ();
 	int pixel = -1;
@@ -3476,6 +3555,7 @@ void setForegroundPixel (int pixel) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setLayoutData (Object layoutData) {
 	checkWidget ();
 	this.layoutData = layoutData;
@@ -3496,6 +3576,7 @@ public void setLayoutData (Object layoutData) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setLocation (int x, int y) {
 	checkWidget ();
 	int zoom = getZoom();
@@ -3523,6 +3604,7 @@ void setLocationInPixels (int x, int y) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setLocation (Point location) {
 	checkWidget ();
 	if (location == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -3543,7 +3625,7 @@ public void setLocation (Point location) {
  * menu to null before the control is disposed.
  * </p>
  *
- * @param menu the new pop up menu
+ * @param menuWrapper the new pop up menu
  *
  * @exception IllegalArgumentException <ul>
  *    <li>ERROR_MENU_NOT_POP_UP - the menu is not a pop up menu</li>
@@ -3555,7 +3637,9 @@ public void setLocation (Point location) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setMenu (Menu menu) {
+@Override
+public void setMenu (Menu menuWrapper) {
+	NativeMenu menu = Widget.checkNative(menuWrapper);
 	checkWidget ();
 	if (menu != null) {
 		if (menu.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
@@ -3582,6 +3666,7 @@ public void setMenu (Menu menu) {
  *
  * @since 3.7
  */
+@Override
 public void setOrientation (int orientation) {
 	checkWidget ();
 	int flags = SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT;
@@ -3625,6 +3710,7 @@ boolean setRadioSelection (boolean value) {
  * @see #redraw(int, int, int, int, boolean)
  * @see #update()
  */
+@Override
 public void setRedraw (boolean redraw) {
 	checkWidget ();
 
@@ -3682,19 +3768,19 @@ private boolean embedsWin32Control () {
 	if (this.isDisposed() || !this.isVisible()) {
 		return false;
 	}
-	if (this instanceof Browser browser) {
+	if (this instanceof NativeBrowser browser) {
 		// The Edge browser embeds webView2
 		return "edge".equals(browser.getBrowserType());
 	}
 
-	if (this instanceof OleClientSite) {
+	if (this instanceof NativeOleClientSite) {
 		// OLE objects are always embedded by windows
 		return true;
 	}
 
 	// This needs to be checked AFTER OleClientSite because OleClientSite itself is a Composite
-	if (this instanceof Composite comp) {
-		return Stream.of(comp.getChildren()).anyMatch(Control::embedsWin32Control);
+	if (this instanceof NativeComposite comp) {
+		return Stream.of(comp._getChildren()).anyMatch(NativeControl::embedsWin32Control);
 	}
 
 	return false;
@@ -3717,6 +3803,7 @@ private boolean embedsWin32Control () {
  *
  * @since 3.4
  */
+@Override
 public void setRegion (Region region) {
 	checkWidget ();
 	if (region != null && region.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -3750,6 +3837,7 @@ public void setRegion (Region region) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setSize (int width, int height) {
 	checkWidget ();
 	int zoom = getZoom();
@@ -3786,6 +3874,7 @@ void setSizeInPixels (int width, int height) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setSize (Point size) {
 	checkWidget ();
 	if (size == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -3826,6 +3915,7 @@ boolean setTabItemFocus () {
  *
  * @since 3.102
  */
+@Override
 public void setTextDirection(int textDirection) {
 	checkWidget ();
 	textDirection &= (SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT);
@@ -3862,6 +3952,7 @@ public void setTextDirection(int textDirection) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setToolTipText (String string) {
 	checkWidget ();
 	if (!Objects.equals(string, toolTipText)) {
@@ -3870,7 +3961,7 @@ public void setToolTipText (String string) {
 	}
 }
 
-void setToolTipText (Shell shell, String string) {
+void setToolTipText (NativeShell shell, String string) {
 	shell.setToolTipText (handle, string);
 }
 
@@ -3891,6 +3982,7 @@ void setToolTipText (Shell shell, String string) {
  *
  * @since 3.7
  */
+@Override
 public void setTouchEnabled(boolean enabled) {
 	checkWidget();
 	if (enabled) {
@@ -3916,6 +4008,7 @@ public void setTouchEnabled(boolean enabled) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setVisible (boolean visible) {
 	checkWidget ();
 	if (!getDrawing()) {
@@ -3936,11 +4029,11 @@ public void setVisible (boolean visible) {
 	* focus.  If no window will take focus, set focus to the
 	* desktop.
 	*/
-	Control control = null;
+	NativeControl control = null;
 	boolean fixFocus = false;
 	if (!visible) {
 		if (display.focusEvent != SWT.FocusOut) {
-			control = display.getFocusControl ();
+			control = Widget.checkNative(display.getFocusControl ());
 			fixFocus = isFocusAncestor (control);
 		}
 	}
@@ -3986,7 +4079,7 @@ void subclass () {
  * to coordinates relative to the receiver.
  * <p>
  * NOTE: To properly map a rectangle or a corner of a rectangle on a right-to-left platform, use
- * {@link Display#map(Control, Control, Rectangle)}.
+ * {@link Display#map(NativeControl, NativeControl, Rectangle)}.
  * </p>
  *
  * @param x the x coordinate in points to be translated
@@ -4000,6 +4093,7 @@ void subclass () {
  *
  * @since 2.1
  */
+@Override
 public Point toControl (int x, int y) {
 	checkWidget ();
 	int zoom = getZoom();
@@ -4021,7 +4115,7 @@ Point toControlInPixels (int x, int y) {
  * to coordinates relative to the receiver.
  * <p>
  * NOTE: To properly map a rectangle or a corner of a rectangle on a right-to-left platform, use
- * {@link Display#map(Control, Control, Rectangle)}.
+ * {@link Display#map(NativeControl, NativeControl, Rectangle)}.
  * </p>
  *
  * @param point the point to be translated (must not be null)
@@ -4035,6 +4129,7 @@ Point toControlInPixels (int x, int y) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Point toControl (Point point) {
 	checkWidget ();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -4047,7 +4142,7 @@ public Point toControl (Point point) {
  * the receiver, to display relative coordinates.
  * <p>
  * NOTE: To properly map a rectangle or a corner of a rectangle on a right-to-left platform, use
- * {@link Display#map(Control, Control, Rectangle)}.
+ * {@link Display#map(NativeControl, NativeControl, Rectangle)}.
  * </p>
  *
  * @param x the x coordinate to be translated
@@ -4061,6 +4156,7 @@ public Point toControl (Point point) {
  *
  * @since 2.1
  */
+@Override
 public Point toDisplay (int x, int y) {
 	checkWidget ();
 	int zoom = getZoom();
@@ -4081,7 +4177,7 @@ Point toDisplayInPixels (int x, int y) {
  * the receiver, to display relative coordinates.
  * <p>
  * NOTE: To properly map a rectangle or a corner of a rectangle on a right-to-left platform, use
- * {@link Display#map(Control, Control, Rectangle)}.
+ * {@link Display#map(NativeControl, NativeControl, Rectangle)}.
  * </p>
  *
  * @param point the point to be translated (must not be null)
@@ -4095,6 +4191,7 @@ Point toDisplayInPixels (int x, int y) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Point toDisplay (Point point) {
 	checkWidget ();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -4109,7 +4206,7 @@ boolean translateAccelerator (MSG msg) {
 	return menuShell ().translateAccelerator (msg);
 }
 
-boolean translateMnemonic (Event event, Control control) {
+boolean translateMnemonic (Event event, NativeControl control) {
 	if (control == this) return false;
 	if (!isVisible () || !isEnabled ()) return false;
 	event.doit = mnemonicMatch (event.character);
@@ -4124,7 +4221,7 @@ boolean translateMnemonic (MSG msg) {
 		if ((code & OS.DLGC_WANTALLKEYS) != 0) return false;
 		if ((code & OS.DLGC_BUTTON) == 0) return false;
 	}
-	Decorations shell = menuShell ();
+	NativeDecorations shell = menuShell ();
 	if (shell.isVisible () && shell.isEnabled ()) {
 		display.lastAscii = (int)msg.wParam;
 		display.lastDead = false;
@@ -4242,8 +4339,8 @@ boolean translateTraversal (MSG msg) {
 	display.lastVirtual = lastVirtual;
 	display.lastDead = false;
 	if (!setKeyState (event, SWT.Traverse, msg.wParam, msg.lParam)) return false;
-	Shell shell = getShell ();
-	Control control = this;
+	NativeShell shell = getShell ();
+	NativeControl control = this;
 	do {
 		if (control.traverse (event)) {
 			OS.SendMessage (hwnd, OS.WM_CHANGEUISTATE, OS.UIS_INITIALIZE, 0);
@@ -4297,6 +4394,7 @@ boolean traverse (Event event) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public boolean traverse (int traversal) {
 	checkWidget ();
 	Event event = new Event ();
@@ -4337,6 +4435,7 @@ public boolean traverse (int traversal) {
  *
  * @since 3.6
  */
+@Override
 public boolean traverse (int traversal, Event event) {
 	checkWidget ();
 	if (event == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -4375,6 +4474,7 @@ public boolean traverse (int traversal, Event event) {
  *
  * @since 3.6
  */
+@Override
 public boolean traverse (int traversal, KeyEvent event) {
 	checkWidget ();
 	if (event == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -4443,7 +4543,7 @@ boolean traverse (int traversal, char character, int keyCode, int keyLocation, i
 	event.keyLocation = keyLocation;
 	event.stateMask = stateMask;
 
-	Shell shell = getShell ();
+	NativeShell shell = getShell ();
 	boolean all = false;
 	switch (traversal) {
 		case SWT.TRAVERSE_ESCAPE:
@@ -4469,7 +4569,7 @@ boolean traverse (int traversal, char character, int keyCode, int keyLocation, i
 		}
 	}
 
-	Control control = this;
+	NativeControl control = this;
 	do {
 		if (control.traverse (event)) {
 			OS.SendMessage (handle, OS.WM_CHANGEUISTATE, OS.UIS_INITIALIZE, 0);
@@ -4487,9 +4587,9 @@ boolean traverseEscape () {
 }
 
 boolean traverseGroup (boolean next) {
-	Control root = computeTabRoot ();
-	Widget group = computeTabGroup ();
-	Widget [] list = root.computeTabList ();
+	NativeControl root = computeTabRoot ();
+	NativeWidget group = computeTabGroup ();
+	NativeWidget [] list = root.computeTabList ();
 	int length = list.length;
 	int index = 0;
 	while (index < length) {
@@ -4505,7 +4605,7 @@ boolean traverseGroup (boolean next) {
 	if (index == length) return false;
 	int start = index, offset = (next) ? 1 : -1;
 	while ((index = ((index + offset + length) % length)) != start) {
-		Widget widget = list [index];
+		NativeWidget widget = list [index];
 		if (!widget.isDisposed () && widget.setTabGroupFocus ()) {
 			return true;
 		}
@@ -4515,7 +4615,7 @@ boolean traverseGroup (boolean next) {
 }
 
 boolean traverseItem (boolean next) {
-	Control [] children = parent._getChildren ();
+	NativeControl [] children = parent._getChildren ();
 	int length = children.length;
 	int index = 0;
 	while (index < length) {
@@ -4531,7 +4631,7 @@ boolean traverseItem (boolean next) {
 	if (index == length) return false;
 	int start = index, offset = (next) ? 1 : -1;
 	while ((index = (index + offset + length) % length) != start) {
-		Control child = children [index];
+		NativeControl child = children [index];
 		if (!child.isDisposed () && child.isTabItem ()) {
 			if (child.setTabItemFocus ()) return true;
 		}
@@ -4584,6 +4684,7 @@ void unsubclass () {
  * @see PaintListener
  * @see SWT#Paint
  */
+@Override
 public void update () {
 	checkWidget ();
 	update (false);
@@ -4597,13 +4698,13 @@ void update (boolean all) {
 }
 
 void updateBackgroundColor () {
-	Control control = findBackgroundControl ();
+	NativeControl control = findBackgroundControl ();
 	if (control == null) control = this;
 	setBackgroundPixel (control.background);
 }
 
 void updateBackgroundImage () {
-	Control control = findBackgroundControl ();
+	NativeControl control = findBackgroundControl ();
 	Image image = control != null ? control.backgroundImage : backgroundImage;
 	setBackgroundImage (image != null ? Image.win32_getHandle(image, getZoom()) : 0);
 }
@@ -4704,7 +4805,7 @@ int widgetStyle () {
  * Changes the parent of the widget to be the one provided.
  * Returns <code>true</code> if the parent is successfully changed.
  *
- * @param parent the new parent for the control.
+ * @param parentWrapper the new parent for the control.
  * @return <code>true</code> if the parent is changed and <code>false</code> otherwise.
  *
  * @exception IllegalArgumentException <ul>
@@ -4716,17 +4817,19 @@ int widgetStyle () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  *	</ul>
  */
-public boolean setParent (Composite parent) {
+@Override
+public boolean setParent (Composite parentWrapper) {
+	NativeComposite parent = Widget.checkNative(parentWrapper);
 	checkWidget ();
 	if (parent == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (parent.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
 	if (this.parent == parent) return true;
 	if (!isReparentable ()) return false;
 	releaseParent ();
-	Shell newShell = parent.getShell (), oldShell = getShell ();
-	Decorations newDecorations = parent.menuShell (), oldDecorations = menuShell ();
+	NativeShell newShell = parent.getShell (), oldShell = getShell ();
+	NativeDecorations newDecorations = parent.menuShell (), oldDecorations = menuShell ();
 	if (oldShell != newShell || oldDecorations != newDecorations) {
-		Menu [] menus = oldShell.findMenus (this);
+		NativeMenu [] menus = oldShell.findMenus (this);
 		fixChildren (newShell, oldShell, newDecorations, oldDecorations, menus);
 	}
 	long topHandle = topHandle ();
@@ -4737,7 +4840,7 @@ public boolean setParent (Composite parent) {
 		int oldZoom = nativeZoom;
 		int newZoom = parent.nativeZoom;
 		float scalingFactor = 1f * newZoom / oldZoom;
-		DPIZoomChangeRegistry.applyChange(this, newZoom, scalingFactor);
+		DPIZoomChangeRegistry.applyChange(this.getWrapper(), newZoom, scalingFactor);
 	}
 	int flags = OS.SWP_NOSIZE | OS.SWP_NOMOVE | OS.SWP_NOACTIVATE;
 	OS.SetWindowPos (topHandle, OS.HWND_BOTTOM, 0, 0, 0, 0, flags);
@@ -4896,17 +4999,17 @@ LRESULT WM_COMMAND (long wParam, long lParam) {
 	* menu, the HWND parameter in LPARAM is zero.
 	*/
 	if (lParam == 0) {
-		Decorations shell = menuShell ();
+		NativeDecorations shell = menuShell ();
 		if (shell.isEnabled ()) {
 			int id = OS.LOWORD (wParam);
-			MenuItem item = display.getMenuItem (id);
+			NativeMenuItem item = display.getMenuItem (id);
 			if (item != null && item.isEnabled ()) {
 				return item.wmCommandChild (wParam, lParam);
 			}
 		}
 		return null;
 	}
-	Control control = display.getControl (lParam);
+	NativeControl control = display.getControl (lParam);
 	if (control == null) return null;
 	return control.wmCommandChild (wParam, lParam);
 }
@@ -4916,7 +5019,7 @@ LRESULT WM_CONTEXTMENU (long wParam, long lParam) {
 }
 
 LRESULT WM_CTLCOLOR (long wParam, long lParam) {
-	Control control = display.getControl (lParam);
+	NativeControl control = display.getControl (lParam);
 	if (control == null) return null;
 	return control.wmColorChild (wParam, lParam);
 }
@@ -4926,7 +5029,7 @@ LRESULT WM_CUT (long wParam, long lParam) {
 }
 
 LRESULT WM_DESTROY (long wParam, long lParam) {
-	OS.KillTimer (this.handle, Menu.ID_TOOLTIP_TIMER);
+	OS.KillTimer (this.handle, NativeMenu.ID_TOOLTIP_TIMER);
 	return null;
 }
 
@@ -4940,7 +5043,7 @@ LRESULT WM_DPICHANGED (long wParam, long lParam) {
 			DPIUtil.setDeviceZoom (newNativeZoom);
 
 			float scalingFactor = 1f * DPIUtil.getZoomForAutoscaleProperty(newNativeZoom) / DPIUtil.getZoomForAutoscaleProperty(oldNativeZoom);
-			DPIZoomChangeRegistry.applyChange(this, newNativeZoom, scalingFactor);
+			DPIZoomChangeRegistry.applyChange(this.getWrapper(), newNativeZoom, scalingFactor);
 
 			RECT rect = new RECT ();
 			COM.MoveMemory(rect, lParam, RECT.sizeof);
@@ -4954,7 +5057,7 @@ LRESULT WM_DPICHANGED (long wParam, long lParam) {
 			// Throw the DPI change event if zoom value changes
 			Event event = new Event();
 			event.type = SWT.ZoomChanged;
-			event.widget = this;
+			event.widget = this.getWrapper();
 			event.detail = DPIUtil.getZoomForAutoscaleProperty(newNativeZoom);
 			event.doit = true;
 			notifyListeners(SWT.ZoomChanged, event);
@@ -4976,11 +5079,11 @@ LRESULT WM_DRAWITEM (long wParam, long lParam) {
 	DRAWITEMSTRUCT struct = new DRAWITEMSTRUCT ();
 	OS.MoveMemory (struct, lParam, DRAWITEMSTRUCT.sizeof);
 	if (struct.CtlType == OS.ODT_MENU) {
-		MenuItem item = display.getMenuItem (struct.itemID);
+		NativeMenuItem item = display.getMenuItem (struct.itemID);
 		if (item == null) return null;
 		return item.wmDrawChild (wParam, lParam);
 	}
-	Control control = display.getControl (struct.hwndItem);
+	NativeControl control = display.getControl (struct.hwndItem);
 	if (control == null) return null;
 	return control.wmDrawChild (wParam, lParam);
 }
@@ -5066,16 +5169,16 @@ LRESULT WM_HOTKEY (long wParam, long lParam) {
 LRESULT WM_HELP (long wParam, long lParam) {
 	HELPINFO lphi = new HELPINFO ();
 	OS.MoveMemory (lphi, lParam, HELPINFO.sizeof);
-	Decorations shell = menuShell ();
+	NativeDecorations shell = menuShell ();
 	if (!shell.isEnabled ()) return null;
 	if (lphi.iContextType == OS.HELPINFO_MENUITEM) {
-		MenuItem item = display.getMenuItem (lphi.iCtrlId);
+		NativeMenuItem item = display.getMenuItem (lphi.iCtrlId);
 		if (item != null && item.isEnabled ()) {
-			Widget widget = null;
+			NativeWidget widget = null;
 			if (item.hooks (SWT.Help)) {
 				widget = item;
 			} else {
-				Menu menu = item.parent;
+				NativeMenu menu = item.parent;
 				if (menu.hooks (SWT.Help)) widget = menu;
 			}
 			if (widget != null) {
@@ -5095,7 +5198,7 @@ LRESULT WM_HELP (long wParam, long lParam) {
 }
 
 LRESULT WM_HSCROLL (long wParam, long lParam) {
-	Control control = display.getControl (lParam);
+	NativeControl control = display.getControl (lParam);
 	if (control == null) return null;
 	return control.wmScrollChild (wParam, lParam);
 }
@@ -5117,9 +5220,9 @@ LRESULT WM_IME_ENDCOMPOSITION (long wParam, long lParam) {
 }
 
 LRESULT WM_UNINITMENUPOPUP (long wParam, long lParam) {
-	Menu hiddenMenu = menuShell ().findMenu (wParam);
+	NativeMenu hiddenMenu = menuShell ().findMenu (wParam);
 	if (hiddenMenu != null) {
-		Shell shell = getShell ();
+		NativeShell shell = getShell ();
 		hiddenMenu.sendEvent (SWT.Hide);
 		if (hiddenMenu == shell.activeMenu) shell.activeMenu = null;
 	}
@@ -5136,13 +5239,13 @@ LRESULT WM_INITMENUPOPUP (long wParam, long lParam) {
 	* the menu is the system menu and we can ignore
 	* WPARAM.  Otherwise, use WPARAM to find the menu.
 	*/
-	Shell shell = getShell ();
-	Menu oldMenu = shell.activeMenu, newMenu = null;
+	NativeShell shell = getShell ();
+	NativeMenu oldMenu = shell.activeMenu, newMenu = null;
 	if (OS.HIWORD (lParam) == 0) {
 		newMenu = menuShell ().findMenu (wParam);
 		if (newMenu != null) newMenu.update ();
 	}
-	Menu menu = newMenu;
+	NativeMenu menu = newMenu;
 	while (menu != null && menu != oldMenu) {
 		menu = menu.getParentMenu ();
 	}
@@ -5159,7 +5262,7 @@ LRESULT WM_INITMENUPOPUP (long wParam, long lParam) {
 			menu.sendEvent (SWT.Hide);
 			if (menu.isDisposed ()) break;
 			menu = menu.getParentMenu ();
-			Menu ancestor = newMenu;
+			NativeMenu ancestor = newMenu;
 			while (ancestor != null && ancestor != menu) {
 				ancestor = ancestor.getParentMenu ();
 			}
@@ -5234,12 +5337,12 @@ LRESULT WM_MEASUREITEM (long wParam, long lParam) {
 	MEASUREITEMSTRUCT struct = new MEASUREITEMSTRUCT ();
 	OS.MoveMemory (struct, lParam, MEASUREITEMSTRUCT.sizeof);
 	if (struct.CtlType == OS.ODT_MENU) {
-		MenuItem item = display.getMenuItem (struct.itemID);
+		NativeMenuItem item = display.getMenuItem (struct.itemID);
 		if (item == null) return null;
 		return item.wmMeasureChild (wParam, lParam);
 	}
 	long hwnd = OS.GetDlgItem (handle, struct.CtlID);
-	Control control = display.getControl (hwnd);
+	NativeControl control = display.getControl (hwnd);
 	if (control == null) return null;
 	return control.wmMeasureChild (wParam, lParam);
 }
@@ -5263,12 +5366,12 @@ LRESULT WM_MENUCHAR (long wParam, long lParam) {
 
 LRESULT WM_MENUSELECT (long wParam, long lParam) {
 	int code = OS.HIWORD (wParam);
-	Shell shell = getShell ();
-	OS.KillTimer (this.handle, Menu.ID_TOOLTIP_TIMER);
+	NativeShell shell = getShell ();
+	OS.KillTimer (this.handle, NativeMenu.ID_TOOLTIP_TIMER);
 	if (activeMenu != null)
 		activeMenu.hideCurrentToolTip ();
 	if (code == 0xFFFF && lParam == 0) {
-		Menu menu = shell.activeMenu;
+		NativeMenu menu = shell.activeMenu;
 		while (menu != null) {
 			/*
 			* When the user cancels any menu that is not the
@@ -5301,24 +5404,24 @@ LRESULT WM_MENUSELECT (long wParam, long lParam) {
 	}
 	if ((code & OS.MF_SYSMENU) != 0) return null;
 	if ((code & OS.MF_HILITE) != 0) {
-		MenuItem item = null;
-		Decorations menuShell = menuShell ();
+		NativeMenuItem item = null;
+		NativeDecorations menuShell = menuShell ();
 		if ((code & OS.MF_POPUP) != 0) {
 			int index = OS.LOWORD (wParam);
 			MENUITEMINFO info = new MENUITEMINFO ();
 			info.cbSize = MENUITEMINFO.sizeof;
 			info.fMask = OS.MIIM_SUBMENU;
 			if (OS.GetMenuItemInfo (lParam, index, true, info)) {
-				Menu newMenu = menuShell.findMenu (info.hSubMenu);
+				NativeMenu newMenu = menuShell.findMenu (info.hSubMenu);
 				if (newMenu != null) {
 					item = newMenu.cascade;
 					activeMenu = newMenu;
 					activeMenu.selectedMenuItem = newMenu.cascade;
-					OS.SetTimer (this.handle, Menu.ID_TOOLTIP_TIMER, OS.TTM_GETDELAYTIME, 0);
+					OS.SetTimer (this.handle, NativeMenu.ID_TOOLTIP_TIMER, OS.TTM_GETDELAYTIME, 0);
 				}
 			}
 		} else {
-			Menu newMenu = menuShell.findMenu (lParam);
+			NativeMenu newMenu = menuShell.findMenu (lParam);
 			if (newMenu != null) {
 				int id = OS.LOWORD (wParam);
 				item = display.getMenuItem (id);
@@ -5326,7 +5429,7 @@ LRESULT WM_MENUSELECT (long wParam, long lParam) {
 			activeMenu = (newMenu == null) ? menu : newMenu;
 			if (item != null && activeMenu != null) {
 				activeMenu.selectedMenuItem = item;
-				OS.SetTimer (this.handle, Menu.ID_TOOLTIP_TIMER, OS.TTM_GETDELAYTIME, 0);
+				OS.SetTimer (this.handle, NativeMenu.ID_TOOLTIP_TIMER, OS.TTM_GETDELAYTIME, 0);
 			}
 		}
 		if (item != null) item.sendEvent (SWT.Arm);
@@ -5449,7 +5552,7 @@ LRESULT WM_RBUTTONUP (long wParam, long lParam) {
 LRESULT WM_SETCURSOR (long wParam, long lParam) {
 	int hitTest = (short) OS.LOWORD (lParam);
 	if (hitTest == OS.HTCLIENT) {
-		Control control = display.getControl (wParam);
+		NativeControl control = display.getControl (wParam);
 		if (control == null) return null;
 		Cursor cursor = control.findCursor ();
 		if (cursor != null) {
@@ -5505,9 +5608,9 @@ LRESULT WM_SYSCOMMAND (long wParam, long lParam) {
 	* NOTE: This is undocumented.
 	*/
 	if ((wParam & 0xF000) == 0) {
-		Decorations shell = menuShell ();
+		NativeDecorations shell = menuShell ();
 		if (shell.isEnabled ()) {
-			MenuItem item = display.getMenuItem (OS.LOWORD (wParam));
+			NativeMenuItem item = display.getMenuItem (OS.LOWORD (wParam));
 			if (item != null) item.wmCommandChild (wParam, lParam);
 		}
 		return LRESULT.ZERO;
@@ -5531,10 +5634,10 @@ LRESULT WM_SYSCOMMAND (long wParam, long lParam) {
 			* behavior.
 			*/
 			if (lParam == 0) {
-				Decorations shell = menuShell ();
-				Menu menu = shell.getMenuBar ();
+				NativeDecorations shell = menuShell ();
+				NativeMenu menu = shell.getMenuBar ();
 				if (menu == null) {
-					Control control = display._getFocusControl ();
+					NativeControl control = display._getFocusControl ();
 					if (control != null) {
 						if (control.hooks (SWT.KeyDown) || control.hooks (SWT.KeyUp)) {
 							display.mnemonicKeyHit = false;
@@ -5559,13 +5662,13 @@ LRESULT WM_SYSCOMMAND (long wParam, long lParam) {
 				*/
 				if (hooks (SWT.KeyDown) || hooks (SWT.KeyUp)) {
 					if (lParam != ' ') {
-						Decorations shell = menuShell ();
-						Menu menu = shell.getMenuBar ();
+						NativeDecorations shell = menuShell ();
+						NativeMenu menu = shell.getMenuBar ();
 						if (menu != null) {
 							char key = (char) lParam;
 							if (key != 0) {
 								key = Character.toUpperCase (key);
-								for (MenuItem item : menu.getItems ()) {
+								for (NativeMenuItem item : menu.getItems ()) {
 									String text = item.getText ();
 									char mnemonic = findMnemonic (text);
 									if (text.length () > 0 && mnemonic == 0) {
@@ -5590,7 +5693,7 @@ LRESULT WM_SYSCOMMAND (long wParam, long lParam) {
 			* Do not allow keyboard traversal of the menu bar
 			* or scrolling when the shell is not enabled.
 			*/
-			Decorations shell = menuShell ();
+			NativeDecorations shell = menuShell ();
 			if (!shell.isEnabled () || !shell.isActive ()) {
 				return LRESULT.ZERO;
 			}
@@ -5689,8 +5792,8 @@ LRESULT WM_TOUCH (long wParam, long lParam) {
 }
 
 LRESULT WM_TIMER (long wParam, long lParam) {
-	if (wParam == Menu.ID_TOOLTIP_TIMER && activeMenu != null) {
-		OS.KillTimer (this.handle, Menu.ID_TOOLTIP_TIMER);
+	if (wParam == NativeMenu.ID_TOOLTIP_TIMER && activeMenu != null) {
+		OS.KillTimer (this.handle, NativeMenu.ID_TOOLTIP_TIMER);
 		activeMenu.wmTimer (wParam, lParam);
 	}
 	return null;
@@ -5705,7 +5808,7 @@ LRESULT WM_UPDATEUISTATE (long wParam, long lParam) {
 }
 
 LRESULT WM_VSCROLL (long wParam, long lParam) {
-	Control control = display.getControl (lParam);
+	NativeControl control = display.getControl (lParam);
 	if (control == null) return null;
 	return control.wmScrollChild (wParam, lParam);
 }
@@ -5728,7 +5831,7 @@ LRESULT WM_WINDOWPOSCHANGING (long wParam, long lParam) {
 	* The fix is to detect this case and redraw the area.
 	*/
 	if (!getDrawing()) {
-		Shell shell = getShell ();
+		NativeShell shell = getShell ();
 		if (shell != this) {
 			WINDOWPOS lpwp = new WINDOWPOS ();
 			OS.MoveMemory (lpwp, lParam, WINDOWPOS.sizeof);
@@ -5767,7 +5870,7 @@ LRESULT WM_XBUTTONUP (long wParam, long lParam) {
 }
 
 LRESULT wmColorChild (long wParam, long lParam) {
-	Control control = findBackgroundControl ();
+	NativeControl control = findBackgroundControl ();
 	if (control == null) {
 		if ((state & THEME_BACKGROUND) != 0) {
 			if (OS.IsAppThemed ()) {
@@ -5833,7 +5936,7 @@ LRESULT wmMeasureChild (long wParam, long lParam) {
 }
 
 LRESULT wmNotify (NMHDR hdr, long wParam, long lParam) {
-	Control control = display.getControl (hdr.hwndFrom);
+	NativeControl control = display.getControl (hdr.hwndFrom);
 	if (control == null) return null;
 	return control.wmNotifyChild (hdr, wParam, lParam);
 }
@@ -5848,7 +5951,7 @@ LRESULT wmScrollChild (long wParam, long lParam) {
 
 
 private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-	if (!(widget instanceof Control control)) {
+	if (!(Widget.checkNative(widget) instanceof NativeControl control)) {
 		return;
 	}
 	resizeFont(control, control.getShell().nativeZoom);
@@ -5866,7 +5969,7 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 	}
 }
 
-private static void resizeFont(Control control, int newZoom) {
+private static void resizeFont(NativeControl control, int newZoom) {
 	Display display = control.getDisplay();
 	Font font = control.font;
 	if (font == null) {
@@ -5880,5 +5983,8 @@ private static void resizeFont(Control control, int newZoom) {
 		control.setFont(Font.win32_new(font, newZoom));
 	}
 }
-}
 
+@Override
+public abstract Control getWrapper();
+
+}

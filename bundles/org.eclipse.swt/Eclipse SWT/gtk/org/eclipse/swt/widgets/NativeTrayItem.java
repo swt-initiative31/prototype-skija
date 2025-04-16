@@ -39,9 +39,9 @@ import org.eclipse.swt.internal.gtk3.*;
  * @since 3.0
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class TrayItem extends Item {
-	Tray parent;
-	ToolTip toolTip;
+public abstract class NativeTrayItem extends NativeItem {
+	NativeTray parent;
+	NativeToolTip toolTip;
 	String toolTipText;
 	long imageHandle;
 	long tooltipsHandle;
@@ -75,10 +75,10 @@ public class TrayItem extends Item {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TrayItem (Tray parent, int style) {
+protected NativeTrayItem (NativeTray parent, int style) {
 	super (parent, style);
 	this.parent = parent;
 	createWidget (parent.getItemCount ());
@@ -138,7 +138,7 @@ public void addSelectionListener(SelectionListener listener) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -181,7 +181,7 @@ void destroyWidget () {
  *
  * @since 3.2
  */
-public Tray getParent () {
+public NativeTray getParent () {
 	checkWidget ();
 	return parent;
 }
@@ -217,7 +217,7 @@ public Image getHighlightImage () {
  *
  * @since 3.2
  */
-public ToolTip getToolTip () {
+public NativeToolTip getToolTip () {
 	checkWidget ();
 	return toolTip;
 }
@@ -257,8 +257,8 @@ long gtk_activate (long widget) {
 			gdk_event_free(currEvent);
 		}
 		gdk_event_free (nextEvent);
-		currEventType = Control.fixGdkEventTypeValues(currEventType);
-		nextEventType = Control.fixGdkEventTypeValues(nextEventType);
+		currEventType = NativeControl.fixGdkEventTypeValues(currEventType);
+		nextEventType = NativeControl.fixGdkEventTypeValues(nextEventType);
 		if (currEventType == GDK.GDK_BUTTON_PRESS && nextEventType == GDK.GDK_2BUTTON_PRESS) {
 			sendSelectionEvent (SWT.DefaultSelection);
 		}
@@ -497,9 +497,9 @@ public void setImage (Image image) {
  *
  * @since 3.2
  */
-public void setToolTip (ToolTip toolTip) {
+public void setToolTip (NativeToolTip toolTip) {
 	checkWidget ();
-	ToolTip oldTip = this.toolTip, newTip = toolTip;
+	NativeToolTip oldTip = this.toolTip, newTip = toolTip;
 	if (oldTip != null) oldTip.item = null;
 	this.toolTip = newTip;
 	if (newTip != null) newTip.item = this;
@@ -568,4 +568,8 @@ public void setVisible (boolean visible) {
 		sendEvent (SWT.Hide);
 	}
 }
+
+@Override
+public abstract TrayItem getWrapper();
+
 }

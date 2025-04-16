@@ -14,6 +14,8 @@
 package org.eclipse.swt.widgets;
 
 
+import java.util.concurrent.atomic.*;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
@@ -38,9 +40,9 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class Scrollable extends Control {
+public abstract class NativeScrollable extends NativeControl implements IScrollable {
 	long scrolledHandle;
-	ScrollBar horizontalBar, verticalBar;
+	NativeScrollBar horizontalBar, verticalBar;
 
 	/** See bug 484682 */
 	static final boolean RESIZE_ON_GETCLIENTAREA = OS.isWayland() || Boolean.getBoolean("org.eclipse.swt.resizeOnGetClientArea");
@@ -48,7 +50,7 @@ public abstract class Scrollable extends Control {
 /**
  * Prevents uninitialized instances from being created outside the package.
  */
-Scrollable () {}
+NativeScrollable () {}
 
 /**
  * Constructs a new instance of this class given its parent
@@ -76,10 +78,10 @@ Scrollable () {}
  *
  * @see SWT#H_SCROLL
  * @see SWT#V_SCROLL
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Scrollable (Composite parent, int style) {
+protected NativeScrollable (NativeComposite parent, int style) {
 	super (parent, style);
 }
 
@@ -114,6 +116,7 @@ long clientHandle () {
  *
  * @see #getClientArea
  */
+@Override
 public Rectangle computeTrim (int x, int y, int width, int height) {
 	checkWidget();
 	Rectangle rect = DPIUtil.autoScaleUp(new Rectangle (x, y, width, height));
@@ -150,9 +153,17 @@ Rectangle computeTrimInPixels (int x, int y, int width, int height) {
 	return new Rectangle (trimX, trimY, trimWidth, trimHeight);
 }
 
-ScrollBar createScrollBar (int style) {
+NativeScrollBar createScrollBar (int style) {
 	if (scrolledHandle == 0) return null;
-	ScrollBar bar = new ScrollBar ();
+	AtomicReference<ScrollBar> wrapperBar = new AtomicReference<>();
+	NativeScrollBar bar = new NativeScrollBar () {
+		@Override
+		public ScrollBar getWrapper() {
+			return wrapperBar.get();
+		}
+	};
+	wrapperBar.set(new ScrollBar(bar));
+
 	bar.parent = this;
 	bar.style = style;
 	bar.display = display;
@@ -204,7 +215,7 @@ void deregister () {
 	if (scrolledHandle != 0) display.removeWidget (scrolledHandle);
 }
 
-void destroyScrollBar (ScrollBar bar) {
+void destroyScrollBar (NativeScrollBar bar) {
 	setScrollBarVisible (bar, false);
 	//This code is intentionally commented
 	//bar.destroyHandle ();
@@ -244,6 +255,7 @@ int getBorderWidthInPixels () {
  *
  * @see #computeTrim
  */
+@Override
 public Rectangle getClientArea () {
 	checkWidget ();
 	return DPIUtil.autoScaleDown(getClientAreaInPixels());
@@ -274,9 +286,10 @@ Rectangle getClientAreaInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public ScrollBar getHorizontalBar () {
 	checkWidget ();
-	return horizontalBar;
+	return horizontalBar != null ? horizontalBar.getWrapper() : null;
 }
 /**
  * Returns the mode of the receiver's scrollbars. This will be
@@ -301,6 +314,7 @@ public ScrollBar getHorizontalBar () {
  *
  * @since 3.8
  */
+@Override
 public int getScrollbarsMode () {
 	checkWidget();
 	if (!GTK.GTK4) {
@@ -334,6 +348,7 @@ public int getScrollbarsMode () {
  *
  * @since 3.126
  */
+@Override
 public void setScrollbarsMode (int mode) {
 	checkWidget();
 	boolean overlayScrolling = (mode & SWT.SCROLLBAR_OVERLAY) != 0;
@@ -350,9 +365,10 @@ public void setScrollbarsMode (int mode) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public ScrollBar getVerticalBar () {
 	checkWidget ();
-	return verticalBar;
+	return verticalBar != null ? verticalBar.getWrapper() : null;
 }
 
 @Override
@@ -406,7 +422,7 @@ long gtk_scroll_event (long widget, long eventPtr) {
 	* The fix is to set the adjustment values directly.
 	*/
 	if ((state & CANVAS) != 0) {
-		ScrollBar scrollBar;
+		NativeScrollBar scrollBar;
 		int [] direction = new int[1];
 		boolean fetched = GDK.gdk_event_get_scroll_direction(eventPtr, direction);
 
@@ -493,7 +509,7 @@ void setOrientation (boolean create) {
 	if (verticalBar != null) verticalBar.setOrientation (create);
 }
 
-boolean setScrollBarVisible (ScrollBar bar, boolean visible) {
+boolean setScrollBarVisible (NativeScrollBar bar, boolean visible) {
 	if (scrolledHandle == 0) return false;
 	int [] hsp = new int [1], vsp = new int [1];
 	GTK.gtk_scrolled_window_get_policy (scrolledHandle, hsp, vsp);
@@ -604,7 +620,7 @@ long topHandle () {
 	return super.topHandle ();
 }
 
-void updateScrollBarValue (ScrollBar bar) {
+void updateScrollBarValue (NativeScrollBar bar) {
 	redrawBackgroundImage ();
 }
 
@@ -642,4 +658,11 @@ private Point scrollBarSize(long scrollBarHandle) {
 	return new Point(requisition.width + spacing, requisition.height + spacing);
 }
 
+<<<<<<< HEAD:bundles/org.eclipse.swt/Eclipse SWT/gtk/org/eclipse/swt/widgets/Scrollable.java
+=======
+@Override
+public
+abstract Scrollable getWrapper();
+
+>>>>>>> fa1cdeec5f (Introduce widget facade and adapt Win32 native widgets accordingly):bundles/org.eclipse.swt/Eclipse SWT/gtk/org/eclipse/swt/widgets/NativeScrollable.java
 }

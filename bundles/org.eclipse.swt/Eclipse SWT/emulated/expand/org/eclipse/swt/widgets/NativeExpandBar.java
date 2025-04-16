@@ -45,10 +45,10 @@ import org.eclipse.swt.graphics.*;
  * @since 3.2
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class ExpandBar extends Composite {
-	ExpandItem [] items;
+public abstract class NativeExpandBar extends NativeComposite {
+	NativeExpandItem [] items;
 	int itemCount;
-	ExpandItem focusItem;
+	NativeExpandItem focusItem;
 	int spacing;
 	int yCurrentScroll;
 	Font font;
@@ -84,9 +84,9 @@ public class ExpandBar extends Composite {
  * @see Widget#checkSubclass
  * @see Widget#getStyle
  */
-public ExpandBar (Composite parent, int style) {
+protected NativeExpandBar (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
-	items = new ExpandItem [4];
+	items = new NativeExpandItem [4];
 
 	listener = event -> {
 		switch (event.type) {
@@ -145,7 +145,7 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -158,7 +158,7 @@ public Point computeSize (int wHint, int hHint, boolean changed) {
 			height += spacing;
 			GC gc = new GC (this);
 			for (int i = 0; i < itemCount; i++) {
-				ExpandItem item = items [i];
+				NativeExpandItem item = items [i];
 				height += item.getHeaderHeight ();
 				if (item.expanded) height += item.height;
 				height += spacing;
@@ -175,10 +175,10 @@ public Point computeSize (int wHint, int hHint, boolean changed) {
 	return new Point (trim.width, trim.height);
 }
 
-void createItem (ExpandItem item, int style, int index) {
+void createItem (NativeExpandItem item, int style, int index) {
 	if (!(0 <= index && index <= itemCount)) error (SWT.ERROR_INVALID_RANGE);
 	if (itemCount == items.length) {
-		ExpandItem [] newItems = new ExpandItem [itemCount + 4];
+		NativeExpandItem [] newItems = new NativeExpandItem [itemCount + 4];
 		System.arraycopy (items, 0, newItems, 0, items.length);
 		items = newItems;
 	}
@@ -190,7 +190,7 @@ void createItem (ExpandItem item, int style, int index) {
 	layoutItems (index, true);
 }
 
-void destroyItem (ExpandItem item) {
+void destroyItem (NativeExpandItem item) {
 	if (inDispose) return;
 	int index = 0;
 	while (index < itemCount) {
@@ -214,11 +214,11 @@ void destroyItem (ExpandItem item) {
 }
 
 int getBandHeight () {
-	if (font == null) return ExpandItem.CHEVRON_SIZE;
+	if (font == null) return NativeExpandItem.CHEVRON_SIZE;
 	GC gc = new GC (this);
 	FontMetrics metrics = gc.getFontMetrics ();
 	gc.dispose ();
-	return Math.max (ExpandItem.CHEVRON_SIZE, metrics.getHeight ());
+	return Math.max (NativeExpandItem.CHEVRON_SIZE, metrics.getHeight ());
 }
 
 @Override
@@ -246,7 +246,7 @@ public Color getForeground () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public ExpandItem getItem (int index) {
+public NativeExpandItem getItem (int index) {
 	checkWidget ();
 	if (!(0 <= index && index < itemCount)) error (SWT.ERROR_INVALID_RANGE);
 	return items [index];
@@ -283,9 +283,9 @@ public int getItemCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public ExpandItem [] getItems () {
+public NativeExpandItem [] getItems () {
 	checkWidget ();
-	ExpandItem [] result = new ExpandItem [itemCount];
+	NativeExpandItem [] result = new NativeExpandItem [itemCount];
 	System.arraycopy (items, 0, result, 0, itemCount);
 	return result;
 }
@@ -323,7 +323,7 @@ public int getSpacing () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public int indexOf (ExpandItem item) {
+public int indexOf (NativeExpandItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	for (int i = 0; i < itemCount; i++) {
@@ -336,12 +336,12 @@ void layoutItems (int index, boolean setScrollbar) {
 	if (index < itemCount) {
 		int y = spacing - yCurrentScroll;
 		for (int i = 0; i < index; i++) {
-			ExpandItem item = items [i];
+			NativeExpandItem item = items [i];
 			if (item.expanded) y += item.height;
 			y += item.getHeaderHeight() + spacing;
 		}
 		for (int i = index; i < itemCount; i++) {
-			ExpandItem item = items [i];
+			NativeExpandItem item = items [i];
 			item.setBounds (spacing, y, 0, 0, true, false);
 			if (item.expanded) y += item.height;
 			y += item.getHeaderHeight() + spacing;
@@ -379,7 +379,7 @@ public void removeExpandListener (ExpandListener listener) {
 void reskinChildren (int flags) {
 	if (items != null) {
 		for (int i=0; i<items.length; i++) {
-			ExpandItem item = items [i];
+			NativeExpandItem item = items [i];
 			if (item != null ) item.reskin (flags);
 		}
 	}
@@ -404,7 +404,7 @@ void setScrollbar () {
 	ScrollBar verticalBar = getVerticalBar ();
 	if (verticalBar == null) return;
 	int height = getClientArea ().height;
-	ExpandItem item = items [itemCount - 1];
+	NativeExpandItem item = items [itemCount - 1];
 	int maxHeight = item.y + getBandHeight () + spacing;
 	if (item.expanded) maxHeight += item.height;
 
@@ -440,15 +440,15 @@ public void setSpacing (int spacing) {
 	this.spacing = spacing;
 	int width = Math.max (0, getClientArea ().width - spacing * 2);
 	for (int i = 0; i < itemCount; i++) {
-		ExpandItem item = items[i];
+		NativeExpandItem item = items[i];
 		if (item.width != width) item.setBounds (0, 0, width, item.height, false, true);
 	}
 	layoutItems (0, true);
 	redraw ();
 }
 
-void showItem (ExpandItem item) {
-	Control control = item.control;
+void showItem (NativeExpandItem item) {
+	NativeControl control = item.control;
 	if (control != null && !control.isDisposed ()) {
 		control.setVisible (item.expanded);
 	}
@@ -488,7 +488,7 @@ void onKeyDown (Event event) {
 		case 13: /* Return */
 		case 32: /* Space */
 			Event ev = new Event ();
-			ev.item = focusItem;
+			ev.item = focusItem.getWrapper();
 			sendEvent (focusItem.expanded ? SWT.Collapse :SWT.Expand, ev);
 			focusItem.expanded = !focusItem.expanded;
 			showItem (focusItem);
@@ -519,7 +519,7 @@ void onMouseDown (Event event) {
 	int x = event.x;
 	int y = event.y;
 	for (int i = 0; i < itemCount; i++) {
-		ExpandItem item = items[i];
+		NativeExpandItem item = items[i];
 		boolean hover = item.x <= x && x < (item.x + item.width) && item.y <= y && y < (item.y + getBandHeight ());
 		if (hover && item != focusItem) {
 			focusItem.redraw ();
@@ -539,7 +539,7 @@ void onMouseUp (Event event) {
 	boolean hover = focusItem.x <= x && x < (focusItem.x + focusItem.width) && focusItem.y <= y && y < (focusItem.y + getBandHeight ());
 	if (hover) {
 		Event ev = new Event ();
-		ev.item = focusItem;
+		ev.item = focusItem.getWrapper();
 		notifyListeners (focusItem.expanded ? SWT.Collapse : SWT.Expand, ev);
 		focusItem.expanded = !focusItem.expanded;
 		showItem (focusItem);
@@ -549,7 +549,7 @@ void onMouseUp (Event event) {
 void onPaint (Event event) {
 	boolean hasFocus = isFocusControl ();
 	for (int i = 0; i < itemCount; i++) {
-		ExpandItem item = items [i];
+		NativeExpandItem item = items [i];
 		item.drawItem (event.gc, hasFocus && item == focusItem);
 	}
 }
@@ -558,7 +558,7 @@ void onResize () {
 	Rectangle rect = getClientArea ();
 	int width = Math.max (0, rect.width - spacing * 2);
 	for (int i = 0; i < itemCount; i++) {
-		ExpandItem item = items[i];
+		NativeExpandItem item = items[i];
 		item.setBounds (0, 0, width, item.height, false, true);
 	}
 	setScrollbar ();
@@ -580,5 +580,8 @@ void onTraverse (Event event) {
 			break;
 	}
 }
+
+@Override
+public abstract ExpandBar getWrapper();
 
 }

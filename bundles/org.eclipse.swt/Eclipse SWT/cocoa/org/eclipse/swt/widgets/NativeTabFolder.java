@@ -14,11 +14,10 @@
 package org.eclipse.swt.widgets;
 
 
-import org.eclipse.swt.internal.cocoa.*;
-
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.cocoa.*;
 
 /**
  * Instances of this class implement the notebook user interface
@@ -50,8 +49,8 @@ import org.eclipse.swt.graphics.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class TabFolder extends Composite {
-	TabItem [] items;
+public abstract class NativeTabFolder extends NativeComposite {
+	NativeTabItem [] items;
 	int itemCount;
 	boolean ignoreSelect;
 
@@ -82,10 +81,10 @@ public class TabFolder extends Composite {
  * @see SWT
  * @see SWT#TOP
  * @see SWT#BOTTOM
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TabFolder (Composite parent, int style) {
+protected NativeTabFolder (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
@@ -130,7 +129,7 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -169,11 +168,11 @@ void createHandle () {
 	view = widget;
 }
 
-void createItem (TabItem item, int index) {
+void createItem (NativeTabItem item, int index) {
 	int count = itemCount;
 	if (!(0 <= index && index <= count)) error (SWT.ERROR_INVALID_RANGE);
 	if (count == items.length) {
-		TabItem [] newItems = new TabItem [items.length + 4];
+		NativeTabItem [] newItems = new NativeTabItem [items.length + 4];
 		System.arraycopy (items, 0, newItems, 0, items.length);
 		items = newItems;
 	}
@@ -190,7 +189,7 @@ void createItem (TabItem item, int index) {
 @Override
 void createWidget () {
 	super.createWidget ();
-	items = new TabItem [4];
+	items = new NativeTabItem [4];
 }
 
 @Override
@@ -198,7 +197,7 @@ NSFont defaultNSFont () {
 	return display.tabViewFont;
 }
 
-void destroyItem (TabItem item) {
+void destroyItem (NativeTabItem item) {
 	int count = itemCount;
 	int index = 0;
 	while (index < count) {
@@ -210,7 +209,7 @@ void destroyItem (TabItem item) {
 	System.arraycopy (items, index + 1, items, index, count - index);
 	items [count] = null;
 	if (count == 0) {
-		items = new TabItem [4];
+		items = new NativeTabItem [4];
 	}
 	itemCount = count;
 	((NSTabView)view).removeTabViewItem(item.nsItem);
@@ -223,12 +222,12 @@ void drawBackground (long id, NSGraphicsContext context, NSRect rect) {
 }
 
 @Override
-Widget findTooltip (NSPoint pt) {
+NativeWidget findTooltip (NSPoint pt) {
 	pt = view.convertPoint_fromView_ (pt, null);
 	NSTabViewItem nsItem = ((NSTabView)view).tabViewItemAtPoint (pt);
 	if (nsItem != null) {
 		for (int i = 0; i < itemCount; i++) {
-			TabItem item = items [i];
+			NativeTabItem item = items [i];
 			if (item.nsItem.id == nsItem.id) return item;
 		}
 	}
@@ -261,7 +260,7 @@ public Rectangle getClientArea () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TabItem getItem (int index) {
+public NativeTabItem getItem (int index) {
 	checkWidget ();
 	int count = itemCount;
 	if (!(0 <= index && index < count)) error (SWT.ERROR_INVALID_RANGE);
@@ -286,7 +285,7 @@ public TabItem getItem (int index) {
  *
  * @since 3.4
  */
-public TabItem getItem (Point point) {
+public NativeTabItem getItem (Point point) {
 	checkWidget ();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
 	NSPoint nsPoint = new NSPoint ();
@@ -334,10 +333,10 @@ public int getItemCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TabItem [] getItems () {
+public NativeTabItem [] getItems () {
 	checkWidget ();
 	int count = itemCount;
-	TabItem [] result = new TabItem [count];
+	NativeTabItem [] result = new NativeTabItem [count];
 	System.arraycopy (items, 0, result, 0, count);
 	return result;
 }
@@ -358,11 +357,11 @@ public TabItem [] getItems () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TabItem [] getSelection () {
+public NativeTabItem [] getSelection () {
 	checkWidget ();
 	int index = getSelectionIndex ();
-	if (index == -1) return new TabItem [0];
-	return new TabItem [] {items [index]};
+	if (index == -1) return new NativeTabItem [0];
+	return new NativeTabItem [] {items [index]};
 }
 
 /**
@@ -408,7 +407,7 @@ float getThemeAlpha () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public int indexOf (TabItem item) {
+public int indexOf (NativeTabItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	int count = itemCount;
@@ -425,10 +424,10 @@ boolean isTransparent() {
 
 @Override
 Point minimumSize (int wHint, int hHint, boolean flushCache) {
-	Control [] children = _getChildren ();
+	NativeControl [] children = _getChildren ();
 	int width = 0, height = 0;
 	for (int i=0; i<children.length; i++) {
-		Control child = children [i];
+		NativeControl child = children [i];
 		int index = 0;
 		int count = itemCount;
 		while (index < count) {
@@ -452,7 +451,7 @@ Point minimumSize (int wHint, int hHint, boolean flushCache) {
 void releaseChildren (boolean destroy) {
 	if (items != null) {
 		for (int i=0; i<items.length; i++) {
-			TabItem item = items [i];
+			NativeTabItem item = items [i];
 			if (item != null && !item.isDisposed ()) {
 				item.release (false);
 			}
@@ -463,11 +462,11 @@ void releaseChildren (boolean destroy) {
 }
 
 @Override
-void removeControl (Control control) {
+void removeControl (NativeControl control) {
 	super.removeControl (control);
 	int count = itemCount;
 	for (int i=0; i<count; i++) {
-		TabItem item = items [i];
+		NativeTabItem item = items [i];
 		if (item.control == control) item.setControl (null);
 	}
 }
@@ -501,7 +500,7 @@ public void removeSelectionListener (SelectionListener listener) {
 void reskinChildren (int flags) {
 	if (items != null) {
 		for (int i=0; i<itemCount; i++) {
-			TabItem item = items [i];
+			NativeTabItem item = items [i];
 			if (item != null) item.reskin (flags);
 		}
 	}
@@ -543,10 +542,10 @@ void setForeground (double [] color) {
  *
  * @since 3.2
  */
-public void setSelection (TabItem item) {
+public void setSelection (NativeTabItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
-	setSelection (new TabItem [] {item});
+	setSelection (new NativeTabItem [] {item});
 }
 
 /**
@@ -564,7 +563,7 @@ public void setSelection (TabItem item) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setSelection (TabItem [] items) {
+public void setSelection (NativeTabItem [] items) {
 	checkWidget ();
 	if (items == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (items.length == 0) {
@@ -602,9 +601,9 @@ void setSelection (int index, boolean notify, boolean force) {
 	int currentIndex = getSelectionIndex ();
 	if (!force && currentIndex == index) return;
 	if (currentIndex != -1) {
-		TabItem item = items [currentIndex];
+		NativeTabItem item = items [currentIndex];
 		if (item != null) {
-			Control control = item.control;
+			NativeControl control = item.control;
 			if (control != null && !control.isDisposed ()) {
 				control.setVisible (false);
 			}
@@ -615,15 +614,15 @@ void setSelection (int index, boolean notify, boolean force) {
 	ignoreSelect = false;
 	index = getSelectionIndex();
 	if (index != -1) {
-		TabItem item = items [index];
+		NativeTabItem item = items [index];
 		if (item != null) {
-			Control control = item.control;
+			NativeControl control = item.control;
 			if (control != null && !control.isDisposed ()) {
 				control.setVisible (true);
 			}
 			if (notify) {
 				Event event = new Event ();
-				event.item = item;
+				event.item = item.getWrapper();
 				sendSelectionEvent (SWT.Selection, event, true);
 			}
 		}
@@ -654,20 +653,20 @@ boolean traversePage (boolean next) {
 void tabView_willSelectTabViewItem(long id, long sel, long tabView, long tabViewItem) {
 	if (tabViewItem == 0) return;
 	for (int i = 0; i < itemCount; i++) {
-		TabItem item = items [i];
+		NativeTabItem item = items [i];
 		if (item.nsItem.id == tabViewItem) {
 			int currentIndex = getSelectionIndex ();
 			if (currentIndex != -1) {
-				TabItem selected = items [currentIndex];
+				NativeTabItem selected = items [currentIndex];
 				if (selected != null) {
 					selected.updateText(false);
-					Control control = selected.control;
+					NativeControl control = selected.control;
 					if (control != null && !control.isDisposed ()) {
 						control.setVisible (false);
 					}
 				}
 			}
-			Control control = item.control;
+			NativeControl control = item.control;
 			if (control != null && !control.isDisposed ()) {
 				control.setVisible (true);
 			}
@@ -681,13 +680,13 @@ void tabView_willSelectTabViewItem(long id, long sel, long tabView, long tabView
 void tabView_didSelectTabViewItem(long id, long sel, long tabView, long tabViewItem) {
 	if (tabViewItem == 0) return;
 	for (int i = 0; i < itemCount; i++) {
-		TabItem item = items [i];
+		NativeTabItem item = items [i];
 		/*
 		* Feature in Cocoa.  For some reason the control on a tab being
 		* deselected has its parent removed natively.  The fix is to
 		* re-set the control's parent.
 		*/
-		Control control = item.control;
+		NativeControl control = item.control;
 		if (control != null) {
 			NSView topView = control.topView ();
 			if (topView.superview () == null) {
@@ -697,11 +696,14 @@ void tabView_didSelectTabViewItem(long id, long sel, long tabView, long tabViewI
 		if (item.nsItem.id == tabViewItem) {
 			if (!ignoreSelect) {
 				Event event = new Event ();
-				event.item = item;
+				event.item = item.getWrapper();
 				sendSelectionEvent (SWT.Selection, event, false);
 			}
 		}
 	}
 }
+
+@Override
+public abstract TabFolder getWrapper();
 
 }

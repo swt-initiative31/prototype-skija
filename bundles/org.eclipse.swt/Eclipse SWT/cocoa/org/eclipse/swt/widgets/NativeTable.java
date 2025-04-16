@@ -68,11 +68,11 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Table extends Composite {
-	TableItem [] items;
-	TableColumn [] columns;
-	TableColumn sortColumn;
-	TableItem currentItem;
+public abstract class NativeTable extends NativeComposite {
+	NativeTableItem [] items;
+	NativeTableColumn [] columns;
+	NativeTableColumn sortColumn;
+	NativeTableItem currentItem;
 	NSTableHeaderView headerView;
 	NSTableColumn firstColumn, checkColumn;
 	NSTextFieldCell dataCell;
@@ -126,10 +126,10 @@ public class Table extends Composite {
  * @see SWT#HIDE_SELECTION
  * @see SWT#VIRTUAL
  * @see SWT#NO_SCROLL
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Table (Composite parent, int style) {
+protected NativeTable (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 
 	this.nativeItemHeight = (int)((NSTableView)view).rowHeight();
@@ -205,16 +205,16 @@ public void addSelectionListener (SelectionListener listener) {
 	addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 }
 
-TableItem _getItem (int index) {
+NativeTableItem _getItem (int index) {
 	if ((style & SWT.VIRTUAL) == 0) return items [index];
 	if (items [index] != null) return items [index];
-	return items [index] = new TableItem (this, SWT.NULL, -1, false);
+	return items [index] = new TableItem (this.getWrapper(), SWT.NULL, -1, false).getWrappedWidget();
 }
 
-int calculateWidth (TableItem[] items, int index, GC gc) {
+int calculateWidth (NativeTableItem[] items, int index, GC gc) {
 	int width = 0;
 	for (int i=0; i < itemCount; i++) {
-		TableItem item = items [i];
+		NativeTableItem item = items [i];
 		if (item != null && item.cached) {
 			width = Math.max (width, item.calculateWidth (index, gc, isSelected(index)));
 		}
@@ -232,7 +232,7 @@ NSSize cellSize (long id, long sel) {
 		long [] outValue = new long [1];
 		OS.object_getInstanceVariable(id, Display.SWT_ROW, outValue);
 		long rowIndex = outValue [0];
-		TableItem item = _getItem((int)rowIndex);
+		NativeTableItem item = _getItem((int)rowIndex);
 		OS.object_getInstanceVariable(id, Display.SWT_COLUMN, outValue);
 		long tableColumn = outValue[0];
 		int columnIndex = 0;
@@ -270,16 +270,16 @@ boolean canDragRowsWithIndexes_atPoint(long id, long sel, long rowIndexes, NSPoi
 	return (widget.isRowSelected(row) && drag) || !hasFocus();
 }
 
-boolean checkData (TableItem item) {
+boolean checkData (NativeTableItem item) {
 	return checkData (item, indexOf (item));
 }
 
-boolean checkData (TableItem item, int index) {
+boolean checkData (NativeTableItem item, int index) {
 	if (item.cached) return true;
 	if ((style & SWT.VIRTUAL) != 0) {
 		item.cached = true;
 		Event event = new Event ();
-		event.item = item;
+		event.item = item.getWrapper();
 		event.index = indexOf (item);
 		currentItem = item;
 		sendEvent (SWT.SetData, event);
@@ -310,7 +310,7 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -338,7 +338,7 @@ protected void checkSubclass () {
 public void clear (int index) {
 	checkWidget ();
 	if (!(0 <= index && index < itemCount)) error (SWT.ERROR_INVALID_RANGE);
-	TableItem item = items [index];
+	NativeTableItem item = items [index];
 	if (item != null) {
 		if (currentItem != item) item.clear ();
 		if (currentItem == null) item.redraw (-1);
@@ -438,7 +438,7 @@ public void clear (int [] indices) {
 public void clearAll () {
 	checkWidget ();
 	for (int i=0; i<itemCount; i++) {
-		TableItem item = items [i];
+		NativeTableItem item = items [i];
 		if (item != null) {
 			item.clear ();
 		}
@@ -447,7 +447,7 @@ public void clearAll () {
 	setScrollWidth (items, true);
 }
 
-void clearCachedWidth (TableItem[] items) {
+void clearCachedWidth (NativeTableItem[] items) {
 	if (items == null) return;
 	for (int i = 0; i < items.length; i++) {
 		if (items [i] != null) items [i].width = -1;
@@ -493,7 +493,7 @@ public Point computeSize (int wHint, int hHint, boolean changed) {
 	return new Point (rect.width, rect.height);
 }
 
-void createColumn (TableItem item, int index) {
+void createColumn (NativeTableItem item, int index) {
 	String [] strings = item.strings;
 	if (strings != null) {
 		String [] temp = new String [columnCount];
@@ -618,10 +618,10 @@ void createHandle () {
 	view = widget;
 }
 
-void createItem (TableColumn column, int index) {
+void createItem (NativeTableColumn column, int index) {
 	if (!(0 <= index && index <= columnCount)) error (SWT.ERROR_INVALID_RANGE);
 	if (columnCount == columns.length) {
-		TableColumn [] newColumns = new TableColumn [columnCount + 4];
+		NativeTableColumn [] newColumns = new NativeTableColumn [columnCount + 4];
 		System.arraycopy (columns, 0, newColumns, 0, columns.length);
 		columns = newColumns;
 	}
@@ -655,7 +655,7 @@ void createItem (TableColumn column, int index) {
 	System.arraycopy (columns, index, columns, index + 1, columnCount++ - index);
 	columns [index] = column;
 	for (int i = 0; i < itemCount; i++) {
-		TableItem item = items [i];
+		NativeTableItem item = items [i];
 		if (item != null) {
 			if (columnCount > 1) {
 				createColumn (item, index);
@@ -664,12 +664,12 @@ void createItem (TableColumn column, int index) {
 	}
 }
 
-void createItem (TableItem item, int index) {
+void createItem (NativeTableItem item, int index) {
 	if (!(0 <= index && index <= itemCount)) error (SWT.ERROR_INVALID_RANGE);
 	if (itemCount == items.length) {
 		/* Grow the array faster when redraw is off */
 		int length = getDrawing () ? items.length + 4 : Math.max (4, items.length * 3 / 2);
-		TableItem [] newItems = new TableItem [length];
+		NativeTableItem [] newItems = new NativeTableItem [length];
 		System.arraycopy (items, 0, newItems, 0, items.length);
 		items = newItems;
 	}
@@ -682,8 +682,8 @@ void createItem (TableItem item, int index) {
 @Override
 void createWidget () {
 	super.createWidget ();
-	items = new TableItem [4];
-	columns = new TableColumn [4];
+	items = new NativeTableItem [4];
+	columns = new NativeTableColumn [4];
 }
 
 @Override
@@ -826,14 +826,14 @@ public void deselectAll () {
 	ignoreSelect = false;
 }
 
-void destroyItem (TableColumn column) {
+void destroyItem (NativeTableColumn column) {
 	int index = 0;
 	while (index < columnCount) {
 		if (columns [index] == column) break;
 		index++;
 	}
 	for (int i=0; i<itemCount; i++) {
-		TableItem item = items [i];
+		NativeTableItem item = items [i];
 		if (item != null) {
 			if (columnCount <= 1) {
 				item.strings = null;
@@ -924,7 +924,7 @@ void destroyItem (TableColumn column) {
 	}
 }
 
-void destroyItem (TableItem item) {
+void destroyItem (NativeTableItem item) {
 	int index = 0;
 	while (index < itemCount) {
 		if (items [index] == item) break;
@@ -962,7 +962,7 @@ void drawInteriorWithFrame_inView (long id, long sel, NSRect rect, long view) {
 	long [] outValue = new long [1];
 	OS.object_getInstanceVariable(id, Display.SWT_ROW, outValue);
 	long rowIndex = outValue [0];
-	TableItem item = _getItem((int)rowIndex);
+	NativeTableItem item = _getItem((int)rowIndex);
 	OS.object_getInstanceVariable(id, Display.SWT_COLUMN, outValue);
 	long tableColumn = outValue[0];
 	long nsColumnIndex = widget.tableColumns().indexOfObjectIdenticalTo(new id(tableColumn));
@@ -1043,7 +1043,7 @@ void drawInteriorWithFrame_inView (long id, long sel, NSRect rect, long view) {
 			gc.setClipping ((int)(cellRect.x - offsetX), (int)(cellRect.y - offsetY), (int)cellRect.width, (int)cellRect.height);
 		}
 		Event event = new Event ();
-		event.item = item;
+		event.item = item.getWrapper();
 		event.gc = gc;
 		event.index = columnIndex;
 		event.detail = SWT.FOREGROUND;
@@ -1201,7 +1201,7 @@ void drawInteriorWithFrame_inView (long id, long sel, NSRect rect, long view) {
 		item.width = -1;
 
 		Event event = new Event ();
-		event.item = item;
+		event.item = item.getWrapper();
 		event.gc = gc;
 		event.index = columnIndex;
 		if (drawForeground) event.detail |= SWT.FOREGROUND;
@@ -1281,7 +1281,7 @@ NSRect expansionFrameWithFrame_inView(long id, long sel, NSRect cellRect, long v
 }
 
 @Override
-Widget findTooltip (NSPoint pt) {
+NativeWidget findTooltip (NSPoint pt) {
 	NSTableView widget = (NSTableView)view;
 	NSTableHeaderView headerView = widget.headerView();
 	if (headerView != null) {
@@ -1291,7 +1291,7 @@ Widget findTooltip (NSPoint pt) {
 			NSArray nsColumns = widget.tableColumns ();
 			id nsColumn = nsColumns.objectAtIndex (index);
 			for (int i = 0; i < columnCount; i++) {
-				TableColumn column = columns [i];
+				NativeTableColumn column = columns [i];
 				if (column.nsColumn.id == nsColumn.id) {
 					return column;
 				}
@@ -1348,7 +1348,7 @@ public Rectangle getClientArea () {
 	return rect;
 }
 
-TableColumn getColumn (id id) {
+NativeTableColumn getColumn (id id) {
 	for (int i = 0; i < columnCount; i++) {
 		if (columns[i].nsColumn.id == id.id) {
 			return columns[i];
@@ -1378,13 +1378,13 @@ TableColumn getColumn (id id) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#getColumnOrder()
- * @see Table#setColumnOrder(int[])
- * @see TableColumn#getMoveable()
- * @see TableColumn#setMoveable(boolean)
+ * @see NativeTable#getColumnOrder()
+ * @see NativeTable#setColumnOrder(int[])
+ * @see NativeTableColumn#getMoveable()
+ * @see NativeTableColumn#setMoveable(boolean)
  * @see SWT#Move
  */
-public TableColumn getColumn (int index) {
+public NativeTableColumn getColumn (int index) {
 	checkWidget ();
 	if (!(0 <=index && index < columnCount)) error (SWT.ERROR_INVALID_RANGE);
 	return columns [index];
@@ -1430,9 +1430,9 @@ public int getColumnCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#setColumnOrder(int[])
- * @see TableColumn#getMoveable()
- * @see TableColumn#setMoveable(boolean)
+ * @see NativeTable#setColumnOrder(int[])
+ * @see NativeTableColumn#getMoveable()
+ * @see NativeTableColumn#setMoveable(boolean)
  * @see SWT#Move
  *
  * @since 3.1
@@ -1441,7 +1441,7 @@ public int [] getColumnOrder () {
 	checkWidget ();
 	int [] order = new int [columnCount];
 	for (int i = 0; i < columnCount; i++) {
-		TableColumn column = columns [i];
+		NativeTableColumn column = columns [i];
 		int index = indexOf (column.nsColumn);
 		if ((style & SWT.CHECK) != 0) index -= 1;
 		order [index] = i;
@@ -1470,15 +1470,15 @@ public int [] getColumnOrder () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#getColumnOrder()
- * @see Table#setColumnOrder(int[])
- * @see TableColumn#getMoveable()
- * @see TableColumn#setMoveable(boolean)
+ * @see NativeTable#getColumnOrder()
+ * @see NativeTable#setColumnOrder(int[])
+ * @see NativeTableColumn#getMoveable()
+ * @see NativeTableColumn#setMoveable(boolean)
  * @see SWT#Move
  */
-public TableColumn [] getColumns () {
+public NativeTableColumn [] getColumns () {
 	checkWidget ();
-	TableColumn [] result = new TableColumn [columnCount];
+	NativeTableColumn [] result = new NativeTableColumn [columnCount];
 	System.arraycopy (columns, 0, result, 0, columnCount);
 	return result;
 }
@@ -1594,7 +1594,7 @@ public boolean getHeaderVisible () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TableItem getItem (int index) {
+public NativeTableItem getItem (int index) {
 	checkWidget ();
 	if (!(0 <= index && index < itemCount)) error (SWT.ERROR_INVALID_RANGE);
 	return _getItem (index);
@@ -1623,7 +1623,7 @@ public TableItem getItem (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TableItem getItem (Point point) {
+public NativeTableItem getItem (Point point) {
 	checkWidget ();
 	NSTableView widget = (NSTableView)view;
 	NSPoint pt = new NSPoint();
@@ -1681,9 +1681,9 @@ public int getItemHeight () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TableItem [] getItems () {
+public NativeTableItem [] getItems () {
 	checkWidget ();
-	TableItem [] result = new TableItem [itemCount];
+	NativeTableItem [] result = new NativeTableItem [itemCount];
 	if ((style & SWT.VIRTUAL) != 0) {
 		for (int i=0; i<itemCount; i++) {
 			result [i] = _getItem (i);
@@ -1733,17 +1733,17 @@ public boolean getLinesVisible () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TableItem [] getSelection () {
+public NativeTableItem [] getSelection () {
 	checkWidget ();
 	NSTableView widget = (NSTableView)view;
 	if (widget.numberOfSelectedRows() == 0) {
-		return new TableItem [0];
+		return new NativeTableItem [0];
 	}
 	NSIndexSet selection = widget.selectedRowIndexes();
 	int count = (int)selection.count();
 	long [] indexBuffer = new long [count];
 	selection.getIndexes(indexBuffer, count, 0);
-	TableItem [] result = new TableItem  [count];
+	NativeTableItem [] result = new NativeTableItem  [count];
 	for (int i=0; i<count; i++) {
 		result [i] = _getItem ((int)indexBuffer [i]);
 	}
@@ -1834,11 +1834,11 @@ public int [] getSelectionIndices () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see #setSortColumn(TableColumn)
+ * @see #setSortColumn(NativeTableColumn)
  *
  * @since 3.2
  */
-public TableColumn getSortColumn () {
+public NativeTableColumn getSortColumn () {
 	checkWidget ();
 	return sortColumn;
 }
@@ -1976,7 +1976,7 @@ int indexOf (NSTableColumn column) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public int indexOf (TableColumn column) {
+public int indexOf (NativeTableColumn column) {
 	checkWidget ();
 	if (column == null) error (SWT.ERROR_NULL_ARGUMENT);
 	for (int i=0; i<columnCount; i++) {
@@ -2002,7 +2002,7 @@ public int indexOf (TableColumn column) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public int indexOf (TableItem item) {
+public int indexOf (NativeTableItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (1 <= lastIndexOf && lastIndexOf < itemCount - 1) {
@@ -2150,7 +2150,7 @@ long nextState (long id, long sel) {
 	NSTableView tableView = (NSTableView)view;
 	int index = (int)tableView.clickedRow();
 	if (index == -1) index = (int)tableView.selectedRow ();
-	TableItem item = items[index];
+	NativeTableItem item = items[index];
 	if (item.grayed) {
 		return item.checked ? OS.NSOffState : OS.NSMixedState;
 	}
@@ -2174,7 +2174,7 @@ void register () {
 void releaseChildren (boolean destroy) {
 	if (items != null) {
 		for (int i=0; i<itemCount; i++) {
-			TableItem item = items [i];
+			NativeTableItem item = items [i];
 			if (item != null && !item.isDisposed ()) {
 				item.release (false);
 			}
@@ -2183,7 +2183,7 @@ void releaseChildren (boolean destroy) {
 	}
 	if (columns != null) {
 		for (int i=0; i<columnCount; i++) {
-			TableColumn column = columns [i];
+			NativeTableColumn column = columns [i];
 			if (column != null && !column.isDisposed ()) {
 				column.release (false);
 			}
@@ -2232,7 +2232,7 @@ void releaseWidget () {
 public void remove (int index) {
 	checkWidget ();
 	if (!(0 <= index && index < itemCount)) error (SWT.ERROR_INVALID_RANGE);
-	TableItem item = items [index];
+	NativeTableItem item = items [index];
 	if (item != null) item.release (false);
 	if (index != itemCount - 1) fixSelection (index, false);
 	System.arraycopy (items, index + 1, items, index, --itemCount - index);
@@ -2270,7 +2270,7 @@ public void remove (int start, int end) {
 	} else {
 		int numOfItemsRemoved = end - start + 1;
 		for (int i=start; i<=end; i++) {
-			TableItem item = items [i];
+			NativeTableItem item = items [i];
 			if (item != null) item.release (false);
 		}
 		//fix selection
@@ -2335,7 +2335,7 @@ public void remove (int [] indices) {
 	for (int i=0; i<newIndices.length; i++) {
 		int index = newIndices [i];
 		if (index != last) {
-			TableItem item = items [index];
+			NativeTableItem item = items [index];
 			if (item != null) item.release (false);
 			if (index != itemCount - 1) fixSelection (index, false);
 			System.arraycopy (items, index + 1, items, index, --itemCount - index);
@@ -2360,7 +2360,7 @@ public void remove (int [] indices) {
 public void removeAll () {
 	checkWidget ();
 	for (int i=0; i<itemCount; i++) {
-		TableItem item = items [i];
+		NativeTableItem item = items [i];
 		if (item != null && !item.isDisposed ()) item.release (false);
 	}
 	setTableEmpty ();
@@ -2396,13 +2396,13 @@ public void removeSelectionListener(SelectionListener listener) {
 void reskinChildren (int flags) {
 	if (items != null) {
 		for (int i=0; i<itemCount; i++) {
-			TableItem item = items [i];
+			NativeTableItem item = items [i];
 			if (item != null) item.reskin (flags);
 		}
 	}
 	if (columns != null) {
 		for (int i=0; i<columnCount; i++) {
-			TableColumn column = columns [i];
+			NativeTableColumn column = columns [i];
 			if (!column.isDisposed ()) column.reskin (flags);
 		}
 	}
@@ -2471,7 +2471,7 @@ public void select (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#setSelection(int,int)
+ * @see NativeTable#setSelection(int,int)
  */
 public void select (int start, int end) {
 	checkWidget ();
@@ -2516,7 +2516,7 @@ public void select (int start, int end) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#setSelection(int[])
+ * @see NativeTable#setSelection(int[])
  */
 public void select (int [] indices) {
 	checkWidget ();
@@ -2593,9 +2593,9 @@ void setBackgroundColor(NSColor nsColor) {
  *    <li>ERROR_INVALID_ARGUMENT - if the item order is not the same length as the number of items</li>
  * </ul>
  *
- * @see Table#getColumnOrder()
- * @see TableColumn#getMoveable()
- * @see TableColumn#setMoveable(boolean)
+ * @see NativeTable#getColumnOrder()
+ * @see NativeTableColumn#getMoveable()
+ * @see NativeTableColumn#setMoveable(boolean)
  * @see SWT#Move
  *
  * @since 3.1
@@ -2629,16 +2629,16 @@ public void setColumnOrder (int [] order) {
 		int [] newX = new int [order.length];
 		for (int i=0; i<order.length; i++) {
 			int index = order [i];
-			TableColumn column = columns[index];
+			NativeTableColumn column = columns[index];
 			int oldIndex = indexOf (column.nsColumn);
 			int newIndex = i + check;
 			tableView.moveColumn (oldIndex, newIndex);
 			newX [index] = (int)tableView.rectOfColumn (newIndex).x;
 		}
-		TableColumn[] newColumns = new TableColumn [columnCount];
+		NativeTableColumn[] newColumns = new NativeTableColumn [columnCount];
 		System.arraycopy (columns, 0, newColumns, 0, columnCount);
 		for (int i=0; i<columnCount; i++) {
-			TableColumn column = newColumns [i];
+			NativeTableColumn column = newColumns [i];
 			if (!column.isDisposed ()) {
 				if (newX [i] != oldX [i]) {
 					column.sendEvent (SWT.Move);
@@ -2783,23 +2783,23 @@ public void setItemCount (int count) {
 	checkWidget ();
 	count = Math.max (0, count);
 	if (count == itemCount) return;
-	TableItem [] children = items;
+	NativeTableItem [] children = items;
 	if (count < itemCount) {
 		for (int index = count; index < itemCount; index ++) {
-			TableItem item = children [index];
+			NativeTableItem item = children [index];
 			if (item != null && !item.isDisposed()) item.release (false);
 		}
 	}
 	if (count > itemCount) {
 		if ((getStyle() & SWT.VIRTUAL) == 0) {
 			for (int i=itemCount; i<count; i++) {
-				new TableItem (this, SWT.NONE, i, true);
+				new TableItem (this.getWrapper(), SWT.NONE, i, true);
 			}
 			return;
 		}
 	}
 	int length = Math.max (4, (count + 3) / 4 * 4);
-	TableItem [] newItems = new TableItem [length];
+	NativeTableItem [] newItems = new NativeTableItem [length];
 	if (children != null) {
 		System.arraycopy (items, 0, newItems, 0, Math.min (count, itemCount));
 	}
@@ -2853,7 +2853,7 @@ public void setRedraw (boolean redraw) {
 		/* Resize the item array to match the item count */
 		if (items.length > 4 && items.length - itemCount > 3) {
 			int length = Math.max (4, (itemCount + 3) / 4 * 4);
-			TableItem [] newItems = new TableItem [length];
+			NativeTableItem [] newItems = new NativeTableItem [length];
 			System.arraycopy (items, 0, newItems, 0, itemCount);
 			items = newItems;
 		}
@@ -2888,7 +2888,7 @@ boolean setScrollWidth () {
 	return setScrollWidth (items, true);
 }
 
-boolean setScrollWidth (TableItem item) {
+boolean setScrollWidth (NativeTableItem item) {
 	if (columnCount != 0) return false;
 	if (!getDrawing()) return false;
 	if (currentItem != null) {
@@ -2907,7 +2907,7 @@ boolean setScrollWidth (TableItem item) {
 	return false;
 }
 
-boolean setScrollWidth (TableItem [] items, boolean set) {
+boolean setScrollWidth (NativeTableItem [] items, boolean set) {
 	if (items == null) return false;
 	if (columnCount != 0) return false;
 	if (!getDrawing()) return false;
@@ -2918,7 +2918,7 @@ boolean setScrollWidth (TableItem [] items, boolean set) {
 	GC gc = new GC (this);
 	int newWidth = 0;
 	for (int i = 0; i < items.length; i++) {
-		TableItem item = items [i];
+		NativeTableItem item = items [i];
 		if (item != null) {
 			newWidth = Math.max (newWidth, item.calculateWidth (0, gc, isSelected(indexOf(item))));
 		}
@@ -2945,8 +2945,8 @@ boolean setScrollWidth (TableItem [] items, boolean set) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#deselectAll()
- * @see Table#select(int)
+ * @see NativeTable#deselectAll()
+ * @see NativeTable#select(int)
  */
 public void setSelection (int index) {
 	checkWidget ();
@@ -2978,8 +2978,8 @@ public void setSelection (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#deselectAll()
- * @see Table#select(int,int)
+ * @see NativeTable#deselectAll()
+ * @see NativeTable#select(int,int)
  */
 public void setSelection (int start, int end) {
 	checkWidget ();
@@ -3013,8 +3013,8 @@ public void setSelection (int start, int end) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#deselectAll()
- * @see Table#select(int[])
+ * @see NativeTable#deselectAll()
+ * @see NativeTable#select(int[])
  */
 public void setSelection (int [] indices) {
 	checkWidget ();
@@ -3048,10 +3048,10 @@ public void setSelection (int [] indices) {
  *
  * @since 3.2
  */
-public void setSelection (TableItem  item) {
+public void setSelection (NativeTableItem  item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
-	setSelection (new TableItem [] {item});
+	setSelection (new NativeTableItem [] {item});
 }
 
 /**
@@ -3075,11 +3075,11 @@ public void setSelection (TableItem  item) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#deselectAll()
- * @see Table#select(int[])
- * @see Table#setSelection(int[])
+ * @see NativeTable#deselectAll()
+ * @see NativeTable#select(int[])
+ * @see NativeTable#setSelection(int[])
  */
-public void setSelection (TableItem [] items) {
+public void setSelection (NativeTableItem [] items) {
 	checkWidget ();
 	if (items == null) error (SWT.ERROR_NULL_ARGUMENT);
 	//TODO - optimize to use expand flag
@@ -3122,7 +3122,7 @@ void setShouldScrollClipView(long id, long sel, boolean shouldScroll) {
  *
  * @since 3.2
  */
-public void setSortColumn (TableColumn column) {
+public void setSortColumn (NativeTableColumn column) {
 	checkWidget ();
 	if (column != null && column.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (column == sortColumn) return;
@@ -3149,7 +3149,7 @@ public void setSortDirection  (int direction) {
 	setSort(sortColumn, direction);
 }
 
-void setSort (TableColumn column, int direction) {
+void setSort (NativeTableColumn column, int direction) {
 	NSImage image = null;
 	NSTableColumn nsColumn = null;
 	if (column != null) {
@@ -3169,7 +3169,7 @@ void setSort (TableColumn column, int direction) {
 
 void setTableEmpty () {
 	itemCount = 0;
-	items = new TableItem [4];
+	items = new NativeTableItem [4];
 	imageBounds = null;
 }
 
@@ -3223,7 +3223,7 @@ public void setTopIndex (int index) {
  *
  * @since 3.0
  */
-public void showColumn (TableColumn column) {
+public void showColumn (NativeTableColumn column) {
 	checkWidget ();
 	if (column == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (column.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
@@ -3282,9 +3282,9 @@ void showIndex (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#showSelection()
+ * @see NativeTable#showSelection()
  */
-public void showItem (TableItem item) {
+public void showItem (NativeTableItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
@@ -3302,7 +3302,7 @@ public void showItem (TableItem item) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#showItem(TableItem)
+ * @see NativeTable#showItem(NativeTableItem)
  */
 public void showSelection () {
 	checkWidget ();
@@ -3338,7 +3338,7 @@ void sendDoubleSelection() {
 			}
 		}
 		Event event = new Event ();
-		event.item = _getItem (rowIndex);
+		event.item = _getItem (rowIndex).getWrapper();
 		sendSelectionEvent (SWT.DefaultSelection, event, false);
 	}
 }
@@ -3359,7 +3359,7 @@ boolean sendKeyEvent (NSEvent nsEvent, int type) {
 	return result;
 }
 
-void sendMeasureItem (TableItem item, int columnIndex, NSSize size, boolean isSelected) {
+void sendMeasureItem (NativeTableItem item, int columnIndex, NSSize size, boolean isSelected) {
 	NSTableView widget = (NSTableView)this.view;
 	int contentWidth = (int)Math.ceil (size.width);
 	NSSize spacing = widget.intercellSpacing();
@@ -3369,7 +3369,7 @@ void sendMeasureItem (TableItem item, int columnIndex, NSSize size, boolean isSe
 	GC gc = GC.cocoa_new (this, data);
 	gc.setFont (item.getFont (columnIndex));
 	Event event = new Event ();
-	event.item = item;
+	event.item = item.getWrapper();
 	event.gc = gc;
 	event.index = columnIndex;
 	event.width = contentWidth;
@@ -3414,7 +3414,7 @@ void tableViewColumnDidMove (long id, long sel, long aNotification) {
 	NSArray nsColumns = tableView.tableColumns ();
 	for (int i = startIndex; i <= endIndex; i++) {
 		id columnId = nsColumns.objectAtIndex (i);
-		TableColumn column = getColumn (columnId);
+		NativeTableColumn column = getColumn (columnId);
 		if (column != null) {
 			column.sendEvent (SWT.Move);
 			if (isDisposed ()) return;
@@ -3431,7 +3431,7 @@ void tableViewColumnDidResize (long id, long sel, long aNotification) {
 	nsstring = nsstring.initWithString("NSTableColumn"); //$NON-NLS-1$
 	id columnId = userInfo.valueForKey (nsstring);
 	nsstring.release();
-	TableColumn column = getColumn (columnId);
+	NativeTableColumn column = getColumn (columnId);
 	if (column == null) return; /* either CHECK column or firstColumn in 0-column Table */
 
 	column.sendEvent (SWT.Resize);
@@ -3461,9 +3461,9 @@ void sendSelection () {
 	if(row == -1)
 		sendSelectionEvent (SWT.Selection);
 	else {
-		TableItem item = _getItem (row);
+		NativeTableItem item = _getItem (row);
 		Event event = new Event ();
-		event.item = item;
+		event.item = item.getWrapper();
 		event.index = row;
 		sendSelectionEvent (SWT.Selection, event, false);
 	}
@@ -3486,7 +3486,7 @@ void tableViewSelectionIsChanging (long id, long sel, long aNotification) {
 
 @Override
 void tableView_didClickTableColumn (long id, long sel, long tableView, long tableColumn) {
-	TableColumn column = getColumn (new id (tableColumn));
+	NativeTableColumn column = getColumn (new id (tableColumn));
 	if (column == null) return; /* either CHECK column or firstColumn in 0-column Table */
 	column.sendSelectionEvent (SWT.Selection);
 }
@@ -3494,7 +3494,7 @@ void tableView_didClickTableColumn (long id, long sel, long tableView, long tabl
 @Override
 long tableView_objectValueForTableColumn_row (long id, long sel, long aTableView, long aTableColumn, long rowIndex) {
 	int index = (int)rowIndex;
-	TableItem item = _getItem (index);
+	NativeTableItem item = _getItem (index);
 	checkData (item, index);
 	if (checkColumn != null && aTableColumn == checkColumn.id) {
 		NSNumber value;
@@ -3552,21 +3552,21 @@ void tableView_setObjectValue_forTableColumn_row (long id, long sel, long aTable
 			selection.getIndexes (indices, count, 0);
 			for (int i = 0; i < indices.length; i++) {
 				int index = (int)indices [i];
-				TableItem item = items [index];
+				NativeTableItem item = items [index];
 				toggleCheckedItem (item, index);
 			}
 		} else {
-			TableItem item = items [(int)rowIndex];
+			NativeTableItem item = items [(int)rowIndex];
 			toggleCheckedItem (item, rowIndex);
 		}
 	}
 }
 
-private void toggleCheckedItem (TableItem item, long rowIndex) {
+private void toggleCheckedItem (NativeTableItem item, long rowIndex) {
 	item.checked = !item.checked;
 	Event event = new Event ();
 	event.detail = SWT.CHECK;
-	event.item = item;
+	event.item = item.getWrapper();
 	event.index = (int)rowIndex;
 	sendSelectionEvent (SWT.Selection, event, false);
 	item.redraw (-1);
@@ -3575,7 +3575,7 @@ private void toggleCheckedItem (TableItem item, long rowIndex) {
 @Override
 void tableView_willDisplayCell_forTableColumn_row (long id, long sel, long aTableView, long cell, long tableColumn, long rowIndex) {
 	if (checkColumn != null && tableColumn == checkColumn.id) return;
-	TableItem item = items [(int)rowIndex];
+	NativeTableItem item = items [(int)rowIndex];
 	int index = 0;
 	for (int i=0; i<columnCount; i++) {
 		if (columns [i].nsColumn.id == tableColumn) {
@@ -3690,7 +3690,7 @@ void handleClickSelected() {
 
 	// Emulate SWT.Selection
 	Event event = new Event ();
-	event.item = _getItem(clickedRow);
+	event.item = _getItem(clickedRow).getWrapper();
 	sendSelectionEvent (SWT.Selection, event, false);
 
 	// Ignore real SWT.Selection that will arrive later
@@ -3736,5 +3736,8 @@ void updateRowCount() {
 	widget.tile();
 	setRedraw(true);
 }
+
+@Override
+public abstract Table getWrapper();
 
 }

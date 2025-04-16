@@ -116,20 +116,20 @@ import org.eclipse.swt.internal.gtk4.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see Decorations
+ * @see NativeDecorations
  * @see SWT
  * @see <a href="http://www.eclipse.org/swt/snippets/#shell">Shell snippets</a>
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Shell extends Decorations {
+public abstract class NativeShell extends NativeDecorations {
 	long shellHandle, tooltipsHandle, tooltipWindow, group, modalGroup;
 	boolean mapped, moved, resized, opened, fullScreen, showWithParent, modified, center;
 	int oldX, oldY, oldWidth, oldHeight;
 	GeometryInterface geometry;
-	Control lastActive;
-	ToolTip [] toolTips;
+	NativeControl lastActive;
+	NativeToolTip [] toolTips;
 	boolean ignoreFocusOut, ignoreFocusIn;
 	boolean ignoreFocusOutAfterGrab, grabbedFocus;
 	Region originalRegion;
@@ -148,7 +148,7 @@ public class Shell extends Decorations {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public Shell () {
+protected NativeShell () {
 	this ((Display) null);
 }
 /**
@@ -190,7 +190,7 @@ public Shell () {
  * @see SWT#SYSTEM_MODAL
  * @see SWT#SHEET
  */
-public Shell (int style) {
+protected NativeShell (int style) {
 	this ((Display) null, style);
 }
 
@@ -213,7 +213,7 @@ public Shell (int style) {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public Shell (Display display) {
+protected NativeShell (Display display) {
 	this (display, SWT.SHELL_TRIM);
 }
 /**
@@ -263,11 +263,11 @@ public Shell (Display display) {
  * @see SWT#SYSTEM_MODAL
  * @see SWT#SHEET
  */
-public Shell (Display display, int style) {
+protected NativeShell (Display display, int style) {
 	this (display, null, style, 0, false);
 }
 
-Shell (Display display, Shell parent, int style, long handle, boolean embedded) {
+NativeShell (Display display, NativeShell parent, int style, long handle, boolean embedded) {
 	super ();
 	checkSubclass ();
 	if (display == null) display = Display.getCurrent ();
@@ -322,7 +322,7 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public Shell (Shell parent) {
+protected NativeShell (NativeShell parent) {
 	this (parent, SWT.DIALOG_TRIM);
 }
 
@@ -375,7 +375,7 @@ public Shell (Shell parent) {
  * @see SWT#SYSTEM_MODAL
  * @see SWT#SHEET
  */
-public Shell (Shell parent, int style) {
+protected NativeShell (NativeShell parent, int style) {
 	this (parent != null ? parent.display : null, parent, style, 0, false);
 }
 
@@ -397,34 +397,11 @@ public Shell (Shell parent, int style) {
  * @noreference This method is not intended to be referenced by clients.
  */
 public static Shell gtk_new (Display display, long handle) {
-	return new Shell (display, null, SWT.NO_TRIM, handle, true);
+	return new Shell(display, null, SWT.NO_TRIM, handle, true);
 }
 
-/**
- * Invokes platform specific functionality to allocate a new shell
- * that is not embedded.
- * <p>
- * <b>IMPORTANT:</b> This method is <em>not</em> part of the public
- * API for <code>Shell</code>. It is marked public only so that it
- * can be shared within the packages provided by SWT. It is not
- * available on all platforms, and should never be called from
- * application code.
- * </p>
- *
- * @param display the display for the shell
- * @param handle the handle for the shell
- * @return a new shell object containing the specified display and handle
- *
- * @noreference This method is not intended to be referenced by clients.
- *
- * @since 3.3
- */
-public static Shell internal_new (Display display, long handle) {
-	return new Shell (display, null, SWT.NO_TRIM, handle, false);
-}
-
-static int checkStyle (Shell parent, int style) {
-	style = Decorations.checkStyle (style);
+static int checkStyle (NativeShell parent, int style) {
+	style = NativeDecorations.checkStyle (style);
 	style &= ~SWT.TRANSPARENT;
 	if (parent != null && (style & SWT.ON_TOP) != 0) style &= ~(SWT.CLOSE | SWT.TITLE | SWT.MIN | SWT.MAX);
 	int mask = SWT.SYSTEM_MODAL | SWT.APPLICATION_MODAL | SWT.PRIMARY_MODAL;
@@ -465,15 +442,15 @@ public void addShellListener (ShellListener listener) {
 	addTypedListener(listener, SWT.Close, SWT.Iconify, SWT.Deiconify, SWT.Activate, SWT.Deactivate);
 }
 
-void addToolTip (ToolTip toolTip) {
-	if (toolTips  == null) toolTips = new ToolTip [4];
+void addToolTip (NativeToolTip toolTip) {
+	if (toolTips  == null) toolTips = new NativeToolTip [4];
 	for (int i=0; i<toolTips.length; i++) {
 		if (toolTips [i] == null) {
 			toolTips [i] = toolTip;
 			return;
 		}
 	}
-	ToolTip [] newToolTips = new ToolTip [toolTips.length + 4];
+	NativeToolTip [] newToolTips = new NativeToolTip [toolTips.length + 4];
 	newToolTips [toolTips.length] = toolTip;
 	System.arraycopy (toolTips, 0, newToolTips, 0, toolTips.length);
 	toolTips = newToolTips;
@@ -571,7 +548,7 @@ void adjustTrim (int widthHint, int heightHint) {
 void bringToTop (boolean force) {
 	if (!GTK.gtk_widget_get_visible (shellHandle)) return;
 	Display display = this.display;
-	Shell activeShell = display.activeShell;
+	NativeShell activeShell = display.activeShell;
 	if (activeShell == this) return;
 	if (!force) {
 		if (activeShell == null) return;
@@ -776,9 +753,9 @@ void createHandle (int index) {
 				 * parent by connecting a "destroy" signal.
 				 */
 				if (OS.isWayland()) {
-					Composite topLevelParent = parent;
+					NativeComposite topLevelParent = parent;
 					while (topLevelParent != null && (topLevelParent.style & SWT.ON_TOP) != 0) {
-						topLevelParent = parent.getParent();
+						topLevelParent = Widget.checkNative(parent.getParent());
 					}
 					// transient parent must be the a toplevel window to position correctly
 					if (topLevelParent != null) {
@@ -914,12 +891,12 @@ long filterProc (long xEvent, long gdkEvent, long data2) {
 }
 
 @Override
-Control findBackgroundControl () {
+NativeControl findBackgroundControl () {
 	return (state & BACKGROUND) != 0 || backgroundImage != null ? this : null;
 }
 
 @Override
-Composite findDeferredControl () {
+NativeComposite findDeferredControl () {
 	return layoutCount > 0 ? this : null;
 }
 
@@ -951,7 +928,7 @@ boolean hasBorder () {
 @Override
 void hookEvents () {
 	super.hookEvents ();
-	OS.g_signal_connect (shellHandle, OS.dpi_changed, display.notifyProc, Widget.DPI_CHANGED);
+	OS.g_signal_connect (shellHandle, OS.dpi_changed, display.notifyProc, NativeWidget.DPI_CHANGED);
 
 	if (GTK.GTK4) {
 		// TODO: GTK4 see if same signals are required in GTK4 as in GTK3, if so, will require the legacy event controller
@@ -960,9 +937,9 @@ void hookEvents () {
 		long gdkSurface = gtk_widget_get_surface (shellHandle);
 		OS.g_signal_connect (gdkSurface, OS.notify_state, display.notifyProc, shellHandle);
 		OS.g_signal_connect (gdkSurface, OS.compute_size, display.computeSizeProc, shellHandle);
-		OS.g_signal_connect(shellHandle, OS.notify_default_height, display.notifyProc, Widget.NOTIFY_DEFAULT_HEIGHT);
-		OS.g_signal_connect(shellHandle, OS.notify_default_width, display.notifyProc, Widget.NOTIFY_DEFAULT_WIDTH);
-		OS.g_signal_connect(shellHandle, OS.notify_maximized, display.notifyProc, Widget.NOTIFY_MAXIMIZED);
+		OS.g_signal_connect(shellHandle, OS.notify_default_height, display.notifyProc, NativeWidget.NOTIFY_DEFAULT_HEIGHT);
+		OS.g_signal_connect(shellHandle, OS.notify_default_width, display.notifyProc, NativeWidget.NOTIFY_DEFAULT_WIDTH);
+		OS.g_signal_connect(shellHandle, OS.notify_maximized, display.notifyProc, NativeWidget.NOTIFY_MAXIMIZED);
 	} else {
 		OS.g_signal_connect_closure_by_id (shellHandle, display.signalIds [WINDOW_STATE_EVENT], 0, display.getClosure (WINDOW_STATE_EVENT), false);
 		OS.g_signal_connect_closure_by_id (shellHandle, display.signalIds [CONFIGURE_EVENT], 0, display.getClosure (CONFIGURE_EVENT), false);
@@ -1087,10 +1064,10 @@ long paintHandle () {
 void fixActiveShell () {
 	// Only fix shell for SWT.ON_TOP set, see bug 568550
 	if (display.activeShell == this && (style & SWT.ON_TOP) != 0) {
-		Shell shell = null;
+		NativeShell shell = null;
 		if (parent != null && parent.isVisible ()) shell = parent.getShell ();
 		if (shell == null && isUndecorated ()) {
-			Shell [] shells = display.getShells ();
+			NativeShell [] shells = display.getNativeShells ();
 			for (int i = 0; i < shells.length; i++) {
 				if (shells [i] != null && shells [i].isVisible ()) {
 					shell = shells [i];
@@ -1102,7 +1079,7 @@ void fixActiveShell () {
 	}
 }
 
-void fixShell (Shell newShell, Control control) {
+void fixShell (NativeShell newShell, NativeControl control) {
 	if (this == newShell) return;
 	if (control == lastActive) setActiveControl (null);
 	String toolTipText = control.toolTipText;
@@ -1334,17 +1311,17 @@ Point getMaximumSizeInPixels () {
 	return new Point (width, height);
 }
 
-Shell getModalShell () {
-	Shell shell = null;
-	Shell [] modalShells = display.modalShells;
+NativeShell getModalShell () {
+	NativeShell shell = null;
+	NativeShell [] modalShells = display.modalShells;
 	if (modalShells != null) {
 		int bits = SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL;
 		int index = modalShells.length;
 		while (--index >= 0) {
-			Shell modal = modalShells [index];
+			NativeShell modal = modalShells [index];
 			if (modal != null) {
 				if ((modal.style & bits) != 0) {
-					Control control = this;
+					NativeControl control = this;
 					while (control != null) {
 						if (control == modal) break;
 						control = control.parent;
@@ -1443,7 +1420,7 @@ public int getImeInputMode () {
 }
 
 @Override
-Shell _getShell () {
+NativeShell _getShell () {
 	return this;
 }
 
@@ -1458,23 +1435,23 @@ Shell _getShell () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Shell [] getShells () {
+public NativeShell [] getShells () {
 	checkWidget ();
 	int count = 0;
-	Shell [] shells = display.getShells ();
-	for (Shell activeshell : shells) {
-		Control shell = activeshell;
+	NativeShell [] shells = display.getNativeShells ();
+	for (NativeShell activeshell : shells) {
+		NativeControl shell = activeshell;
 		do {
-			shell = shell.getParent ();
+			shell = Widget.checkNative(shell.getParent ());
 		} while (shell != null && shell != this);
 		if (shell == this) count++;
 	}
 	int index = 0;
-	Shell [] result = new Shell [count];
-	for (Shell activeshell : shells) {
-		Control shell = activeshell;
+	NativeShell [] result = new NativeShell [count];
+	for (NativeShell activeshell : shells) {
+		NativeControl shell = activeshell;
 		do {
-			shell = shell.getParent ();
+			shell = Widget.checkNative(shell.getParent ());
 		} while (shell != null && shell != this);
 		if (shell == this) {
 			result [index++] = activeshell;
@@ -1596,7 +1573,7 @@ long gtk_focus (long widget, long directionType) {
 	switch ((int)directionType) {
 		case GTK.GTK_DIR_TAB_FORWARD:
 		case GTK.GTK_DIR_TAB_BACKWARD:
-			Control control = display.getFocusControl ();
+			NativeControl control = display.getNativeFocusControl ();
 			if (control != null) {
 				if ((control.state & CANVAS) != 0 && (control.style & SWT.EMBEDDED) != 0 && control.getShell () == this) {
 					int traversal = directionType == GTK.GTK_DIR_TAB_FORWARD ? SWT.TRAVERSE_TAB_NEXT : SWT.TRAVERSE_TAB_PREVIOUS;
@@ -1680,7 +1657,7 @@ long gtk_map (long widget) {
 
 @Override
 long gtk_move_focus (long widget, long directionType) {
-	Control control = display.getFocusControl ();
+	NativeControl control = display.getNativeFocusControl ();
 	if (control != null) {
 		long focusHandle = control.focusHandle ();
 		GTK.gtk_widget_child_focus (focusHandle, (int)directionType);
@@ -1794,7 +1771,7 @@ long gtk_key_press_event (long widget, long event) {
 		if ((state & DISABLED) != 0) return 1;
 
 		if (menuBar != null && !menuBar.isDisposed ()) {
-			Control focusControl = display.getFocusControl ();
+			NativeControl focusControl = display.getNativeFocusControl ();
 			if (focusControl != null && (focusControl.hooks (SWT.KeyDown) || focusControl.filters (SWT.KeyDown))) {
 				long [] accel = new long [1];
 				long setting = GTK.gtk_settings_get_default ();
@@ -2037,13 +2014,13 @@ long notifyState (long object, long arg0) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Control#moveAbove
- * @see Control#setFocus
- * @see Control#setVisible
+ * @see NativeControl#moveAbove
+ * @see NativeControl#setFocus
+ * @see NativeControl#setVisible
  * @see Display#getActiveShell
- * @see Decorations#setDefaultButton(Button)
- * @see Shell#setActive
- * @see Shell#forceActive
+ * @see NativeDecorations#setDefaultButton(Button)
+ * @see NativeShell#setActive
+ * @see NativeShell#forceActive
  */
 public void open () {
 	checkWidget ();
@@ -2062,7 +2039,7 @@ public void open () {
 	}
 	if (restored) {
 		Control focusControl = display.getFocusControl ();
-		if (focusControl instanceof Button && (focusControl.style & SWT.PUSH) != 0) {
+		if (focusControl instanceof Button && (focusControl.getStyle() & SWT.PUSH) != 0) {
 			restored = false;
 		}
 	}
@@ -2139,7 +2116,7 @@ public void removeShellListener (ShellListener listener) {
 	eventTable.unhook (SWT.Deactivate, listener);
 }
 
-void removeTooTip (ToolTip toolTip) {
+void removeTooTip (NativeToolTip toolTip) {
 	if (toolTips == null) return;
 	for (int i=0; i<toolTips.length; i++) {
 		if (toolTips [i] == toolTip) {
@@ -2151,14 +2128,14 @@ void removeTooTip (ToolTip toolTip) {
 
 @Override
 void reskinChildren (int flags) {
-	Shell [] shells = getShells ();
+	NativeShell [] shells = getShells ();
 	for (int i=0; i<shells.length; i++) {
-		Shell shell = shells [i];
+		NativeShell shell = shells [i];
 		if (shell != null) shell.reskin (flags);
 	}
 	if (toolTips != null) {
 		for (int i=0; i<toolTips.length; i++) {
-			ToolTip toolTip = toolTips [i];
+			NativeToolTip toolTip = toolTips [i];
 			if (toolTip != null) toolTip.reskin (flags);
 		}
 	}
@@ -2178,24 +2155,24 @@ void reskinChildren (int flags) {
  * </ul>
  *
  * @since 2.0
- * @see Control#moveAbove
- * @see Control#setFocus
- * @see Control#setVisible
+ * @see NativeControl#moveAbove
+ * @see NativeControl#setFocus
+ * @see NativeControl#setVisible
  * @see Display#getActiveShell
- * @see Decorations#setDefaultButton(Button)
- * @see Shell#open
- * @see Shell#setActive
+ * @see NativeDecorations#setDefaultButton(Button)
+ * @see NativeShell#open
+ * @see NativeShell#setActive
  */
 public void setActive () {
 	checkWidget ();
 	bringToTop (false);
 }
 
-void setActiveControl (Control control) {
+void setActiveControl (NativeControl control) {
 	setActiveControl (control, SWT.None);
 }
 
-void setActiveControl (Control control, int type) {
+void setActiveControl (NativeControl control, int type) {
 	if (control != null && control.isDisposed ()) control = null;
 	if (lastActive != null && lastActive.isDisposed ()) lastActive = null;
 	if (lastActive == control) return;
@@ -2205,8 +2182,8 @@ void setActiveControl (Control control, int type) {
 	* deactivated by finding the first common parent
 	* control.
 	*/
-	Control [] activate = (control == null) ? new Control[0] : control.getPath ();
-	Control [] deactivate = (lastActive == null) ? new Control[0] : lastActive.getPath ();
+	NativeControl [] activate = (control == null) ? new NativeControl[0] : control.getPath ();
+	NativeControl [] deactivate = (lastActive == null) ? new NativeControl[0] : lastActive.getPath ();
 	lastActive = control;
 	int index = 0, length = Math.min (activate.length, deactivate.length);
 	while (index < length) {
@@ -2411,11 +2388,11 @@ public void setEnabled (boolean enabled) {
 	checkWidget();
 	if (((state & DISABLED) == 0) == enabled) return;
 	Display display = this.display;
-	Control control = null;
+	NativeControl control = null;
 	boolean fixFocus = false;
 	if (!enabled) {
 		if (display.focusEvent != SWT.FocusOut) {
-			control = display.getFocusControl ();
+			control = display.getNativeFocusControl ();
 			fixFocus = isFocusAncestor (control);
 		}
 	}
@@ -2586,7 +2563,7 @@ public void setMaximized (boolean maximized) {
 }
 
 @Override
-public void setMenuBar (Menu menu) {
+public void setMenuBar (NativeMenu menu) {
 	checkWidget();
 	if (menuBar == menu) return;
 	boolean both = menu != null && menuBar != null;
@@ -2990,7 +2967,7 @@ public void setVisible (boolean visible) {
 			Display display = this.display;
 			display.putGdkEvents();
 			boolean iconic = false;
-			Shell shell = parent != null ? parent.getShell() : null;
+			NativeShell shell = parent != null ? parent.getShell() : null;
 			do {
 				if (GTK.GTK4) {
 					OS.g_main_context_iteration (0, false);
@@ -3043,7 +3020,7 @@ public void setVisible (boolean visible) {
 }
 
 @Override
-void setZOrder (Control sibling, boolean above, boolean fixRelations) {
+void setZOrder (NativeControl sibling, boolean above, boolean fixRelations) {
 	/*
 	* Bug in GTK+.  Changing the toplevel window Z-order causes
 	* X to send a resize event.  Before the shell is mapped, these
@@ -3192,9 +3169,9 @@ void updateModal () {
 	long group = 0;
 	boolean isModalShell = false;
 	if (display.getModalDialog () == null) {
-		Shell modal = getModalShell ();
+		NativeShell modal = getModalShell ();
 		int mask = SWT.PRIMARY_MODAL | SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL;
-		Composite shell = null;
+		NativeComposite shell = null;
 		if (modal == null) {
 			if ((style & mask) != 0) {
 				shell = this;
@@ -3212,7 +3189,7 @@ void updateModal () {
 		} else {
 			shell = modal;
 		}
-		Composite topModalShell = shell;
+		NativeComposite topModalShell = shell;
 		while (shell != null) {
 			if ((shell.style & mask) == 0) {
 				group = shell.getShell ().group;
@@ -3252,12 +3229,12 @@ void updateModal () {
 }
 
 void updateMinimized (boolean minimized) {
-	Shell[] shells = getShells ();
+	NativeShell[] shells = getShells ();
 	for (int i = 0; i < shells.length; i++) {
 		boolean update = false;
-		Shell shell = shells[i];
+		NativeShell shell = shells[i];
 		while (shell != null && shell != this && !shell.isUndecorated ()) {
-			shell = (Shell) shell.getParent ();
+			shell = Widget.checkNative((Shell) shell.getParent ());
 		}
 		if (shell != null && shell != this) update = true;
 		if (update) {
@@ -3279,13 +3256,13 @@ void updateMinimized (boolean minimized) {
 @Override
 void deregister () {
 	super.deregister ();
-	Widget disposed = display.removeWidget (shellHandle);
-	if(shellHandle != 0 && !(disposed instanceof Shell)) {
+	NativeWidget disposed = display.removeWidget (shellHandle);
+	if(shellHandle != 0 && !(disposed instanceof NativeShell)) {
 		SWT.error(SWT.ERROR_INVALID_RETURN_VALUE, null, ". Wrong widgetTable entry: " + disposed + " removed for shell: " + this + display.dumpWidgetTableInfo());
 	}
 	if(Display.strictChecks) {
-		Shell[] shells = display.getShells();
-		for (Shell shell : shells) {
+		NativeShell[] shells = display.getNativeShells();
+		for (NativeShell shell : shells) {
 			if(shell == this) {
 				SWT.error(SWT.ERROR_INVALID_RETURN_VALUE, null, ". Disposed shell still in the widgetTable: " + this + display.dumpWidgetTableInfo());
 			}
@@ -3368,13 +3345,13 @@ public void dispose () {
  * </ul>
  *
  * @since 2.0
- * @see Control#moveAbove
- * @see Control#setFocus
- * @see Control#setVisible
+ * @see NativeControl#moveAbove
+ * @see NativeControl#setFocus
+ * @see NativeControl#setVisible
  * @see Display#getActiveShell
- * @see Decorations#setDefaultButton(Button)
- * @see Shell#open
- * @see Shell#setActive
+ * @see NativeDecorations#setDefaultButton(Button)
+ * @see NativeShell#open
+ * @see NativeShell#setActive
  */
 public void forceActive () {
 	checkWidget ();
@@ -3385,7 +3362,7 @@ public void forceActive () {
 Rectangle getBoundsInPixels () {
 	checkWidget ();
 	int [] x = new int [1], y = new int [1];
-	if ((state & Widget.DISPOSE_SENT) == 0) {
+	if ((state & NativeWidget.DISPOSE_SENT) == 0) {
 		if (GTK.GTK4) {
 			// TODO: GTK4 GtkWindow no longer has the ability to get position
 		} else {
@@ -3419,16 +3396,16 @@ void releaseHandle () {
 
 @Override
 void releaseChildren (boolean destroy) {
-	Shell [] shells = getShells ();
+	NativeShell [] shells = getShells ();
 	for (int i=0; i<shells.length; i++) {
-		Shell shell = shells [i];
+		NativeShell shell = shells [i];
 		if (shell != null && !shell.isDisposed ()) {
 			shell.release (false);
 		}
 	}
 	if (toolTips != null) {
 		for (int i=0; i<toolTips.length; i++) {
-			ToolTip toolTip = toolTips [i];
+			NativeToolTip toolTip = toolTips [i];
 			if (toolTip != null && !toolTip.isDisposed ()) {
 				toolTip.dispose ();
 			}
@@ -3479,5 +3456,8 @@ Point getSurfaceOrigin () {
 	}
 	return super.getSurfaceOrigin( );
 }
+
+@Override
+public abstract Shell getWrapper();
 
 }

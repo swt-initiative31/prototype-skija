@@ -25,6 +25,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Widget;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -360,7 +361,7 @@ public class KeyboardLayoutTest {
 	protected void ensureShellFocused() {
 		// Note that `Shell.isFocusControl()` still returns `true` even if a
 		// different app is focused
-		if (shell.handle != OS.GetForegroundWindow()) {
+		if (Widget.checkNative(shell).handle != OS.GetForegroundWindow()) {
 			fail("Test Shell lost focus (did you use keyboard/mouse while the test was running?)");
 		}
 	}

@@ -28,7 +28,7 @@ import org.eclipse.swt.widgets.*;
  * @since 3.2
  */
 
-public class GLCanvas extends Canvas {
+public abstract class NativeGLCanvas extends NativeCanvas {
 	long context;
 	int pixelFormat;
 	static final String USE_OWNDC_KEY = "org.eclipse.swt.internal.win32.useOwnDC"; //$NON-NLS-1$
@@ -45,7 +45,7 @@ public class GLCanvas extends Canvas {
  *     <li>ERROR_UNSUPPORTED_DEPTH when the requested attributes cannot be provided</li>
  * </ul>
  */
-public GLCanvas (Composite parent, int style, GLData data) {
+protected NativeGLCanvas (NativeComposite parent, int style, GLData data) {
 	super (parent, checkStyle (parent, style));
 	parent.getDisplay ().setData (USE_OWNDC_KEY, false);
 	if (data == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
@@ -93,7 +93,7 @@ public GLCanvas (Composite parent, int style, GLData data) {
 	}
 	OS.ReleaseDC (handle, hDC);
 	if (data.shareContext != null) {
-		WGL.wglShareLists (data.shareContext.context, context);
+		WGL.wglShareLists (data.shareContext.getWrappedWidget().context, context);
 	}
 
 	Listener listener = event -> {
@@ -106,7 +106,7 @@ public GLCanvas (Composite parent, int style, GLData data) {
 	addListener (SWT.Dispose, listener);
 }
 
-static int checkStyle(Composite parent, int style) {
+static int checkStyle(NativeComposite parent, int style) {
 	if (parent != null) {
 		parent.getDisplay ().setData (USE_OWNDC_KEY, true);
 	}
@@ -191,4 +191,8 @@ public void swapBuffers () {
 	WGL.SwapBuffers (hDC);
 	OS.ReleaseDC (handle, hDC);
 }
+
+@Override
+public abstract GLCanvas getWrapper();
+
 }

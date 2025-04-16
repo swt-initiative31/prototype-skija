@@ -81,27 +81,27 @@ import org.eclipse.swt.internal.gtk4.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see Slider
- * @see Scrollable
- * @see Scrollable#getHorizontalBar
- * @see Scrollable#getVerticalBar
+ * @see NativeSlider
+ * @see NativeScrollable
+ * @see NativeScrollable#getHorizontalBar
+ * @see NativeScrollable#getVerticalBar
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class ScrollBar extends Widget {
-	Scrollable parent;
+public abstract class NativeScrollBar extends NativeWidget {
+	NativeScrollable parent;
 	long adjustmentHandle;
 	int detail;
 	boolean dragSent;
 
-ScrollBar () {
+NativeScrollBar () {
 }
 
 /**
 * Creates a new instance of the widget.
 */
-ScrollBar (Scrollable parent, int style) {
+NativeScrollBar (NativeScrollable parent, int style) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	createWidget (0);
@@ -254,7 +254,7 @@ public int getPageIncrement () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Scrollable getParent () {
+public NativeScrollable getParent () {
 	checkWidget ();
 	return parent;
 }
@@ -311,7 +311,7 @@ Point getSizeInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see ScrollBar
+ * @see NativeScrollBar
  */
 public int getThumb () {
 	checkWidget ();
@@ -389,7 +389,7 @@ Rectangle getThumbBoundsInPixels() {
 /**
  * Returns a rectangle describing the size and location of the
  * receiver's thumb track relative to its parent. This rectangle
- * comprises the areas 2, 3, and 4 as described in {@link ScrollBar}.
+ * comprises the areas 2, 3, and 4 as described in {@link NativeScrollBar}.
  *
  * @return the thumb track bounds, relative to the {@link #getParent() parent}
  *
@@ -566,7 +566,7 @@ long gtk_value_changed (long range) {
 @Override
 long gtk_event_after (long widget, long gdkEvent) {
 	int eventType = GDK.gdk_event_get_event_type(gdkEvent);
-	eventType = Control.fixGdkEventTypeValues(eventType);
+	eventType = NativeControl.fixGdkEventTypeValues(eventType);
 	switch (eventType) {
 		case GDK.GDK_BUTTON_RELEASE: {
 			int [] eventButton = new int [1];
@@ -937,5 +937,8 @@ public void setVisible (boolean visible) {
 		parent.sendEvent (SWT.Resize);
 	}
 }
+
+@Override
+public abstract ScrollBar getWrapper();
 
 }

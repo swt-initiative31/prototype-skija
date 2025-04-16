@@ -63,7 +63,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @since 3.3
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class DateTime extends Composite {
+public abstract class NativeDateTime extends NativeComposite {
 	int day, month, year, hours, minutes, seconds;
 
 	/**
@@ -92,8 +92,8 @@ public class DateTime extends Composite {
 	Color fg, bg;
 	boolean hasFocus;
 	int savedYear, savedMonth, savedDay;
-	Shell popupShell;
-	DateTime popupCalendar;
+	NativeShell popupShell;
+	NativeDateTime popupCalendar;
 	Listener popupListener, popupFilter;
 
 	Point prefferedSize;
@@ -152,10 +152,10 @@ public class DateTime extends Composite {
  * @see SWT#MEDIUM
  * @see SWT#LONG
  * @see SWT#DROP_DOWN
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public DateTime (Composite parent, int style) {
+protected NativeDateTime (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 	if (isDate () || isTime ()) {
 		createText ();
@@ -256,7 +256,7 @@ public void addSelectionListener (SelectionListener listener) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -329,7 +329,7 @@ Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
 			Point textSize = computeMaxTextSize (wHint, hHint, changed);
 			Rectangle trim = computeTrimInPixels (0,0, textSize.x,textSize.y);
 			if (isDateWithDropDownButton ()){
-				Point buttonSize = down.computeSizeInPixels (SWT.DEFAULT, SWT.DEFAULT, changed);
+				Point buttonSize = DPIUtil.autoScaleUp (down.computeSize(SWT.DEFAULT, SWT.DEFAULT, changed));
 				width = trim.width + buttonSize.x;
 				height = Math.max (trim.height, buttonSize.y);
 			} else if (isDate () || isTime ()) {
@@ -492,27 +492,28 @@ private void createHandleForDateTime() {
 }
 
 void createDropDownButton () {
-	down = new Button (this, SWT.ARROW  | SWT.DOWN);
-	GTK.gtk_widget_set_can_focus (down.handle, false);
+	down = new Button (this.getWrapper(), SWT.ARROW  | SWT.DOWN);
+	// TODO Facade readd
+//	GTK.gtk_widget_set_can_focus (down.handle, false);
 	down.addListener (SWT.Selection, event -> {
 		setFocus ();
 		dropDownCalendar (!isDropped ());
 	});
 
 	popupListener = event -> {
-		if (event.widget == popupShell) {
+		if (event.widget == popupShell.getWrapper()) {
 			popupShellEvent (event);
 			return;
 		}
-		if (event.widget == popupCalendar) {
+		if (event.widget == popupCalendar.getWrapper()) {
 			popupCalendarEvent (event);
 			return;
 		}
-		if (event.widget == DateTime.this) {
+		if (event.widget == NativeDateTime.this.getWrapper()) {
 			onDispose (event);
 			return;
 		}
-		if (event.widget == getShell ()) {
+		if (event.widget == getShell ().getWrapper()) {
 			getDisplay ().asyncExec (() -> {
 				if (isDisposed ()) return;
 				handleFocus (SWT.FocusOut);
@@ -521,19 +522,19 @@ void createDropDownButton () {
 	};
 	popupFilter = event -> {
 		Shell shell = ((Control)event.widget).getShell ();
-		if (shell == DateTime.this.getShell ()) {
+		if (shell == NativeDateTime.this.getShell ().getWrapper()) {
 			handleFocus (SWT.FocusOut);
 		}
 	};
 }
 
 void createPopupShell (int year, int month, int day) {
-	popupShell = new Shell (getShell (), SWT.NO_TRIM | SWT.ON_TOP);
+	popupShell = new Shell (getShell ().getWrapper(), SWT.NO_TRIM | SWT.ON_TOP).getWrappedWidget();
 	int popupStyle = SWT.CALENDAR;
 	if (showWeekNumbers()) {
 		popupStyle |= SWT.CALENDAR_WEEKNUMBERS;
 	}
-	popupCalendar = new DateTime (popupShell, popupStyle);
+	popupCalendar = new DateTime (popupShell.getWrapper(), popupStyle).getWrappedWidget();
 	if (font != null) popupCalendar.setFont (font);
 	if (fg != null) popupCalendar.setForeground (fg);
 	if (bg != null) popupCalendar.setBackground (bg);
@@ -541,7 +542,7 @@ void createPopupShell (int year, int month, int day) {
 	mouseEventListener = event -> {
 		if (event.widget instanceof Control) {
 			Control c = (Control)event.widget;
-			if (c != down && c.getShell () != popupShell)
+			if (c != down && c.getShell () != popupShell.getWrapper())
 				dropDownCalendar (false);
 		}
 	};
@@ -585,7 +586,7 @@ void onDispose (Event event) {
 		popupCalendar.removeListener (SWT.Dispose, popupListener);
 		popupShell.dispose ();
 	}
-	Shell shell = getShell ();
+	NativeShell shell = getShell ();
 	shell.removeListener (SWT.Deactivate, popupListener);
 	Display display = getDisplay ();
 	display.removeFilter (SWT.FocusIn, popupFilter);
@@ -608,7 +609,7 @@ void dropDownCalendar (boolean drop) {
 
 	setCurrentDate ();
 
-	if (getShell () != popupShell.getParent ()) {
+	if (getShell ().getWrapper() != popupShell.getParent ()) {
 		recreateCalendar ();
 	}
 
@@ -991,7 +992,8 @@ final private void hookEventsForDateTimeSpinner () {
 }
 
 final private void hookEventsForMenu () {
-	OS.g_signal_connect_closure (down.handle, OS.selection_done, display.getClosure (SELECTION_DONE), true);
+	// TODO Facade readd
+//	OS.g_signal_connect_closure (down.handle, OS.selection_done, display.getClosure (SELECTION_DONE), true);
 }
 
 void incrementField(int amount) {
@@ -1135,7 +1137,7 @@ boolean isValidDate (int year, int month, int day) {
 void popupCalendarEvent (Event event) {
 	switch (event.type) {
 		case SWT.Dispose:
-			if (popupShell != null && !popupShell.isDisposed () && !isDisposed () && getShell () != popupShell.getParent ()) {
+			if (popupShell != null && !popupShell.isDisposed () && !isDisposed () && getShell ().getWrapper() != popupShell.getParent ()) {
 				int year = popupCalendar.getYear ();
 				int month = popupCalendar.getMonth ();
 				int day = popupCalendar.getDay ();
@@ -1251,7 +1253,7 @@ void handleFocus (int type) {
 			if (hasFocus) return;
 			selectAll ();
 			hasFocus = true;
-			Shell shell = getShell ();
+			NativeShell shell = getShell ();
 			shell.removeListener (SWT.Deactivate, popupListener);
 			shell.addListener (SWT.Deactivate, popupListener);
 			Display display = getDisplay ();
@@ -1262,10 +1264,9 @@ void handleFocus (int type) {
 		}
 		case SWT.FocusOut: {
 			if (!hasFocus) return;
-			Control focusControl = getDisplay ().getFocusControl ();
-			if (focusControl == down || focusControl == popupCalendar ) return;
+			if (getDisplay ().getFocusControl () == down || getDisplay ().getNativeFocusControl () == popupCalendar ) return;
 			hasFocus = false;
-			Shell shell = getShell ();
+			NativeShell shell = getShell ();
 			shell.removeListener (SWT.Deactivate, popupListener);
 			Display display = getDisplay ();
 			display.removeFilter (SWT.MouseDown, mouseEventListener);
@@ -1734,7 +1735,7 @@ void setBoundsInPixels (int x, int y, int width, int height) {
 		GTK.gtk_widget_get_preferred_size (sizingHandle, null, requisition);
 		int oldHeight = requisition.height; //Entry should not expand vertically. It is single liner.
 
-		int newWidth = width - (down.getSizeInPixels ().x + getGtkBorderPadding ().right);
+		int newWidth = width - (DPIUtil.autoScaleUp (down.getSize().x) + getGtkBorderPadding ().right);
 		GTK.gtk_widget_set_size_request (sizingHandle, (newWidth >= 0) ? newWidth : 0, oldHeight);
 	}
 
@@ -1748,7 +1749,7 @@ private void setDropDownButtonSize() {
 	Rectangle rect = getClientAreaInPixels();
 	int parentWidth = rect.width;
 	int parentHeight = rect.height;
-	Point buttonSize = down.computeSizeInPixels(SWT.DEFAULT, parentHeight);
+	Point buttonSize = DPIUtil.autoScaleUp (down.computeSize(SWT.DEFAULT, parentHeight));
 
 	int dateEntryHeight = computeNativeSize(GTK.GTK4 ? editableHandle : textEntryHandle, SWT.DEFAULT, SWT.DEFAULT, false).y;
 
@@ -1756,7 +1757,7 @@ private void setDropDownButtonSize() {
 	int newXpos = parentWidth - buttonSize.x - getGtkBorderPadding().left - getGtkBorderPadding().right;
 
 	int newYPos = parentHeight/2 - dateEntryHeight/2;
-	down.setBoundsInPixels (newXpos, newYPos, buttonSize.x, dateEntryHeight);
+	down.setBounds(DPIUtil.autoScaleUp (new Rectangle(newXpos, newYPos, buttonSize.x, dateEntryHeight)));
 }
 
 /**
@@ -2494,5 +2495,8 @@ private static int getCalendarField(Field field) {
 	}
 	return field.getCalendarField();
 }
+
+@Override
+public abstract DateTime getWrapper();
 
 }

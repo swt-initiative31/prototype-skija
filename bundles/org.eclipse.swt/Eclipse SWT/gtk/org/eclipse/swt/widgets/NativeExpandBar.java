@@ -38,7 +38,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see ExpandItem
+ * @see NativeExpandItem
  * @see ExpandEvent
  * @see ExpandListener
  * @see ExpandAdapter
@@ -49,9 +49,9 @@ import org.eclipse.swt.internal.gtk4.*;
  * @since 3.2
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class ExpandBar extends Composite {
-	ExpandItem [] items;
-	ExpandItem lastFocus;
+public abstract class NativeExpandBar extends NativeComposite {
+	NativeExpandItem [] items;
+	NativeExpandItem lastFocus;
 	int itemCount;
 	int spacing;
 
@@ -80,10 +80,10 @@ public class ExpandBar extends Composite {
  * </ul>
  *
  * @see SWT#V_SCROLL
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public ExpandBar (Composite parent, int style) {
+protected NativeExpandBar (NativeComposite parent, int style) {
 	super (parent, style);
 }
 
@@ -111,7 +111,7 @@ public void addExpandListener (ExpandListener listener) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -173,10 +173,10 @@ void createHandle (int index) {
 	setFontDescription(defaultFont().handle);
 }
 
-void createItem (ExpandItem item, int style, int index) {
+void createItem (NativeExpandItem item, int style, int index) {
 	if (!(0 <= index && index <= itemCount)) error (SWT.ERROR_INVALID_RANGE);
 	if (itemCount == items.length) {
-		ExpandItem [] newItems = new ExpandItem [itemCount + 4];
+		NativeExpandItem [] newItems = new NativeExpandItem [itemCount + 4];
 		System.arraycopy (items, 0, newItems, 0, items.length);
 		items = newItems;
 	}
@@ -190,10 +190,10 @@ void createItem (ExpandItem item, int style, int index) {
 @Override
 void createWidget (int index) {
 	super.createWidget (index);
-	items = new ExpandItem [4];
+	items = new NativeExpandItem [4];
 }
 
-void destroyItem (ExpandItem item) {
+void destroyItem (NativeExpandItem item) {
 	int index = 0;
 	while (index < itemCount) {
 		if (items [index] == item) break;
@@ -214,7 +214,7 @@ long eventHandle () {
 boolean forceFocus (long focusHandle) {
 	if (lastFocus != null && lastFocus.setFocus ()) return true;
 	for (int i = 0; i < itemCount; i++) {
-		ExpandItem item = items [i];
+		NativeExpandItem item = items [i];
 		if (item.setFocus ()) return true;
 	}
 	return super.forceFocus (focusHandle);
@@ -223,7 +223,7 @@ boolean forceFocus (long focusHandle) {
 @Override
 boolean hasFocus () {
 	for (int i=0; i<itemCount; i++) {
-		ExpandItem item = items [i];
+		NativeExpandItem item = items [i];
 		if (item.hasFocus ()) return true;
 	}
 	return super.hasFocus();
@@ -253,7 +253,7 @@ void hookEvents() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public ExpandItem getItem (int index) {
+public NativeExpandItem getItem (int index) {
 	checkWidget();
 	if (!(0 <= index && index < itemCount)) error (SWT.ERROR_INVALID_RANGE);
 	return items [index];
@@ -290,9 +290,9 @@ public int getItemCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public ExpandItem [] getItems () {
+public NativeExpandItem [] getItems () {
 	checkWidget ();
-	ExpandItem [] result = new ExpandItem [itemCount];
+	NativeExpandItem [] result = new NativeExpandItem [itemCount];
 	System.arraycopy (items, 0, result, 0, itemCount);
 	return result;
 }
@@ -340,7 +340,7 @@ long gtk_key_press_event (long widget, long event) {
 	}
 	int start = index, offset = next ? 1 : -1;
 	while ((index = (index + offset + itemCount) % itemCount) != start) {
-		ExpandItem item = items [index];
+		NativeExpandItem item = items [index];
 		if (item.setFocus ()) return result;
 	}
 	return result;
@@ -364,7 +364,7 @@ long gtk_key_press_event (long widget, long event) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public int indexOf (ExpandItem item) {
+public int indexOf (NativeExpandItem item) {
 	checkWidget();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	for (int i = 0; i < itemCount; i++) {
@@ -375,7 +375,7 @@ public int indexOf (ExpandItem item) {
 
 void layoutItems() {
 	for (int i = 0; i < itemCount; i++) {
-		ExpandItem item = items [i];
+		NativeExpandItem item = items [i];
 		if (item != null) item.resizeControl();
 	}
 }
@@ -395,7 +395,7 @@ long parentingHandle () {
 @Override
 void releaseChildren (boolean destroy) {
 	for (int i = 0; i < itemCount; i++) {
-		ExpandItem item = items [i];
+		NativeExpandItem item = items [i];
 		if (item != null && !item.isDisposed ()) {
 			item.release (false);
 		}
@@ -432,7 +432,7 @@ public void removeExpandListener (ExpandListener listener) {
 void reskinChildren (int flags) {
 	if (items != null) {
 		for (int i=0; i<items.length; i++) {
-			ExpandItem item = items [i];
+			NativeExpandItem item = items [i];
 			if (item != null ) item.reskin (flags);
 		}
 	}
@@ -498,7 +498,11 @@ void setSpacingInPixels (int spacing) {
 }
 
 @Override
-void updateScrollBarValue (ScrollBar bar) {
+void updateScrollBarValue (NativeScrollBar bar) {
 	layoutItems();
 }
+
+@Override
+public abstract ExpandBar getWrapper();
+
 }

@@ -101,8 +101,7 @@ import org.eclipse.swt.widgets.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class DragSource extends Widget {
-
+public abstract class NativeDragSource extends NativeWidget {
 	// TODO: These should either move out of Display or be accessible to this class.
 	static byte[] types = {'*','\0'};
 	static int size = C.PTR_SIZEOF, align = C.PTR_SIZEOF == 4 ? 2 : 3;
@@ -117,7 +116,7 @@ public class DragSource extends Widget {
 	static {
 		String className = "SWTDragSourceDelegate";
 
-		Class<?> clazz = DragSource.class;
+		Class<?> clazz = NativeDragSource.class;
 
 		dragSource2Args = new Callback(clazz, "dragSourceProc", 2);
 		proc2 = dragSource2Args.getAddress();
@@ -187,33 +186,33 @@ public class DragSource extends Widget {
  * <p>NOTE: ERROR_CANNOT_INIT_DRAG should be an SWTException, since it is a
  * recoverable error, but can not be changed due to backward compatibility.</p>
  *
- * @see Widget#dispose
- * @see DragSource#checkSubclass
+ * @see NativeWidget#dispose
+ * @see NativeDragSource#checkSubclass
  * @see DND#DROP_NONE
  * @see DND#DROP_COPY
  * @see DND#DROP_MOVE
  * @see DND#DROP_LINK
  */
-public DragSource(Control control, int style) {
-	super (control, checkStyle(style));
+protected NativeDragSource(Control control, int style) {
+	super(Widget.checkNative(control), checkStyle(style));
 	this.control = control;
 	if (control.getData(DND.DRAG_SOURCE_KEY) != null) {
 		DND.error(DND.ERROR_CANNOT_INIT_DRAG);
 	}
-	control.setData(DND.DRAG_SOURCE_KEY, this);
+	control.setData(DND.DRAG_SOURCE_KEY, this.getWrapper());
 
 	controlListener = event -> {
 		if (event.type == SWT.Dispose) {
-			if (!DragSource.this.isDisposed()) {
-				DragSource.this.dispose();
+			if (!NativeDragSource.this.isDisposed()) {
+				NativeDragSource.this.dispose();
 			}
 		}
 		if (event.type == SWT.DragDetect) {
-			if (!DragSource.this.isDisposed()) {
+			if (!NativeDragSource.this.isDisposed()) {
 				if (event.widget instanceof Table || event.widget instanceof Tree) {
-					DragSource.this.dragOutlineViewStart(event);
+					NativeDragSource.this.dragOutlineViewStart(event);
 				} else {
-					DragSource.this.drag(event);
+					NativeDragSource.this.drag(event);
 				}
 			}
 		}
@@ -242,7 +241,7 @@ public DragSource(Control control, int style) {
 
 	// Tables and trees already implement dragging, so we need to override their drag methods instead of creating a dragging source.
 	if (control instanceof Tree || control instanceof Table) {
-		long cls = OS.object_getClass(control.view.id);
+		long cls = OS.object_getClass(Widget.checkNative(control).view.id);
 
 		if (cls == 0) {
 			DND.error(DND.ERROR_CANNOT_INIT_DRAG);
@@ -299,7 +298,7 @@ public DragSource(Control control, int style) {
 public void addDragListener(DragSourceListener listener) {
 	if (listener == null) DND.error (SWT.ERROR_NULL_ARGUMENT);
 	DNDListener typedListener = new DNDListener (listener);
-	typedListener.dndWidget = this;
+	typedListener.dndWidget = this.getWrapper();
 	addListener (DND.DragStart, typedListener);
 	addListener (DND.DragSetData, typedListener);
 	addListener (DND.DragEnd, typedListener);
@@ -327,10 +326,10 @@ long dndCallSuperObject(long id, long sel, long arg0, long arg1, long arg2, long
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	String name = getClass().getName ();
-	String validName = DragSource.class.getName();
-	if (!validName.equals(name)) {
+	String validName = NativeDragSource.class.getPackageName();
+	if (!name.startsWith(validName)) {
 		DND.error (SWT.ERROR_INVALID_SUBCLASS);
 	}
 }
@@ -348,7 +347,7 @@ void drag(Event dragDetectEvent) {
 	// Start the drag here from the Control's view.
 	NSEvent currEvent = NSApplication.sharedApplication().currentEvent();
 	NSPoint pt = currEvent.locationInWindow();
-	NSPoint viewPt = control.view.convertPoint_fromView_(pt, null);
+	NSPoint viewPt = Widget.checkNative(control).view.convertPoint_fromView_(pt, null);
 
 	// Get the image for the drag. The drag should happen from the middle of the image.
 	NSImage dragImage = null;
@@ -380,7 +379,7 @@ void drag(Event dragDetectEvent) {
 		NSSize imageSize = dragImage.size();
 		viewPt.x -= event.offsetX;
 
-		if (control.view.isFlipped())
+		if (Widget.checkNative(control).view.isFlipped())
 			viewPt.y += imageSize.height - event.offsetY;
 		else
 			viewPt.y -= event.offsetY;
@@ -388,7 +387,7 @@ void drag(Event dragDetectEvent) {
 		// The third argument to dragImage is ignored as of 10.4.
 		NSSize ignored = new NSSize();
 
-		control.view.dragImage(dragImage, viewPt, ignored, NSApplication.sharedApplication().currentEvent(), NSPasteboard.pasteboardWithName(OS.NSDragPboard), dragSourceDelegate, true);
+		Widget.checkNative(control).view.dragImage(dragImage, viewPt, ignored, NSApplication.sharedApplication().currentEvent(), NSPasteboard.pasteboardWithName(OS.NSDragPboard), dragSourceDelegate, true);
 
 	} finally {
 		if (defaultDragImage != null) defaultDragImage.dispose();
@@ -436,7 +435,7 @@ void draggedImage_endedAt_operation(long id, long sel, long arg0, NSPoint arg1, 
 	OS.objc_msgSend(id, OS.sel_retain);
 	try {
 		Event event = new DNDEvent();
-		event.widget = this;
+		event.widget = this.getWrapper();
 		event.time = (int)System.currentTimeMillis();
 		event.doit = swtOperation != DND.DROP_NONE;
 		event.detail = swtOperation;
@@ -474,14 +473,14 @@ long draggingSourceOperationMaskForLocal(long id, long sel, long arg0) {
 static long dragSourceProc(long id, long sel) {
 	Display display = Display.findDisplay(Thread.currentThread());
 	if (display == null || display.isDisposed()) return 0;
-	Widget widget = display.findWidget(id);
+	NativeWidget widget = display.findWidget(id);
 	if (widget == null) return 0;
-	DragSource ds = null;
+	NativeDragSource ds = null;
 
-	if (widget instanceof DragSource) {
-		ds = (DragSource)widget;
+	if (widget instanceof NativeDragSource) {
+		ds = (NativeDragSource)widget;
 	} else {
-		ds = (DragSource)widget.getData(DND.DRAG_SOURCE_KEY);
+		ds = ((DragSource)widget.getData(DND.DRAG_SOURCE_KEY)).getWrappedWidget();
 	}
 
 	if (ds == null) return 0;
@@ -496,14 +495,14 @@ static long dragSourceProc(long id, long sel) {
 static long dragSourceProc(long id, long sel, long arg0) {
 	Display display = Display.findDisplay(Thread.currentThread());
 	if (display == null || display.isDisposed()) return 0;
-	Widget widget = display.findWidget(id);
+	NativeWidget widget = display.findWidget(id);
 	if (widget == null) return 0;
-	DragSource ds = null;
+	NativeDragSource ds = null;
 
-	if (widget instanceof DragSource) {
-		ds = (DragSource)widget;
+	if (widget instanceof NativeDragSource) {
+		ds = (NativeDragSource)widget;
 	} else {
-		ds = (DragSource)widget.getData(DND.DRAG_SOURCE_KEY);
+		ds = ((DragSource)widget.getData(DND.DRAG_SOURCE_KEY)).getWrappedWidget();
 	}
 
 	if (ds == null) return 0;
@@ -518,14 +517,14 @@ static long dragSourceProc(long id, long sel, long arg0) {
 static long dragSourceProc(long id, long sel, long arg0, long arg1) {
 	Display display = Display.findDisplay(Thread.currentThread());
 	if (display == null || display.isDisposed()) return 0;
-	Widget widget = display.findWidget(id);
+	NativeWidget widget = display.findWidget(id);
 	if (widget == null) return 0;
-	DragSource ds = null;
+	NativeDragSource ds = null;
 
-	if (widget instanceof DragSource) {
-		ds = (DragSource)widget;
+	if (widget instanceof NativeDragSource) {
+		ds = (NativeDragSource)widget;
 	} else {
-		ds = (DragSource)widget.getData(DND.DRAG_SOURCE_KEY);
+		ds = ((DragSource)widget.getData(DND.DRAG_SOURCE_KEY)).getWrappedWidget();
 	}
 
 	if (ds == null) return 0;
@@ -542,14 +541,14 @@ static long dragSourceProc(long id, long sel, long arg0, long arg1) {
 static long dragSourceProc(long id, long sel, long arg0, long arg1, long arg2) {
 	Display display = Display.findDisplay(Thread.currentThread());
 	if (display == null || display.isDisposed()) return 0;
-	Widget widget = display.findWidget(id);
+	NativeWidget widget = display.findWidget(id);
 	if (widget == null) return 0;
-	DragSource ds = null;
+	NativeDragSource ds = null;
 
-	if (widget instanceof DragSource) {
-		ds = (DragSource)widget;
+	if (widget instanceof NativeDragSource) {
+		ds = (NativeDragSource)widget;
 	} else {
-		ds = (DragSource)widget.getData(DND.DRAG_SOURCE_KEY);
+		ds = ((DragSource)widget.getData(DND.DRAG_SOURCE_KEY)).getWrappedWidget();
 	}
 
 	if (ds == null) return 0;
@@ -566,14 +565,14 @@ static long dragSourceProc(long id, long sel, long arg0, long arg1, long arg2) {
 static long dragSourceProc(long id, long sel, long arg0, long arg1, long arg2, long arg3) {
 	Display display = Display.findDisplay(Thread.currentThread());
 	if (display == null || display.isDisposed()) return 0;
-	Widget widget = display.findWidget(id);
+	NativeWidget widget = display.findWidget(id);
 	if (widget == null) return 0;
-	DragSource ds = null;
+	NativeDragSource ds = null;
 
-	if (widget instanceof DragSource) {
-		ds = (DragSource)widget;
+	if (widget instanceof NativeDragSource) {
+		ds = (NativeDragSource)widget;
 	} else {
-		ds = (DragSource)widget.getData(DND.DRAG_SOURCE_KEY);
+		ds = ((DragSource)widget.getData(DND.DRAG_SOURCE_KEY)).getWrappedWidget();
 	}
 
 	if (ds == null) return 0;
@@ -713,7 +712,7 @@ void pasteboard_provideDataForType(long id, long sel, long arg0, long arg1) {
 	TransferData transferData = new TransferData();
 	transferData.type = Transfer.registerType(dataType.getString());
 	DNDEvent event = new DNDEvent();
-	event.widget = this;
+	event.widget = this.getWrapper();
 	event.time = (int)System.currentTimeMillis();
 	event.dataType = transferData;
 	notifyListeners(DND.DragSetData, event);
@@ -811,7 +810,7 @@ boolean canBeginDrag() {
 
 DNDEvent startDrag(Event dragEvent) {
 	DNDEvent event = new DNDEvent();
-	event.widget = this;
+	event.widget = this.getWrapper();
 	event.x = dragEvent.x;
 	event.y = dragEvent.y;
 	event.time = dragEvent.time;
@@ -839,4 +838,8 @@ DNDEvent startDrag(Event dragEvent) {
 
 	return event;
 }
+
+@Override
+public abstract DragSource getWrapper();
+
 }

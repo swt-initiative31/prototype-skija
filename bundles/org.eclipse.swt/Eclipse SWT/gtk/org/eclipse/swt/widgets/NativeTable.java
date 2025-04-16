@@ -74,15 +74,15 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Table extends Composite {
+public abstract class NativeTable extends NativeComposite {
 	long modelHandle, checkRenderer;
 	int itemCount, columnCount, lastIndexOf, sortDirection;
 	int selectionCountOnPress,selectionCountOnRelease;
 	long ignoreCell;
-	TableItem [] items;
-	TableColumn [] columns;
-	TableItem currentItem;
-	TableColumn sortColumn;
+	NativeTableItem [] items;
+	NativeTableColumn [] columns;
+	NativeTableItem currentItem;
+	NativeTableColumn sortColumn;
 	ImageList imageList, headerImageList;
 	boolean firstCustomDraw;
 	/** True iff computeSize has never been called on this Table */
@@ -146,10 +146,10 @@ public class Table extends Composite {
  * @see SWT#HIDE_SELECTION
  * @see SWT#VIRTUAL
  * @see SWT#NO_SCROLL
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Table (Composite parent, int style) {
+protected NativeTable (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
@@ -168,10 +168,10 @@ void _addListener (int eventType, Listener listener) {
 	}
 }
 
-TableItem _getItem (int index) {
+NativeTableItem _getItem (int index) {
 	if ((style & SWT.VIRTUAL) == 0) return items [index];
 	if (items [index] != null) return items [index];
-	return items [index] = new TableItem (this, SWT.NONE, index, false);
+	return items [index] = new TableItem (this.getWrapper(), SWT.NONE, index, false).getWrappedWidget();
 }
 
 static int checkStyle (int style) {
@@ -198,7 +198,7 @@ long cellDataProc (long tree_column, long cell, long tree_model, long iter, long
 	long path = GTK.gtk_tree_model_get_path (tree_model, iter);
 	int [] index = new int [1];
 	C.memmove (index, GTK.gtk_tree_path_get_indices (path), 4);
-	TableItem item = _getItem (index[0]);
+	NativeTableItem item = _getItem (index[0]);
 	GTK.gtk_tree_path_free (path);
 	if (item != null) OS.g_object_set_qdata (cell, Display.SWT_OBJECT_INDEX2, item.handle);
 	boolean isPixbuf = GTK.GTK_IS_CELL_RENDERER_PIXBUF (cell);
@@ -210,10 +210,10 @@ long cellDataProc (long tree_column, long cell, long tree_model, long iter, long
 	int modelIndex = -1;
 	boolean customDraw = false;
 	if (columnCount == 0) {
-		modelIndex = Table.FIRST_COLUMN;
+		modelIndex = NativeTable.FIRST_COLUMN;
 		customDraw = firstCustomDraw;
 	} else {
-		TableColumn column = (TableColumn) display.getWidget (tree_column);
+		NativeTableColumn column = (NativeTableColumn) display.getWidget (tree_column);
 		if (column != null) {
 			modelIndex = column.modelIndex;
 			customDraw = column.customDraw;
@@ -274,12 +274,12 @@ long cellDataProc (long tree_column, long cell, long tree_model, long iter, long
 	return 0;
 }
 
-boolean checkData (TableItem item) {
+boolean checkData (NativeTableItem item) {
 	if (item.cached) return true;
 	if ((style & SWT.VIRTUAL) != 0) {
 		item.cached = true;
 		Event event = new Event ();
-		event.item = item;
+		event.item = item.getWrapper();
 		event.index = indexOf (item);
 		int mask = OS.G_SIGNAL_MATCH_DATA | OS.G_SIGNAL_MATCH_ID;
 		int signal_id = OS.g_signal_lookup (OS.row_changed, GTK.gtk_tree_model_get_type ());
@@ -298,7 +298,7 @@ boolean checkData (TableItem item) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -383,7 +383,7 @@ public void clear (int index) {
 	if (!(0 <= index && index < itemCount)) {
 		error(SWT.ERROR_INVALID_RANGE);
 	}
-	TableItem item = items [index];
+	NativeTableItem item = items [index];
 	if (item != null) item.clear ();
 }
 
@@ -420,7 +420,7 @@ public void clear (int start, int end) {
 		clearAll();
 	} else {
 		for (int i=start; i<=end; i++) {
-			TableItem item = items [i];
+			NativeTableItem item = items [i];
 			if (item != null) item.clear();
 		}
 	}
@@ -458,7 +458,7 @@ public void clear (int [] indices) {
 		}
 	}
 	for (int i=0; i<indices.length; i++) {
-		TableItem item = items [indices [i]];
+		NativeTableItem item = items [indices [i]];
 		if (item != null) item.clear();
 	}
 }
@@ -482,7 +482,7 @@ public void clear (int [] indices) {
 public void clearAll () {
 	checkWidget ();
 	for (int i=0; i<itemCount; i++) {
-		TableItem item = items [i];
+		NativeTableItem item = items [i];
 		if (item != null) item.clear();
 	}
 }
@@ -499,7 +499,7 @@ Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
 	 */
 	if (firstCompute) {
 		for (int x = 0; x < columns.length; x++) {
-			TableColumn column = columns[x];
+			NativeTableColumn column = columns[x];
 			if (column != null) GTK.gtk_widget_set_visible(column.buttonHandle, true);
 		}
 		firstCompute = false;
@@ -550,7 +550,7 @@ void copyModel(long oldModel, int oldStart, long newModel, int newStart, int mod
 		if (newIterator == 0) error (SWT.ERROR_NO_HANDLES);
 		GTK.gtk_list_store_append (newModel, newIterator);
 
-		TableItem item = items [i];
+		NativeTableItem item = items [i];
 		if (item == null) {
 			/*
 			 * In `SWT.VIRTUAL` mode, `items[]` is not populated, and
@@ -585,7 +585,7 @@ void copyModel(long oldModel, int oldStart, long newModel, int newStart, int mod
 	OS.g_free (value);
 }
 
-void createColumn (TableColumn column, int index) {
+void createColumn (NativeTableColumn column, int index) {
 	int modelIndex = FIRST_COLUMN;
 	if (columnCount != 0) {
 		int modelLength = GTK.gtk_tree_model_get_n_columns (modelHandle);
@@ -622,7 +622,7 @@ void createColumn (TableColumn column, int index) {
 	long columnHandle = GTK.gtk_tree_view_column_new ();
 	if (columnHandle == 0) error (SWT.ERROR_NO_HANDLES);
 	if (index == 0 && columnCount > 0) {
-		TableColumn checkColumn = columns [0];
+		NativeTableColumn checkColumn = columns [0];
 		createRenderers (checkColumn.handle, checkColumn.modelIndex, false, checkColumn.style);
 	}
 	createRenderers (columnHandle, modelIndex, index == 0, column == null ? 0 : column.style);
@@ -710,7 +710,7 @@ void createHandle (int index) {
 	}
 }
 
-void createItem (TableColumn column, int index) {
+void createItem (NativeTableColumn column, int index) {
 	if (!(0 <= index && index <= columnCount)) error (SWT.ERROR_INVALID_RANGE);
 	if (columnCount == 0) {
 		column.handle = GTK.gtk_tree_view_get_column (handle, 0);
@@ -752,7 +752,7 @@ void createItem (TableColumn column, int index) {
 	GTK.gtk_widget_set_focus_on_click(column.buttonHandle, false);
 
 	if (columnCount == columns.length) {
-		TableColumn [] newColumns = new TableColumn [columns.length + 4];
+		NativeTableColumn [] newColumns = new NativeTableColumn [columns.length + 4];
 		System.arraycopy (columns, 0, newColumns, 0, columns.length);
 		columns = newColumns;
 	}
@@ -765,7 +765,7 @@ void createItem (TableColumn column, int index) {
 	}
 	if (columnCount >= 1) {
 		for (int i=0; i<itemCount; i++) {
-			TableItem item = items [i];
+			NativeTableItem item = items [i];
 			if (item != null) {
 				// Bug 545139: For consistency, do not wipe out content of first TableColumn created after TableItem
 				boolean doNotModify;
@@ -803,11 +803,11 @@ void createItem (TableColumn column, int index) {
 	}
 }
 
-void createItem (TableItem item, int index) {
+void createItem (NativeTableItem item, int index) {
 	if (!(0 <= index && index <= itemCount)) error (SWT.ERROR_INVALID_RANGE);
 	if (itemCount == items.length) {
 		int length = drawCount <= 0 ? items.length + 4 : Math.max (4, items.length * 3 / 2);
-		TableItem [] newItems = new TableItem [length];
+		NativeTableItem [] newItems = new NativeTableItem [length];
 		System.arraycopy (items, 0, newItems, 0, items.length);
 		items = newItems;
 	}
@@ -918,8 +918,8 @@ void createRenderers (long columnHandle, int modelIndex, boolean check, int colu
 @Override
 void createWidget (int index) {
 	super.createWidget (index);
-	items = new TableItem [4];
-	columns = new TableColumn [4];
+	items = new NativeTableItem [4];
+	columns = new NativeTableColumn [4];
 	itemCount = columnCount = 0;
 	// In GTK 3 font description is inherited from parent widget which is not how SWT has always worked,
 	// reset to default font to get the usual behavior
@@ -1045,7 +1045,7 @@ public void deselectAll () {
 	if (fixColumn) hideFirstColumn ();
 }
 
-void destroyItem (TableColumn column) {
+void destroyItem (NativeTableColumn column) {
 	int index = 0;
 	while (index < columnCount) {
 		if (columns [index] == column) break;
@@ -1079,7 +1079,7 @@ void destroyItem (TableColumn column) {
 		createColumn (null, 0);
 	} else {
 		for (int i=0; i<itemCount; i++) {
-			TableItem item = items [i];
+			NativeTableItem item = items [i];
 			if (item != null) {
 				long iter = item.handle;
 				int modelIndex = column.modelIndex;
@@ -1103,7 +1103,7 @@ void destroyItem (TableColumn column) {
 			}
 		}
 		if (index == 0) {
-			TableColumn checkColumn = columns [0];
+			NativeTableColumn checkColumn = columns [0];
 			createRenderers (checkColumn.handle, checkColumn.modelIndex, true, checkColumn.style);
 		}
 	}
@@ -1116,7 +1116,7 @@ void destroyItem (TableColumn column) {
 	}
 }
 
-void destroyItem (TableItem item) {
+void destroyItem (NativeTableItem item) {
 	int index = 0;
 	while (index < itemCount) {
 		if (items [index] == item) break;
@@ -1250,13 +1250,13 @@ int getClientWidth () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#getColumnOrder()
- * @see Table#setColumnOrder(int[])
- * @see TableColumn#getMoveable()
- * @see TableColumn#setMoveable(boolean)
+ * @see NativeTable#getColumnOrder()
+ * @see NativeTable#setColumnOrder(int[])
+ * @see NativeTableColumn#getMoveable()
+ * @see NativeTableColumn#setMoveable(boolean)
  * @see SWT#Move
  */
-public TableColumn getColumn (int index) {
+public NativeTableColumn getColumn (int index) {
 	checkWidget();
 	if (!(0 <= index && index < columnCount)) error (SWT.ERROR_INVALID_RANGE);
 	return columns [index];
@@ -1322,9 +1322,9 @@ long [] getColumnTypes (int columnCount) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#setColumnOrder(int[])
- * @see TableColumn#getMoveable()
- * @see TableColumn#setMoveable(boolean)
+ * @see NativeTable#setColumnOrder(int[])
+ * @see NativeTableColumn#getMoveable()
+ * @see NativeTableColumn#setMoveable(boolean)
  * @see SWT#Move
  *
  * @since 3.1
@@ -1374,15 +1374,15 @@ public int [] getColumnOrder () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#getColumnOrder()
- * @see Table#setColumnOrder(int[])
- * @see TableColumn#getMoveable()
- * @see TableColumn#setMoveable(boolean)
+ * @see NativeTable#getColumnOrder()
+ * @see NativeTable#setColumnOrder(int[])
+ * @see NativeTableColumn#getMoveable()
+ * @see NativeTableColumn#setMoveable(boolean)
  * @see SWT#Move
  */
-public TableColumn [] getColumns () {
+public NativeTableColumn [] getColumns () {
 	checkWidget();
-	TableColumn [] result = new TableColumn [columnCount];
+	NativeTableColumn [] result = new NativeTableColumn [columnCount];
 	System.arraycopy (columns, 0, result, 0, columnCount);
 	return result;
 }
@@ -1407,11 +1407,11 @@ GdkRGBA getContextColorGdkRGBA () {
 	}
 }
 
-TableItem getFocusItem () {
+NativeTableItem getFocusItem () {
 	long [] path = new long [1];
 	GTK.gtk_tree_view_get_cursor (handle, path, null);
 	if (path [0] == 0) return null;
-	TableItem item = null;
+	NativeTableItem item = null;
 	long indices = GTK.gtk_tree_path_get_indices (path [0]);
 	if (indices != 0) {
 		int [] index = new int []{-1};
@@ -1568,7 +1568,7 @@ public boolean getHeaderVisible () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TableItem getItem (int index) {
+public NativeTableItem getItem (int index) {
 	checkWidget();
 	if (!(0 <= index && index < itemCount)) error (SWT.ERROR_INVALID_RANGE);
 	return _getItem (index);
@@ -1597,12 +1597,12 @@ public TableItem getItem (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TableItem getItem (Point point) {
+public NativeTableItem getItem (Point point) {
 	checkWidget();
 	return getItemInPixels(DPIUtil.autoScaleUp(point));
 }
 
-TableItem getItemInPixels (Point point) {
+NativeTableItem getItemInPixels (Point point) {
 	checkWidget();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
 	long [] path = new long [1];
@@ -1619,7 +1619,7 @@ TableItem getItemInPixels (Point point) {
 	if (!GTK.gtk_tree_view_get_path_at_pos (handle, point.x, y, path, null, null, null)) return null;
 	if (path [0] == 0) return null;
 	long indices = GTK.gtk_tree_path_get_indices (path [0]);
-	TableItem item = null;
+	NativeTableItem item = null;
 	if (indices != 0) {
 		int [] index = new int [1];
 		C.memmove (index, indices, 4);
@@ -1722,9 +1722,9 @@ int getItemHeightInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TableItem [] getItems () {
+public NativeTableItem [] getItems () {
 	checkWidget();
-	TableItem [] result = new TableItem [itemCount];
+	NativeTableItem [] result = new NativeTableItem [itemCount];
 	if ((style & SWT.VIRTUAL) != 0) {
 		for (int i=0; i<itemCount; i++) {
 			result [i] = _getItem (i);
@@ -1791,7 +1791,7 @@ long getPixbufRenderer (long column) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TableItem [] getSelection () {
+public NativeTableItem [] getSelection () {
 	checkWidget();
 	long selection = GTK.gtk_tree_view_get_selection (handle);
 	long list = GTK.gtk_tree_selection_get_selected_rows (selection, null);
@@ -1813,11 +1813,11 @@ public TableItem [] getSelection () {
 			list = OS.g_list_next (list);
 		}
 		OS.g_list_free (originalList);
-		TableItem [] result = new TableItem [length];
+		NativeTableItem [] result = new NativeTableItem [length];
 		for (int i=0; i<result.length; i++) result [i] = _getItem (treeSelection [i]);
 		return result;
 	}
-	return new TableItem [0];
+	return new NativeTableItem [0];
 }
 
 /**
@@ -1930,11 +1930,11 @@ public int [] getSelectionIndices () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see #setSortColumn(TableColumn)
+ * @see #setSortColumn(NativeTableColumn)
  *
  * @since 3.2
  */
-public TableColumn getSortColumn () {
+public NativeTableColumn getSortColumn () {
 	checkWidget ();
 	return sortColumn;
 }
@@ -2170,7 +2170,7 @@ long gtk_key_press_event (long widget, long event) {
 			break;
 		case GDK.GDK_space:
 			if ((style & SWT.CHECK) != 0) {
-				TableItem[] selected = getSelection();
+				NativeTableItem[] selected = getSelection();
 				for (int i = 0; i < selected.length; i++) {
 					toggleItemAndSendEvent(selected[i]);
 				}
@@ -2184,12 +2184,12 @@ long gtk_key_press_event (long widget, long event) {
 	return super.gtk_key_press_event (widget, event);
 }
 
-private void toggleItemAndSendEvent(TableItem item) {
+private void toggleItemAndSendEvent(NativeTableItem item) {
 	item.setChecked (!item.getChecked ());
 
 	Event event = new Event ();
 	event.detail = SWT.CHECK;
-	event.item = item;
+	event.item = item.getWrapper();
 	sendSelectionEvent (SWT.Selection, event, false);
 }
 
@@ -2203,12 +2203,12 @@ private void toggleItemAndSendEvent(TableItem item) {
 void sendTreeDefaultSelection() {
 
 	//Note, similar DefaultSelectionHandling in SWT List/Table/Tree
-	TableItem tableItem = getFocusItem ();
+	NativeTableItem tableItem = getFocusItem ();
 	if (tableItem == null)
 		return;
 
 	Event event = new Event ();
-	event.item = tableItem;
+	event.item = tableItem.getWrapper();
 
 	sendSelectionEvent (SWT.DefaultSelection, event, false);
 }
@@ -2278,10 +2278,10 @@ long gtk_button_release_event (long widget, long event) {
 
 @Override
 long gtk_changed (long widget) {
-	TableItem item = getFocusItem ();
+	NativeTableItem item = getFocusItem ();
 	if (item != null) {
 		Event event = new Event ();
-		event.item = item;
+		event.item = item.getWrapper();
 		sendSelectionEvent (SWT.Selection, event, false);
 	}
 	return 0;
@@ -2289,7 +2289,7 @@ long gtk_changed (long widget) {
 
 void drawInheritedBackground (long cairo) {
 	if ((state & PARENT_BACKGROUND) != 0 || backgroundImage != null) {
-		Control control = findBackgroundControl ();
+		NativeControl control = findBackgroundControl ();
 		if (control != null) {
 			int [] width = new int [1], height = new int [1];
 			long gdkResource;
@@ -2375,7 +2375,7 @@ long gtk_toggled (long renderer, long pathStr) {
 	if (indices != 0) {
 		int [] index = new int [1];
 		C.memmove (index, indices, 4);
-		TableItem item = _getItem (index [0]);
+		NativeTableItem item = _getItem (index [0]);
 		toggleItemAndSendEvent(item);
 	}
 	GTK.gtk_tree_path_free (path);
@@ -2450,7 +2450,7 @@ void hookEvents () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public int indexOf (TableColumn column) {
+public int indexOf (NativeTableColumn column) {
 	checkWidget();
 	if (column == null) error (SWT.ERROR_NULL_ARGUMENT);
 	for (int i=0; i<columnCount; i++) {
@@ -2476,7 +2476,7 @@ public int indexOf (TableColumn column) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public int indexOf (TableItem item) {
+public int indexOf (NativeTableItem item) {
 	checkWidget();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (1 <= lastIndexOf && lastIndexOf < itemCount - 1) {
@@ -2552,7 +2552,7 @@ void propagateDraw (long container, long cairo) {
 	 */
 	super.propagateDraw(container, cairo);
 	if (headerVisible && noChildDrawing && wasScrolled) {
-		for (TableColumn column : columns) {
+		for (NativeTableColumn column : columns) {
 			if (column != null) {
 				GTK.gtk_widget_queue_draw(column.buttonHandle);
 			}
@@ -2572,10 +2572,10 @@ void recreateRenderers () {
 		OS.g_signal_connect_closure (checkRenderer, OS.toggled, display.getClosure (TOGGLED), false);
 	}
 	if (columnCount == 0) {
-		createRenderers (GTK.gtk_tree_view_get_column (handle, 0), Table.FIRST_COLUMN, true, 0);
+		createRenderers (GTK.gtk_tree_view_get_column (handle, 0), NativeTable.FIRST_COLUMN, true, 0);
 	} else {
 		for (int i = 0; i < columnCount; i++) {
-			TableColumn column = columns [i];
+			NativeTableColumn column = columns [i];
 			createRenderers (column.handle, column.modelIndex, i == 0, column.style);
 		}
 	}
@@ -2583,7 +2583,7 @@ void recreateRenderers () {
 
 @Override
 void redrawBackgroundImage () {
-	Control control = findBackgroundControl ();
+	NativeControl control = findBackgroundControl ();
 	if (control != null && control.backgroundImage != null) {
 		redrawWidget (0, 0, 0, 0, true, false, false);
 	}
@@ -2601,7 +2601,7 @@ void register () {
 void releaseChildren (boolean destroy) {
 	if (items != null) {
 		for (int i=0; i<itemCount; i++) {
-			TableItem item = items [i];
+			NativeTableItem item = items [i];
 			if (item != null && !item.isDisposed ()) {
 				item.release (false);
 			}
@@ -2610,7 +2610,7 @@ void releaseChildren (boolean destroy) {
 	}
 	if (columns != null) {
 		for (int i=0; i<columnCount; i++) {
-			TableColumn column = columns [i];
+			NativeTableColumn column = columns [i];
 			if (column != null && !column.isDisposed ()) {
 				column.release (false);
 			}
@@ -2651,7 +2651,7 @@ public void remove (int index) {
 	checkWidget();
 	if (!(0 <= index && index < itemCount)) error (SWT.ERROR_ITEM_NOT_REMOVED);
 	long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
-	TableItem item = items [index];
+	NativeTableItem item = items [index];
 	boolean disposed = false;
 	if (item != null) {
 		disposed = item.isDisposed ();
@@ -2706,7 +2706,7 @@ public void remove (int start, int end) {
 	int index = -1;
 	for (index = start; index <= end; index++) {
 		if (index == start) GTK.gtk_tree_model_iter_nth_child (modelHandle, iter, 0, index);
-		TableItem item = items [index];
+		NativeTableItem item = items [index];
 		if (item != null && !item.isDisposed ()) item.release (false);
 		OS.g_signal_handlers_block_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
 		GTK.gtk_list_store_remove (modelHandle, iter);
@@ -2752,7 +2752,7 @@ public void remove (int [] indices) {
 	for (int i=0; i<newIndices.length; i++) {
 		int index = newIndices [i];
 		if (index != last) {
-			TableItem item = items [index];
+			NativeTableItem item = items [index];
 			boolean disposed = false;
 			if (item != null) {
 				disposed = item.isDisposed ();
@@ -2789,11 +2789,11 @@ public void removeAll () {
 	checkSetDataInProcessBeforeRemoval(0, items.length);
 	int index = itemCount - 1;
 	while (index >= 0) {
-		TableItem item = items [index];
+		NativeTableItem item = items [index];
 		if (item != null && !item.isDisposed ()) item.release (false);
 		--index;
 	}
-	items = new TableItem [4];
+	items = new NativeTableItem [4];
 	itemCount = 0;
 	long selection = GTK.gtk_tree_view_get_selection (handle);
 	OS.g_signal_handlers_block_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
@@ -2848,7 +2848,7 @@ public void removeSelectionListener(SelectionListener listener) {
 void sendMeasureEvent (long cell, long width, long height) {
 	if (!ignoreSize && GTK.GTK_IS_CELL_RENDERER_TEXT (cell) && hooks (SWT.MeasureItem)) {
 		long iter = OS.g_object_get_qdata (cell, Display.SWT_OBJECT_INDEX2);
-		TableItem item = null;
+		NativeTableItem item = null;
 		boolean isSelected = false;
 		if (iter != 0) {
 			long path = GTK.gtk_tree_model_get_path (modelHandle, iter);
@@ -2890,7 +2890,7 @@ void sendMeasureEvent (long cell, long width, long height) {
 			GC gc = new GC (this);
 			gc.setFont (item.getFont (columnIndex));
 			Event event = new Event ();
-			event.item = item;
+			event.item = item.getWrapper();
 			event.index = columnIndex;
 			event.gc = gc;
 			Rectangle eventRect = new Rectangle (0, 0, contentWidth [0], contentHeight [0]);
@@ -2936,7 +2936,7 @@ long rendererRenderProc (long cell, long cr, long widget, long background_area, 
 }
 
 void rendererRender (long cell, long cr, long snapshot, long widget, long background_area, long cell_area, long expose_area, long flags) {
-	TableItem item = null;
+	NativeTableItem item = null;
 	boolean wasSelected = false;
 	long iter = OS.g_object_get_qdata (cell, Display.SWT_OBJECT_INDEX2);
 	if (iter != 0) {
@@ -2988,10 +2988,10 @@ void rendererRender (long cell, long cr, long snapshot, long widget, long backgr
 			drawFlags = (int)flags;
 			drawState = SWT.FOREGROUND;
 			long [] ptr = new long [1];
-			GTK.gtk_tree_model_get (modelHandle, item.handle, Table.BACKGROUND_COLUMN, ptr, -1);
+			GTK.gtk_tree_model_get (modelHandle, item.handle, NativeTable.BACKGROUND_COLUMN, ptr, -1);
 			if (ptr [0] == 0) {
-				int modelIndex = columnCount == 0 ? Table.FIRST_COLUMN : columns [columnIndex].modelIndex;
-				GTK.gtk_tree_model_get (modelHandle, item.handle, modelIndex + Table.CELL_BACKGROUND, ptr, -1);
+				int modelIndex = columnCount == 0 ? NativeTable.FIRST_COLUMN : columns [columnIndex].modelIndex;
+				GTK.gtk_tree_model_get (modelHandle, item.handle, modelIndex + NativeTable.CELL_BACKGROUND, ptr, -1);
 			}
 			if (ptr [0] != 0) {
 				drawState |= SWT.BACKGROUND;
@@ -3005,7 +3005,7 @@ void rendererRender (long cell, long cr, long snapshot, long widget, long backgr
 			Rectangle rect = columnRect.toRectangle ();
 			if ((drawState & SWT.SELECTED) == 0) {
 				if ((state & PARENT_BACKGROUND) != 0 || backgroundImage != null) {
-					Control control = findBackgroundControl ();
+					NativeControl control = findBackgroundControl ();
 					if (control != null) {
 						if (cr != 0) {
 							Cairo.cairo_save (cr);
@@ -3032,7 +3032,7 @@ void rendererRender (long cell, long cr, long snapshot, long widget, long backgr
 				 */
 				wasSelected = (drawState & SWT.SELECTED) != 0;
 				if (wasSelected) {
-					Control control = findBackgroundControl ();
+					NativeControl control = findBackgroundControl ();
 					if (control == null) control = this;
 				}
 				GC gc = getGC(cr);
@@ -3068,7 +3068,7 @@ void rendererRender (long cell, long cr, long snapshot, long widget, long backgr
 					eventRect.y += y_offset;
 					Cairo.cairo_translate (cr, 0, -y_offset);
 
-					event.item = item;
+					event.item = item.getWrapper();
 					event.index = columnIndex;
 					event.gc = gc;
 					event.detail = drawState;
@@ -3190,7 +3190,7 @@ void rendererRender (long cell, long cr, long snapshot, long widget, long backgr
 					eventRect.y += y_offset;
 					Cairo.cairo_translate (cr, 0, -y_offset);
 
-					event.item = item;
+					event.item = item.getWrapper();
 					event.index = columnIndex;
 					event.gc = gc;
 					event.detail = drawState;
@@ -3233,13 +3233,13 @@ void resetCustomDraw () {
 void reskinChildren (int flags) {
 	if (items != null) {
 		for (int i=0; i<itemCount; i++) {
-			TableItem item = items [i];
+			NativeTableItem item = items [i];
 			if (item != null) item.reskin (flags);
 		}
 	}
 	if (columns != null) {
 		for (int i=0; i<columnCount; i++) {
-			TableColumn column = columns [i];
+			NativeTableColumn column = columns [i];
 			if (!column.isDisposed ()) column.reskin (flags);
 		}
 	}
@@ -3270,7 +3270,7 @@ public void select (int index) {
 	boolean fixColumn = showFirstColumn ();
 	long selection = GTK.gtk_tree_view_get_selection (handle);
 	OS.g_signal_handlers_block_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
-	TableItem item = _getItem (index);
+	NativeTableItem item = _getItem (index);
 	GTK.gtk_tree_selection_select_iter (selection, item.handle);
 	OS.g_signal_handlers_unblock_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
 	if (fixColumn) hideFirstColumn ();
@@ -3297,7 +3297,7 @@ public void select (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#setSelection(int,int)
+ * @see NativeTable#setSelection(int,int)
  */
 public void select (int start, int end) {
 	checkWidget ();
@@ -3309,7 +3309,7 @@ public void select (int start, int end) {
 	long selection = GTK.gtk_tree_view_get_selection (handle);
 	OS.g_signal_handlers_block_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
 	for (int index=start; index<=end; index++) {
-		TableItem item = _getItem (index);
+		NativeTableItem item = _getItem (index);
 		GTK.gtk_tree_selection_select_iter (selection, item.handle);
 	}
 	OS.g_signal_handlers_unblock_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
@@ -3337,7 +3337,7 @@ public void select (int start, int end) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#setSelection(int[])
+ * @see NativeTable#setSelection(int[])
  */
 public void select (int [] indices) {
 	checkWidget ();
@@ -3350,7 +3350,7 @@ public void select (int [] indices) {
 	for (int i=0; i<length; i++) {
 		int index = indices [i];
 		if (!(0 <= index && index < itemCount)) continue;
-		TableItem item = _getItem (index);
+		NativeTableItem item = _getItem (index);
 		GTK.gtk_tree_selection_select_iter (selection, item.handle);
 	}
 	OS.g_signal_handlers_unblock_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
@@ -3386,7 +3386,7 @@ void selectFocusIndex (int index) {
 	* gtk does not provide a way to just set focus to a specified list item.
 	*/
 	if (!(0 <= index && index < itemCount))  return;
-	TableItem item = _getItem (index);
+	NativeTableItem item = _getItem (index);
 	long path = GTK.gtk_tree_model_get_path (modelHandle, item.handle);
 	long selection = GTK.gtk_tree_view_get_selection (handle);
 	OS.g_signal_handlers_block_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
@@ -3460,9 +3460,9 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
  *    <li>ERROR_INVALID_ARGUMENT - if the item order is not the same length as the number of items</li>
  * </ul>
  *
- * @see Table#getColumnOrder()
- * @see TableColumn#getMoveable()
- * @see TableColumn#setMoveable(boolean)
+ * @see NativeTable#getColumnOrder()
+ * @see NativeTableColumn#getMoveable()
+ * @see NativeTableColumn#setMoveable(boolean)
  * @see SWT#Move
  *
  * @since 3.1
@@ -3492,7 +3492,7 @@ public void setColumnOrder (int [] order) {
 @Override
 void setFontDescription (long font) {
 	super.setFontDescription (font);
-	TableColumn[] columns = getColumns ();
+	NativeTableColumn[] columns = getColumns ();
 	for (int i = 0; i < columns.length; i++) {
 		if (columns[i] != null) {
 			columns[i].setFontDescription (font);
@@ -3566,7 +3566,7 @@ void updateHeaderCSS() {
 			GTK3.gtk_css_provider_load_from_data(headerCSSProvider, Converter.javaStringToCString(css.toString()), -1, null);
 		}
 	} else {
-		for (TableColumn column : columns) {
+		for (NativeTableColumn column : columns) {
 			if (column != null) {
 				column.setHeaderCSS(css.toString());
 			}
@@ -3647,7 +3647,7 @@ public void setItemCount (int count) {
 	if (!isVirtual) setRedraw (false);
 	remove (count, itemCount - 1);
 	int length = Math.max (4, (count + 3) / 4 * 4);
-	TableItem [] newItems = new TableItem [length];
+	NativeTableItem [] newItems = new NativeTableItem [length];
 	System.arraycopy (items, 0, newItems, 0, itemCount);
 	items = newItems;
 	if (isVirtual) {
@@ -3660,7 +3660,7 @@ public void setItemCount (int count) {
 		itemCount = count;
 	} else {
 		for (int i=itemCount; i<count; i++) {
-			new TableItem (this, SWT.NONE, i, true);
+			new TableItem (this.getWrapper(), SWT.NONE, i, true);
 		}
 	}
 	if (!isVirtual) setRedraw (true);
@@ -3714,7 +3714,7 @@ void setParentBackground () {
 }
 
 @Override
-void setParentGdkResource (Control child) {
+void setParentGdkResource (NativeControl child) {
 	/*
 	 * Feature in GTK3: non-native GdkWindows are not drawn implicitly
 	 * as of GTK3.10+. It is the client's responsibility to propagate draw
@@ -3746,14 +3746,14 @@ public void setRedraw (boolean redraw) {
 		/* Resize the item array to match the item count */
 		if (items.length > 4 && items.length - itemCount > 3) {
 			int length = Math.max (4, (itemCount + 3) / 4 * 4);
-			TableItem [] newItems = new TableItem [length];
+			NativeTableItem [] newItems = new NativeTableItem [length];
 			System.arraycopy (items, 0, newItems, 0, itemCount);
 			items = newItems;
 		}
 	}
 }
 
-void setScrollWidth (long column, TableItem item) {
+void setScrollWidth (long column, NativeTableItem item) {
 	if (columnCount != 0 || currentItem == item) return;
 	int width = GTK.gtk_tree_view_column_get_fixed_width (column);
 	int itemWidth = calculateWidth (column, item.handle);
@@ -3779,7 +3779,7 @@ void setScrollWidth (long column, TableItem item) {
  *
  * @since 3.2
  */
-public void setSortColumn (TableColumn column) {
+public void setSortColumn (NativeTableColumn column) {
 	checkWidget ();
 	if (column != null && column.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (sortColumn != null && !sortColumn.isDisposed()) {
@@ -3830,8 +3830,8 @@ public void setSortDirection  (int direction) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#deselectAll()
- * @see Table#select(int)
+ * @see NativeTable#deselectAll()
+ * @see NativeTable#select(int)
  */
 public void setSelection (int index) {
 	checkWidget ();
@@ -3862,8 +3862,8 @@ public void setSelection (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#deselectAll()
- * @see Table#select(int,int)
+ * @see NativeTable#deselectAll()
+ * @see NativeTable#select(int,int)
  */
 public void setSelection (int start, int end) {
 	checkWidget ();
@@ -3901,8 +3901,8 @@ public void setSelection (int start, int end) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#deselectAll()
- * @see Table#select(int[])
+ * @see NativeTable#deselectAll()
+ * @see NativeTable#select(int[])
  */
 public void setSelection (int [] indices) {
 	checkWidget ();
@@ -3940,9 +3940,9 @@ public void setSelection (int [] indices) {
  *
  * @since 3.2
  */
-public void setSelection (TableItem item) {
+public void setSelection (NativeTableItem item) {
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
-	setSelection (new TableItem [] {item});
+	setSelection (new NativeTableItem [] {item});
 }
 
 
@@ -3967,11 +3967,11 @@ public void setSelection (TableItem item) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#deselectAll()
- * @see Table#select(int[])
- * @see Table#setSelection(int[])
+ * @see NativeTable#deselectAll()
+ * @see NativeTable#select(int[])
+ * @see NativeTable#setSelection(int[])
  */
-public void setSelection (TableItem [] items) {
+public void setSelection (NativeTableItem [] items) {
 	checkWidget ();
 	if (items == null) error (SWT.ERROR_NULL_ARGUMENT);
 	boolean fixColumn = showFirstColumn ();
@@ -4041,7 +4041,7 @@ public void setTopIndex (int index) {
  *
  * @since 3.0
  */
-public void showColumn (TableColumn column) {
+public void showColumn (NativeTableColumn column) {
 	checkWidget ();
 	if (column == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (column.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
@@ -4081,9 +4081,9 @@ boolean showFirstColumn () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#showSelection()
+ * @see NativeTable#showSelection()
  */
-public void showItem (TableItem item) {
+public void showItem (NativeTableItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -4108,18 +4108,18 @@ void showItem (long iter) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Table#showItem(TableItem)
+ * @see NativeTable#showItem(NativeTableItem)
  */
 public void showSelection () {
 	checkWidget();
-	TableItem [] selection = getSelection ();
+	NativeTableItem [] selection = getSelection ();
 	if (selection.length == 0) return;
-	TableItem item = selection [0];
+	NativeTableItem item = selection [0];
 	showItem (item.handle);
 }
 
 @Override
-void updateScrollBarValue (ScrollBar bar) {
+void updateScrollBarValue (NativeScrollBar bar) {
 	super.updateScrollBarValue (bar);
 
 	if (!GTK.GTK4) {
@@ -4172,7 +4172,7 @@ long windowProc (long handle, long arg0, long user_data) {
 			 */
 			if (itemCount == 0 && (state & OBSCURED) == 0 && !GTK.GTK4) {
 				if ((state & PARENT_BACKGROUND) != 0 || backgroundImage != null) {
-					Control control = findBackgroundControl ();
+					NativeControl control = findBackgroundControl ();
 					if (control != null) {
 						long window = GTK3.gtk_tree_view_get_bin_window (handle);
 						if (window == GTK3.gtk_widget_get_window(handle)) {
@@ -4231,7 +4231,7 @@ void checkSetDataInProcessBeforeRemoval(int start, int end) {
 	 * We therefore throw an exception to prevent the crash.
 	 */
 	for (int i = start; i < end; i++) {
-		TableItem item = items[i];
+		NativeTableItem item = items[i];
 		if (item != null && item.settingData) {
 			String message = "Cannot remove a table item while its data is being set. "
 					+ "At item " + i + " in range [" + start + ", " + end + ").";
@@ -4249,4 +4249,8 @@ public void dispose() {
 		headerCSSProvider = 0;
 	}
 }
+
+@Override
+public abstract Table getWrapper();
+
 }

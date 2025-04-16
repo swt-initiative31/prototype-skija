@@ -50,8 +50,8 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class TabFolder extends Composite {
-	TabItem [] items;
+public abstract class NativeTabFolder extends NativeComposite {
+	NativeTabItem [] items;
 	ImageList imageList;
 	static final long TabFolderProc;
 	static final TCHAR TabFolderClass = new TCHAR (0, OS.WC_TABCONTROL, true);
@@ -90,7 +90,7 @@ public class TabFolder extends Composite {
 		lpWndClass.hInstance = OS.GetModuleHandle (null);
 		lpWndClass.style &= ~(OS.CS_HREDRAW | OS.CS_VREDRAW | OS.CS_GLOBALCLASS);
 		OS.RegisterClass (TabFolderClass, lpWndClass);
-		DPIZoomChangeRegistry.registerHandler(TabFolder::handleDPIChange, TabFolder.class);
+		DPIZoomChangeRegistry.registerHandler(NativeTabFolder::handleDPIChange, TabFolder.class);
 	}
 
 /**
@@ -120,10 +120,10 @@ public class TabFolder extends Composite {
  * @see SWT
  * @see SWT#TOP
  * @see SWT#BOTTOM
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TabFolder (Composite parent, int style) {
+protected NativeTabFolder (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
@@ -175,7 +175,7 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -213,11 +213,11 @@ protected void checkSubclass () {
 	return new Rectangle (rect.left, rect.top, newWidth, newHeight);
 }
 
-void createItem (TabItem item, int index) {
+void createItem (NativeTabItem item, int index) {
 	int count = (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
 	if (!(0 <= index && index <= count)) error (SWT.ERROR_INVALID_RANGE);
 	if (count == items.length) {
-		TabItem [] newItems = new TabItem [items.length + 4];
+		NativeTabItem [] newItems = new NativeTabItem [items.length + 4];
 		System.arraycopy (items, 0, newItems, 0, items.length);
 		items = newItems;
 	}
@@ -235,7 +235,7 @@ void createItem (TabItem item, int index) {
 	*/
 	if (count == 0) {
 		Event event = new Event ();
-		event.item = items [0];
+		event.item = items [0].getWrapper();
 		sendSelectionEvent (SWT.Selection, event, true);
 		// the widget could be destroyed at this point
 	}
@@ -262,10 +262,10 @@ void createHandle () {
 @Override
 void createWidget () {
 	super.createWidget ();
-	items = new TabItem [4];
+	items = new NativeTabItem [4];
 }
 
-void destroyItem (TabItem item) {
+void destroyItem (NativeTabItem item) {
 	int count = (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
 	int index = 0;
 	while (index < count) {
@@ -285,7 +285,7 @@ void destroyItem (TabItem item) {
 			display.releaseImageList (imageList);
 		}
 		imageList = null;
-		items = new TabItem [4];
+		items = new NativeTabItem [4];
 	}
 	if (count > 0 && index == selectionIndex) {
 		setSelection (Math.max (0, selectionIndex - 1), true);
@@ -303,7 +303,7 @@ void drawThemeBackground (long hDC, long hwnd, RECT rect) {
 }
 
 @Override
-Control findThemeControl () {
+NativeControl findThemeControl () {
 	/* It is not possible to change the background of this control */
 	return this;
 }
@@ -334,7 +334,7 @@ Control findThemeControl () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TabItem getItem (int index) {
+public NativeTabItem getItem (int index) {
 	checkWidget ();
 	int count = (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
 	if (!(0 <= index && index < count)) error (SWT.ERROR_INVALID_RANGE);
@@ -359,7 +359,7 @@ public TabItem getItem (int index) {
  *
  * @since 3.4
  */
-public TabItem getItem (Point point) {
+public NativeTabItem getItem (Point point) {
 	checkWidget ();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
 	TCHITTESTINFO pinfo = new TCHITTESTINFO ();
@@ -401,10 +401,10 @@ public int getItemCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TabItem [] getItems () {
+public NativeTabItem [] getItems () {
 	checkWidget ();
 	int count = (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
-	TabItem [] result = new TabItem [count];
+	NativeTabItem [] result = new NativeTabItem [count];
 	System.arraycopy (items, 0, result, 0, count);
 	return result;
 }
@@ -425,11 +425,11 @@ public TabItem [] getItems () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TabItem [] getSelection () {
+public NativeTabItem [] getSelection () {
 	checkWidget ();
 	int index = (int)OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
-	if (index == -1) return new TabItem [0];
-	return new TabItem [] {items [index]};
+	if (index == -1) return new NativeTabItem [0];
+	return new NativeTabItem [] {items [index]};
 }
 
 /**
@@ -488,7 +488,7 @@ int imageIndex (Image image) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public int indexOf (TabItem item) {
+public int indexOf (NativeTabItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	int count = (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
@@ -501,7 +501,7 @@ public int indexOf (TabItem item) {
 @Override
 Point minimumSize (int wHint, int hHint, boolean flushCache) {
 	int width = 0, height = 0;
-	for (Control child : _getChildren ()) {
+	for (NativeControl child : _getChildren ()) {
 		int index = 0;
 		int count = (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
 		while (index < count) {
@@ -529,7 +529,7 @@ Point minimumSize (int wHint, int hHint, boolean flushCache) {
 @Override
 boolean mnemonicHit (char key) {
 	for (int i=0; i<items.length; i++) {
-		TabItem item = items [i];
+		NativeTabItem item = items [i];
 		if (item != null) {
 			char ch = findMnemonic (item.getText ());
 			if (Character.toUpperCase (key) == Character.toUpperCase (ch)) {
@@ -545,7 +545,7 @@ boolean mnemonicHit (char key) {
 
 @Override
 boolean mnemonicMatch (char key) {
-	for (TabItem item : items) {
+	for (NativeTabItem item : items) {
 		if (item != null) {
 			char ch = findMnemonic (item.getText ());
 			if (Character.toUpperCase (key) == Character.toUpperCase (ch)) {
@@ -561,7 +561,7 @@ void releaseChildren (boolean destroy) {
 	if (items != null) {
 		int count = (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
 		for (int i=0; i<count; i++) {
-			TabItem item = items [i];
+			NativeTabItem item = items [i];
 			if (item != null && !item.isDisposed ()) {
 				item.release (false);
 			}
@@ -582,11 +582,11 @@ void releaseWidget () {
 }
 
 @Override
-void removeControl (Control control) {
+void removeControl (NativeControl control) {
 	super.removeControl (control);
 	int count = (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
 	for (int i=0; i<count; i++) {
-		TabItem item = items [i];
+		NativeTabItem item = items [i];
 		if (item.control == control) item.setControl (null);
 	}
 }
@@ -622,7 +622,7 @@ void reskinChildren (int flags) {
 	if (items != null) {
 		int count = (int)OS.SendMessage (handle, OS.TCM_GETITEMCOUNT, 0, 0);
 		for (int i=0; i<count; i++) {
-			TabItem item = items [i];
+			NativeTabItem item = items [i];
 			if (item != null) item.reskin (flags);
 		}
 	}
@@ -646,10 +646,10 @@ void reskinChildren (int flags) {
  *
  * @since 3.2
  */
-public void setSelection (TabItem item) {
+public void setSelection (NativeTabItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
-	setSelection (new TabItem [] {item});
+	setSelection (new NativeTabItem [] {item});
 }
 
 /**
@@ -667,7 +667,7 @@ public void setSelection (TabItem item) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setSelection (TabItem [] items) {
+public void setSelection (NativeTabItem [] items) {
 	checkWidget ();
 	if (items == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (items.length == 0) {
@@ -690,8 +690,8 @@ public void setFont (Font font) {
 		sendResize ();
 		int index = (int)OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
 		if (index != -1) {
-			TabItem item = items [index];
-			Control control = item.control;
+			NativeTabItem item = items [index];
+			NativeControl control = item.control;
 			if (control != null && !control.isDisposed ()) {
 				control.setBoundsInPixels (getClientAreaInPixels ());
 			}
@@ -723,8 +723,8 @@ void setSelection (int index, boolean notify) {
 	int oldIndex = (int)OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
 	if (oldIndex == index) return;
 	if (oldIndex != -1) {
-		TabItem item = items [oldIndex];
-		Control control = item.control;
+		NativeTabItem item = items [oldIndex];
+		NativeControl control = item.control;
 		if (control != null && !control.isDisposed ()) {
 			control.setVisible (false);
 		}
@@ -732,15 +732,15 @@ void setSelection (int index, boolean notify) {
 	OS.SendMessage (handle, OS.TCM_SETCURSEL, index, 0);
 	int newIndex = (int)OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
 	if (newIndex != -1) {
-		TabItem item = items [newIndex];
-		Control control = item.control;
+		NativeTabItem item = items [newIndex];
+		NativeControl control = item.control;
 		if (control != null && !control.isDisposed ()) {
 			control.setBoundsInPixels (getClientAreaInPixels ());
 			control.setVisible (true);
 		}
 		if (notify) {
 			Event event = new Event ();
-			event.item = item;
+			event.item = item.getWrapper();
 			sendSelectionEvent (SWT.Selection, event, true);
 		}
 	}
@@ -783,7 +783,7 @@ String toolTipText (NMTTDISPINFO hdr) {
 		}
 		if (toolTipText != null) return "";
 		if (0 <= index && index < items.length) {
-			TabItem item = items [index];
+			NativeTabItem item = items [index];
 			if (item != null) return item.toolTipText;
 		}
 	}
@@ -845,7 +845,7 @@ void updateOrientation () {
 		TCITEM tcItem = new TCITEM ();
 		tcItem.mask = OS.TCIF_IMAGE;
 		for (int i = 0; i < items.length; i++) {
-			TabItem item = items [i];
+			NativeTabItem item = items [i];
 			if (item == null) break;
 			Image image = item.image;
 			if (image != null) {
@@ -1042,8 +1042,8 @@ LRESULT WM_SIZE (long wParam, long lParam) {
 	if (isDisposed ()) return result;
 	int index = (int)OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
 	if (index != -1) {
-		TabItem item = items [index];
-		Control control = item.control;
+		NativeTabItem item = items [index];
+		NativeControl control = item.control;
 		if (control != null && !control.isDisposed ()) {
 			control.setBoundsInPixels (getClientAreaInPixels ());
 		}
@@ -1107,11 +1107,11 @@ LRESULT wmNotifyChild (NMHDR hdr, long wParam, long lParam) {
 	switch (code) {
 		case OS.TCN_SELCHANGE:
 		case OS.TCN_SELCHANGING:
-			TabItem item = null;
+			NativeTabItem item = null;
 			int index = (int)OS.SendMessage (handle, OS.TCM_GETCURSEL, 0, 0);
 			if (index != -1) item = items [index];
 			if (item != null) {
-				Control control = item.control;
+				NativeControl control = item.control;
 				if (control != null && !control.isDisposed ()) {
 					if (code == OS.TCN_SELCHANGE) {
 						control.setBoundsInPixels (getClientAreaInPixels ());
@@ -1121,7 +1121,7 @@ LRESULT wmNotifyChild (NMHDR hdr, long wParam, long lParam) {
 			}
 			if (code == OS.TCN_SELCHANGE) {
 				Event event = new Event ();
-				event.item = item;
+				event.item = item.getWrapper();
 				sendSelectionEvent (SWT.Selection, event, false);
 			}
 	}
@@ -1129,7 +1129,7 @@ LRESULT wmNotifyChild (NMHDR hdr, long wParam, long lParam) {
 }
 
 private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-	if (!(widget instanceof TabFolder tabFolder)) {
+	if (!(Widget.checkNative(widget)instanceof NativeTabFolder tabFolder)) {
 		return;
 	}
 	Display display = tabFolder.getDisplay();
@@ -1138,8 +1138,12 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 		tabFolder.imageList = null;
 	}
 	for (int i = 0; i < tabFolder.getItemCount(); i++) {
-		DPIZoomChangeRegistry.applyChange(tabFolder.items[i], newZoom, scalingFactor);
+		DPIZoomChangeRegistry.applyChange(tabFolder.items[i].getWrapper(), newZoom, scalingFactor);
 	}
 	tabFolder.layout(true, true);
 }
+
+@Override
+public abstract TabFolder getWrapper();
+
 }

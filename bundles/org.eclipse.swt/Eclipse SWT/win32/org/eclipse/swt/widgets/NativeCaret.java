@@ -37,11 +37,11 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Caret extends Widget {
+public abstract class NativeCaret extends NativeWidget {
 	/** The Caret last updated on the OS-level */
-	private static Caret currentCaret;
+	private static NativeCaret currentCaret;
 
-	Canvas parent;
+	NativeCanvas parent;
 	int x, y, width, height;
 	boolean moved, resized;
 	boolean isVisible;
@@ -50,7 +50,7 @@ public class Caret extends Widget {
 	LOGFONT oldFont;
 
 static {
-	DPIZoomChangeRegistry.registerHandler(Caret::handleDPIChange, Caret.class);
+	DPIZoomChangeRegistry.registerHandler(NativeCaret::handleDPIChange, Caret.class);
 }
 
 /**
@@ -78,10 +78,10 @@ static {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Caret (Canvas parent, int style) {
+protected NativeCaret (NativeCanvas parent, int style) {
 	super (parent, style);
 	this.parent = parent;
 	createWidget ();
@@ -198,7 +198,7 @@ public Point getLocation () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Canvas getParent () {
+public NativeCanvas getParent () {
 	checkWidget();
 	return parent;
 }
@@ -315,7 +315,7 @@ void resizeIME () {
 	if (!OS.GetCaretPos (ptCurrentPos)) return;
 	long hwnd = parent.handle;
 	long hIMC = OS.ImmGetContext (hwnd);
-	IME ime = parent.getIME ();
+	NativeIME ime = Widget.checkNative(parent.getIME ());
 	if (ime != null && ime.isInlineEnabled ()) {
 		Point size = getSizeInPixels ();
 		CANDIDATEFORM lpCandidate = new CANDIDATEFORM ();
@@ -344,7 +344,7 @@ void resizeIME () {
 void releaseParent () {
 	super.releaseParent ();
 	if (parent != null && this == parent.caret) {
-		if (!parent.isDisposed()) parent.setCaret (null);
+		if (!parent.isDisposed()) parent.setCaret ((NativeCaret) null);
 		else parent.caret = null;
 	}
 }
@@ -478,7 +478,7 @@ public void setFont (Font font) {
 	if (font != null && font.isDisposed ()) {
 		error (SWT.ERROR_INVALID_ARGUMENT);
 	}
-	Shell shell = parent.getShell();
+	NativeShell shell = parent.getShell();
 	this.font = font == null ? null : Font.win32_new(font, shell.nativeZoom);
 	if (hasFocus ()) setIMEFont ();
 }
@@ -549,11 +549,11 @@ public void setLocation (int x, int y) {
 }
 
 private boolean isCurrentCaret() {
-	return Caret.currentCaret == this;
+	return NativeCaret.currentCaret == this;
 }
 
-private void setCurrentCaret(Caret caret) {
-	Caret.currentCaret = caret;
+private void setCurrentCaret(NativeCaret caret) {
+	NativeCaret.currentCaret = caret;
 }
 
 /**
@@ -661,7 +661,7 @@ public void setVisible (boolean visible) {
  *
  * @noreference This method is not intended to be referenced by clients.
  */
-public static void win32_setHeight(Caret caret, int height) {
+public static void win32_setHeight(NativeCaret caret, int height) {
 	caret.checkWidget();
 	if(caret.height == height && caret.isCurrentCaret()) return;
 	caret.height = height;
@@ -670,7 +670,7 @@ public static void win32_setHeight(Caret caret, int height) {
 }
 
 private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-	if (!(widget instanceof Caret caret)) {
+	if (!(Widget.checkNative(widget) instanceof NativeCaret caret)) {
 		return;
 	}
 
@@ -683,5 +683,9 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 		caret.setFont(caret.font);
 	}
 }
+
+@Override
+public abstract Caret getWrapper();
+
 }
 

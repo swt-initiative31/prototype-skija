@@ -47,7 +47,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @since 3.1
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Spinner extends Composite {
+public abstract class NativeSpinner extends NativeComposite {
 	static final int MIN_ARROW_WIDTH = 6;
 	int lastEventTime = 0;
 	long imContext;
@@ -102,10 +102,10 @@ public class Spinner extends Composite {
  *
  * @see SWT#READ_ONLY
  * @see SWT#WRAP
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Spinner (Composite parent, int style) {
+protected NativeSpinner (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
@@ -195,7 +195,7 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -1343,5 +1343,8 @@ String verifyText (String string, int start, int end) {
 	if (!event.doit || isDisposed ()) return null;
 	return event.text;
 }
+
+@Override
+public abstract Spinner getWrapper();
 
 }

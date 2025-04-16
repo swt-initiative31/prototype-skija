@@ -47,13 +47,13 @@ import org.eclipse.swt.internal.cocoa.*;
  * @since 3.3
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class DateTime extends Composite {
+public abstract class NativeDateTime extends NativeComposite {
 	static final int MIN_YEAR = 1752; // Gregorian switchover in North America: September 19, 1752
 	static final int MAX_YEAR = 9999;
 
 	/* Emulated DROP_DOWN calendar fields for DATE */
 	NSButton buttonView;
-	Shell popupShell;
+	NativeShell popupShell;
 	DateTime popupCalendar;
 	int savedYear, savedMonth, savedDay;
 
@@ -91,10 +91,10 @@ public class DateTime extends Composite {
  * @see SWT#MEDIUM
  * @see SWT#LONG
  * @see SWT#DROP_DOWN
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public DateTime (Composite parent, int style) {
+protected NativeDateTime (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
@@ -114,7 +114,7 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -216,16 +216,16 @@ void createHandle () {
 }
 
 void createPopupShell(int year, int month, int day) {
-	popupShell = new Shell (getShell (), SWT.NO_TRIM | SWT.ON_TOP);
+	popupShell = new Shell (getShell ().getWrapper(), SWT.NO_TRIM | SWT.ON_TOP).getWrappedWidget();
 	popupShell.isPopup = true;
 	popupShell.window.setHasShadow(true);
-	popupCalendar = new DateTime (popupShell, SWT.CALENDAR);
+	popupCalendar = new DateTime (popupShell.getWrapper(), SWT.CALENDAR);
 	if (font != null) popupCalendar.setFont (font);
 
 	if (clickListener == null) {
 		clickListener = event -> {
-			if (event.widget instanceof Control c && event.widget != DateTime.this) {
-				if (c.getShell() != popupShell) {
+			if (event.widget instanceof Control c && event.widget != NativeDateTime.this.getWrapper()) {
+				if (c.getShell() != popupShell.getWrapper()) {
 					hideCalendar();
 				}
 			}
@@ -287,7 +287,7 @@ void showCalendar() {
 	savedYear = getYear ();
 	savedMonth = getMonth ();
 	savedDay = getDay ();
-	if (getShell() != popupShell.getParent ()) {
+	if (getShell().getWrapper() != popupShell.getParent ()) {
 		disposePopupShell();
 		createPopupShell (savedYear, savedMonth, savedDay);
 	}
@@ -831,4 +831,8 @@ public void setYear (int year) {
 		((NSDatePicker)view).setDateValue(newDate);
 	}
 }
+
+@Override
+public abstract DateTime getWrapper();
+
 }

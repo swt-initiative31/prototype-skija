@@ -47,9 +47,9 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class CoolBar extends Composite {
-	CoolItem [] items;
-	CoolItem [] originalItems;
+public abstract class NativeCoolBar extends NativeComposite {
+	NativeCoolItem [] items;
+	NativeCoolItem [] originalItems;
 	boolean locked;
 	boolean ignoreResize;
 	static final long ReBarProc;
@@ -58,7 +58,7 @@ public class CoolBar extends Composite {
 		WNDCLASS lpWndClass = new WNDCLASS ();
 		OS.GetClassInfo (0, ReBarClass, lpWndClass);
 		ReBarProc = lpWndClass.lpfnWndProc;
-		DPIZoomChangeRegistry.registerHandler(CoolBar::handleDPIChange, CoolBar.class);
+		DPIZoomChangeRegistry.registerHandler(NativeCoolBar::handleDPIChange, CoolBar.class);
 	}
 	static final int SEPARATOR_WIDTH = 2;
 	static final int MAX_WIDTH = 0x7FFF;
@@ -93,10 +93,10 @@ public class CoolBar extends Composite {
  * @see SWT#FLAT
  * @see SWT#HORIZONTAL
  * @see SWT#VERTICAL
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public CoolBar (Composite parent, int style) {
+protected NativeCoolBar (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 	/*
 	* Ensure that either of HORIZONTAL or VERTICAL is set.
@@ -137,7 +137,7 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -218,13 +218,13 @@ void createHandle () {
 	OS.SendMessage (handle, OS.WM_SETFONT, hFont, 0);
 }
 
-void createItem (CoolItem item, int index) {
+void createItem (NativeCoolItem item, int index) {
 	int count = (int)OS.SendMessage (handle, OS.RB_GETBANDCOUNT, 0, 0);
 	if (!(0 <= index && index <= count)) error (SWT.ERROR_INVALID_RANGE);
 	int id = 0;
 	while (id < items.length && items [id] != null) id++;
 	if (id == items.length) {
-		CoolItem [] newItems = new CoolItem [items.length + 4];
+		NativeCoolItem [] newItems = new NativeCoolItem [items.length + 4];
 		System.arraycopy (items, 0, newItems, 0, items.length);
 		items = newItems;
 	}
@@ -279,7 +279,7 @@ void createItem (CoolItem item, int index) {
 	OS.HeapFree (hHeap, 0, lpText);
 	items [item.id = id] = item;
 	int length = originalItems.length;
-	CoolItem [] newOriginals = new CoolItem [length + 1];
+	NativeCoolItem [] newOriginals = new NativeCoolItem [length + 1];
 	System.arraycopy (originalItems, 0, newOriginals, 0, index);
 	System.arraycopy (originalItems, index, newOriginals, index + 1, length - index);
 	newOriginals [index] = item;
@@ -289,11 +289,11 @@ void createItem (CoolItem item, int index) {
 @Override
 void createWidget () {
 	super.createWidget ();
-	items = new CoolItem [4];
-	originalItems = new CoolItem [0];
+	items = new NativeCoolItem [4];
+	originalItems = new NativeCoolItem [0];
 }
 
-void destroyItem (CoolItem item) {
+void destroyItem (NativeCoolItem item) {
 	int index = (int)OS.SendMessage (handle, OS.RB_IDTOINDEX, item.id, 0);
 	int count = (int)OS.SendMessage (handle, OS.RB_GETBANDCOUNT, 0, 0);
 	if (count != 0) {
@@ -317,7 +317,7 @@ void destroyItem (CoolItem item) {
 	* band, it makes the band child invisible.  The fix
 	* is to show the child.
 	*/
-	Control control = item.control;
+	NativeControl control = item.control;
 	boolean wasVisible = control != null && !control.isDisposed() && control.getVisible ();
 
 	/*
@@ -327,7 +327,7 @@ void destroyItem (CoolItem item) {
 	* ignore WM_SIZE.  If the next item is wrapped then a
 	* row will be deleted and the WM_SIZE is necessary.
 	*/
-	CoolItem nextItem = null;
+	NativeCoolItem nextItem = null;
 	if (item.getWrap ()) {
 		if (index + 1 < count) {
 			nextItem = getItem (index + 1);
@@ -353,7 +353,7 @@ void destroyItem (CoolItem item) {
 		index++;
 	}
 	int length = originalItems.length - 1;
-	CoolItem [] newOriginals = new CoolItem [length];
+	NativeCoolItem [] newOriginals = new NativeCoolItem [length];
 	System.arraycopy (originalItems, 0, newOriginals, 0, index);
 	System.arraycopy (originalItems, index + 1, newOriginals, index, length - index);
 	originalItems = newOriginals;
@@ -363,7 +363,7 @@ void destroyItem (CoolItem item) {
 void drawThemeBackground (long hDC, long hwnd, RECT rect) {
 	if (OS.IsAppThemed ()) {
 		if (background == -1 && (style & SWT.FLAT) != 0) {
-			Control control = findBackgroundControl ();
+			NativeControl control = findBackgroundControl ();
 			if (control != null && control.backgroundImage != null) {
 				fillBackground (hDC, control.getBackgroundPixel (), rect);
 				return;
@@ -380,7 +380,7 @@ void drawThemeBackground (long hDC, long hwnd, RECT rect) {
 }
 
 @Override
-Control findThemeControl () {
+NativeControl findThemeControl () {
 	if ((style & SWT.FLAT) != 0) return this;
 	return background == -1 && backgroundImage == null ? this : super.findThemeControl ();
 }
@@ -434,7 +434,7 @@ int getMargin (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public CoolItem getItem (int index) {
+public NativeCoolItem getItem (int index) {
 	checkWidget ();
 	int count = (int)OS.SendMessage (handle, OS.RB_GETBANDCOUNT, 0, 0);
 	if (!(0 <= index && index < count)) error (SWT.ERROR_INVALID_RANGE);
@@ -490,7 +490,7 @@ public int [] getItemOrder () {
 	rbBand.fMask = OS.RBBIM_ID;
 	for (int i=0; i<count; i++) {
 		OS.SendMessage (handle, OS.RB_GETBANDINFO, i, rbBand);
-		CoolItem item = items [rbBand.wID];
+		NativeCoolItem item = items [rbBand.wID];
 		int index = 0;
 		while (index<originalItems.length) {
 			if (originalItems [index] == item) break;
@@ -518,10 +518,10 @@ public int [] getItemOrder () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public CoolItem [] getItems () {
+public NativeCoolItem [] getItems () {
 	checkWidget ();
 	int count = (int)OS.SendMessage (handle, OS.RB_GETBANDCOUNT, 0, 0);
-	CoolItem [] result = new CoolItem [count];
+	NativeCoolItem [] result = new NativeCoolItem [count];
 	REBARBANDINFO rbBand = new REBARBANDINFO ();
 	rbBand.cbSize = REBARBANDINFO.sizeof;
 	rbBand.fMask = OS.RBBIM_ID;
@@ -638,7 +638,7 @@ public boolean getLocked () {
  */
 public int [] getWrapIndices () {
 	checkWidget ();
-	CoolItem [] items = getItems ();
+	NativeCoolItem [] items = getItems ();
 	int [] indices = new int [items.length];
 	int count = 0;
 	for (int i=0; i<items.length; i++) {
@@ -667,7 +667,7 @@ public int [] getWrapIndices () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public int indexOf (CoolItem item) {
+public int indexOf (NativeCoolItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -706,7 +706,7 @@ void resizeToMaximumWidth (int index) {
 @Override
 void releaseChildren (boolean destroy) {
 	if (items != null) {
-		for (CoolItem item : items) {
+		for (NativeCoolItem item : items) {
 			if (item != null && !item.isDisposed ()) {
 				item.release (false);
 			}
@@ -717,9 +717,9 @@ void releaseChildren (boolean destroy) {
 }
 
 @Override
-void removeControl (Control control) {
+void removeControl (NativeControl control) {
 	super.removeControl (control);
-	for (CoolItem item : items) {
+	for (NativeCoolItem item : items) {
 		if (item != null && item.control == control) {
 			item.setControl (null);
 		}
@@ -729,7 +729,7 @@ void removeControl (Control control) {
 @Override
 void reskinChildren (int flags) {
 	if (items != null) {
-		for (CoolItem item : items) {
+		for (NativeCoolItem item : items) {
 			if (item != null) item.reskin (flags);
 		}
 	}
@@ -966,9 +966,9 @@ public void setWrapIndices (int [] indices) {
 		}
 	}
 	setRedraw (false);
-	CoolItem [] items = getItems ();
+	NativeCoolItem [] items = getItems ();
 	for (int i=0; i<items.length; i++) {
-		CoolItem item = items [i];
+		NativeCoolItem item = items [i];
 		if (item.getWrap ()) {
 			resizeToPreferredWidth (i - 1);
 			item.setWrap (false);
@@ -977,7 +977,7 @@ public void setWrapIndices (int [] indices) {
 	resizeToMaximumWidth (count - 1);
 	for (int index : indices) {
 		if (0 <= index && index < items.length) {
-			CoolItem item = items [index];
+			NativeCoolItem item = items [index];
 			item.setWrap (true);
 			resizeToMaximumWidth (index - 1);
 		}
@@ -1143,8 +1143,8 @@ LRESULT wmNotifyChild (NMHDR hdr, long wParam, long lParam) {
 			NMREBARCHILDSIZE lprbcs  = new NMREBARCHILDSIZE ();
 			OS.MoveMemory (lprbcs, lParam, NMREBARCHILDSIZE.sizeof);
 			if (lprbcs.uBand != -1) {
-				CoolItem item = items [lprbcs.wID];
-				Control control = item.control;
+				NativeCoolItem item = items [lprbcs.wID];
+				NativeControl control = item.control;
 				if (control != null) {
 					int width = lprbcs.rcChild_right - lprbcs.rcChild_left;
 					int height = lprbcs.rcChild_bottom - lprbcs.rcChild_top;
@@ -1169,7 +1169,7 @@ LRESULT wmNotifyChild (NMHDR hdr, long wParam, long lParam) {
 		case OS.RBN_CHEVRONPUSHED: {
 			NMREBARCHEVRON lpnm = new NMREBARCHEVRON ();
 			OS.MoveMemory (lpnm, lParam, NMREBARCHEVRON.sizeof);
-			CoolItem item = items [lpnm.wID];
+			NativeCoolItem item = items [lpnm.wID];
 			if (item != null) {
 				Event event = new Event();
 				event.detail = SWT.ARROW;
@@ -1202,7 +1202,7 @@ LRESULT wmNotifyChild (NMHDR hdr, long wParam, long lParam) {
 }
 
 private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-	if (!(widget instanceof CoolBar coolBar)) {
+	if (!(Widget.checkNative(widget) instanceof NativeCoolBar coolBar)) {
 		return;
 	}
 	Point[] sizes = coolBar.getItemSizesInPixels();
@@ -1212,18 +1212,18 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 	int[] indices = coolBar.getWrapIndices();
 	int[] itemOrder = coolBar.getItemOrder();
 
-	CoolItem[] items = coolBar.getItems();
+	NativeCoolItem[] items = coolBar.getItems();
 	for (int index = 0; index < sizes.length; index++) {
 		minSizes[index] = items[index].getMinimumSizeInPixels();
 		prefSizes[index] = items[index].getPreferredSizeInPixels();
 	}
 
 	for (int index = 0; index < sizes.length; index++) {
-		CoolItem item = items[index];
+		NativeCoolItem item = items[index];
 
-		Control control = item.control;
+		NativeControl control = item.control;
 		if (control != null) {
-			DPIZoomChangeRegistry.applyChange(control, newZoom, scalingFactor);
+			DPIZoomChangeRegistry.applyChange(control.getWrapper(), newZoom, scalingFactor);
 			item.setControl(control);
 		}
 
@@ -1243,4 +1243,8 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 	coolBar.setItemLayoutInPixels(itemOrder, indices, scaledSizes);
 	coolBar.updateLayout(true);
 }
+
+@Override
+public abstract CoolBar getWrapper();
+
 }

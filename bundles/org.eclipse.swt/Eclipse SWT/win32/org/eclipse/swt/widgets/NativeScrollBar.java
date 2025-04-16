@@ -79,16 +79,15 @@ import org.eclipse.swt.internal.win32.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see Slider
- * @see Scrollable
- * @see Scrollable#getHorizontalBar
- * @see Scrollable#getVerticalBar
+ * @see NativeScrollable
+ * @see NativeScrollable#getHorizontalBar
+ * @see NativeScrollable#getVerticalBar
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class ScrollBar extends Widget {
-	Scrollable parent;
+public abstract class NativeScrollBar extends NativeWidget {
+	NativeScrollable parent;
 	int increment, pageIncrement;
 
 /**
@@ -117,10 +116,10 @@ public class ScrollBar extends Widget {
  *
  * @see SWT#HORIZONTAL
  * @see SWT#VERTICAL
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-ScrollBar (Scrollable parent, int style) {
+NativeScrollBar (NativeScrollable parent, int style) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	createWidget ();
@@ -314,7 +313,7 @@ public int getPageIncrement () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Scrollable getParent () {
+public NativeScrollable getParent () {
 	checkWidget();
 	return parent;
 }
@@ -383,7 +382,7 @@ Point getSizeInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see ScrollBar
+ * @see NativeScrollBar
  */
 public int getThumb () {
 	checkWidget();
@@ -445,7 +444,7 @@ Rectangle getThumbBoundsInPixels () {
 /**
  * Returns a rectangle describing the size and location of the
  * receiver's thumb track relative to its parent. This rectangle
- * comprises the areas 2, 3, and 4 as described in {@link ScrollBar}.
+ * comprises the areas 2, 3, and 4 as described in {@link NativeScrollBar}.
  *
  * @return the thumb track bounds, relative to the {@link #getParent() parent}
  *
@@ -998,5 +997,8 @@ LRESULT wmScrollChild (long wParam, long lParam) {
 	// the widget could be destroyed at this point
 	return null;
 }
+
+@Override
+public abstract ScrollBar getWrapper();
 
 }

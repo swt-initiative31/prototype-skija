@@ -41,7 +41,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Sash extends Control {
+public abstract class NativeSash extends NativeControl implements ISash {
 	boolean dragging;
 	int startX, startY, lastX, lastY;
 	final static int INCREMENT = 1;
@@ -74,10 +74,10 @@ public class Sash extends Control {
  * @see SWT#HORIZONTAL
  * @see SWT#VERTICAL
  * @see SWT#SMOOTH
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Sash (Composite parent, int style) {
+protected NativeSash (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
@@ -106,6 +106,7 @@ public Sash (Composite parent, int style) {
  * @see #removeSelectionListener
  * @see SelectionEvent
  */
+@Override
 public void addSelectionListener (SelectionListener listener) {
 	addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 }
@@ -172,6 +173,7 @@ void drawBand (int x, int y, int width, int height) {
  * @see SelectionListener
  * @see #addSelectionListener
  */
+@Override
 public void removeSelectionListener(SelectionListener listener) {
 	checkWidget ();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -407,5 +409,8 @@ LRESULT WM_SETCURSOR (long wParam, long lParam) {
 	}
 	return result;
 }
+
+@Override
+public abstract Sash getWrapper();
 
 }

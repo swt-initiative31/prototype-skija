@@ -33,11 +33,11 @@ import org.eclipse.swt.*;
  *
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class TaskBar extends Widget {
+public abstract class NativeTaskBar extends NativeWidget {
 	int itemCount;
-	TaskItem [] items = new TaskItem [4];
+	NativeTaskItem [] items = new NativeTaskItem [4];
 
-TaskBar (Display display, int style) {
+NativeTaskBar (Display display, int style) {
 	if (display == null) display = Display.getCurrent ();
 	if (display == null) display = Display.getDefault ();
 	if (!display.isValidThread ()) {
@@ -47,11 +47,11 @@ TaskBar (Display display, int style) {
 	reskinWidget ();
 }
 
-void createItem (TaskItem item, int index) {
+void createItem (NativeTaskItem item, int index) {
 	if (index == -1) index = itemCount;
 	if (!(0 <= index && index <= itemCount)) error (SWT.ERROR_INVALID_RANGE);
 	if (itemCount == items.length) {
-		TaskItem [] newItems = new TaskItem [items.length + 4];
+		NativeTaskItem [] newItems = new NativeTaskItem [items.length + 4];
 		System.arraycopy (items, 0, newItems, 0, items.length);
 		items = newItems;
 	}
@@ -63,7 +63,7 @@ void createItems () {
 	getItem (null);
 }
 
-void destroyItem (TaskItem item) {
+void destroyItem (NativeTaskItem item) {
 	int index = 0;
 	while (index < itemCount) {
 		if (items [index] == item) break;
@@ -89,7 +89,7 @@ void destroyItem (TaskItem item) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TaskItem getItem (int index) {
+public NativeTaskItem getItem (int index) {
 	checkWidget ();
 	createItems ();
 	if (!(0 <= index && index < itemCount)) error (SWT.ERROR_INVALID_RANGE);
@@ -125,7 +125,7 @@ public int getItemCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TaskItem getItem (Shell shell) {
+public NativeTaskItem getItem (NativeShell shell) {
 	checkWidget ();
 	for (int i = 0; i < itemCount; i++) {
 		if (items [i] != null && items [i].shell == shell) {
@@ -134,13 +134,13 @@ public TaskItem getItem (Shell shell) {
 	}
 	TaskItem item = null;
 	if (shell == null) {
-		item = new TaskItem (this, SWT.NONE);
+		item = new TaskItem (this.getWrapper(), SWT.NONE);
 	} else {
 		// on the Mac only the application item is supported
 //		TaskBarItem item = new TaskBarItem (this, SWT.NONE);
 //		item.setShell (shell);
 	}
-	return item;
+	return item != null ? item.getWrappedWidget() : null;
 }
 
 /**
@@ -159,10 +159,10 @@ public TaskItem getItem (Shell shell) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TaskItem [] getItems () {
+public NativeTaskItem [] getItems () {
 	checkWidget ();
 	createItems ();
-	TaskItem [] result = new TaskItem [itemCount];
+	NativeTaskItem [] result = new NativeTaskItem [itemCount];
 	System.arraycopy (items, 0, result, 0, result.length);
 	return result;
 }
@@ -171,7 +171,7 @@ public TaskItem [] getItems () {
 void releaseChildren (boolean destroy) {
 	if (items != null) {
 		for (int i=0; i<items.length; i++) {
-			TaskItem item = items [i];
+			NativeTaskItem item = items [i];
 			if (item != null && !item.isDisposed ()) {
 				item.release (false);
 			}
@@ -191,11 +191,14 @@ void releaseParent () {
 void reskinChildren (int flags) {
 	if (items != null) {
 		for (int i=0; i<items.length; i++) {
-			TaskItem item = items [i];
+			NativeTaskItem item = items [i];
 			if (item != null) item.reskin (flags);
 		}
 	}
 	super.reskinChildren (flags);
 }
+
+@Override
+public abstract TaskBar getWrapper();
 
 }

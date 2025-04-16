@@ -40,14 +40,14 @@ import org.eclipse.swt.internal.win32.*;
  * @since 3.1
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class TreeColumn extends Item {
-	Tree parent;
+public abstract class NativeTreeColumn extends NativeItem {
+	NativeTree parent;
 	boolean resizable, moveable;
 	String toolTipText;
 	int id;
 
 	static {
-		DPIZoomChangeRegistry.registerHandler(TreeColumn::handleDPIChange, TreeColumn.class);
+		DPIZoomChangeRegistry.registerHandler(NativeTreeColumn::handleDPIChange, TreeColumn.class);
 	}
 
 /**
@@ -79,10 +79,10 @@ public class TreeColumn extends Item {
  * @see SWT#LEFT
  * @see SWT#RIGHT
  * @see SWT#CENTER
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TreeColumn (Tree parent, int style) {
+protected NativeTreeColumn (NativeTree parent, int style) {
 	super (parent, checkStyle (style));
 	resizable = true;
 	this.parent = parent;
@@ -123,10 +123,10 @@ public TreeColumn (Tree parent, int style) {
  * @see SWT#LEFT
  * @see SWT#RIGHT
  * @see SWT#CENTER
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TreeColumn (Tree parent, int style, int index) {
+protected NativeTreeColumn (NativeTree parent, int style, int index) {
 	super (parent, checkStyle (style));
 	resizable = true;
 	this.parent = parent;
@@ -189,7 +189,7 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -232,9 +232,9 @@ public int getAlignment () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Tree#getColumnOrder()
- * @see Tree#setColumnOrder(int[])
- * @see TreeColumn#setMoveable(boolean)
+ * @see NativeTree#getColumnOrder()
+ * @see NativeTree#setColumnOrder(int[])
+ * @see NativeTreeColumn#setMoveable(boolean)
  * @see SWT#Move
  *
  * @since 3.2
@@ -259,7 +259,7 @@ String getNameText () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Tree getParent () {
+public NativeTree getParent () {
 	checkWidget ();
 	return parent;
 }
@@ -351,7 +351,7 @@ public void pack () {
 	tvItem.hItem = OS.SendMessage (hwnd, OS.TVM_GETNEXTITEM, OS.TVGN_ROOT, 0);
 	while (tvItem.hItem != 0) {
 		OS.SendMessage (hwnd, OS.TVM_GETITEM, 0, tvItem);
-		TreeItem item = tvItem.lParam != -1 ? parent.items [(int)tvItem.lParam] : null;
+		NativeTreeItem item = tvItem.lParam != -1 ? parent.items [(int)tvItem.lParam] : null;
 		if (item != null) {
 			int itemRight = 0;
 			if (parent.hooks (SWT.MeasureItem)) {
@@ -375,12 +375,12 @@ public void pack () {
 	int flags = OS.DT_CALCRECT | OS.DT_NOPREFIX;
 	char [] buffer = text.toCharArray ();
 	OS.DrawText (hDC, buffer, buffer.length, rect, flags);
-	int headerWidth = rect.right - rect.left + Tree.HEADER_MARGIN;
-	if (OS.IsAppThemed ()) headerWidth += Tree.HEADER_EXTRA;
+	int headerWidth = rect.right - rect.left + NativeTree.HEADER_MARGIN;
+	if (OS.IsAppThemed ()) headerWidth += NativeTree.HEADER_EXTRA;
 	if (image != null || parent.sortColumn == this) {
 		Image headerImage = null;
 		if (parent.sortColumn == this && parent.sortDirection != SWT.NONE) {
-			headerWidth += Tree.SORT_WIDTH;
+			headerWidth += NativeTree.SORT_WIDTH;
 		} else {
 			headerImage = image;
 		}
@@ -398,7 +398,7 @@ public void pack () {
 	}
 	if (newFont != 0) OS.SelectObject (hDC, oldFont);
 	OS.ReleaseDC (hwnd, hDC);
-	int gridWidth = parent.linesVisible ? Tree.GRID_WIDTH : 0;
+	int gridWidth = parent.linesVisible ? NativeTree.GRID_WIDTH : 0;
 	setWidthInPixels (Math.max (headerWidth, columnWidth + gridWidth));
 }
 
@@ -565,9 +565,9 @@ void setImage (Image image, boolean sort, boolean right) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Tree#setColumnOrder(int[])
- * @see Tree#getColumnOrder()
- * @see TreeColumn#getMoveable()
+ * @see NativeTree#setColumnOrder(int[])
+ * @see NativeTree#getColumnOrder()
+ * @see NativeTreeColumn#getMoveable()
  * @see SWT#Move
  *
  * @since 3.2
@@ -761,10 +761,10 @@ void updateToolTip (int index) {
 }
 
 private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-	if (!(widget instanceof TreeColumn treeColumn)) {
+	if (!(Widget.checkNative(widget) instanceof NativeTreeColumn treeColumn)) {
 		return;
 	}
-	Tree tree = treeColumn.getParent();
+	NativeTree tree = treeColumn.getParent();
 	boolean ignoreColumnResize = tree.ignoreColumnResize;
 	tree.ignoreColumnResize = true;
 	final int newColumnWidth = Math.round(treeColumn.getWidthInPixels() * scalingFactor);
@@ -776,4 +776,8 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 		treeColumn.setImage(image);
 	}
 }
+
+@Override
+public abstract TreeColumn getWrapper();
+
 }

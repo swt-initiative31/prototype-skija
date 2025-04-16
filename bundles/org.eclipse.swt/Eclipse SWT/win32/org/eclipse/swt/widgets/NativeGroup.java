@@ -43,7 +43,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Group extends Composite {
+public abstract class NativeGroup extends NativeComposite {
 	String text = "";
 	static final int CLIENT_INSET = 3;
 	static final long GroupProc;
@@ -98,10 +98,10 @@ public class Group extends Composite {
  * @see SWT#SHADOW_IN
  * @see SWT#SHADOW_OUT
  * @see SWT#SHADOW_NONE
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Group (Composite parent, int style) {
+protected NativeGroup (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
@@ -134,7 +134,7 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -332,7 +332,7 @@ void printWidget (long hwnd, long hdc, GC gc) {
 		int flags = OS.PRF_CLIENT | OS.PRF_NONCLIENT | OS.PRF_ERASEBKGND;
 		OS.SendMessage (hwnd, OS.WM_PRINT, hdc, flags);
 		int nSavedDC = OS.SaveDC (hdc);
-		Control [] children = _getChildren ();
+		NativeControl [] children = _getChildren ();
 		Rectangle rect = getBoundsInPixels ();
 		OS.IntersectClipRect (hdc, 0, 0, rect.width, rect.height);
 		for (int i=children.length - 1; i>=0; --i) {
@@ -625,4 +625,8 @@ LRESULT WM_WINDOWPOSCHANGING (long wParam, long lParam) {
 	}
 	return result;
 }
+
+@Override
+public abstract Group getWrapper();
+
 }

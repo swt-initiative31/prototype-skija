@@ -21,7 +21,7 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import org.eclipse.swt.widgets.Menu.*;
+import org.eclipse.swt.widgets.NativeMenu.*;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -42,8 +42,8 @@ import org.eclipse.swt.widgets.Menu.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class MenuItem extends Item {
-	Menu parent, menu;
+public abstract class NativeMenuItem extends NativeItem {
+	NativeMenu parent, menu;
 	long groupHandle, labelHandle, imageHandle;
 
 	/** Feature in Gtk: as of Gtk version 3.10 GtkImageMenuItem is deprecated,
@@ -101,10 +101,10 @@ public class MenuItem extends Item {
  * @see SWT#PUSH
  * @see SWT#RADIO
  * @see SWT#SEPARATOR
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public MenuItem (Menu parent, int style) {
+protected NativeMenuItem (NativeMenu parent, int style) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	createWidget (parent.getItemCount ());
@@ -143,10 +143,10 @@ public MenuItem (Menu parent, int style) {
  * @see SWT#PUSH
  * @see SWT#RADIO
  * @see SWT#SEPARATOR
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public MenuItem (Menu parent, int style, int index) {
+protected NativeMenuItem (NativeMenu parent, int style, int index) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	int count = parent.getItemCount ();
@@ -250,7 +250,7 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -318,7 +318,7 @@ void createHandle(int index) {
 
 			int itemsToMove = selectedSection.sectionItems.size() - sectionRelativeIndex;
 			for (int i = 0; i < itemsToMove; i++) {
-				MenuItem removedItem = selectedSection.sectionItems.remove(sectionRelativeIndex);
+				NativeMenuItem removedItem = selectedSection.sectionItems.remove(sectionRelativeIndex);
 				section.sectionItems.add(removedItem);
 
 				OS.g_menu_remove(selectedSection.getSectionHandle(), sectionRelativeIndex);
@@ -464,7 +464,7 @@ void createHandle(int index) {
 	}
 }
 
-void fixMenus (Decorations newParent) {
+void fixMenus (NativeDecorations newParent) {
 	if (menu != null && !menu.isDisposed() && !newParent.isDisposed()) menu.fixMenus (newParent);
 }
 
@@ -488,12 +488,12 @@ public int getAccelerator () {
 }
 
 long getAccelGroup () {
-	Menu menu = parent;
+	NativeMenu menu = parent;
 	while (menu != null && menu.cascade != null) {
 		menu = menu.cascade.parent;
 	}
 	if (menu == null) return 0;
-	Decorations shell = menu.parent;
+	NativeDecorations shell = menu.parent;
 	if (shell == null) return 0;
 	return shell.menuBar == menu ? shell.accelGroup : 0;
 }
@@ -560,7 +560,7 @@ public int getID () {
  */
 public Menu getMenu () {
 	checkWidget();
-	return menu;
+	return menu != null ? menu.getWrapper() : null;
 }
 
 @Override
@@ -579,7 +579,7 @@ String getNameText () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Menu getParent () {
+public NativeMenu getParent () {
 	checkWidget();
 	return parent;
 }
@@ -761,7 +761,7 @@ void destroyWidget() {
 			Section aboveSection = parent.sections.get(parent.sections.indexOf(section) - 1);
 			aboveSection.sectionItems.addAll(section.sectionItems);
 
-			for (MenuItem item : section.sectionItems) {
+			for (NativeMenuItem item : section.sectionItems) {
 				OS.g_menu_insert_item(aboveSection.getSectionHandle(), aboveSection.sectionItems.indexOf(item), item.handle);
 			}
 
@@ -875,7 +875,7 @@ void reskinChildren (int flags) {
 }
 void selectRadio () {
 	int index = 0;
-	MenuItem [] items = parent.getItems ();
+	NativeMenuItem [] items = parent.getItems ();
 	while (index < items.length && items [index] != this) index++;
 	int i = index - 1;
 	while (i >= 0 && items [i].setRadioSelection (false)) --i;
@@ -1110,7 +1110,7 @@ private void _setImage (Image image) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setMenu (Menu menu) {
+public void setMenu (NativeMenu menu) {
 	checkWidget ();
 
 	/* Check to make sure the new menu is valid */
@@ -1127,7 +1127,7 @@ public void setMenu (Menu menu) {
 	}
 
 	/* Assign the new menu */
-	Menu oldMenu = this.menu;
+	NativeMenu oldMenu = this.menu;
 	if (oldMenu == menu) return;
 
 	if (GTK.GTK4) {
@@ -1308,7 +1308,7 @@ public void setText (String string) {
  * </p>
  * <p>
  * NOTE: Tooltips are currently not shown for top-level menu items in the
- * {@link Shell#setMenuBar(Menu) shell menubar} on Windows, Mac, and Ubuntu Unity desktop.
+ * {@link NativeShell#setMenuBar(NativeMenu) shell menubar} on Windows, Mac, and Ubuntu Unity desktop.
  * </p>
  * <p>
  * NOTE: This operation is a hint and behavior is platform specific, on Windows
@@ -1455,4 +1455,8 @@ private void disposeDefaultDisabledImage() {
 		defaultDisableImage = null;
 	}
 }
+
+@Override
+public abstract MenuItem getWrapper();
+
 }

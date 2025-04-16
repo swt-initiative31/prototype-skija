@@ -41,7 +41,7 @@ public class DefaultButtonRenderer extends ButtonRenderer {
 			| SWT.DRAW_TRANSPARENT | SWT.DRAW_DELIMITER;
 
 
-	public DefaultButtonRenderer(Button button) {
+	public DefaultButtonRenderer(CustomButton button) {
 		super(button);
 	}
 

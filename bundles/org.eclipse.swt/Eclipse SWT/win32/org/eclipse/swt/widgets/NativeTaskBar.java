@@ -40,9 +40,9 @@ import org.eclipse.swt.internal.win32.*;
  *
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class TaskBar extends Widget {
+public abstract class NativeTaskBar extends NativeWidget {
 	int itemCount;
-	TaskItem [] items = new TaskItem [4];
+	NativeTaskItem [] items = new NativeTaskItem [4];
 	ITaskbarList3 mTaskbarList3;
 	String iconsDir;
 
@@ -63,7 +63,7 @@ public class TaskBar extends Widget {
 		EXE_PATH = buffer;
 	}
 
-TaskBar (Display display, int style) {
+NativeTaskBar (Display display, int style) {
 	this.display = display;
 	this.nativeZoom = display.getDeviceZoom();
 	createHandle ();
@@ -78,11 +78,11 @@ void createHandle () {
 	mTaskbarList3 = new ITaskbarList3 (ppv [0]);
 }
 
-void createItem (TaskItem item, int index) {
+void createItem (NativeTaskItem item, int index) {
 	if (index == -1) index = itemCount;
 	if (!(0 <= index && index <= itemCount)) error (SWT.ERROR_INVALID_RANGE);
 	if (itemCount == items.length) {
-		TaskItem [] newItems = new TaskItem [items.length + 4];
+		NativeTaskItem [] newItems = new NativeTaskItem [items.length + 4];
 		System.arraycopy (items, 0, newItems, 0, items.length);
 		items = newItems;
 	}
@@ -91,13 +91,13 @@ void createItem (TaskItem item, int index) {
 }
 
 void createItems () {
-	for (Shell shell : display.getShells ()) {
+	for (NativeShell shell : display.getNativeShells ()) {
 		getItem (shell);
 	}
 	getItem (null);
 }
 
-IShellLink createShellLink (MenuItem item) {
+IShellLink createShellLink (NativeMenuItem item) {
 	int style = item.getStyle ();
 	if ((style & SWT.CASCADE) != 0) return null;
 	long [] ppv = new long [1];
@@ -200,14 +200,14 @@ IShellLink createShellLink (MenuItem item) {
 	return pLink;
 }
 
-IObjectArray createShellLinkArray (MenuItem [] items) {
+IObjectArray createShellLinkArray (NativeMenuItem [] items) {
 	if (items == null) return null;
 	if (items.length == 0) return null;
 	long [] ppv = new long [1];
 	int hr = COM.CoCreateInstance (COM.CLSID_EnumerableObjectCollection, 0, COM.CLSCTX_INPROC_SERVER, COM.IID_IObjectCollection, ppv);
 	if (hr != OS.S_OK) error (SWT.ERROR_NO_HANDLES);
 	IObjectCollection pObjColl = new IObjectCollection (ppv [0]);
-	for (MenuItem item : items) {
+	for (NativeMenuItem item : items) {
 		IShellLink pLink = createShellLink (item);
 		if (pLink != null) {
 			pObjColl.AddObject (pLink);
@@ -222,7 +222,7 @@ IObjectArray createShellLinkArray (MenuItem [] items) {
 	return poa;
 }
 
-void destroyItem (TaskItem item) {
+void destroyItem (NativeTaskItem item) {
 	int index = 0;
 	while (index < itemCount) {
 		if (items [index] == item) break;
@@ -260,7 +260,7 @@ String getIconsDir() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TaskItem getItem (int index) {
+public NativeTaskItem getItem (int index) {
 	checkWidget ();
 	createItems ();
 	if (!(0 <= index && index < itemCount)) error (SWT.ERROR_INVALID_RANGE);
@@ -280,14 +280,14 @@ public TaskItem getItem (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TaskItem getItem (Shell shell) {
+public NativeTaskItem getItem (NativeShell shell) {
 	checkWidget ();
-	for (TaskItem item : items) {
+	for (NativeTaskItem item : items) {
 		if (item != null && item.shell == shell) {
 			return item;
 		}
 	}
-	TaskItem item = new TaskItem (this, SWT.NONE);
+	NativeTaskItem item = new TaskItem (this.getWrapper(), SWT.NONE).getWrappedWidget();
 	if (shell != null) item.setShell (shell);
 	return item;
 }
@@ -324,10 +324,10 @@ public int getItemCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TaskItem [] getItems () {
+public NativeTaskItem [] getItems () {
 	checkWidget ();
 	createItems ();
-	TaskItem [] result = new TaskItem [itemCount];
+	NativeTaskItem [] result = new NativeTaskItem [itemCount];
 	System.arraycopy (items, 0, result, 0, result.length);
 	return result;
 }
@@ -335,7 +335,7 @@ public TaskItem [] getItems () {
 @Override
 void releaseChildren (boolean destroy) {
 	if (items != null) {
-		for (TaskItem item : items) {
+		for (NativeTaskItem item : items) {
 			if (item != null && !item.isDisposed ()) {
 				item.release (false);
 			}
@@ -348,7 +348,7 @@ void releaseChildren (boolean destroy) {
 @Override
 void releaseParent () {
 	super.releaseParent ();
-	if (display.taskBar == this) display.taskBar = null;
+	if (Widget.checkNative(display.taskBar) == this) display.taskBar = null;
 }
 
 @Override
@@ -361,14 +361,14 @@ void releaseWidget () {
 @Override
 void reskinChildren (int flags) {
 	if (items != null) {
-		for (TaskItem item : items) {
+		for (NativeTaskItem item : items) {
 			if (item != null) item.reskin (flags);
 		}
 	}
 	super.reskinChildren (flags);
 }
 
-void setMenu (Menu menu) {
+void setMenu (NativeMenu menu) {
 	long [] ppv = new long [1];
 	int hr = COM.CoCreateInstance (COM.CLSID_DestinationList, 0, COM.CLSCTX_INPROC_SERVER, COM.IID_ICustomDestinationList, ppv);
 	if (hr != OS.S_OK) error (SWT.ERROR_NO_HANDLES);
@@ -380,7 +380,7 @@ void setMenu (Menu menu) {
 		buffer = new char [length + 1];
 		appName.getChars (0, length, buffer, 0);
 	}
-	MenuItem [] items = null;
+	NativeMenuItem [] items = null;
 	if (menu != null && (items = menu.getItems ()).length != 0) {
 		IObjectArray poa = createShellLinkArray (items);
 		if (poa != null) {
@@ -399,11 +399,11 @@ void setMenu (Menu menu) {
 				if (hr != OS.S_OK) error (SWT.ERROR_INVALID_ARGUMENT);
 			}
 
-			for (MenuItem item : items) {
+			for (NativeMenuItem item : items) {
 				if ((item.getStyle () & SWT.CASCADE) != 0) {
-					Menu subMenu = item.getMenu ();
+					NativeMenu subMenu = Widget.checkNative(item.getMenu ());
 					if (subMenu != null) {
-						MenuItem [] subItems = subMenu.getItems ();
+						NativeMenuItem [] subItems = subMenu.getItems ();
 						IObjectArray poa2 = createShellLinkArray (subItems);
 						if (poa2 != null) {
 							poa2.GetCount (count);
@@ -431,5 +431,8 @@ void setMenu (Menu menu) {
 	}
 	pDestList.Release ();
 }
+
+@Override
+public abstract TaskBar getWrapper();
 
 }

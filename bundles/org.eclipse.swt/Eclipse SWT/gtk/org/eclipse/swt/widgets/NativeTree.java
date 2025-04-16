@@ -15,6 +15,7 @@ package org.eclipse.swt.widgets;
 
 
 import java.util.*;
+import java.util.concurrent.atomic.*;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
@@ -82,16 +83,16 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Tree extends Composite {
+public abstract class NativeTree extends NativeComposite {
 	long modelHandle, checkRenderer;
 	int columnCount, sortDirection;
 	int selectionCountOnPress,selectionCountOnRelease;
 	long ignoreCell;
-	TreeItem[] items;
+	NativeTreeItem[] items;
 	int nextId;
-	TreeColumn [] columns;
-	TreeColumn sortColumn;
-	TreeItem currentItem;
+	NativeTreeColumn [] columns;
+	NativeTreeColumn sortColumn;
+	NativeTreeItem currentItem;
 	ImageList imageList, headerImageList;
 	boolean firstCustomDraw;
 	/** True iff computeSize has never been called on this Tree */
@@ -105,7 +106,7 @@ public class Tree extends Composite {
 	boolean ignoreSize, pixbufSizeSet, hasChildren;
 	int pixbufHeight, pixbufWidth, headerHeight;
 	boolean headerVisible;
-	TreeItem topItem;
+	NativeTreeItem topItem;
 	double cachedAdjustment, currentAdjustment;
 	Color headerBackground, headerForeground;
 	boolean boundsChangedSinceLastDraw, wasScrolled;
@@ -158,10 +159,10 @@ public class Tree extends Composite {
  * @see SWT#FULL_SELECTION
  * @see SWT#VIRTUAL
  * @see SWT#NO_SCROLL
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Tree (Composite parent, int style) {
+protected NativeTree (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
@@ -180,7 +181,7 @@ void _addListener (int eventType, Listener listener) {
 	}
 }
 
-TreeItem _getItem (long iter) {
+NativeTreeItem _getItem (long iter) {
 	int id = getId (iter, true);
 	if (items [id] != null) return items [id];
 	long path = GTK.gtk_tree_model_get_path (modelHandle, iter);
@@ -193,20 +194,35 @@ TreeItem _getItem (long iter) {
 		parentIter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
 		GTK.gtk_tree_model_get_iter (modelHandle, parentIter, path);
 	}
-	items [id] = new TreeItem (this, parentIter, SWT.NONE, indices [indices.length -1], iter);
+	AtomicReference<TreeItem> item = new AtomicReference<>();
+	items[id] = new NativeTreeItem(this, parentIter, SWT.NONE, indices [indices.length -1], iter) {
+		@Override
+		public TreeItem getWrapper() {
+			return item.get();
+		}
+	};
+	item.set(new TreeItem(items[id]));
 	GTK.gtk_tree_path_free (path);
 	if (parentIter != 0) OS.g_free (parentIter);
 	return items [id];
 }
 
-TreeItem _getItem (long parentIter, long iter, int index) {
+NativeTreeItem _getItem (long parentIter, long iter, int index) {
 	int id = getId (iter, true);
 	if (items [id] != null) return items [id];
-	return items [id] = new TreeItem (this, parentIter, SWT.NONE, index, iter);
+	AtomicReference<TreeItem> item = new AtomicReference<>();
+	items[id] = new NativeTreeItem(this, parentIter, SWT.NONE, index, iter) {
+		@Override
+		public TreeItem getWrapper() {
+			return item.get();
+		}
+	};
+	item.set(new TreeItem(items[id]));
+	return items [id];
 }
 
 void reallocateIds(int newSize) {
-	TreeItem [] newItems = new TreeItem [newSize];
+	NativeTreeItem [] newItems = new NativeTreeItem [newSize];
 	System.arraycopy (items, 0, newItems, 0, items.length);
 	items = newItems;
 }
@@ -275,7 +291,7 @@ static int checkStyle (int style) {
 @Override
 long cellDataProc (long tree_column, long cell, long tree_model, long iter, long data) {
 	if (cell == ignoreCell) return 0;
-	TreeItem item = _getItem (iter);
+	NativeTreeItem item = _getItem (iter);
 	if (item != null) OS.g_object_set_qdata (cell, Display.SWT_OBJECT_INDEX2, item.handle);
 	boolean isPixbuf = GTK.GTK_IS_CELL_RENDERER_PIXBUF (cell);
 	boolean isText = GTK.GTK_IS_CELL_RENDERER_TEXT (cell);
@@ -286,10 +302,10 @@ long cellDataProc (long tree_column, long cell, long tree_model, long iter, long
 	int modelIndex = -1;
 	boolean customDraw = false;
 	if (columnCount == 0) {
-		modelIndex = Tree.FIRST_COLUMN;
+		modelIndex = NativeTree.FIRST_COLUMN;
 		customDraw = firstCustomDraw;
 	} else {
-		TreeColumn column = (TreeColumn) display.getWidget (tree_column);
+		NativeTreeColumn column = (NativeTreeColumn) display.getWidget (tree_column);
 		if (column != null) {
 			modelIndex = column.modelIndex;
 			customDraw = column.customDraw;
@@ -356,13 +372,13 @@ long cellDataProc (long tree_column, long cell, long tree_model, long iter, long
 	return 0;
 }
 
-boolean checkData (TreeItem item) {
+boolean checkData (NativeTreeItem item) {
 	if (item.cached) return true;
 	if ((style & SWT.VIRTUAL) != 0) {
 		item.cached = true;
-		TreeItem parentItem = item.getParentItem ();
+		NativeTreeItem parentItem = item.getParentItem ();
 		Event event = new Event ();
-		event.item = item;
+		event.item = item.getWrapper();
 		event.index = parentItem == null ? indexOf (item) : parentItem.indexOf (item);
 		int mask = OS.G_SIGNAL_MATCH_DATA | OS.G_SIGNAL_MATCH_ID;
 		int signal_id = OS.g_signal_lookup (OS.row_changed, GTK.gtk_tree_model_get_type ());
@@ -381,7 +397,7 @@ boolean checkData (TreeItem item) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -480,10 +496,10 @@ int calculateWidth (long column, long iter, boolean recurse) {
 				long image = GTK4.gtk_image_new_from_icon_name(GTK.GTK_NAMED_ICON_PAN_DOWN);
 				GtkRequisition requisition = new GtkRequisition ();
 				GTK.gtk_widget_get_preferred_size(image, requisition, null);
-				width += requisition.width + TreeItem.EXPANDER_EXTRA_PADDING;
+				width += requisition.width + NativeTreeItem.EXPANDER_EXTRA_PADDING;
 			} else {
 				GTK3.gtk_widget_style_get (handle, OS.expander_size, w, 0);
-				width += w [0] + TreeItem.EXPANDER_EXTRA_PADDING;
+				width += w [0] + NativeTreeItem.EXPANDER_EXTRA_PADDING;
 			}
 		}
 	}
@@ -569,7 +585,7 @@ void clear (long parentIter, int index, boolean all) {
 	int[] value = new int[1];
 	GTK.gtk_tree_model_get (modelHandle, iter, ID_COLUMN, value, -1);
 	if (value [0] != -1) {
-		TreeItem item = items [value [0]];
+		NativeTreeItem item = items [value [0]];
 		item.clear ();
 	}
 	if (all) clearAll (all, iter);
@@ -608,7 +624,7 @@ void clearAll (boolean all, long parentIter) {
 	while (valid) {
 		GTK.gtk_tree_model_get (modelHandle, iter, ID_COLUMN, value, -1);
 		if (value [0] != -1) {
-			TreeItem item = items [value [0]];
+			NativeTreeItem item = items [value [0]];
 			item.clear ();
 		}
 		if (all) clearAll (all, iter);
@@ -629,7 +645,7 @@ Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
 	 */
 	if (!GTK.GTK4) {
 		if (firstCompute) {
-			for (TreeColumn column : columns) {
+			for (NativeTreeColumn column : columns) {
 				if (column != null) GTK.gtk_widget_set_visible(column.buttonHandle, true);
 			}
 			firstCompute = false;
@@ -650,7 +666,7 @@ Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
 		// Initialize to height of root items & header
 		size.y = getItemCount() * itemHeight + getHeaderHeight();
 
-		for (TreeItem item : items) {
+		for (NativeTreeItem item : items) {
 			if (item != null && item.isExpanded) {
 				size.y += GTK.gtk_tree_model_iter_n_children (modelHandle, item.handle) * itemHeight;
 			}
@@ -692,7 +708,7 @@ void copyModel (long oldModel, int oldStart, long newModel, int newStart, long o
 			GTK.gtk_tree_store_append (newModel, newIterator, newParent);
 			GTK.gtk_tree_model_get (oldModel, iter, ID_COLUMN, intBuffer, -1);
 			int index = intBuffer[0];
-			TreeItem item = null;
+			NativeTreeItem item = null;
 			if (index != -1) {
 				item = items [index];
 				if (item != null) {
@@ -738,7 +754,7 @@ void copyModel (long oldModel, int oldStart, long newModel, int newStart, long o
 	OS.g_free (iter);
 }
 
-void createColumn (TreeColumn column, int index) {
+void createColumn (NativeTreeColumn column, int index) {
 /*
 * Bug in ATK. For some reason, ATK segments fault if
 * the GtkTreeView has a column and does not have items.
@@ -773,7 +789,7 @@ void createColumn (TreeColumn column, int index) {
 	long columnHandle = GTK.gtk_tree_view_column_new ();
 	if (columnHandle == 0) error (SWT.ERROR_NO_HANDLES);
 	if (index == 0 && columnCount > 0) {
-		TreeColumn checkColumn = columns [0];
+		NativeTreeColumn checkColumn = columns [0];
 		createRenderers (checkColumn.handle, checkColumn.modelIndex, false, checkColumn.style);
 	}
 	createRenderers (columnHandle, modelIndex, index == 0, column == null ? 0 : column.style);
@@ -897,7 +913,7 @@ int applyThemeBackground () {
 	return -1; /* No Change */
 }
 
-void createItem (TreeColumn column, int index) {
+void createItem (NativeTreeColumn column, int index) {
 	if (!(0 <= index && index <= columnCount)) error (SWT.ERROR_INVALID_RANGE);
 	if (index == 0) {
 		// first column must be left aligned
@@ -941,7 +957,7 @@ void createItem (TreeColumn column, int index) {
 	column.buttonHandle = GTK.gtk_tree_view_column_get_button(column.handle);
 	GTK.gtk_widget_set_focus_on_click(column.buttonHandle, false);
 	if (columnCount == columns.length) {
-		TreeColumn [] newColumns = new TreeColumn [columns.length + 4];
+		NativeTreeColumn [] newColumns = new NativeTreeColumn [columns.length + 4];
 		System.arraycopy (columns, 0, newColumns, 0, columns.length);
 		columns = newColumns;
 	}
@@ -954,7 +970,7 @@ void createItem (TreeColumn column, int index) {
 	}
 	if (columnCount >= 1) {
 		for (int i=0; i<items.length; i++) {
-			TreeItem item = items [i];
+			NativeTreeItem item = items [i];
 			if (item != null) {
 				Font [] cellFont = item.cellFont;
 				if (cellFont != null) {
@@ -980,10 +996,10 @@ void createItem (TreeColumn column, int index) {
 }
 
 /**
- * The fastest way to insert many items is documented in {@link TreeItem#TreeItem(org.eclipse.swt.widgets.Tree,int,int)}
- * and {@link TreeItem#setItemCount}
+ * The fastest way to insert many items is documented in {@link NativeTreeItem#TreeItem(org.eclipse.swt.widgets.NativeTree,int,int)}
+ * and {@link NativeTreeItem#setItemCount}
  */
-void createItem (TreeItem item, long parentIter, int index) {
+void createItem (NativeTreeItem item, long parentIter, int index) {
 	/*
 	 * Try to achieve maximum possible performance in bulk insert scenarios.
 	 * Even a single call to 'gtk_tree_model_iter_n_children' already
@@ -1143,8 +1159,8 @@ void createRenderers (long columnHandle, int modelIndex, boolean check, int colu
 @Override
 void createWidget (int index) {
 	super.createWidget (index);
-	items = new TreeItem [4];
-	columns = new TreeColumn [4];
+	items = new NativeTreeItem [4];
+	columns = new NativeTreeColumn [4];
 	columnCount = 0;
 	// In GTK 3 font description is inherited from parent widget which is not how SWT has always worked,
 	// reset to default font to get the usual behavior
@@ -1181,7 +1197,7 @@ void deregister () {
  *
  * @since 3.4
  */
-public void deselect (TreeItem item) {
+public void deselect (NativeTreeItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -1211,7 +1227,7 @@ public void deselectAll() {
 	if (fixColumn) hideFirstColumn ();
 }
 
-void destroyItem (TreeColumn column) {
+void destroyItem (NativeTreeColumn column) {
 	int index = 0;
 	while (index < columnCount) {
 		if (columns [index] == column) break;
@@ -1236,7 +1252,7 @@ void destroyItem (TreeColumn column) {
 		createColumn (null, 0);
 	} else {
 		for (int i=0; i<items.length; i++) {
-			TreeItem item = items [i];
+			NativeTreeItem item = items [i];
 			if (item != null) {
 				long iter = item.handle;
 				int modelIndex = column.modelIndex;
@@ -1261,7 +1277,7 @@ void destroyItem (TreeColumn column) {
 		}
 		if (index == 0) {
 			// first column must be left aligned and must show check box
-			TreeColumn firstColumn = columns [0];
+			NativeTreeColumn firstColumn = columns [0];
 			firstColumn.style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
 			firstColumn.style |= SWT.LEFT;
 			createRenderers (firstColumn.handle, firstColumn.modelIndex, true, firstColumn.style);
@@ -1277,7 +1293,7 @@ void destroyItem (TreeColumn column) {
 }
 
 
-void destroyItem (TreeItem item) {
+void destroyItem (NativeTreeItem item) {
 	long selection = GTK.gtk_tree_view_get_selection (handle);
 	OS.g_signal_handlers_block_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
 	GTK.gtk_tree_store_remove (modelHandle, item.handle);
@@ -1408,15 +1424,15 @@ int getClientWidth () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Tree#getColumnOrder()
- * @see Tree#setColumnOrder(int[])
- * @see TreeColumn#getMoveable()
- * @see TreeColumn#setMoveable(boolean)
+ * @see NativeTree#getColumnOrder()
+ * @see NativeTree#setColumnOrder(int[])
+ * @see NativeTreeColumn#getMoveable()
+ * @see NativeTreeColumn#setMoveable(boolean)
  * @see SWT#Move
  *
  * @since 3.1
  */
-public TreeColumn getColumn (int index) {
+public NativeTreeColumn getColumn (int index) {
 	checkWidget();
 	if (!(0 <= index && index < columnCount)) error (SWT.ERROR_INVALID_RANGE);
 	return columns [index];
@@ -1464,9 +1480,9 @@ public int getColumnCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Tree#setColumnOrder(int[])
- * @see TreeColumn#getMoveable()
- * @see TreeColumn#setMoveable(boolean)
+ * @see NativeTree#setColumnOrder(int[])
+ * @see NativeTreeColumn#getMoveable()
+ * @see NativeTreeColumn#setMoveable(boolean)
  * @see SWT#Move
  *
  * @since 3.2
@@ -1537,17 +1553,17 @@ long [] getColumnTypes (int columnCount) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Tree#getColumnOrder()
- * @see Tree#setColumnOrder(int[])
- * @see TreeColumn#getMoveable()
- * @see TreeColumn#setMoveable(boolean)
+ * @see NativeTree#getColumnOrder()
+ * @see NativeTree#setColumnOrder(int[])
+ * @see NativeTreeColumn#getMoveable()
+ * @see NativeTreeColumn#setMoveable(boolean)
  * @see SWT#Move
  *
  * @since 3.1
  */
-public TreeColumn [] getColumns () {
+public NativeTreeColumn [] getColumns () {
 	checkWidget();
-	TreeColumn [] result = new TreeColumn [columnCount];
+	NativeTreeColumn [] result = new NativeTreeColumn [columnCount];
 	System.arraycopy (columns, 0, result, 0, columnCount);
 	return result;
 }
@@ -1572,11 +1588,11 @@ GdkRGBA getContextColorGdkRGBA () {
 	}
 }
 
-TreeItem getFocusItem () {
+NativeTreeItem getFocusItem () {
 	long [] path = new long [1];
 	GTK.gtk_tree_view_get_cursor (handle, path, null);
 	if (path [0] == 0) return null;
-	TreeItem item = null;
+	NativeTreeItem item = null;
 	long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
 	if (GTK.gtk_tree_model_get_iter (modelHandle, iter, path [0])) {
 		int [] index = new int [1];
@@ -1734,7 +1750,7 @@ public boolean getHeaderVisible () {
  *
  * @since 3.1
  */
-public TreeItem getItem (int index) {
+public NativeTreeItem getItem (int index) {
 	checkWidget();
 	if (index < 0) error (SWT.ERROR_INVALID_RANGE);
 	long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
@@ -1769,12 +1785,12 @@ public TreeItem getItem (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TreeItem getItem (Point point) {
+public NativeTreeItem getItem (Point point) {
 	checkWidget();
 	return getItemInPixels(DPIUtil.autoScaleUp(point));
 }
 
-TreeItem getItemInPixels (Point point) {
+NativeTreeItem getItemInPixels (Point point) {
 	checkWidget ();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
 	long [] path = new long [1];
@@ -1793,7 +1809,7 @@ TreeItem getItemInPixels (Point point) {
 	long [] columnHandle = new long [1];
 	if (!GTK.gtk_tree_view_get_path_at_pos (handle, x, y, path, columnHandle, null, null)) return null;
 	if (path [0] == 0) return null;
-	TreeItem item = null;
+	NativeTreeItem item = null;
 	long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
 	if (GTK.gtk_tree_model_get_iter (modelHandle, iter, path [0])) {
 		boolean overExpander = false;
@@ -1913,13 +1929,13 @@ int getItemHeightInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TreeItem [] getItems () {
+public NativeTreeItem [] getItems () {
 	checkWidget();
 	return getItems (0);
 }
 
-TreeItem [] getItems (long parent) {
-	ArrayList<TreeItem> result = new ArrayList<> ();
+NativeTreeItem [] getItems (long parent) {
+	ArrayList<NativeTreeItem> result = new ArrayList<> ();
 	long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
 	try {
 		boolean valid = GTK.gtk_tree_model_iter_children (modelHandle, iter, parent);
@@ -1930,7 +1946,7 @@ TreeItem [] getItems (long parent) {
 	} finally {
 		OS.g_free (iter);
 	}
-	return result.toArray (new TreeItem [result.size ()]);
+	return result.toArray (new NativeTreeItem [result.size ()]);
 }
 
 /**
@@ -1970,7 +1986,7 @@ public boolean getLinesVisible() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TreeItem getParentItem () {
+public NativeTreeItem getParentItem () {
 	checkWidget ();
 	return null;
 }
@@ -2008,14 +2024,14 @@ long getPixbufRenderer (long column) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TreeItem[] getSelection () {
+public NativeTreeItem[] getSelection () {
 	checkWidget();
 	long selection = GTK.gtk_tree_view_get_selection (handle);
 	long list = GTK.gtk_tree_selection_get_selected_rows (selection, null);
 	if (list != 0) {
 		long originalList = list;
 		int count = OS.g_list_length (list);
-		TreeItem [] treeSelection = new TreeItem [count];
+		NativeTreeItem [] treeSelection = new NativeTreeItem [count];
 		int length = 0;
 		for (int i=0; i<count; i++) {
 			long data = OS.g_list_data (list);
@@ -2030,13 +2046,13 @@ public TreeItem[] getSelection () {
 		}
 		OS.g_list_free (originalList);
 		if (length < count) {
-			TreeItem [] temp = new TreeItem [length];
+			NativeTreeItem [] temp = new NativeTreeItem [length];
 			System.arraycopy(treeSelection, 0, temp, 0, length);
 			treeSelection = temp;
 		}
 		return treeSelection;
 	}
-	return new TreeItem [0];
+	return new NativeTreeItem [0];
 }
 
 /**
@@ -2067,11 +2083,11 @@ public int getSelectionCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see #setSortColumn(TreeColumn)
+ * @see #setSortColumn(NativeTreeColumn)
  *
  * @since 3.2
  */
-public TreeColumn getSortColumn () {
+public NativeTreeColumn getSortColumn () {
 	checkWidget ();
 	return sortColumn;
 }
@@ -2128,7 +2144,7 @@ long getTextRenderer (long column) {
  *
  * @since 2.1
  */
-public TreeItem getTopItem () {
+public NativeTreeItem getTopItem () {
 	checkWidget ();
 	/*
 	 * Feature in GTK: fetch the topItem using the topItem global variable
@@ -2138,7 +2154,7 @@ public TreeItem getTopItem () {
 	long vAdjustment;
 	vAdjustment = GTK.gtk_scrollable_get_vadjustment(handle);
 	currentAdjustment = GTK.gtk_adjustment_get_value(vAdjustment);
-	TreeItem item = null;
+	NativeTreeItem item = null;
 	if (cachedAdjustment == currentAdjustment) {
 		item = _getCachedTopItem();
 	}
@@ -2165,7 +2181,7 @@ public TreeItem getTopItem () {
 	return item;
 }
 
-TreeItem _getCachedTopItem() {
+NativeTreeItem _getCachedTopItem() {
 	/*
 	 *  Check to see if the selected item is also the topItem. If it is, that means topItem is
 	 *  in sync with the GTK view. If not, the real top item should be the last selected item, which is caused
@@ -2173,7 +2189,7 @@ TreeItem _getCachedTopItem() {
 	 */
 	long treeSelect = GTK.gtk_tree_view_get_selection(handle);
 	long list = GTK.gtk_tree_selection_get_selected_rows(treeSelect, null);
-	TreeItem treeSelection = null;
+	NativeTreeItem treeSelection = null;
 	if (list != 0) {
 		long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
 		long data = OS.g_list_data (list);
@@ -2191,7 +2207,7 @@ TreeItem _getCachedTopItem() {
 	} else {
 		if (topItem == null) {
 			// if topItem isn't set and there is nothing selected, topItem is the first item on the Tree
-			TreeItem item = null;
+			NativeTreeItem item = null;
 			long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof());
 			if (GTK.gtk_tree_model_get_iter_first (modelHandle, iter)) {
 				item = _getItem (iter);
@@ -2369,12 +2385,12 @@ long gtk_key_press_event (long widget, long event) {
 void sendTreeDefaultSelection() {
 
 	//Note, similar DefaultSelectionHandling in SWT List/Table/Tree
-	TreeItem treeItem = getFocusItem ();
+	NativeTreeItem treeItem = getFocusItem ();
 	if (treeItem == null)
 		return;
 
 	Event event = new Event ();
-	event.item = treeItem;
+	event.item = treeItem.getWrapper();
 
 	sendSelectionEvent (SWT.DefaultSelection, event, false);
 }
@@ -2442,10 +2458,10 @@ long gtk_button_release_event (long widget, long event) {
 
 @Override
 long gtk_changed (long widget) {
-	TreeItem item = getFocusItem ();
+	NativeTreeItem item = getFocusItem ();
 	if (item != null) {
 		Event event = new Event ();
-		event.item = item;
+		event.item = item.getWrapper();
 		sendSelectionEvent (SWT.Selection, event, false);
 	}
 	return 0;
@@ -2460,7 +2476,7 @@ long gtk_expand_collapse_cursor_row (long widget, long logical, long expand, lon
 
 void drawInheritedBackground (long cairo) {
 	if ((state & PARENT_BACKGROUND) != 0 || backgroundImage != null) {
-		Control control = findBackgroundControl ();
+		NativeControl control = findBackgroundControl ();
 		if (control != null) {
 			int [] width = new int [1], height = new int [1];
 			long gdkResource;
@@ -2541,7 +2557,7 @@ long gtk_row_has_child_toggled (long model, long path, long iter) {
 	int [] index = new int [1];
 	GTK.gtk_tree_model_get (modelHandle, iter, ID_COLUMN, index, -1);
 	if (index [0] >= items.length) return 0;
-	TreeItem item = items [index [0]];
+	NativeTreeItem item = items [index [0]];
 	if (item == null) return 0;
 	int childCount = GTK.gtk_tree_model_iter_n_children (modelHandle, item.handle);
 	if (childCount != 0 && item.isExpanded) {
@@ -2572,9 +2588,9 @@ long gtk_start_interactive_search(long widget) {
 long gtk_test_collapse_row (long tree, long iter, long path) {
 	int [] index = new int [1];
 	GTK.gtk_tree_model_get (modelHandle, iter, ID_COLUMN, index, -1);
-	TreeItem item = items [index [0]];
+	NativeTreeItem item = items [index [0]];
 	Event event = new Event ();
-	event.item = item;
+	event.item = item.getWrapper();
 	boolean oldModelChanged = modelChanged;
 	modelChanged = false;
 	sendEvent (SWT.Collapse, event);
@@ -2612,9 +2628,9 @@ long gtk_test_collapse_row (long tree, long iter, long path) {
 long gtk_test_expand_row (long tree, long iter, long path) {
 	int [] index = new int [1];
 	GTK.gtk_tree_model_get (modelHandle, iter, ID_COLUMN, index, -1);
-	TreeItem item = items [index [0]];
+	NativeTreeItem item = items [index [0]];
 	Event event = new Event ();
-	event.item = item;
+	event.item = item.getWrapper();
 	boolean oldModelChanged = modelChanged;
 	modelChanged = false;
 	sendEvent (SWT.Expand, event);
@@ -2656,7 +2672,7 @@ long gtk_test_expand_row (long tree, long iter, long path) {
 long gtk_toggled (long renderer, long pathStr) {
 	long path = GTK.gtk_tree_path_new_from_string (pathStr);
 	if (path == 0) return 0;
-	TreeItem item = null;
+	NativeTreeItem item = null;
 	long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof());
 	if (GTK.gtk_tree_model_get_iter (modelHandle, iter, path)) {
 		item = _getItem (iter);
@@ -2667,7 +2683,7 @@ long gtk_toggled (long renderer, long pathStr) {
 		item.setChecked (!item.getChecked ());
 		Event event = new Event ();
 		event.detail = SWT.CHECK;
-		event.item = item;
+		event.item = item.getWrapper();
 		sendSelectionEvent (SWT.Selection, event, false);
 	}
 	return 0;
@@ -2747,7 +2763,7 @@ void hookEvents () {
  *
  * @since 3.1
  */
-public int indexOf (TreeColumn column) {
+public int indexOf (NativeTreeColumn column) {
 	checkWidget();
 	if (column == null) error (SWT.ERROR_NULL_ARGUMENT);
 	for (int i=0; i<columnCount; i++) {
@@ -2776,7 +2792,7 @@ public int indexOf (TreeColumn column) {
  *
  * @since 3.1
  */
-public int indexOf (TreeItem item) {
+public int indexOf (NativeTreeItem item) {
 	checkWidget();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -2828,7 +2844,7 @@ void propagateDraw (long container, long cairo) {
 	 */
 	super.propagateDraw(container, cairo);
 	if (headerVisible && noChildDrawing && wasScrolled) {
-		for (TreeColumn column : columns) {
+		for (NativeTreeColumn column : columns) {
 			if (column != null) {
 				GTK.gtk_widget_queue_draw(column.buttonHandle);
 			}
@@ -2848,10 +2864,10 @@ void recreateRenderers () {
 		OS.g_signal_connect_closure (checkRenderer, OS.toggled, display.getClosure (TOGGLED), false);
 	}
 	if (columnCount == 0) {
-		createRenderers (GTK.gtk_tree_view_get_column (handle, 0), Tree.FIRST_COLUMN, true, 0);
+		createRenderers (GTK.gtk_tree_view_get_column (handle, 0), NativeTree.FIRST_COLUMN, true, 0);
 	} else {
 		for (int i = 0; i < columnCount; i++) {
-			TreeColumn column = columns [i];
+			NativeTreeColumn column = columns [i];
 			createRenderers (column.handle, column.modelIndex, i == 0, column.style);
 		}
 	}
@@ -2859,7 +2875,7 @@ void recreateRenderers () {
 
 @Override
 void redrawBackgroundImage () {
-	Control control = findBackgroundControl ();
+	NativeControl control = findBackgroundControl ();
 	if (control != null && control.backgroundImage != null) {
 		redrawWidget (0, 0, 0, 0, true, false, false);
 	}
@@ -2873,7 +2889,7 @@ void register () {
 	display.addWidget (modelHandle, this);
 }
 
-void releaseItem (TreeItem item, boolean release) {
+void releaseItem (NativeTreeItem item, boolean release) {
 	int [] index = new int [1];
 	GTK.gtk_tree_model_get (modelHandle, item.handle, ID_COLUMN, index, -1);
 	if (index [0] == -1) return;
@@ -2890,7 +2906,7 @@ void releaseItems (long parentIter) {
 		if (!isDisposed ()) {
 			GTK.gtk_tree_model_get (modelHandle, iter, ID_COLUMN, index, -1);
 			if (index [0] != -1) {
-				TreeItem item = items [index [0]];
+				NativeTreeItem item = items [index [0]];
 				if (item != null) releaseItem (item, true);
 			}
 		}
@@ -2903,7 +2919,7 @@ void releaseItems (long parentIter) {
 void releaseChildren (boolean destroy) {
 	if (items != null) {
 		for (int i=0; i<items.length; i++) {
-			TreeItem item = items [i];
+			NativeTreeItem item = items [i];
 			if (item != null && !item.isDisposed ()) {
 				item.release (false);
 			}
@@ -2912,7 +2928,7 @@ void releaseChildren (boolean destroy) {
 	}
 	if (columns != null) {
 		for (int i=0; i<columnCount; i++) {
-			TreeColumn column = columns [i];
+			NativeTreeColumn column = columns [i];
 			if (column != null && !column.isDisposed ()) {
 				column.release (false);
 			}
@@ -2949,7 +2965,7 @@ void remove (long parentIter, int start, int end) {
 			GTK.gtk_tree_model_iter_nth_child (modelHandle, iter, parentIter, start);
 			int[] value = new int[1];
 			GTK.gtk_tree_model_get (modelHandle, iter, ID_COLUMN, value, -1);
-			TreeItem item = value [0] != -1 ? items [value [0]] : null;
+			NativeTreeItem item = value [0] != -1 ? items [value [0]] : null;
 			if (item != null && !item.isDisposed ()) {
 				/*
 				 * Bug 182598 - assertion failed in gtktreestore.c
@@ -2991,10 +3007,10 @@ public void removeAll () {
 	OS.g_signal_handlers_unblock_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
 
 	for (int i=0; i<items.length; i++) {
-		TreeItem item = items [i];
+		NativeTreeItem item = items [i];
 		if (item != null && !item.isDisposed ()) item.release (false);
 	}
-	items = new TreeItem[4];
+	items = new NativeTreeItem[4];
 
 	if (!searchEnabled ()) {
 		GTK.gtk_tree_view_set_search_column (handle, -1);
@@ -3057,7 +3073,7 @@ public void removeTreeListener(TreeListener listener) {
 void sendMeasureEvent (long cell, long width, long height) {
 	if (!ignoreSize && GTK.GTK_IS_CELL_RENDERER_TEXT (cell) && hooks (SWT.MeasureItem)) {
 		long iter = OS.g_object_get_qdata (cell, Display.SWT_OBJECT_INDEX2);
-		TreeItem item = null;
+		NativeTreeItem item = null;
 		if (iter != 0) item = _getItem (iter);
 		if (item != null && !item.isDisposed()) {
 			int columnIndex = 0;
@@ -3090,7 +3106,7 @@ void sendMeasureEvent (long cell, long width, long height) {
 			GC gc = new GC (this);
 			gc.setFont (item.getFont (columnIndex));
 			Event event = new Event ();
-			event.item = item;
+			event.item = item.getWrapper();
 			event.index = columnIndex;
 			event.gc = gc;
 			Rectangle eventRect = new Rectangle (0, 0, contentWidth [0], contentHeight [0]);
@@ -3141,7 +3157,7 @@ long rendererRenderProc (long cell, long cr, long widget, long background_area, 
 }
 
 void rendererRender (long cell, long cr, long snapshot, long widget, long background_area, long cell_area, long expose_area, long flags) {
-	TreeItem item = null;
+	NativeTreeItem item = null;
 	boolean wasSelected = false;
 	long iter = OS.g_object_get_qdata (cell, Display.SWT_OBJECT_INDEX2);
 	if (iter != 0) item = _getItem (iter);
@@ -3186,10 +3202,10 @@ void rendererRender (long cell, long cr, long snapshot, long widget, long backgr
 			drawFlags = (int)flags;
 			drawState = SWT.FOREGROUND;
 			long [] ptr = new long [1];
-			GTK.gtk_tree_model_get (modelHandle, item.handle, Tree.BACKGROUND_COLUMN, ptr, -1);
+			GTK.gtk_tree_model_get (modelHandle, item.handle, NativeTree.BACKGROUND_COLUMN, ptr, -1);
 			if (ptr [0] == 0) {
-				int modelIndex = columnCount == 0 ? Tree.FIRST_COLUMN : columns [columnIndex].modelIndex;
-				GTK.gtk_tree_model_get (modelHandle, item.handle, modelIndex + Tree.CELL_BACKGROUND, ptr, -1);
+				int modelIndex = columnCount == 0 ? NativeTree.FIRST_COLUMN : columns [columnIndex].modelIndex;
+				GTK.gtk_tree_model_get (modelHandle, item.handle, modelIndex + NativeTree.CELL_BACKGROUND, ptr, -1);
 			}
 			if (ptr [0] != 0) {
 				drawState |= SWT.BACKGROUND;
@@ -3210,7 +3226,7 @@ void rendererRender (long cell, long cr, long snapshot, long widget, long backgr
 			}
 			if ((drawState & SWT.SELECTED) == 0) {
 				if ((state & PARENT_BACKGROUND) != 0 || backgroundImage != null) {
-					Control control = findBackgroundControl ();
+					NativeControl control = findBackgroundControl ();
 					if (control != null) {
 						if (cr != 0) {
 							Cairo.cairo_save (cr);
@@ -3236,7 +3252,7 @@ void rendererRender (long cell, long cr, long snapshot, long widget, long backgr
 				 */
 				wasSelected = (drawState & SWT.SELECTED) != 0;
 				if (wasSelected) {
-					Control control = findBackgroundControl ();
+					NativeControl control = findBackgroundControl ();
 					if (control == null) control = this;
 				}
 				GC gc = getGC(cr);
@@ -3271,7 +3287,7 @@ void rendererRender (long cell, long cr, long snapshot, long widget, long backgr
 					eventRect.y += y_offset;
 					Cairo.cairo_translate (cr, 0, -y_offset);
 
-					event.item = item;
+					event.item = item.getWrapper();
 					event.index = columnIndex;
 					event.gc = gc;
 					event.detail = drawState;
@@ -3393,7 +3409,7 @@ void rendererRender (long cell, long cr, long snapshot, long widget, long backgr
 					eventRect.y += y_offset;
 					Cairo.cairo_translate (cr, 0, -y_offset);
 
-					event.item = item;
+					event.item = item.getWrapper();
 					event.index = columnIndex;
 					event.gc = gc;
 					event.detail = drawState;
@@ -3436,13 +3452,13 @@ void resetCustomDraw () {
 void reskinChildren (int flags) {
 	if (items != null) {
 		for (int i=0; i<items.length; i++) {
-			TreeItem item = items [i];
+			NativeTreeItem item = items [i];
 			if (item != null) item.reskinChildren (flags);
 		}
 	}
 	if (columns != null) {
 		for (int i=0; i<columns.length; i++) {
-			TreeColumn column = columns [i];
+			NativeTreeColumn column = columns [i];
 			if (column != null) column.reskinChildren (flags);
 		}
 	}
@@ -3470,7 +3486,7 @@ boolean searchEnabled () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setInsertMark (TreeItem item, boolean before) {
+public void setInsertMark (NativeTreeItem item, boolean before) {
 	checkWidget ();
 	if (item == null) {
 		GTK.gtk_tree_view_set_drag_dest_row(handle, 0, GTK.GTK_TREE_VIEW_DROP_BEFORE);
@@ -3519,7 +3535,14 @@ void setItemCount (long parentIter, int count) {
 		OS.g_free (iters);
 	} else {
 		for (int i=itemCount; i<count; i++) {
-			new TreeItem (this, parentIter, SWT.NONE, itemCount, 0);
+			AtomicReference<TreeItem> item = new AtomicReference<>();
+			NativeTreeItem nativeItem = new NativeTreeItem(this, parentIter, SWT.NONE, itemCount, 0) {
+				@Override
+				public TreeItem getWrapper() {
+					return item.get();
+				}
+			};
+			item.set(new TreeItem(nativeItem));
 		}
 	}
 	if (!isVirtual) setRedraw (true);
@@ -3529,8 +3552,8 @@ void setItemCount (long parentIter, int count) {
 /**
  * Sets the number of root-level items contained in the receiver.
  * <p>
- * The fastest way to insert many items is documented in {@link TreeItem#TreeItem(Tree,int,int)}
- * and {@link TreeItem#setItemCount}
+ * The fastest way to insert many items is documented in {@link NativeTreeItem#NativeTreeItem(NativeTree,int,int)}
+ * and {@link NativeTreeItem#setItemCount}
  *
  * @param count the number of items
  *
@@ -3564,7 +3587,7 @@ public void setItemCount (int count) {
  *
  * @since 3.4
  */
-public void select (TreeItem item) {
+public void select (NativeTreeItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -3663,9 +3686,9 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
  *    <li>ERROR_INVALID_ARGUMENT - if the item order is not the same length as the number of items</li>
  * </ul>
  *
- * @see Tree#getColumnOrder()
- * @see TreeColumn#getMoveable()
- * @see TreeColumn#setMoveable(boolean)
+ * @see NativeTree#getColumnOrder()
+ * @see NativeTreeColumn#getMoveable()
+ * @see NativeTreeColumn#setMoveable(boolean)
  * @see SWT#Move
  *
  * @since 3.2
@@ -3696,7 +3719,7 @@ public void setColumnOrder (int [] order) {
 @Override
 void setFontDescription (long font) {
 	super.setFontDescription (font);
-	TreeColumn[] columns = getColumns ();
+	NativeTreeColumn[] columns = getColumns ();
 	for (int i = 0; i < columns.length; i++) {
 		if (columns[i] != null) {
 			columns[i].setFontDescription (font);
@@ -3770,7 +3793,7 @@ void updateHeaderCSS() {
 			GTK3.gtk_css_provider_load_from_data(headerCSSProvider, Converter.javaStringToCString(css.toString()), -1, null);
 		}
 	} else {
-		for (TreeColumn column : columns) {
+		for (NativeTreeColumn column : columns) {
 			if (column != null) {
 				column.setHeaderCSS(css.toString());
 			}
@@ -3887,7 +3910,7 @@ void setParentBackground () {
 }
 
 @Override
-void setParentGdkResource (Control child) {
+void setParentGdkResource (NativeControl child) {
 	/*
 	 * Feature in GTK3: non-native GdkWindows are not drawn implicitly
 	 * as of GTK3.10+. It is the client's responsibility to propagate draw
@@ -3911,7 +3934,7 @@ void setParentGdkResource (Control child) {
 	}
 }
 
-void setScrollWidth (long column, TreeItem item) {
+void setScrollWidth (long column, NativeTreeItem item) {
 	if (columnCount != 0 || currentItem == item) return;
 	int width = GTK.gtk_tree_view_column_get_fixed_width (column);
 	int itemWidth = calculateWidth (column, item.handle, true);
@@ -3941,10 +3964,10 @@ void setScrollWidth (long column, TreeItem item) {
  *
  * @since 3.2
  */
-public void setSelection (TreeItem item) {
+public void setSelection (NativeTreeItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
-	setSelection (new TreeItem [] {item});
+	setSelection (new NativeTreeItem [] {item});
 }
 
 /**
@@ -3968,9 +3991,9 @@ public void setSelection (TreeItem item) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Tree#deselectAll()
+ * @see NativeTree#deselectAll()
  */
-public void setSelection (TreeItem [] items) {
+public void setSelection (NativeTreeItem [] items) {
 	checkWidget ();
 	if (items == null) error (SWT.ERROR_NULL_ARGUMENT);
 	deselectAll ();
@@ -3981,7 +4004,7 @@ public void setSelection (TreeItem [] items) {
 	OS.g_signal_handlers_block_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
 	boolean first = true;
 	for (int i = 0; i < length; i++) {
-		TreeItem item = items [i];
+		NativeTreeItem item = items [i];
 		if (item == null) continue;
 		if (item.isDisposed ()) break;
 		if (item.parent != this) continue;
@@ -4015,7 +4038,7 @@ public void setSelection (TreeItem [] items) {
  *
  * @since 3.2
  */
-public void setSortColumn (TreeColumn column) {
+public void setSortColumn (NativeTreeColumn column) {
 	checkWidget ();
 	if (column != null && column.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (sortColumn != null && !sortColumn.isDisposed()) {
@@ -4070,11 +4093,11 @@ public void setSortDirection  (int direction) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Tree#getTopItem()
+ * @see NativeTree#getTopItem()
  *
  * @since 2.1
  */
-public void setTopItem (TreeItem item) {
+public void setTopItem (NativeTreeItem item) {
 
 	/*
 	 * Feature in GTK: cache the GtkAdjustment value for future use in
@@ -4112,7 +4135,7 @@ public void setTopItem (TreeItem item) {
  *
  * @since 3.1
  */
-public void showColumn (TreeColumn column) {
+public void showColumn (NativeTreeColumn column) {
 	checkWidget ();
 	if (column == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (column.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
@@ -4146,11 +4169,11 @@ boolean showFirstColumn () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Tree#showItem(TreeItem)
+ * @see NativeTree#showItem(NativeTreeItem)
  */
 public void showSelection () {
 	checkWidget();
-	TreeItem [] items = getSelection ();
+	NativeTreeItem [] items = getSelection ();
 	if (items.length != 0 && items [0] != null) showItem (items [0]);
 }
 
@@ -4188,9 +4211,9 @@ void showItem (long path, boolean scroll) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Tree#showSelection()
+ * @see NativeTree#showSelection()
  */
-public void showItem (TreeItem item) {
+public void showItem (NativeTreeItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed ()) error(SWT.ERROR_INVALID_ARGUMENT);
@@ -4201,7 +4224,7 @@ public void showItem (TreeItem item) {
 }
 
 @Override
-void updateScrollBarValue (ScrollBar bar) {
+void updateScrollBarValue (NativeScrollBar bar) {
 	super.updateScrollBarValue (bar);
 
 	if (!GTK.GTK4) {
@@ -4255,7 +4278,7 @@ long windowProc (long handle, long arg0, long user_data) {
 			int itemCount = GTK.gtk_tree_model_iter_n_children (modelHandle, 0);
 			if (itemCount == 0 && (state & OBSCURED) == 0) {
 				if ((state & PARENT_BACKGROUND) != 0 || backgroundImage != null) {
-					Control control = findBackgroundControl ();
+					NativeControl control = findBackgroundControl ();
 					if (control != null) {
 						long window = GTK3.gtk_tree_view_get_bin_window (handle);
 						if (window == GTK3.gtk_widget_get_window(handle)) {
@@ -4312,7 +4335,7 @@ void checkSetDataInProcessBeforeRemoval() {
 	 * We therefore throw an exception to prevent the crash.
 	 */
 	for (int i = 0; i < items.length; i++) {
-		TreeItem item = items[i];
+		NativeTreeItem item = items[i];
 		if (item != null && item.settingData) {
 			throwCannotRemoveItem(i);
 		}
@@ -4333,4 +4356,8 @@ public void dispose() {
 		headerCSSProvider = 0;
 	}
 }
+
+@Override
+public abstract Tree getWrapper();
+
 }

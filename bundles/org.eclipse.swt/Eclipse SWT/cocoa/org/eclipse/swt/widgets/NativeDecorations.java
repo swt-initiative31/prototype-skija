@@ -92,21 +92,21 @@ import org.eclipse.swt.internal.cocoa.*;
  *
  * @see #getMinimized
  * @see #getMaximized
- * @see Shell
+ * @see NativeShell
  * @see SWT
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Decorations extends Canvas {
+public abstract class NativeDecorations extends NativeCanvas {
 	Image image;
 	Image [] images = new Image [0];
-	Menu menuBar;
+	NativeMenu menuBar;
 	String text = "";
 	boolean minimized, maximized;
-	Control savedFocus;
+	NativeControl savedFocus;
 	Button defaultButton;
 
-Decorations () {
+NativeDecorations () {
 	/* Do nothing */
 }
 
@@ -146,10 +146,10 @@ Decorations () {
  * @see SWT#DIALOG_TRIM
  * @see SWT#ON_TOP
  * @see SWT#TOOL
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Decorations (Composite parent, int style) {
+protected NativeDecorations (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
@@ -170,7 +170,7 @@ void bringToTop (boolean force) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -190,21 +190,21 @@ int compare (ImageData data1, ImageData data2) {
 }
 
 @Override
-Widget computeTabGroup () {
+NativeWidget computeTabGroup () {
 	return this;
 }
 
 @Override
-Control computeTabRoot () {
+NativeControl computeTabRoot () {
 	return this;
 }
 
-void fixDecorations (Decorations newDecorations, Control control, Menu [] menus) {
+void fixDecorations (NativeDecorations newDecorations, NativeControl control, NativeMenu [] menus) {
 	if (this == newDecorations) return;
 	if (control == savedFocus) savedFocus = null;
-	if (control == defaultButton) defaultButton = null;
+	if (control.getWrapper() == defaultButton) defaultButton = null;
 	if (menus == null) return;
-	Menu menu = control.menu;
+	NativeMenu menu = control.menu;
 	if (menu != null) {
 		int index = 0;
 		while (index < menus.length) {
@@ -231,7 +231,7 @@ void fixDecorations (Decorations newDecorations, Control control, Menu [] menus)
  *
  * @see #setDefaultButton(Button)
  */
-public Button getDefaultButton () {
+public Button getDefaultButton() {
 	checkWidget();
 	if (defaultButton != null && defaultButton.isDisposed ()) return null;
 	return defaultButton;
@@ -327,7 +327,7 @@ public boolean getMaximized () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Menu getMenuBar () {
+public NativeMenu getMenuBar () {
 	checkWidget();
 	return menuBar;
 }
@@ -390,7 +390,7 @@ boolean isTabItem () {
 }
 
 @Override
-Decorations menuShell () {
+NativeDecorations menuShell () {
 	return this;
 }
 
@@ -405,10 +405,10 @@ void releaseChildren (boolean destroy) {
 		return;
 	}
 	super.releaseChildren (destroy);
-	Menu [] menus = display.getMenus (this);
+	NativeMenu [] menus = display.getMenus (this);
 	if (menus != null) {
 		for (int i=0; i<menus.length; i++) {
-			Menu menu = menus [i];
+			NativeMenu menu = menus [i];
 			if (menu != null && !menu.isDisposed ()) {
 				menu.dispose ();
 			}
@@ -428,10 +428,10 @@ void releaseWidget () {
 @Override
 void reskinChildren (int flags) {
 	if (menuBar != null) menuBar.reskin (flags);
-	Menu [] menus = display.getMenus (this);
+	NativeMenu [] menus = display.getMenus (this);
 	if (menus != null) {
 		for (int i=0; i<menus.length; i++) {
-			Menu menu = menus [i];
+			NativeMenu menu = menus [i];
 			if (menu != null) menu.reskin (flags);
 		}
 	}
@@ -445,7 +445,7 @@ boolean restoreFocus () {
 }
 
 void saveFocus () {
-	Control control = display._getFocusControl(view.window());
+	NativeControl control = display._getFocusControl(view.window());
 	if (control != null && control != this && this == control.menuShell ()) {
 		setSavedFocus (control);
 	}
@@ -476,17 +476,23 @@ void saveFocus () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setDefaultButton (Button button) {
+public void setDefaultButton(Button button) {
 	checkWidget();
 	if (button != null) {
 		if (button.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
-		if (button.menuShell () != this) error (SWT.ERROR_INVALID_PARENT);
-		if ((button.style & SWT.PUSH) == 0) return;
+		if (button.menuShell () != this.getWrapper()) error (SWT.ERROR_INVALID_PARENT);
+		if ((button.getStyle() & SWT.PUSH) == 0) return;
 	}
 	if (button == defaultButton) return;
 	defaultButton = button;
+<<<<<<< HEAD:bundles/org.eclipse.swt/Eclipse SWT/cocoa/org/eclipse/swt/widgets/Decorations.java
 //	NSButtonCell cell = null;
 //	if (defaultButton != null && (defaultButton.style & SWT.PUSH) != 0) {
+=======
+	// TODO Facade readd
+//	NSButtonCell cell = null;
+//	if (defaultButton != null && (defaultButton.getStyle() & SWT.PUSH) != 0) {
+>>>>>>> fa1cdeec5f (Introduce widget facade and adapt Win32 native widgets accordingly):bundles/org.eclipse.swt/Eclipse SWT/cocoa/org/eclipse/swt/widgets/NativeDecorations.java
 //		cell = new NSButtonCell (((NSButton)defaultButton.view).cell ());
 //	}
 //	view.window().setDefaultButtonCell (cell);
@@ -610,7 +616,7 @@ public void setMaximized (boolean maximized) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setMenuBar (Menu menu) {
+public void setMenuBar (NativeMenu menu) {
 	checkWidget();
 	if (menuBar == menu) return;
 	if (menu != null) {
@@ -649,7 +655,7 @@ public void setMinimized (boolean minimized) {
 	this.minimized = minimized;
 }
 
-void setSavedFocus (Control control) {
+void setSavedFocus (NativeControl control) {
 	savedFocus = control;
 }
 
@@ -711,8 +717,12 @@ boolean traverseItem (boolean next) {
 boolean traverseReturn () {
 	if (defaultButton == null || defaultButton.isDisposed ()) return false;
 	if (!defaultButton.isVisible () || !defaultButton.isEnabled ()) return false;
-	defaultButton.click ();
+	// TODO Facade readd
+//	defaultButton.click ();
 	return true;
 }
+
+@Override
+public abstract Decorations getWrapper();
 
 }

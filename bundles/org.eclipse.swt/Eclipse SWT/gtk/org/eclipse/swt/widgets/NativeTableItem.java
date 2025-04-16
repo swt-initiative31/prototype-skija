@@ -39,8 +39,8 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class TableItem extends Item {
-	Table parent;
+public abstract class NativeTableItem extends NativeItem {
+	NativeTable parent;
 	Font font;
 	Font[] cellFont;
 	String [] strings;
@@ -75,10 +75,10 @@ public class TableItem extends Item {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TableItem (Table parent, int style, int index) {
+protected NativeTableItem (NativeTable parent, int style, int index) {
 	this (parent, style, index, true);
 }
 
@@ -109,15 +109,15 @@ public TableItem (Table parent, int style, int index) {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TableItem (Table parent, int style) {
+protected NativeTableItem (NativeTable parent, int style) {
 	this (parent, style, checkNull (parent).getItemCount (), true);
 }
 
 
-TableItem (Table parent, int style, int index, boolean create) {
+NativeTableItem (NativeTable parent, int style, int index, boolean create) {
 	super (parent, style);
 	this.parent = parent;
 	if (create) {
@@ -128,14 +128,14 @@ TableItem (Table parent, int style, int index, boolean create) {
 	}
 }
 
-static Table checkNull (Table control) {
+static NativeTable checkNull (NativeTable control) {
 	if (control == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	return control;
 }
 
 Color _getBackground () {
 	long [] ptr = new long [1];
-	GTK.gtk_tree_model_get (parent.modelHandle, handle, Table.BACKGROUND_COLUMN, ptr, -1);
+	GTK.gtk_tree_model_get (parent.modelHandle, handle, NativeTable.BACKGROUND_COLUMN, ptr, -1);
 	if (ptr [0] == 0) return parent.getBackground ();
 	GdkRGBA gdkRGBA = new GdkRGBA ();
 	OS.memmove(gdkRGBA, ptr [0], GdkRGBA.sizeof);
@@ -147,8 +147,8 @@ Color _getBackground (int index) {
 	int count = Math.max (1, parent.columnCount);
 	if (0 > index || index > count - 1) return _getBackground ();
 	long [] ptr = new long [1];
-	int modelIndex = parent.columnCount == 0 ? Table.FIRST_COLUMN : parent.columns [index].modelIndex;
-	GTK.gtk_tree_model_get (parent.modelHandle, handle, modelIndex + Table.CELL_BACKGROUND, ptr, -1);
+	int modelIndex = parent.columnCount == 0 ? NativeTable.FIRST_COLUMN : parent.columns [index].modelIndex;
+	GTK.gtk_tree_model_get (parent.modelHandle, handle, modelIndex + NativeTable.CELL_BACKGROUND, ptr, -1);
 	if (ptr [0] == 0) return _getBackground ();
 	GdkRGBA gdkRGBA = new GdkRGBA ();
 	OS.memmove(gdkRGBA, ptr [0], GdkRGBA.sizeof);
@@ -158,13 +158,13 @@ Color _getBackground (int index) {
 
 boolean _getChecked () {
 	int [] ptr = new int [1];
-	GTK.gtk_tree_model_get (parent.modelHandle, handle, Table.CHECKED_COLUMN, ptr, -1);
+	GTK.gtk_tree_model_get (parent.modelHandle, handle, NativeTable.CHECKED_COLUMN, ptr, -1);
 	return ptr [0] != 0;
 }
 
 Color _getForeground () {
 	long [] ptr = new long [1];
-	GTK.gtk_tree_model_get (parent.modelHandle, handle, Table.FOREGROUND_COLUMN, ptr, -1);
+	GTK.gtk_tree_model_get (parent.modelHandle, handle, NativeTable.FOREGROUND_COLUMN, ptr, -1);
 	if (ptr [0] == 0) return parent.getForeground ();
 	GdkRGBA gdkRGBA = new GdkRGBA ();
 	OS.memmove(gdkRGBA, ptr [0], GdkRGBA.sizeof);
@@ -176,8 +176,8 @@ Color _getForeground (int index) {
 	int count = Math.max (1, parent.columnCount);
 	if (0 > index || index > count - 1) return _getForeground ();
 	long [] ptr = new long [1];
-	int modelIndex =  parent.columnCount == 0 ? Table.FIRST_COLUMN : parent.columns [index].modelIndex;
-	GTK.gtk_tree_model_get (parent.modelHandle, handle, modelIndex + Table.CELL_FOREGROUND, ptr, -1);
+	int modelIndex =  parent.columnCount == 0 ? NativeTable.FIRST_COLUMN : parent.columns [index].modelIndex;
+	GTK.gtk_tree_model_get (parent.modelHandle, handle, modelIndex + NativeTable.CELL_FOREGROUND, ptr, -1);
 	if (ptr [0] == 0) return _getForeground ();
 	GdkRGBA gdkRGBA = new GdkRGBA ();
 	OS.memmove(gdkRGBA, ptr [0], GdkRGBA.sizeof);
@@ -190,8 +190,8 @@ Image _getImage(int index) {
 	if (0 > index || index > count - 1) return null;
 
 	long[] surfaceHandle = new long[1];
-	int modelIndex = parent.columnCount == 0 ? Table.FIRST_COLUMN : parent.columns [index].modelIndex;
-	GTK.gtk_tree_model_get (parent.modelHandle, handle, modelIndex + Table.CELL_SURFACE, surfaceHandle, -1);
+	int modelIndex = parent.columnCount == 0 ? NativeTable.FIRST_COLUMN : parent.columns [index].modelIndex;
+	GTK.gtk_tree_model_get (parent.modelHandle, handle, modelIndex + NativeTable.CELL_SURFACE, surfaceHandle, -1);
 	if (surfaceHandle[0] == 0) return null;
 
 	int imageIndex = parent.imageList.indexOf(surfaceHandle[0]);
@@ -206,8 +206,8 @@ String _getText (int index) {
 	int count = Math.max (1, parent.getColumnCount ());
 	if (0 > index || index > count - 1) return "";
 	long [] ptr = new long [1];
-	int modelIndex = parent.columnCount == 0 ? Table.FIRST_COLUMN : parent.columns [index].modelIndex;
-	GTK.gtk_tree_model_get (parent.modelHandle, handle, modelIndex + Table.CELL_TEXT, ptr, -1);
+	int modelIndex = parent.columnCount == 0 ? NativeTable.FIRST_COLUMN : parent.columns [index].modelIndex;
+	GTK.gtk_tree_model_get (parent.modelHandle, handle, modelIndex + NativeTable.CELL_TEXT, ptr, -1);
 	if (ptr [0] == 0) return "";
 	int length = C.strlen (ptr [0]);
 	byte[] buffer = new byte [length];
@@ -217,7 +217,7 @@ String _getText (int index) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -226,10 +226,10 @@ void clear () {
 	if (cached || (parent.style & SWT.VIRTUAL) == 0) {
 		int columnCount = GTK.gtk_tree_model_get_n_columns (parent.modelHandle);
 		/* the columns before FOREGROUND_COLUMN contain int values, subsequent columns contain pointers */
-		for (int i=Table.CHECKED_COLUMN; i<Table.FOREGROUND_COLUMN; i++) {
+		for (int i=NativeTable.CHECKED_COLUMN; i<NativeTable.FOREGROUND_COLUMN; i++) {
 			GTK.gtk_list_store_set (parent.modelHandle, handle, i, 0, -1);
 		}
-		for (int i=Table.FOREGROUND_COLUMN; i<columnCount; i++) {
+		for (int i=NativeTable.FOREGROUND_COLUMN; i<columnCount; i++) {
 			GTK.gtk_list_store_set (parent.modelHandle, handle, i, (long )0, -1);
 		}
 	}
@@ -248,7 +248,7 @@ void destroyWidget () {
 @Override
 public void dispose () {
 	// Workaround to Bug489751, avoid selecting next node when selected node is disposed.
-	Table tmpParent = null;
+	NativeTable tmpParent = null;
 	if (parent != null && parent.getItemCount() > 0 && parent.getSelectionCount() == 0) {
 		tmpParent = parent;
 	}
@@ -689,7 +689,7 @@ String getNameText () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Table getParent () {
+public NativeTable getParent () {
 	checkWidget ();
 	return parent;
 }
@@ -868,7 +868,7 @@ public void setBackground (Color color) {
 	}
 	if (_getBackground ().equals (color)) return;
 	GdkRGBA gdkRGBA = color != null ? color.handle : null;
-	GTK.gtk_list_store_set (parent.modelHandle, handle, Table.BACKGROUND_COLUMN, gdkRGBA, -1);
+	GTK.gtk_list_store_set (parent.modelHandle, handle, NativeTable.BACKGROUND_COLUMN, gdkRGBA, -1);
 	cached = true;
 }
 
@@ -898,9 +898,9 @@ public void setBackground (int index, Color color) {
 	if (_getBackground (index).equals (color)) return;
 	int count = Math.max (1, parent.getColumnCount ());
 	if (0 > index || index > count - 1) return;
-	int modelIndex = parent.columnCount == 0 ? Table.FIRST_COLUMN : parent.columns [index].modelIndex;
+	int modelIndex = parent.columnCount == 0 ? NativeTable.FIRST_COLUMN : parent.columns [index].modelIndex;
 	GdkRGBA gdkRGBA = color != null ? color.handle : null;
-	GTK.gtk_list_store_set (parent.modelHandle, handle, modelIndex + Table.CELL_BACKGROUND, gdkRGBA, -1);
+	GTK.gtk_list_store_set (parent.modelHandle, handle, modelIndex + NativeTable.CELL_BACKGROUND, gdkRGBA, -1);
 	cached = true;
 
 	if (color != null) {
@@ -944,13 +944,13 @@ public void setChecked (boolean checked) {
 	checkWidget();
 	if ((parent.style & SWT.CHECK) == 0) return;
 	if (_getChecked () == checked) return;
-	GTK.gtk_list_store_set (parent.modelHandle, handle, Table.CHECKED_COLUMN, checked, -1);
+	GTK.gtk_list_store_set (parent.modelHandle, handle, NativeTable.CHECKED_COLUMN, checked, -1);
 	/*
 	* GTK+'s "inconsistent" state does not match SWT's concept of grayed.  To
 	* show checked+grayed differently from unchecked+grayed, we must toggle the
 	* grayed state on check and uncheck.
 	*/
-	GTK.gtk_list_store_set (parent.modelHandle, handle, Table.GRAYED_COLUMN, !checked ? false : grayed, -1);
+	GTK.gtk_list_store_set (parent.modelHandle, handle, NativeTable.GRAYED_COLUMN, !checked ? false : grayed, -1);
 	cached = true;
 }
 
@@ -981,7 +981,7 @@ public void setFont (Font font){
 	this.font = font;
 	if (oldFont != null && oldFont.equals (font)) return;
 	long fontHandle = font != null ? font.handle : 0;
-	GTK.gtk_list_store_set (parent.modelHandle, handle, Table.FONT_COLUMN, fontHandle, -1);
+	GTK.gtk_list_store_set (parent.modelHandle, handle, NativeTable.FONT_COLUMN, fontHandle, -1);
 	cached = true;
 }
 
@@ -1020,9 +1020,9 @@ public void setFont (int index, Font font) {
 	cellFont [index] = font;
 	if (oldFont != null && oldFont.equals (font)) return;
 
-	int modelIndex = parent.columnCount == 0 ? Table.FIRST_COLUMN : parent.columns [index].modelIndex;
+	int modelIndex = parent.columnCount == 0 ? NativeTable.FIRST_COLUMN : parent.columns [index].modelIndex;
 	long fontHandle  = font != null ? font.handle : 0;
-	GTK.gtk_list_store_set (parent.modelHandle, handle, modelIndex + Table.CELL_FONT, fontHandle, -1);
+	GTK.gtk_list_store_set (parent.modelHandle, handle, modelIndex + NativeTable.CELL_FONT, fontHandle, -1);
 	cached = true;
 
 	if (font != null) {
@@ -1075,7 +1075,7 @@ public void setForeground (Color color){
 	}
 	if (_getForeground ().equals (color)) return;
 	GdkRGBA gdkRGBA = color != null ? color.handle : null;
-	GTK.gtk_list_store_set (parent.modelHandle, handle, Table.FOREGROUND_COLUMN, gdkRGBA, -1);
+	GTK.gtk_list_store_set (parent.modelHandle, handle, NativeTable.FOREGROUND_COLUMN, gdkRGBA, -1);
 	cached = true;
 }
 
@@ -1105,9 +1105,9 @@ public void setForeground (int index, Color color){
 	if (_getForeground (index).equals (color)) return;
 	int count = Math.max (1, parent.getColumnCount ());
 	if (0 > index || index > count - 1) return;
-	int modelIndex = parent.columnCount == 0 ? Table.FIRST_COLUMN : parent.columns [index].modelIndex;
+	int modelIndex = parent.columnCount == 0 ? NativeTable.FIRST_COLUMN : parent.columns [index].modelIndex;
 	GdkRGBA gdkRGBA = color != null ? color.handle : null;
-	GTK.gtk_list_store_set (parent.modelHandle, handle, modelIndex + Table.CELL_FOREGROUND, gdkRGBA, -1);
+	GTK.gtk_list_store_set (parent.modelHandle, handle, modelIndex + NativeTable.CELL_FOREGROUND, gdkRGBA, -1);
 	cached = true;
 
 	if (color != null) {
@@ -1157,8 +1157,8 @@ public void setGrayed (boolean grayed) {
 	* Render checked+grayed as "inconsistent", unchecked+grayed as blank.
 	*/
 	int [] ptr = new int [1];
-	GTK.gtk_tree_model_get (parent.modelHandle, handle, Table.CHECKED_COLUMN, ptr, -1);
-	GTK.gtk_list_store_set (parent.modelHandle, handle, Table.GRAYED_COLUMN, ptr [0] == 0 ? false : grayed, -1);
+	GTK.gtk_tree_model_get (parent.modelHandle, handle, NativeTable.CHECKED_COLUMN, ptr, -1);
+	GTK.gtk_list_store_set (parent.modelHandle, handle, NativeTable.GRAYED_COLUMN, ptr [0] == 0 ? false : grayed, -1);
 	cached = true;
 }
 
@@ -1237,8 +1237,8 @@ public void setImage(int index, Image image) {
 			GTK.gtk_cell_renderer_set_fixed_size (pixbufRenderer, parent.pixbufWidth, parent.pixbufHeight);
 		}
 	}
-	int modelIndex = parent.columnCount == 0 ? Table.FIRST_COLUMN : parent.columns [index].modelIndex;
-	GTK.gtk_list_store_set (parent.modelHandle, handle, modelIndex + Table.CELL_PIXBUF, pixbuf, -1);
+	int modelIndex = parent.columnCount == 0 ? NativeTable.FIRST_COLUMN : parent.columns [index].modelIndex;
+	GTK.gtk_list_store_set (parent.modelHandle, handle, modelIndex + NativeTable.CELL_PIXBUF, pixbuf, -1);
 	/*
 	 * Bug 573633: gtk_list_store_set() will reference the handle. So we unref the pixbuf here,
 	 * and leave the destruction of the handle to be done later on by the GTK+ tree.
@@ -1246,7 +1246,7 @@ public void setImage(int index, Image image) {
 	if (pixbuf != 0) {
 		OS.g_object_unref(pixbuf);
 	}
-	GTK.gtk_list_store_set (parent.modelHandle, handle, modelIndex + Table.CELL_SURFACE, surface, -1);
+	GTK.gtk_list_store_set (parent.modelHandle, handle, modelIndex + NativeTable.CELL_SURFACE, surface, -1);
 	cached = true;
 	/*
 	 * Bug 465056: single column Tables have a very small initial width.
@@ -1343,8 +1343,8 @@ public void setText (int index, String string) {
 		string = string.substring(0, TEXT_LIMIT - ELLIPSIS.length()) + ELLIPSIS;
 	}
 	byte[] buffer = Converter.wcsToMbcs (string, true);
-	int modelIndex = parent.columnCount == 0 ? Table.FIRST_COLUMN : parent.columns [index].modelIndex;
-	GTK.gtk_list_store_set (parent.modelHandle, handle, modelIndex + Table.CELL_TEXT, buffer, -1);
+	int modelIndex = parent.columnCount == 0 ? NativeTable.FIRST_COLUMN : parent.columns [index].modelIndex;
+	GTK.gtk_list_store_set (parent.modelHandle, handle, modelIndex + NativeTable.CELL_TEXT, buffer, -1);
 	cached = true;
 	/*
 	 * Bug 465056: single column Tables have a very small initial width.
@@ -1388,4 +1388,8 @@ public void setText (String [] strings) {
 		if (string != null) setText (i, string);
 	}
 }
+
+@Override
+public abstract TableItem getWrapper();
+
 }

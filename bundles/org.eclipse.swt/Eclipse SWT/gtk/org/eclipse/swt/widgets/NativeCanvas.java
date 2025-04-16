@@ -37,17 +37,17 @@ import org.eclipse.swt.internal.gtk.*;
  * methods.
  * </p>
  *
- * @see Composite
+ * @see NativeComposite
  * @see <a href="http://www.eclipse.org/swt/snippets/#canvas">Canvas snippets</a>
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public class Canvas extends Composite {
-	Caret caret;
-	IME ime;
+public abstract class NativeCanvas extends NativeComposite implements ICanvas {
+	NativeCaret caret;
+	NativeIME ime;
 	boolean blink, drawFlag;
 
-Canvas () {}
+NativeCanvas () {}
 
 /**
  * Constructs a new instance of this class given its parent
@@ -73,9 +73,9 @@ Canvas () {}
  * </ul>
  *
  * @see SWT
- * @see Widget#getStyle
+ * @see NativeWidget#getStyle
  */
-public Canvas (Composite parent, int style) {
+protected NativeCanvas (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
@@ -100,6 +100,7 @@ public Canvas (Composite parent, int style) {
  *
  * @since 3.2
  */
+@Override
 public void drawBackground (GC gc, int x, int y, int width, int height) {
 	drawBackground (gc, x, y, width, height, 0, 0);
 }
@@ -122,9 +123,10 @@ public void drawBackground (GC gc, int x, int y, int width, int height) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Caret getCaret () {
 	checkWidget();
-	return caret;
+	return caret != null ? caret.getWrapper() : null;
 }
 
 @Override
@@ -145,9 +147,10 @@ Point getIMCaretPos () {
  *
  * @since 3.4
  */
+@Override
 public IME getIME () {
 	checkWidget ();
-	return ime;
+	return ime != null ? ime.getWrapper() : null;
 }
 
 @Override
@@ -219,7 +222,7 @@ private void drawCaret(long widget, long cairo) {
 			Cairo.cairo_set_source_rgb(cairo, 1, 1, 1);
 			Cairo.cairo_set_operator(cairo, Cairo.CAIRO_OPERATOR_DIFFERENCE);
 			int nWidth = caret.width, nHeight = caret.height;
-			if (nWidth <= 0) nWidth = Caret.DEFAULT_WIDTH;
+			if (nWidth <= 0) nWidth = NativeCaret.DEFAULT_WIDTH;
 			int nX = caret.x;
 			if ((style & SWT.MIRRORED) != 0) nX = getClientWidth () - nWidth - nX;
 			Cairo.cairo_rectangle(cairo, nX, caret.y, nWidth, nHeight);
@@ -308,6 +311,7 @@ void reskinChildren (int flags) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void scroll (int destX, int destY, int x, int y, int width, int height, boolean all) {
 	checkWidget();
 	if (width <= 0 || height <= 0) return;
@@ -376,7 +380,7 @@ void scrollInPixels (int destX, int destY, int x, int y, int width, int height, 
 	if (copyRect.width != 0 && copyRect.height != 0) {
 		update ();
 	}
-	Control control = findBackgroundControl ();
+	NativeControl control = findBackgroundControl ();
 	if (control == null) control = this;
 	if (control.backgroundImage != null) {
 		redrawWidget (x, y, width, height, false, false, false);
@@ -432,9 +436,9 @@ void scrollInPixels (int destX, int destY, int x, int y, int width, int height, 
 	Cairo.cairo_region_destroy (copyRegion);
 	Cairo.cairo_region_destroy (invalidateRegion);
 	if (all) {
-		Control [] children = _getChildren ();
+		NativeControl [] children = _getChildren ();
 		for (int i=0; i<children.length; i++) {
-			Control child = children [i];
+			NativeControl child = children [i];
 			Rectangle rect = child.getBoundsInPixels ();
 			if (Math.min(x + width, rect.x + rect.width) >= Math.max (x, rect.x) &&
 				Math.min(y + height, rect.y + rect.height) >= Math.max (y, rect.y)) {
@@ -479,10 +483,15 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setCaret (Caret caret) {
+	setCaret(Widget.checkNative(caret));
+}
+
+void setCaret (NativeCaret caret) {
 	checkWidget();
-	Caret newCaret = caret;
-	Caret oldCaret = this.caret;
+	NativeCaret newCaret = caret;
+	NativeCaret oldCaret = this.caret;
 	this.caret = newCaret;
 	if (hasFocus ()) {
 		if (oldCaret != null) oldCaret.killFocus ();
@@ -515,7 +524,12 @@ public void setFont (Font font) {
  *
  * @since 3.4
  */
+@Override
 public void setIME (IME ime) {
+	setIME(Widget.checkNative(ime));
+}
+
+void setIME(NativeIME ime) {
 	checkWidget ();
 	if (ime != null && ime.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
 	this.ime = ime;
@@ -531,5 +545,8 @@ void updateCaret () {
 	rect.height = caret.height;
 	GTK.gtk_im_context_set_cursor_location (imHandle, rect);
 }
+
+@Override
+public abstract Canvas getWrapper();
 
 }

@@ -38,7 +38,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class ColorDialog extends Dialog {
+public class NativeColorDialog extends NativeDialog {
 	RGB rgb;
 	RGB [] rgbs;
 /**
@@ -58,7 +58,7 @@ public class ColorDialog extends Dialog {
  * @see Widget#checkSubclass
  * @see Widget#getStyle
  */
-public ColorDialog (Shell parent) {
+public NativeColorDialog (NativeShell parent) {
 	this (parent, SWT.APPLICATION_MODAL);
 }
 /**
@@ -89,7 +89,7 @@ public ColorDialog (Shell parent) {
  * @see Widget#checkSubclass
  * @see Widget#getStyle
  */
-public ColorDialog (Shell parent, int style) {
+public NativeColorDialog (NativeShell parent, int style) {
 	super (parent, checkStyle (parent, style));
 	checkSubclass ();
 }
@@ -190,7 +190,7 @@ public RGB open () {
 	}
 
 	display.addIdleProc();
-	Dialog oldModal = null;
+	NativeDialog oldModal = null;
 	if ((GTK.GTK_VERSION >= OS.VERSION(4, 10, 0)) ? GTK4.gtk_color_dialog_get_modal(handle) : GTK.gtk_window_get_modal(handle)) {
 		oldModal = display.getModalDialog();
 		display.setModalDialog(this);
@@ -212,13 +212,13 @@ public RGB open () {
 				public void async(long callback) {
 					GTK4.gtk_color_dialog_choose_rgba(handle, shellHandle, initialColor, 0, callback, 0);
 				}
-	
+
 				@Override
 				public long await(long result) {
 					return GTK4.gtk_color_dialog_choose_rgba_finish(handle, result, null);
 				}
 			});
-	
+
 			if (gdkRGBA != 0) {
 				OS.memmove(rgba, gdkRGBA, GdkRGBA.sizeof);
 				GDK.gdk_rgba_free(gdkRGBA);

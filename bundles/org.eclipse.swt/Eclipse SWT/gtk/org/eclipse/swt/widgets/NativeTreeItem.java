@@ -39,8 +39,8 @@ import org.eclipse.swt.internal.gtk3.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class TreeItem extends Item {
-	Tree parent;
+public abstract class NativeTreeItem extends NativeItem {
+	NativeTree parent;
 	Font font;
 	Font[] cellFont;
 	String [] strings;
@@ -51,8 +51,8 @@ public class TreeItem extends Item {
  * Constructs <code>TreeItem</code> and <em>inserts</em> it into <code>Tree</code>.
  * Item is inserted as last direct child of the tree.
  * <p>
- * The fastest way to insert many items is documented in {@link TreeItem#TreeItem(Tree,int,int)}
- * and {@link TreeItem#setItemCount}
+ * The fastest way to insert many items is documented in {@link NativeTreeItem#NativeTreeItem(NativeTree,int,int)}
+ * and {@link NativeTreeItem#setItemCount}
  *
  * @param parent a tree control which will be the parent of the new instance (cannot be null)
  * @param style no styles are currently supported, pass SWT.NONE
@@ -66,10 +66,10 @@ public class TreeItem extends Item {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TreeItem (Tree parent, int style) {
+protected NativeTreeItem (NativeTree parent, int style) {
 	this (checkNull (parent), 0, style, -1, 0);
 }
 
@@ -79,7 +79,7 @@ public TreeItem (Tree parent, int style) {
  * <p>
  * The fastest way to insert many items is:
  * <ol>
- * <li>Use {@link Tree#setRedraw} to disable drawing during bulk insert</li>
+ * <li>Use {@link NativeTree#setRedraw} to disable drawing during bulk insert</li>
  * <li>Insert every item at index 0 (insert them in reverse to get the same result)</li>
  * <li>Collapse the parent item before inserting (gives massive improvement on Windows)</li>
  * </ol>
@@ -98,11 +98,11 @@ public TreeItem (Tree parent, int style) {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
- * @see Tree#setRedraw
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
+ * @see NativeTree#setRedraw
  */
-public TreeItem (Tree parent, int style, int index) {
+protected NativeTreeItem (NativeTree parent, int style, int index) {
 	this (checkNull (parent), 0, style, checkIndex (index), 0);
 }
 
@@ -110,8 +110,8 @@ public TreeItem (Tree parent, int style, int index) {
  * Constructs <code>TreeItem</code> and <em>inserts</em> it into <code>Tree</code>.
  * Item is inserted as last direct child of the specified <code>TreeItem</code>.
  * <p>
- * The fastest way to insert many items is documented in {@link TreeItem#TreeItem(Tree,int,int)}
- * and {@link TreeItem#setItemCount}
+ * The fastest way to insert many items is documented in {@link NativeTreeItem#NativeTreeItem(NativeTree,int,int)}
+ * and {@link NativeTreeItem#setItemCount}
  *
  * @param parentItem a tree control which will be the parent of the new instance (cannot be null)
  * @param style no styles are currently supported, pass SWT.NONE
@@ -125,10 +125,10 @@ public TreeItem (Tree parent, int style, int index) {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TreeItem (TreeItem parentItem, int style) {
+protected NativeTreeItem (NativeTreeItem parentItem, int style) {
 	this (checkNull (parentItem).parent, parentItem.handle, style, -1, 0);
 }
 
@@ -136,8 +136,8 @@ public TreeItem (TreeItem parentItem, int style) {
  * Constructs <code>TreeItem</code> and <em>inserts</em> it into <code>Tree</code>.
  * Item is inserted as <code>index</code> direct child of the specified <code>TreeItem</code>.
  * <p>
- * The fastest way to insert many items is documented in {@link TreeItem#TreeItem(Tree,int,int)}
- * and {@link TreeItem#setItemCount}
+ * The fastest way to insert many items is documented in {@link NativeTreeItem#NativeTreeItem(NativeTree,int,int)}
+ * and {@link NativeTreeItem#setItemCount}
  *
  * @param parentItem a tree control which will be the parent of the new instance (cannot be null)
  * @param style no styles are currently supported, pass SWT.NONE
@@ -153,15 +153,15 @@ public TreeItem (TreeItem parentItem, int style) {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
- * @see Tree#setRedraw
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
+ * @see NativeTree#setRedraw
  */
-public TreeItem (TreeItem parentItem, int style, int index) {
+protected NativeTreeItem (NativeTreeItem parentItem, int style, int index) {
 	this (checkNull (parentItem).parent, parentItem.handle, style, checkIndex (index), 0);
 }
 
-TreeItem (Tree parent, long parentIter, int style, int index, long iter) {
+NativeTreeItem (NativeTree parent, long parentIter, int style, int index, long iter) {
 	super (parent, style);
 	this.parent = parent;
 	if (iter == 0) {
@@ -179,24 +179,24 @@ static int checkIndex (int index) {
 	return index;
 }
 
-static TreeItem checkNull (TreeItem item) {
+static NativeTreeItem checkNull (NativeTreeItem item) {
 	if (item == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	return item;
 }
 
-static Tree checkNull (Tree control) {
+static NativeTree checkNull (NativeTree control) {
 	if (control == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	return control;
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
 Color _getBackground () {
 	long [] ptr = new long [1];
-	GTK.gtk_tree_model_get (parent.modelHandle, handle, Tree.BACKGROUND_COLUMN, ptr, -1);
+	GTK.gtk_tree_model_get (parent.modelHandle, handle, NativeTree.BACKGROUND_COLUMN, ptr, -1);
 	if (ptr [0] == 0) return parent.getBackground ();
 	GdkRGBA gdkRGBA = new GdkRGBA ();
 	OS.memmove(gdkRGBA, ptr [0], GdkRGBA.sizeof);
@@ -208,8 +208,8 @@ Color _getBackground (int index) {
 	int count = Math.max (1, parent.columnCount);
 	if (0 > index || index > count - 1) return _getBackground ();
 	long [] ptr = new long [1];
-	int modelIndex = parent.columnCount == 0 ? Tree.FIRST_COLUMN : parent.columns [index].modelIndex;
-	GTK.gtk_tree_model_get (parent.modelHandle, handle, modelIndex + Tree.CELL_BACKGROUND, ptr, -1);
+	int modelIndex = parent.columnCount == 0 ? NativeTree.FIRST_COLUMN : parent.columns [index].modelIndex;
+	GTK.gtk_tree_model_get (parent.modelHandle, handle, modelIndex + NativeTree.CELL_BACKGROUND, ptr, -1);
 	if (ptr [0] == 0) return _getBackground ();
 	GdkRGBA gdkRGBA = new GdkRGBA ();
 	OS.memmove(gdkRGBA, ptr [0], GdkRGBA.sizeof);
@@ -219,13 +219,13 @@ Color _getBackground (int index) {
 
 boolean _getChecked () {
 	int [] ptr = new int [1];
-	GTK.gtk_tree_model_get (parent.modelHandle, handle, Tree.CHECKED_COLUMN, ptr, -1);
+	GTK.gtk_tree_model_get (parent.modelHandle, handle, NativeTree.CHECKED_COLUMN, ptr, -1);
 	return ptr [0] != 0;
 }
 
 Color _getForeground () {
 	long [] ptr = new long [1];
-	GTK.gtk_tree_model_get (parent.modelHandle, handle, Tree.FOREGROUND_COLUMN, ptr, -1);
+	GTK.gtk_tree_model_get (parent.modelHandle, handle, NativeTree.FOREGROUND_COLUMN, ptr, -1);
 	if (ptr [0] == 0) return parent.getForeground ();
 	GdkRGBA gdkRGBA = new GdkRGBA ();
 	OS.memmove(gdkRGBA, ptr [0], GdkRGBA.sizeof);
@@ -237,8 +237,8 @@ Color _getForeground (int index) {
 	int count = Math.max (1, parent.columnCount);
 	if (0 > index || index > count - 1) return _getForeground ();
 	long [] ptr = new long [1];
-	int modelIndex =  parent.columnCount == 0 ? Tree.FIRST_COLUMN : parent.columns [index].modelIndex;
-	GTK.gtk_tree_model_get (parent.modelHandle, handle, modelIndex + Tree.CELL_FOREGROUND, ptr, -1);
+	int modelIndex =  parent.columnCount == 0 ? NativeTree.FIRST_COLUMN : parent.columns [index].modelIndex;
+	GTK.gtk_tree_model_get (parent.modelHandle, handle, modelIndex + NativeTree.CELL_FOREGROUND, ptr, -1);
 	if (ptr [0] == 0) return _getForeground ();
 	GdkRGBA gdkRGBA = new GdkRGBA ();
 	OS.memmove(gdkRGBA, ptr [0], GdkRGBA.sizeof);
@@ -251,8 +251,8 @@ Image _getImage(int index) {
 	if (0 > index || index > count - 1) return null;
 
 	long[] surfaceHandle = new long[1];
-	int modelIndex = parent.columnCount == 0 ? Tree.FIRST_COLUMN : parent.columns[index].modelIndex;
-	GTK.gtk_tree_model_get (parent.modelHandle, handle, modelIndex + Tree.CELL_SURFACE, surfaceHandle, -1);
+	int modelIndex = parent.columnCount == 0 ? NativeTree.FIRST_COLUMN : parent.columns[index].modelIndex;
+	GTK.gtk_tree_model_get (parent.modelHandle, handle, modelIndex + NativeTree.CELL_SURFACE, surfaceHandle, -1);
 	if (surfaceHandle[0] == 0) return null;
 
 	int imageIndex = parent.imageList.indexOf(surfaceHandle[0]);
@@ -267,8 +267,8 @@ String _getText (int index) {
 	int count = Math.max (1, parent.getColumnCount ());
 	if (0 > index || index > count - 1) return "";
 	long [] ptr = new long [1];
-	int modelIndex = parent.columnCount == 0 ? Tree.FIRST_COLUMN : parent.columns [index].modelIndex;
-	GTK.gtk_tree_model_get (parent.modelHandle, handle, modelIndex + Tree.CELL_TEXT, ptr, -1);
+	int modelIndex = parent.columnCount == 0 ? NativeTree.FIRST_COLUMN : parent.columns [index].modelIndex;
+	GTK.gtk_tree_model_get (parent.modelHandle, handle, modelIndex + NativeTree.CELL_TEXT, ptr, -1);
 	if (ptr [0] == 0) return ""; //$NON-NLS-1$
 	int length = C.strlen (ptr [0]);
 	byte[] buffer = new byte [length];
@@ -282,10 +282,10 @@ void clear () {
 	if (cached || (parent.style & SWT.VIRTUAL) == 0) {
 		int columnCount = GTK.gtk_tree_model_get_n_columns (parent.modelHandle);
 		/* the columns before FOREGROUND_COLUMN contain int values, subsequent columns contain pointers */
-		for (int i=Tree.CHECKED_COLUMN; i<Tree.FOREGROUND_COLUMN; i++) {
+		for (int i=NativeTree.CHECKED_COLUMN; i<NativeTree.FOREGROUND_COLUMN; i++) {
 			GTK.gtk_tree_store_set (parent.modelHandle, handle, i, 0, -1);
 		}
-		for (int i=Tree.FOREGROUND_COLUMN; i<columnCount; i++) {
+		for (int i=NativeTree.FOREGROUND_COLUMN; i<columnCount; i++) {
 			GTK.gtk_tree_store_set (parent.modelHandle, handle, i, (long )0, -1);
 		}
 	}
@@ -790,7 +790,7 @@ public int getItemCount () {
  *
  * @since 3.1
  */
-public TreeItem getItem (int index) {
+public NativeTreeItem getItem (int index) {
 	checkWidget();
 	if (index < 0) error (SWT.ERROR_INVALID_RANGE);
 	if (!parent.checkData (this)) error (SWT.ERROR_WIDGET_DISPOSED);
@@ -820,7 +820,7 @@ public TreeItem getItem (int index) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TreeItem [] getItems () {
+public NativeTreeItem [] getItems () {
 	checkWidget();
 	if (!parent.checkData (this)) error (SWT.ERROR_WIDGET_DISPOSED);
 	return parent.getItems (handle);
@@ -844,7 +844,7 @@ String getNameText () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Tree getParent () {
+public NativeTree getParent () {
 	checkWidget ();
 	return parent;
 }
@@ -861,10 +861,10 @@ public Tree getParent () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public TreeItem getParentItem () {
+public NativeTreeItem getParentItem () {
 	checkWidget();
 	long path = GTK.gtk_tree_model_get_path (parent.modelHandle, handle);
-	TreeItem item = null;
+	NativeTreeItem item = null;
 	int depth = GTK.gtk_tree_path_get_depth (path);
 	if (depth > 1) {
 		GTK.gtk_tree_path_up (path);
@@ -1031,7 +1031,7 @@ Rectangle getTextBoundsInPixels (int index) {
  *
  * @since 3.1
  */
-public int indexOf (TreeItem item) {
+public int indexOf (NativeTreeItem item) {
 	checkWidget();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -1086,7 +1086,7 @@ void releaseWidget () {
 @Override
 public void dispose () {
 	// Workaround to Bug489751, avoid selecting next node when selected node is disposed.
-	Tree tmpParent = null;
+	NativeTree tmpParent = null;
 	if (parent != null && parent.getItemCount() > 0 && parent.getSelectionCount() == 0) {
 		tmpParent = parent;
 	}
@@ -1114,8 +1114,8 @@ public void removeAll () {
 	long selection = GTK.gtk_tree_view_get_selection (parent.handle);
 	int [] value = new int [1];
 	while (GTK.gtk_tree_model_iter_children (modelHandle, iter, handle)) {
-		GTK.gtk_tree_model_get (modelHandle, iter, Tree.ID_COLUMN, value, -1);
-		TreeItem item = value [0] != -1 ? parent.items [value [0]] : null;
+		GTK.gtk_tree_model_get (modelHandle, iter, NativeTree.ID_COLUMN, value, -1);
+		NativeTreeItem item = value [0] != -1 ? parent.items [value [0]] : null;
 		if (item != null && !item.isDisposed ()) {
 			item.dispose ();
 		} else {
@@ -1151,7 +1151,7 @@ public void setBackground (Color color) {
 	}
 	if (_getBackground ().equals (color)) return;
 	GdkRGBA gdkRGBA = color != null ? color.handle : null;
-	GTK.gtk_tree_store_set (parent.modelHandle, handle, Tree.BACKGROUND_COLUMN, gdkRGBA, -1);
+	GTK.gtk_tree_store_set (parent.modelHandle, handle, NativeTree.BACKGROUND_COLUMN, gdkRGBA, -1);
 	cached = true;
 }
 
@@ -1181,9 +1181,9 @@ public void setBackground (int index, Color color) {
 	if (_getBackground (index).equals (color)) return;
 	int count = Math.max (1, parent.getColumnCount ());
 	if (0 > index || index > count - 1) return;
-	int modelIndex = parent.columnCount == 0 ? Tree.FIRST_COLUMN : parent.columns [index].modelIndex;
+	int modelIndex = parent.columnCount == 0 ? NativeTree.FIRST_COLUMN : parent.columns [index].modelIndex;
 	GdkRGBA gdkRGBA = color != null ? color.handle : null;
-	GTK.gtk_tree_store_set (parent.modelHandle, handle, modelIndex + Tree.CELL_BACKGROUND, gdkRGBA, -1);
+	GTK.gtk_tree_store_set (parent.modelHandle, handle, modelIndex + NativeTree.CELL_BACKGROUND, gdkRGBA, -1);
 	cached = true;
 	updated = true;
 
@@ -1227,13 +1227,13 @@ public void setChecked (boolean checked) {
 	checkWidget();
 	if ((parent.style & SWT.CHECK) == 0) return;
 	if (_getChecked () == checked) return;
-	GTK.gtk_tree_store_set (parent.modelHandle, handle, Tree.CHECKED_COLUMN, checked, -1);
+	GTK.gtk_tree_store_set (parent.modelHandle, handle, NativeTree.CHECKED_COLUMN, checked, -1);
 	/*
 	* GTK+'s "inconsistent" state does not match SWT's concept of grayed.  To
 	* show checked+grayed differently from unchecked+grayed, we must toggle the
 	* grayed state on check and uncheck.
 	*/
-	GTK.gtk_tree_store_set (parent.modelHandle, handle, Tree.GRAYED_COLUMN, !checked ? false : grayed, -1);
+	GTK.gtk_tree_store_set (parent.modelHandle, handle, NativeTree.GRAYED_COLUMN, !checked ? false : grayed, -1);
 	cached = true;
 }
 
@@ -1294,7 +1294,7 @@ public void setFont (Font font){
 	this.font = font;
 	if (oldFont != null && oldFont.equals (font)) return;
 	long fontHandle = font != null ? font.handle : 0;
-	GTK.gtk_tree_store_set (parent.modelHandle, handle, Tree.FONT_COLUMN, fontHandle, -1);
+	GTK.gtk_tree_store_set (parent.modelHandle, handle, NativeTree.FONT_COLUMN, fontHandle, -1);
 	cached = true;
 }
 
@@ -1333,9 +1333,9 @@ public void setFont (int index, Font font) {
 	cellFont [index] = font;
 	if (oldFont != null && oldFont.equals (font)) return;
 
-	int modelIndex = parent.columnCount == 0 ? Tree.FIRST_COLUMN : parent.columns [index].modelIndex;
+	int modelIndex = parent.columnCount == 0 ? NativeTree.FIRST_COLUMN : parent.columns [index].modelIndex;
 	long fontHandle  = font != null ? font.handle : 0;
-	GTK.gtk_tree_store_set (parent.modelHandle, handle, modelIndex + Tree.CELL_FONT, fontHandle, -1);
+	GTK.gtk_tree_store_set (parent.modelHandle, handle, modelIndex + NativeTree.CELL_FONT, fontHandle, -1);
 	cached = true;
 
 	if (font != null) {
@@ -1388,7 +1388,7 @@ public void setForeground (Color color){
 	}
 	if (_getForeground ().equals (color)) return;
 	GdkRGBA gdkRGBA = color != null ? color.handle : null;
-	GTK.gtk_tree_store_set (parent.modelHandle, handle, Tree.FOREGROUND_COLUMN, gdkRGBA, -1);
+	GTK.gtk_tree_store_set (parent.modelHandle, handle, NativeTree.FOREGROUND_COLUMN, gdkRGBA, -1);
 	cached = true;
 }
 
@@ -1418,9 +1418,9 @@ public void setForeground (int index, Color color){
 	if (_getForeground (index).equals (color)) return;
 	int count = Math.max (1, parent.getColumnCount ());
 	if (0 > index || index > count - 1) return;
-	int modelIndex = parent.columnCount == 0 ? Tree.FIRST_COLUMN : parent.columns [index].modelIndex;
+	int modelIndex = parent.columnCount == 0 ? NativeTree.FIRST_COLUMN : parent.columns [index].modelIndex;
 	GdkRGBA gdkRGBA = color != null ? color.handle : null;
-	GTK.gtk_tree_store_set (parent.modelHandle, handle, modelIndex + Tree.CELL_FOREGROUND, gdkRGBA, -1);
+	GTK.gtk_tree_store_set (parent.modelHandle, handle, modelIndex + NativeTree.CELL_FOREGROUND, gdkRGBA, -1);
 	cached = true;
 	updated = true;
 
@@ -1471,8 +1471,8 @@ public void setGrayed (boolean grayed) {
 	* Render checked+grayed as "inconsistent", unchecked+grayed as blank.
 	*/
 	int [] ptr = new int [1];
-	GTK.gtk_tree_model_get (parent.modelHandle, handle, Tree.CHECKED_COLUMN, ptr, -1);
-	GTK.gtk_tree_store_set (parent.modelHandle, handle, Tree.GRAYED_COLUMN, ptr [0] == 0 ? false : grayed, -1);
+	GTK.gtk_tree_model_get (parent.modelHandle, handle, NativeTree.CHECKED_COLUMN, ptr, -1);
+	GTK.gtk_tree_store_set (parent.modelHandle, handle, NativeTree.GRAYED_COLUMN, ptr [0] == 0 ? false : grayed, -1);
 	cached = true;
 }
 
@@ -1519,7 +1519,7 @@ public void setImage(int index, Image image) {
 		pixbuf = ImageList.createPixbuf(surface);
 	}
 
-	int modelIndex = parent.columnCount == 0 ? Tree.FIRST_COLUMN : parent.columns [index].modelIndex;
+	int modelIndex = parent.columnCount == 0 ? NativeTree.FIRST_COLUMN : parent.columns [index].modelIndex;
 	long parentHandle = parent.handle;
 	long column = GTK.gtk_tree_view_get_column (parentHandle, index);
 	long pixbufRenderer = parent.getPixbufRenderer (column);
@@ -1555,7 +1555,7 @@ public void setImage(int index, Image image) {
 					 * Otherwise check-boxes will be rendered in columns they are not
 					 * supposed to be rendered in. See bug 513761.
 					 */
-					boolean check = modelIndex == Tree.FIRST_COLUMN && (parent.style & SWT.CHECK) != 0;
+					boolean check = modelIndex == NativeTree.FIRST_COLUMN && (parent.style & SWT.CHECK) != 0;
 					parent.createRenderers(column, modelIndex, check, parent.style);
 				}
 			}
@@ -1572,7 +1572,7 @@ public void setImage(int index, Image image) {
 		}
 	}
 
-	GTK.gtk_tree_store_set(parent.modelHandle, handle, modelIndex + Tree.CELL_PIXBUF, pixbuf, -1);
+	GTK.gtk_tree_store_set(parent.modelHandle, handle, modelIndex + NativeTree.CELL_PIXBUF, pixbuf, -1);
 	/*
 	 * Bug 573633: gtk_tree_store_set() will reference the handle. So we unref the pixbuf here,
 	 * and leave the destruction of the handle to be done later on by the GTK+ tree.
@@ -1580,7 +1580,7 @@ public void setImage(int index, Image image) {
 	if (pixbuf != 0) {
 		OS.g_object_unref(pixbuf);
 	}
-	GTK.gtk_tree_store_set(parent.modelHandle, handle, modelIndex + Tree.CELL_SURFACE, surface, -1);
+	GTK.gtk_tree_store_set(parent.modelHandle, handle, modelIndex + NativeTree.CELL_SURFACE, surface, -1);
 	cached = true;
 	updated = true;
 }
@@ -1620,7 +1620,7 @@ public void setImage (Image [] images) {
  * <p>
  * The fastest way to insert many items is:
  * <ol>
- * <li>Use {@link Tree#setRedraw} to disable drawing during bulk insert</li>
+ * <li>Use {@link NativeTree#setRedraw} to disable drawing during bulk insert</li>
  * <li>Collapse the parent item before inserting (gives massive improvement on Windows)</li>
  * </ol>
  *
@@ -1677,8 +1677,8 @@ public void setText (int index, String string) {
 		string = string.substring(0, TEXT_LIMIT - ELLIPSIS.length()) + ELLIPSIS;
 	}
 	byte[] buffer = Converter.wcsToMbcs (string, true);
-	int modelIndex = parent.columnCount == 0 ? Tree.FIRST_COLUMN : parent.columns [index].modelIndex;
-	GTK.gtk_tree_store_set (parent.modelHandle, handle, modelIndex + Tree.CELL_TEXT, buffer, -1);
+	int modelIndex = parent.columnCount == 0 ? NativeTree.FIRST_COLUMN : parent.columns [index].modelIndex;
+	GTK.gtk_tree_store_set (parent.modelHandle, handle, modelIndex + NativeTree.CELL_TEXT, buffer, -1);
 	cached = true;
 	updated = true;
 }
@@ -1715,4 +1715,8 @@ public void setText (String [] strings) {
 		if (string != null) setText (i, string);
 	}
 }
+
+@Override
+public abstract TreeItem getWrapper();
+
 }

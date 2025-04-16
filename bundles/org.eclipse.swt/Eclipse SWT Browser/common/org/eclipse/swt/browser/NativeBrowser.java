@@ -42,7 +42,7 @@ import org.eclipse.swt.widgets.*;
  * @noextend This class is not intended to be subclassed by clients.
  */
 
-public class Browser extends Composite {
+public abstract class NativeBrowser extends NativeComposite {
 	WebBrowser webBrowser;
 	int userStyle;
 	boolean isClosing;
@@ -79,12 +79,12 @@ public class Browser extends Composite {
  *    <li>ERROR_NO_HANDLES if a handle could not be obtained for browser creation</li>
  * </ul>
  *
- * @see Widget#getStyle
+ * @see NativeWidget#getStyle
  *
  * @since 3.0
  */
-public Browser (Composite parent, int style) {
-	super (checkParent (parent), checkStyle (style));
+protected NativeBrowser (Composite parent, int style) {
+	super (checkParent (Widget.checkNative(parent)), checkStyle (style));
 	userStyle = style;
 
 	String platform = SWT.getPlatform ();
@@ -95,7 +95,8 @@ public Browser (Composite parent, int style) {
 	style = getStyle ();
 	webBrowser = new BrowserFactory ().createWebBrowser (style);
 	if (webBrowser != null) {
-		webBrowser.setBrowser (this);
+		webBrowser.nativeBrowser = this;
+		webBrowser.setBrowser (this.getWrapper());
 		webBrowser.create (parent, style);
 		return;
 	}
@@ -119,7 +120,7 @@ public Browser (Composite parent, int style) {
 	SWT.error (SWT.ERROR_NO_HANDLES, null, errMsg);
 }
 
-static Composite checkParent (Composite parent) {
+static NativeComposite checkParent (NativeComposite parent) {
 	String platform = SWT.getPlatform ();
 	if (!"gtk".equals (platform)) return parent; //$NON-NLS-1$
 
@@ -207,7 +208,7 @@ static int checkStyle(int style) {
 }
 
 @Override
-protected void checkWidget () {
+public void checkWidget () {
 	super.checkWidget ();
 }
 
@@ -499,7 +500,7 @@ public boolean back () {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	String name = getClass ().getName ();
 	int index = name.lastIndexOf ('.');
 	if (!name.substring (0, index + 1).equals (PACKAGE_PREFIX)) {
@@ -604,7 +605,7 @@ public boolean close () {
  *    <li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
  * </ul>
  *
- * @see Browser#evaluate(String,boolean)
+ * @see NativeBrowser#evaluate(String,boolean)
  * @see ProgressListener#completed(ProgressEvent)
  *
  * @since 3.5
@@ -1201,4 +1202,8 @@ public void stop () {
 	checkWidget();
 	webBrowser.stop ();
 }
+
+@Override
+public abstract Browser getWrapper();
+
 }

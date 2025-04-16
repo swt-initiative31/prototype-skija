@@ -42,7 +42,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Menu extends Widget {
+public abstract class NativeMenu extends NativeWidget {
 	/**
 	 * the handle to the OS resource
 	 * (Warning: This field is platform dependent)
@@ -62,15 +62,15 @@ public class Menu extends Widget {
 	int foreground = -1, background = -1;
 	Image backgroundImage;
 	boolean hasLocation;
-	MenuItem cascade;
-	Decorations parent;
-	MenuItem selectedMenuItem;
+	NativeMenuItem cascade;
+	NativeDecorations parent;
+	NativeMenuItem selectedMenuItem;
 
 	/* Timer ID for MenuItem ToolTip */
 	static final int ID_TOOLTIP_TIMER = 110;
 
 	static {
-		DPIZoomChangeRegistry.registerHandler(Menu::handleDPIChange, Menu.class);
+		DPIZoomChangeRegistry.registerHandler(NativeMenu::handleDPIChange, Menu.class);
 	}
 
 /**
@@ -94,10 +94,10 @@ public class Menu extends Widget {
  * </ul>
  *
  * @see SWT#POP_UP
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Menu (Control parent) {
+protected NativeMenu (NativeControl parent) {
 	this (checkNull (parent).menuShell (), SWT.POP_UP);
 }
 
@@ -135,10 +135,10 @@ public Menu (Control parent) {
  * @see SWT#NO_RADIO_GROUP
  * @see SWT#LEFT_TO_RIGHT
  * @see SWT#RIGHT_TO_LEFT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Menu (Decorations parent, int style) {
+protected NativeMenu (NativeDecorations parent, int style) {
 	this (parent, checkStyle (style), 0);
 }
 
@@ -163,10 +163,10 @@ public Menu (Decorations parent, int style) {
  * </ul>
  *
  * @see SWT#DROP_DOWN
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Menu (Menu parentMenu) {
+protected NativeMenu (NativeMenu parentMenu) {
 	this (checkNull (parentMenu).parent, SWT.DROP_DOWN);
 }
 
@@ -191,14 +191,14 @@ public Menu (Menu parentMenu) {
  * </ul>
  *
  * @see SWT#DROP_DOWN
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Menu (MenuItem parentItem) {
+protected NativeMenu (NativeMenuItem parentItem) {
 	this (checkNull (parentItem).parent);
 }
 
-Menu (Decorations parent, int style, long handle) {
+NativeMenu (NativeDecorations parent, int style, long handle) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	this.handle = handle;
@@ -304,17 +304,17 @@ public void addMenuListener (MenuListener listener) {
 	addTypedListener(listener, SWT.Hide, SWT.Show);
 }
 
-static Control checkNull (Control control) {
+static NativeControl checkNull (NativeControl control) {
 	if (control == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	return control;
 }
 
-static Menu checkNull (Menu menu) {
+static NativeMenu checkNull (NativeMenu menu) {
 	if (menu == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	return menu;
 }
 
-static MenuItem checkNull (MenuItem item) {
+static NativeMenuItem checkNull (NativeMenuItem item) {
 	if (item == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	return item;
 }
@@ -334,7 +334,7 @@ void createHandle () {
 	updateBackground ();
 }
 
-void createItem (MenuItem item, int index) {
+void createItem (NativeMenuItem item, int index) {
 	int count = OS.GetMenuItemCount (handle);
 	if (!(0 <= index && index <= count)) error (SWT.ERROR_INVALID_RANGE);
 	display.addMenuItem (item);
@@ -401,7 +401,7 @@ void destroyAccelerators () {
 	parent.destroyAccelerators ();
 }
 
-void destroyItem (MenuItem item) {
+void destroyItem (NativeMenuItem item) {
 	if (!OS.DeleteMenu (handle, item.id, OS.MF_BYCOMMAND)) {
 		error (SWT.ERROR_ITEM_NOT_REMOVED);
 	}
@@ -410,7 +410,7 @@ void destroyItem (MenuItem item) {
 
 @Override
 void destroyWidget () {
-	MenuItem cascade = this.cascade;
+	NativeMenuItem cascade = this.cascade;
 	long hMenu = handle;
 	releaseHandle ();
 	if (cascade != null) {
@@ -420,11 +420,11 @@ void destroyWidget () {
 	}
 }
 
-void fixMenus (Decorations newParent) {
+void fixMenus (NativeDecorations newParent) {
 	if (isDisposed()) {
 		return;
 	}
-	for (MenuItem item : getItems ()) {
+	for (NativeMenuItem item : getItems ()) {
 		item.fixMenus (newParent);
 	}
 	parent.removeMenu (this);
@@ -530,7 +530,7 @@ void fixMenus (Decorations newParent) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public MenuItem getDefaultItem () {
+public NativeMenuItem getDefaultItem () {
 	checkWidget ();
 	int id = OS.GetMenuDefaultItem (handle, OS.MF_BYCOMMAND, OS.GMDI_USEDISABLED);
 	if (id == -1) return null;
@@ -593,7 +593,7 @@ public boolean getEnabled () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public MenuItem getItem (int index) {
+public NativeMenuItem getItem (int index) {
 	checkWidget ();
 	int id = 0;
 	MENUITEMINFO info = new MENUITEMINFO ();
@@ -637,7 +637,7 @@ public int getItemCount () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public MenuItem [] getItems () {
+public NativeMenuItem [] getItems () {
 	checkWidget ();
 	int index = 0, count = 0;
 	int length = OS.GetMenuItemCount (handle);
@@ -645,22 +645,22 @@ public MenuItem [] getItems () {
 		int error = OS.GetLastError();
 		SWT.error(SWT.ERROR_CANNOT_GET_COUNT, null, " [GetLastError=0x" + Integer.toHexString(error) + "]");//$NON-NLS-1$ $NON-NLS-2$
 	}
-	MenuItem [] items = new MenuItem [length];
+	NativeMenuItem [] items = new NativeMenuItem [length];
 	MENUITEMINFO info = new MENUITEMINFO ();
 	info.cbSize = MENUITEMINFO.sizeof;
 	info.fMask = OS.MIIM_DATA;
 	while (OS.GetMenuItemInfo (handle, index, true, info)) {
 		if (count == items.length) {
-			MenuItem [] newItems = new MenuItem [count + 4];
+			NativeMenuItem [] newItems = new NativeMenuItem [count + 4];
 			System.arraycopy (items, 0, newItems, 0, count);
 			items = newItems;
 		}
-		MenuItem item = display.getMenuItem ((int)info.dwItemData);
+		NativeMenuItem item = display.getMenuItem ((int)info.dwItemData);
 		if (item != null) items [count++] = item;
 		index++;
 	}
 	if (count == items.length) return items;
-	MenuItem [] result = new MenuItem [count];
+	NativeMenuItem [] result = new NativeMenuItem [count];
 	System.arraycopy (items, 0, result, 0, count);
 	return result;
 }
@@ -668,7 +668,7 @@ public MenuItem [] getItems () {
 @Override
 String getNameText () {
 	String result = "";
-	MenuItem [] items = getItems ();
+	NativeMenuItem [] items = getItems ();
 	int length = items.length;
 	if (length > 0) {
 		for (int i=0; i<=length-1; i++) {
@@ -707,7 +707,7 @@ public int getOrientation () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Decorations getParent () {
+public NativeDecorations getParent () {
 	checkWidget ();
 	return parent;
 }
@@ -724,7 +724,7 @@ public Decorations getParent () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public MenuItem getParentItem () {
+public NativeMenuItem getParentItem () {
 	checkWidget ();
 	return cascade;
 }
@@ -741,7 +741,7 @@ public MenuItem getParentItem () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Menu getParentMenu () {
+public NativeMenu getParentMenu () {
 	checkWidget ();
 	if (cascade != null) return cascade.parent;
 	return null;
@@ -763,7 +763,7 @@ public Menu getParentMenu () {
  *
  * @see #getParent
  */
-public Shell getShell () {
+public NativeShell getShell () {
 	checkWidget ();
 	return parent.getShell ();
 }
@@ -791,14 +791,14 @@ public boolean getVisible () {
 		return this == parent.menuShell ().menuBar;
 	}
 	if ((style & SWT.POP_UP) != 0) {
-		Menu [] popups = display.popups;
+		NativeMenu [] popups = display.popups;
 		if (popups == null) return false;
-		for (Menu popup : popups) {
+		for (NativeMenu popup : popups) {
 			if (popup == this) return true;
 		}
 	}
-	Shell shell = getShell ();
-	Menu menu = shell.activeMenu;
+	NativeShell shell = getShell ();
+	NativeMenu menu = shell.activeMenu;
 	while (menu != null && menu != this) {
 		menu = menu.getParentMenu ();
 	}
@@ -828,7 +828,7 @@ void hideCurrentToolTip () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public int indexOf (MenuItem item) {
+public int indexOf (NativeMenuItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
@@ -868,7 +868,7 @@ void initThemeColors () {
  */
 public boolean isEnabled () {
 	checkWidget ();
-	Menu parentMenu = getParentMenu ();
+	NativeMenu parentMenu = getParentMenu ();
 	if (parentMenu == null) {
 		return getEnabled () && parent.isEnabled ();
 	}
@@ -940,7 +940,7 @@ void releaseHandle () {
 
 @Override
 void releaseChildren (boolean destroy) {
-	for (MenuItem item : getItems ()) {
+	for (NativeMenuItem item : getItems ()) {
 		if (item != null && !item.isDisposed ()) {
 			item.release (false);
 		}
@@ -1024,7 +1024,7 @@ public void removeMenuListener (MenuListener listener) {
 
 @Override
 void reskinChildren (int flags) {
-	for (MenuItem item : getItems ()) {
+	for (NativeMenuItem item : getItems ()) {
 		item.reskin (flags);
 	}
 	super.reskinChildren (flags);
@@ -1132,7 +1132,7 @@ void reskinChildren (int flags) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setDefaultItem (MenuItem item) {
+public void setDefaultItem (NativeMenuItem item) {
 	checkWidget ();
 	int newID = -1;
 	if (item != null) {
@@ -1254,7 +1254,7 @@ void _setOrientation (int orientation) {
 	style &= ~flags;
 	style |= orientation & flags;
 	style &= ~SWT.FLIP_TEXT_DIRECTION;
-	for (MenuItem itm : getItems ()) {
+	for (NativeMenuItem itm : getItems ()) {
 		itm.setOrientation (orientation);
 	}
 }
@@ -1292,7 +1292,7 @@ void update () {
 		return;
 	}
 	boolean hasCheck = false, hasImage = false;
-	for (MenuItem item : getItems ()) {
+	for (NativeMenuItem item : getItems ()) {
 		if (item.image != null) {
 			if ((hasImage = true) && hasCheck) break;
 		}
@@ -1368,11 +1368,15 @@ LRESULT wmTimer (long wParam, long lParam) {
 }
 
 private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-	if (!(widget instanceof Menu menu)) {
+	if (!(Widget.checkNative(widget) instanceof NativeMenu menu)) {
 		return;
 	}
-	for (MenuItem item : menu.getItems()) {
-		DPIZoomChangeRegistry.applyChange(item, newZoom, scalingFactor);
+	for (NativeMenuItem item : menu.getItems()) {
+		DPIZoomChangeRegistry.applyChange(item.getWrapper(), newZoom, scalingFactor);
 	}
 }
+
+@Override
+public abstract Menu getWrapper();
+
 }

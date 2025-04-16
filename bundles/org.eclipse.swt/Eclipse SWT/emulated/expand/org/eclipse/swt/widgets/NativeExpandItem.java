@@ -35,9 +35,9 @@ import org.eclipse.swt.graphics.*;
  * @since 3.2
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class ExpandItem extends Item {
-	ExpandBar parent;
-	Control control;
+public abstract class NativeExpandItem extends NativeItem {
+	NativeExpandBar parent;
+	NativeControl control;
 	boolean expanded;
 	int x, y, width, height;
 	int imageHeight, imageWidth;
@@ -72,7 +72,7 @@ public class ExpandItem extends Item {
  * @see Widget#checkSubclass
  * @see Widget#getStyle
  */
-public ExpandItem (ExpandBar parent, int style) {
+protected NativeExpandItem (NativeExpandBar parent, int style) {
 	this (parent, style, checkNull (parent).getItemCount ());
 }
 
@@ -106,13 +106,13 @@ public ExpandItem (ExpandBar parent, int style) {
  * @see Widget#checkSubclass
  * @see Widget#getStyle
  */
-public ExpandItem (ExpandBar parent, int style, int index) {
+protected NativeExpandItem (NativeExpandBar parent, int style, int index) {
 	super (parent, style);
 	this.parent = parent;
 	parent.createItem (this, style, index);
 }
 
-static ExpandBar checkNull (ExpandBar control) {
+static NativeExpandBar checkNull (NativeExpandBar control) {
 	if (control == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	return control;
 }
@@ -169,7 +169,7 @@ void drawItem (GC gc, boolean drawFocus) {
 	}
 	int drawX = x;
 	if (image != null) {
-		drawX += ExpandItem.TEXT_INSET;
+		drawX += NativeExpandItem.TEXT_INSET;
 		if (imageHeight > headerHeight) {
 			gc.drawImage (image, drawX, y + headerHeight - imageHeight);
 		} else {
@@ -178,12 +178,12 @@ void drawItem (GC gc, boolean drawFocus) {
 		drawX += imageWidth;
 	}
 	if (text.length() > 0) {
-		drawX += ExpandItem.TEXT_INSET;
+		drawX += NativeExpandItem.TEXT_INSET;
 		Point size = gc.stringExtent (text);
 		gc.setForeground (parent.getForeground ());
 		gc.drawString (text, drawX, y + (headerHeight - size.y) / 2, true);
 	}
-	int chevronSize = ExpandItem.CHEVRON_SIZE;
+	int chevronSize = NativeExpandItem.CHEVRON_SIZE;
 	drawChevron (gc, x + width - chevronSize, y + (headerHeight - chevronSize) / 2);
 	if (drawFocus) {
 		gc.drawFocus (x + 1, y + 1, width - 2, headerHeight - 2);
@@ -201,7 +201,7 @@ void drawItem (GC gc, boolean drawFocus) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Control getControl() {
+public NativeControl getControl() {
 	checkWidget ();
 	return control;
 }
@@ -262,15 +262,15 @@ public int getHeight () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public ExpandBar getParent () {
+public NativeExpandBar getParent () {
 	checkWidget ();
 	return parent;
 }
 
 int getPreferredWidth (GC gc) {
-	int width = ExpandItem.TEXT_INSET * 2 + ExpandItem.CHEVRON_SIZE;
+	int width = NativeExpandItem.TEXT_INSET * 2 + NativeExpandItem.CHEVRON_SIZE;
 	if (image != null) {
-		width += ExpandItem.TEXT_INSET + imageWidth;
+		width += NativeExpandItem.TEXT_INSET + imageWidth;
 	}
 	if (text.length() > 0) {
 		width += gc.stringExtent (text).x;
@@ -281,7 +281,7 @@ int getPreferredWidth (GC gc) {
 void redraw () {
 	int headerHeight = parent.getBandHeight ();
 	if (imageHeight > headerHeight) {
-		parent.redraw (x + ExpandItem.TEXT_INSET, y + headerHeight - imageHeight, imageWidth, imageHeight, false);
+		parent.redraw (x + NativeExpandItem.TEXT_INSET, y + headerHeight - imageHeight, imageWidth, imageHeight, false);
 	}
 	parent.redraw (x, y, width, headerHeight + height, false);
 }
@@ -322,7 +322,7 @@ void setBounds (int x, int y, int width, int height, boolean move, boolean size)
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setControl(Control control) {
+public void setControl(NativeControl control) {
 	checkWidget ();
 	if (control != null) {
 		if (control.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -393,4 +393,8 @@ public void setText (String string) {
 	super.setText (string);
 	redraw ();
 }
+
+@Override
+public abstract ExpandItem getWrapper();
+
 }

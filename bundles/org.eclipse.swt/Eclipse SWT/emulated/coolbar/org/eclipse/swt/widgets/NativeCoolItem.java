@@ -35,9 +35,9 @@ import org.eclipse.swt.graphics.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class CoolItem extends Item {
-	Control control;
-	CoolBar parent;
+public abstract class NativeCoolItem extends NativeItem {
+	NativeControl control;
+	NativeCoolBar parent;
 	boolean ideal;
 	int preferredWidth, preferredHeight, minimumWidth, minimumHeight, requestedWidth;
 	Rectangle itemBounds = new Rectangle(0, 0, 0, 0);
@@ -82,10 +82,10 @@ public class CoolItem extends Item {
  * </ul>
  *
  * @see SWT#DROP_DOWN
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public CoolItem (CoolBar parent, int style) {
+protected NativeCoolItem (NativeCoolBar parent, int style) {
 	super(parent, style);
 	this.parent = parent;
 	parent.createItem (this, parent.getItemCount());
@@ -120,10 +120,10 @@ public CoolItem (CoolBar parent, int style) {
  * </ul>
  *
  * @see SWT#DROP_DOWN
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public CoolItem (CoolBar parent, int style, int index) {
+protected NativeCoolItem (NativeCoolBar parent, int style, int index) {
 	super(parent, style);
 	this.parent = parent;
 	parent.createItem (this, index);
@@ -163,15 +163,15 @@ public void addSelectionListener(SelectionListener listener) {
 	addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 }
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 /*
  * Find the trim size of the Toolbar widget in the current platform.
  */
 void calculateChevronTrim () {
-	ToolBar tb = new ToolBar (parent, SWT.FLAT);
-	ToolItem ti = new ToolItem (tb, SWT.PUSH);
+	ToolBar tb = new ToolBar(parent.getWrapper(), SWT.FLAT);
+	ToolItem ti = new ToolItem(tb, SWT.PUSH);
 	Image image = new Image (display, 1, 1);
 	ti.setImage (image);
 	Point size = tb.computeSize (SWT.DEFAULT, SWT.DEFAULT);
@@ -205,9 +205,9 @@ void calculateChevronTrim () {
  * @see Layout
  * @see #getBounds
  * @see #getSize
- * @see Control#getBorderWidth
- * @see Scrollable#computeTrim
- * @see Scrollable#getClientArea
+ * @see NativeControl#getBorderWidth
+ * @see NativeScrollable#computeTrim
+ * @see NativeScrollable#getClientArea
  */
 public Point computeSize (int wHint, int hHint) {
 	checkWidget();
@@ -310,7 +310,7 @@ Rectangle internalGetBounds () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Control getControl () {
+public NativeControl getControl () {
 	checkWidget();
 	return control;
 }
@@ -341,7 +341,7 @@ public Point getMinimumSize () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public CoolBar getParent () {
+public NativeCoolBar getParent () {
 	checkWidget();
 	return parent;
 }
@@ -461,7 +461,7 @@ void setBounds (int x, int y, int width, int height) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public void setControl (Control control) {
+public void setControl (NativeControl control) {
 	checkWidget();
 	if (control != null) {
 		if (control.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
@@ -618,9 +618,9 @@ void updateChevron() {
 		int width = itemBounds.width;
 		if ((style & SWT.DROP_DOWN) != 0 && width < preferredWidth) {
 			if (chevron == null) {
-				chevron = new ToolBar (parent, SWT.FLAT | SWT.NO_FOCUS);
-				ToolItem toolItem = new ToolItem (chevron, SWT.PUSH);
-				toolItem.addListener (SWT.Selection, event -> CoolItem.this.onSelection (event));
+				chevron = new ToolBar(parent.getWrapper(), SWT.FLAT | SWT.NO_FOCUS);
+				ToolItem toolItem = new ToolItem(chevron, SWT.PUSH);
+				toolItem.addListener (SWT.Selection, event -> NativeCoolItem.this.onSelection (event));
 			}
 			int controlHeight, currentImageHeight = 0;
 			if ((parent.style & SWT.VERTICAL) != 0) {
@@ -652,4 +652,8 @@ void updateChevron() {
 		}
 	}
 }
+
+@Override
+public abstract CoolItem getWrapper();
+
 }

@@ -42,10 +42,10 @@ import org.eclipse.swt.internal.gtk4.*;
  * @since 3.1
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class TreeColumn extends Item {
+public abstract class NativeTreeColumn extends NativeItem {
 	long headerButtonCSSProvider = 0;
 	long labelHandle, imageHandle, buttonHandle;
-	Tree parent;
+	NativeTree parent;
 	int modelIndex, lastTime, lastX, lastWidth;
 	boolean customDraw;
 	String toolTipText;
@@ -79,10 +79,10 @@ public class TreeColumn extends Item {
  * @see SWT#LEFT
  * @see SWT#RIGHT
  * @see SWT#CENTER
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TreeColumn (Tree parent, int style) {
+protected NativeTreeColumn (NativeTree parent, int style) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	createWidget (parent.getColumnCount ());
@@ -122,10 +122,10 @@ public TreeColumn (Tree parent, int style) {
  * @see SWT#LEFT
  * @see SWT#RIGHT
  * @see SWT#CENTER
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TreeColumn (Tree parent, int style, int index) {
+protected NativeTreeColumn (NativeTree parent, int style, int index) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	createWidget (index);
@@ -187,7 +187,7 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -247,9 +247,9 @@ public int getAlignment () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Tree#getColumnOrder()
- * @see Tree#setColumnOrder(int[])
- * @see TreeColumn#setMoveable(boolean)
+ * @see NativeTree#getColumnOrder()
+ * @see NativeTree#setColumnOrder(int[])
+ * @see NativeTreeColumn#setMoveable(boolean)
  * @see SWT#Move
  *
  * @since 3.2
@@ -269,7 +269,7 @@ public boolean getMoveable() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Tree getParent () {
+public NativeTree getParent () {
 	checkWidget();
 	return parent;
 }
@@ -374,7 +374,7 @@ void gtk_gesture_press_event(long gesture, int n_press, double x, double y, long
 @Override
 long gtk_event_after (long widget, long gdkEvent) {
 	int eventType = GDK.gdk_event_get_event_type(gdkEvent);
-	eventType = Control.fixGdkEventTypeValues(eventType);
+	eventType = NativeControl.fixGdkEventTypeValues(eventType);
 	switch (eventType) {
 		case GDK.GDK_BUTTON_PRESS: {
 			int [] eventButton = new int [1];
@@ -471,7 +471,7 @@ public void pack () {
 	}
 	if ((parent.style & SWT.VIRTUAL) != 0) {
 		for (int i=0; i<parent.items.length; i++) {
-			TreeItem item = parent.items [i];
+			NativeTreeItem item = parent.items [i];
 			if (item != null && item.cached) {
 				width = Math.max (width, parent.calculateWidth (handle, item.handle, true));
 			}
@@ -635,9 +635,9 @@ public void setImage (Image image) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Tree#setColumnOrder(int[])
- * @see Tree#getColumnOrder()
- * @see TreeColumn#getMoveable()
+ * @see NativeTree#setColumnOrder(int[])
+ * @see NativeTree#getColumnOrder()
+ * @see NativeTreeColumn#getMoveable()
  * @see SWT#Move
  *
  * @since 3.2
@@ -824,4 +824,8 @@ long dpiChanged(long object, long arg0) {
 
 	return 0;
 }
+
+@Override
+public abstract TreeColumn getWrapper();
+
 }

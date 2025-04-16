@@ -35,7 +35,7 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class FontDialog extends Dialog {
+public class NativeFontDialog extends NativeDialog {
 	FontData fontData;
 	RGB rgb;
 	boolean selected;
@@ -55,7 +55,7 @@ public class FontDialog extends Dialog {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public FontDialog (Shell parent) {
+public NativeFontDialog (NativeShell parent) {
 	this (parent, SWT.APPLICATION_MODAL);
 }
 
@@ -83,7 +83,7 @@ public FontDialog (Shell parent) {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public FontDialog (Shell parent, int style) {
+public NativeFontDialog (NativeShell parent, int style) {
 	super (parent, checkStyle (parent, style));
 	checkSubclass ();
 }

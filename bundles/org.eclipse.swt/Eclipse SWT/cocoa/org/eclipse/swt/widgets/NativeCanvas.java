@@ -37,14 +37,14 @@ import org.eclipse.swt.internal.graphics.*;
  * methods.
  * </p>
  *
- * @see Composite
+ * @see NativeComposite
  * @see <a href="http://www.eclipse.org/swt/snippets/#canvas">Canvas snippets</a>
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public class Canvas extends Composite {
-	Caret caret;
-	IME ime;
+public abstract class NativeCanvas extends NativeComposite implements ICanvas {
+	NativeCaret caret;
+	NativeIME ime;
 	NSOpenGLContext glcontext;
 	NSBezierPath visiblePath;
 
@@ -58,7 +58,7 @@ public class Canvas extends Composite {
 		//supportedPboardTypes.addObject(OS.NSRTFPboardType);
 	};
 
-Canvas () {
+NativeCanvas () {
 	/* Do nothing */
 }
 
@@ -105,9 +105,9 @@ void sendFocusEvent(int type) {
  * </ul>
  *
  * @see SWT
- * @see Widget#getStyle
+ * @see NativeWidget#getStyle
  */
-public Canvas (Composite parent, int style) {
+public NativeCanvas (NativeComposite parent, int style) {
 	super (parent, style);
 }
 
@@ -138,6 +138,7 @@ long characterIndexForPoint (long id, long sel, long point) {
  *
  * @since 3.2
  */
+@Override
 public void drawBackground (GC gc, int x, int y, int width, int height) {
 	drawBackground(gc, x, y, width, height, 0, 0);
 }
@@ -214,7 +215,7 @@ void drawWidget (long id, NSGraphicsContext context, NSRect rect) {
 			CGRect drawRect = new CGRect();
 			drawRect.origin.x = caret.x;
 			drawRect.origin.y = caret.y;
-			drawRect.size.width = caret.width != 0 ? caret.width : Caret.DEFAULT_WIDTH;
+			drawRect.size.width = caret.width != 0 ? caret.width : NativeCaret.DEFAULT_WIDTH;
 			drawRect.size.height = caret.height;
 			long colorspace = OS.CGColorSpaceCreateDeviceRGB();
 			OS.CGContextSetFillColorSpace(ctx, colorspace);
@@ -250,9 +251,10 @@ NSRect firstRectForCharacterRange (long id, long sel, long range) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Caret getCaret () {
 	checkWidget();
-	return caret;
+	return caret != null ? caret.getWrapper() : null;
 }
 
 /**
@@ -267,9 +269,10 @@ public Caret getCaret () {
  *
  * @since 3.4
  */
+@Override
 public IME getIME () {
 	checkWidget();
-	return ime;
+	return ime != null ? ime.getWrapper() : null;
 }
 
 @Override
@@ -395,6 +398,7 @@ void resetVisibleRegion () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void scroll (int destX, int destY, int x, int y, int width, int height, boolean all) {
 	checkWidget();
 	if (width <= 0 || height <= 0) return;
@@ -407,7 +411,7 @@ public void scroll (int destX, int destY, int x, int y, int width, int height, b
 	if (isFocus) caret.killFocus ();
 	Rectangle clientRect = getClientArea ();
 	Rectangle sourceRect = new Rectangle (x, y, width, height);
-	Control control = findBackgroundControl ();
+	NativeControl control = findBackgroundControl ();
 	boolean redraw = control != null && control.backgroundImage != null;
 	if (!redraw) redraw = hasRegion ();
 	if (!redraw) redraw = isObscured ();
@@ -497,9 +501,9 @@ public void scroll (int destX, int destY, int x, int y, int width, int height, b
 	}
 
 	if (all) {
-		Control [] children = _getChildren ();
+		NativeControl [] children = _getChildren ();
 		for (int i=0; i<children.length; i++) {
-			Control child = children [i];
+			NativeControl child = children [i];
 			Rectangle rect = child.getBounds ();
 			if (Math.min(x + width, rect.x + rect.width) >= Math.max (x, rect.x) &&
 				Math.min(y + height, rect.y + rect.height) >= Math.max (y, rect.y)) {
@@ -542,10 +546,15 @@ boolean sendKeyEvent (NSEvent nsEvent, int type) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setCaret (Caret caret) {
+	setCaret(Widget.checkNative(caret));
+}
+
+public void setCaret (NativeCaret caret) {
 	checkWidget();
-	Caret newCaret = caret;
-	Caret oldCaret = this.caret;
+	NativeCaret newCaret = caret;
+	NativeCaret oldCaret = this.caret;
 	this.caret = newCaret;
 	if (hasFocus ()) {
 		if (oldCaret != null) oldCaret.killFocus ();
@@ -566,7 +575,7 @@ public void setFont (Font font) {
 @Override
 void setOpenGLContext(Object value) {
 	glcontext = (NSOpenGLContext)value;
-	Shell shell = getShell ();
+	NativeShell shell = getShell ();
 	if (glcontext != null) {
 		shell.glContextCount++;
 	} else {
@@ -590,7 +599,12 @@ void setOpenGLContext(Object value) {
  *
  * @since 3.4
  */
+@Override
 public void setIME (IME ime) {
+	setIME(Widget.checkNative(ime));
+}
+
+public void setIME (NativeIME ime) {
 	checkWidget ();
 	if (ime != null && ime.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
 	this.ime = ime;
@@ -646,12 +660,12 @@ void updateOpenGLContext(long id, long sel, long notification) {
 void viewWillMoveToWindow(long id, long sel, long arg0) {
 	super.viewWillMoveToWindow(id, sel, arg0);
 	if (glcontext != null && id == view.id && arg0 != 0) {
-		Widget newShell = display.getWidget(new NSWindow(arg0).contentView());
-		if (newShell instanceof Shell) {
-			((Shell) newShell).glContextCount++;
-			((Shell) newShell).updateOpaque();
+		NativeWidget newShell = display.getWidget(new NSWindow(arg0).contentView());
+		if (newShell instanceof NativeShell) {
+			((NativeShell) newShell).glContextCount++;
+			((NativeShell) newShell).updateOpaque();
 		}
-		Shell shell = getShell();
+		NativeShell shell = getShell();
 		shell.glContextCount--;
 		shell.updateOpaque();
 	}
@@ -695,5 +709,8 @@ boolean writeSelectionToPasteboard(NSPasteboard pboard, NSString type) {
 
 	return result;
 }
+
+@Override
+public abstract Canvas getWrapper();
 
 }

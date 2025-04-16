@@ -38,10 +38,10 @@ import org.eclipse.swt.internal.gtk.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Caret extends Widget {
-	Canvas parent;
+public abstract class NativeCaret extends NativeWidget {
+	NativeCanvas parent;
 	// Table or Tree the parent might be embedded into (also indirectly)
-	Composite embeddedInto;
+	NativeComposite embeddedInto;
 	int x, y, width, height;
 	boolean isVisible, isShowing;
 	int blinkRate;
@@ -75,17 +75,17 @@ public class Caret extends Widget {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Caret (Canvas parent, int style) {
+protected NativeCaret (NativeCanvas parent, int style) {
 	super (parent, style);
 	this.parent = parent;
 	createWidget (0);
 	Composite p = parent.getParent();
 	while (p != null) {
 		if (p instanceof Tree || p instanceof Table) {
-			embeddedInto = p;
+			embeddedInto = Widget.checkNative(p);
 			break;
 		}
 		p = p.getParent();
@@ -221,7 +221,7 @@ Point getLocationInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Canvas getParent () {
+public NativeCanvas getParent () {
 	checkWidget();
 	return parent;
 }
@@ -315,7 +315,7 @@ void killFocus () {
 void releaseParent () {
 	super.releaseParent ();
 	if (parent != null && this == parent.caret) {
-		if (!parent.isDisposed()) parent.setCaret (null);
+		if (!parent.isDisposed()) parent.setCaret ((NativeCaret) null);
 		else parent.caret = null;
 	}
 }
@@ -553,7 +553,7 @@ void setSizeInPixels (Point size) {
  */
 public void setVisible (boolean visible) {
 	checkWidget();
-	Canvas canvas = getParent();
+	NativeCanvas canvas = getParent();
 	canvas.blink = true;
 	canvas.drawFlag = visible;
 	display.resetCaretTiming();
@@ -572,5 +572,8 @@ boolean showCaret () {
 	isShowing = true;
 	return drawCaret ();
 }
+
+@Override
+public abstract Caret getWrapper();
 
 }

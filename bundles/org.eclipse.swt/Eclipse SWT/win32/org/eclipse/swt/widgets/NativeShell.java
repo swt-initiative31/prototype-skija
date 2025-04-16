@@ -113,16 +113,16 @@ import org.eclipse.swt.internal.win32.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see Decorations
+ * @see NativeDecorations
  * @see SWT
  * @see <a href="http://www.eclipse.org/swt/snippets/#shell">Shell snippets</a>
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Shell extends Decorations {
-	Menu activeMenu;
-	ToolTip [] toolTips;
+public abstract class NativeShell extends NativeDecorations {
+	NativeMenu activeMenu;
+	NativeToolTip [] toolTips;
 	long hwndMDIClient, lpstrTip, toolTipHandle, balloonTipHandle, menuItemToolTipHandle;
 	int minWidth = SWT.DEFAULT, minHeight = SWT.DEFAULT, maxWidth = SWT.DEFAULT, maxHeight = SWT.DEFAULT;
 	long [] brushes;
@@ -130,7 +130,7 @@ public class Shell extends Decorations {
 	String toolTitle, balloonTitle;
 	long toolIcon, balloonIcon;
 	long windowProc;
-	Control lastActive;
+	NativeControl lastActive;
 	static /*final*/ long ToolTipProc;
 	static final long DialogProc;
 	static final TCHAR DialogClass = new TCHAR (0, "#32770", true);
@@ -147,7 +147,7 @@ public class Shell extends Decorations {
 		WNDCLASS lpWndClass = new WNDCLASS ();
 		OS.GetClassInfo (0, DialogClass, lpWndClass);
 		DialogProc = lpWndClass.lpfnWndProc;
-		DPIZoomChangeRegistry.registerHandler(Shell::handleDPIChange, Shell.class);
+		DPIZoomChangeRegistry.registerHandler(NativeShell::handleDPIChange, Shell.class);
 	}
 
 /**
@@ -159,7 +159,7 @@ public class Shell extends Decorations {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public Shell () {
+protected NativeShell () {
 	this ((Display) null);
 }
 
@@ -202,7 +202,7 @@ public Shell () {
  * @see SWT#SYSTEM_MODAL
  * @see SWT#SHEET
  */
-public Shell (int style) {
+protected NativeShell (int style) {
 	this ((Display) null, style);
 }
 
@@ -225,7 +225,7 @@ public Shell (int style) {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public Shell (Display display) {
+protected NativeShell (Display display) {
 	this (display, SWT.SHELL_TRIM);
 }
 
@@ -276,11 +276,11 @@ public Shell (Display display) {
  * @see SWT#SYSTEM_MODAL
  * @see SWT#SHEET
  */
-public Shell (Display display, int style) {
+protected NativeShell (Display display, int style) {
 	this (display, null, style, 0, false);
 }
 
-Shell (Display display, Shell parent, int style, long handle, boolean embedded) {
+NativeShell (Display display, NativeShell parent, int style, long handle, boolean embedded) {
 	super ();
 	checkSubclass ();
 	if (display == null) display = Display.getCurrent ();
@@ -335,7 +335,7 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public Shell (Shell parent) {
+protected NativeShell (NativeShell parent) {
 	this (parent, SWT.DIALOG_TRIM);
 }
 
@@ -388,7 +388,7 @@ public Shell (Shell parent) {
  * @see SWT#SYSTEM_MODAL
  * @see SWT#SHEET
  */
-public Shell (Shell parent, int style) {
+protected NativeShell (NativeShell parent, int style) {
 	this (parent != null ? parent.display : null, parent, style, 0, false);
 }
 
@@ -410,34 +410,11 @@ public Shell (Shell parent, int style) {
  * @noreference This method is not intended to be referenced by clients.
  */
 public static Shell win32_new (Display display, long handle) {
-	return new Shell (display, null, SWT.NO_TRIM, handle, true);
+	return new Shell(display, null, SWT.NO_TRIM, handle, true);
 }
 
-/**
- * Invokes platform specific functionality to allocate a new shell
- * that is not embedded.
- * <p>
- * <b>IMPORTANT:</b> This method is <em>not</em> part of the public
- * API for <code>Shell</code>. It is marked public only so that it
- * can be shared within the packages provided by SWT. It is not
- * available on all platforms, and should never be called from
- * application code.
- * </p>
- *
- * @param display the display for the shell
- * @param handle the handle for the shell
- * @return a new shell object containing the specified display and handle
- *
- * @noreference This method is not intended to be referenced by clients.
- *
- * @since 3.3
- */
-public static Shell internal_new (Display display, long handle) {
-	return new Shell (display, null, SWT.NO_TRIM, handle, false);
-}
-
-static int checkStyle (Shell parent, int style) {
-	style = Decorations.checkStyle (style);
+static int checkStyle (NativeShell parent, int style) {
+	style = NativeDecorations.checkStyle (style);
 	style &= ~SWT.TRANSPARENT;
 	int mask = SWT.SYSTEM_MODAL | SWT.APPLICATION_MODAL | SWT.PRIMARY_MODAL;
 	if ((style & SWT.SHEET) != 0) {
@@ -657,12 +634,12 @@ void createMenuItemToolTipHandle() {
 	menuItemToolTipHandle = createToolTipHandle (0);
 }
 
-void createToolTip (ToolTip toolTip) {
+void createToolTip (NativeToolTip toolTip) {
 	int id = 0;
-	if (toolTips == null) toolTips = new ToolTip [4];
+	if (toolTips == null) toolTips = new NativeToolTip [4];
 	while (id < toolTips.length && toolTips [id] != null) id++;
 	if (id == toolTips.length) {
-		ToolTip [] newToolTips = new ToolTip [toolTips.length + 4];
+		NativeToolTip [] newToolTips = new NativeToolTip [toolTips.length + 4];
 		System.arraycopy (toolTips, 0, newToolTips, 0, toolTips.length);
 		toolTips = newToolTips;
 	}
@@ -717,7 +694,7 @@ void deregister () {
 	if (menuItemToolTipHandle != 0) display.removeControl (menuItemToolTipHandle);
 }
 
-void destroyToolTip (ToolTip toolTip) {
+void destroyToolTip (NativeToolTip toolTip) {
 	if (toolTips == null) return;
 	toolTips [toolTip.id - Display.ID_START] = null;
 	if (balloonTipHandle != 0) {
@@ -793,7 +770,7 @@ long findBrush (long value, int lbStyle) {
 }
 
 @Override
-Control findBackgroundControl () {
+NativeControl findBackgroundControl () {
 	return background != -1 || backgroundImage != null ? this : null;
 }
 
@@ -803,11 +780,11 @@ Cursor findCursor () {
 }
 
 @Override
-Control findThemeControl () {
+NativeControl findThemeControl () {
 	return null;
 }
 
-ToolTip findToolTip (int id) {
+NativeToolTip findToolTip (int id) {
 	if (toolTips == null) return null;
 	id = id - Display.ID_START;
 	return 0 <= id && id < toolTips.length ? toolTips [id] : null;
@@ -831,7 +808,7 @@ void fixActiveShell () {
 	}
 }
 
-void fixShell (Shell newShell, Control control) {
+void fixShell (NativeShell newShell, NativeControl control) {
 	if (this == newShell) return;
 	if (control == lastActive) setActiveControl (null);
 	String toolTipText = control.toolTipText;
@@ -885,13 +862,13 @@ void fixToolTip () {
  * </ul>
  *
  * @since 2.0
- * @see Control#moveAbove
- * @see Control#setFocus
- * @see Control#setVisible
+ * @see NativeControl#moveAbove
+ * @see NativeControl#setFocus
+ * @see NativeControl#setVisible
  * @see Display#getActiveShell
- * @see Decorations#setDefaultButton(Button)
- * @see Shell#open
- * @see Shell#setActive
+ * @see NativeDecorations#setDefaultButton(Button)
+ * @see NativeShell#open
+ * @see NativeShell#setActive
  */
 public void forceActive () {
 	checkWidget ();
@@ -935,23 +912,23 @@ public int getAlpha () {
 	return new Rectangle (rect.left, rect.top, width, height);
 }
 
-ToolTip getCurrentToolTip () {
+NativeToolTip getCurrentToolTip () {
 	if (toolTipHandle != 0) {
-		ToolTip tip = getCurrentToolTip (toolTipHandle);
+		NativeToolTip tip = getCurrentToolTip (toolTipHandle);
 		if (tip != null) return tip;
 	}
 	if (balloonTipHandle != 0) {
-		ToolTip tip = getCurrentToolTip (balloonTipHandle);
+		NativeToolTip tip = getCurrentToolTip (balloonTipHandle);
 		if (tip != null) return tip;
 	}
 	if (menuItemToolTipHandle != 0) {
-		ToolTip tip = getCurrentToolTip (menuItemToolTipHandle);
+		NativeToolTip tip = getCurrentToolTip (menuItemToolTipHandle);
 		if (tip != null) return tip;
 	}
 	return null;
 }
 
-ToolTip getCurrentToolTip (long hwndToolTip) {
+NativeToolTip getCurrentToolTip (long hwndToolTip) {
 	if (hwndToolTip == 0) return null;
 	if (OS.SendMessage (hwndToolTip, OS.TTM_GETCURRENTTOOL, 0, 0) != 0) {
 		TOOLINFO lpti = new TOOLINFO ();
@@ -1154,7 +1131,7 @@ public Region getRegion () {
 }
 
 @Override
-public Shell getShell () {
+public NativeShell getShell () {
 	checkWidget ();
 	return this;
 }
@@ -1179,23 +1156,23 @@ public Shell getShell () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Shell [] getShells () {
+public NativeShell [] getShells () {
 	checkWidget ();
 	int count = 0;
-	Shell [] shells = display.getShells ();
-	for (Shell activeshell : shells) {
-		Control shell = activeshell;
+	NativeShell [] shells = display.getNativeShells ();
+	for (NativeShell activeshell : shells) {
+		NativeControl shell = activeshell;
 		do {
-			shell = shell.getParent ();
+			shell = Widget.checkNative(shell.getParent ());
 		} while (shell != null && shell != this);
 		if (shell == this) count++;
 	}
 	int index = 0;
-	Shell [] result = new Shell [count];
-	for (Shell activeshell : shells) {
-		Control shell = activeshell;
+	NativeShell [] result = new NativeShell [count];
+	for (NativeShell activeshell : shells) {
+		NativeControl shell = activeshell;
 		do {
-			shell = shell.getParent ();
+			shell = Widget.checkNative(shell.getParent ());
 		} while (shell != null && shell != this);
 		if (shell == this) {
 			result [index++] = activeshell;
@@ -1225,7 +1202,7 @@ public ToolBar getToolBar() {
 }
 
 @Override
-Composite findDeferredControl () {
+NativeComposite findDeferredControl () {
 	return layoutCount > 0 ? this : null;
 }
 
@@ -1277,13 +1254,13 @@ long menuItemToolTipHandle () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Control#moveAbove
- * @see Control#setFocus
- * @see Control#setVisible
+ * @see NativeControl#moveAbove
+ * @see NativeControl#setFocus
+ * @see NativeControl#setVisible
  * @see Display#getActiveShell
- * @see Decorations#setDefaultButton(Button)
- * @see Shell#setActive
- * @see Shell#forceActive
+ * @see NativeDecorations#setDefaultButton(Button)
+ * @see NativeShell#setActive
+ * @see NativeShell#forceActive
  */
 public void open () {
 	checkWidget ();
@@ -1323,7 +1300,7 @@ public void open () {
 	}
 	if (restored) {
 		Control focusControl = display.getFocusControl ();
-		if (focusControl instanceof Button && (focusControl.style & SWT.PUSH) != 0) {
+		if (focusControl instanceof Button && (focusControl.getStyle() & SWT.PUSH) != 0) {
 			restored = false;
 		}
 	}
@@ -1363,13 +1340,13 @@ void releaseBrushes () {
 
 @Override
 void releaseChildren (boolean destroy) {
-	for (Shell shell : getShells ()) {
+	for (NativeShell shell : getShells ()) {
 		if (shell != null && !shell.isDisposed ()) {
 			shell.release (false);
 		}
 	}
 	if (toolTips != null) {
-		for (ToolTip toolTip : toolTips) {
+		for (NativeToolTip toolTip : toolTips) {
 			if (toolTip != null && !toolTip.isDisposed ()) {
 				toolTip.release (false);
 			}
@@ -1407,7 +1384,7 @@ void releaseWidget () {
 }
 
 @Override
-void removeMenu (Menu menu) {
+void removeMenu (NativeMenu menu) {
 	super.removeMenu (menu);
 	if (menu == activeMenu) activeMenu = null;
 }
@@ -1447,11 +1424,11 @@ public void requestLayout () {
 
 @Override
 void reskinChildren (int flags) {
-	for (Shell shell : getShells ()) {
+	for (NativeShell shell : getShells ()) {
 		if (shell != null) shell.reskin (flags);
 	}
 	if (toolTips != null) {
-		for (ToolTip toolTip : toolTips) {
+		for (NativeToolTip toolTip : toolTips) {
 			if (toolTip != null) toolTip.reskin (flags);
 		}
 	}
@@ -1477,13 +1454,13 @@ boolean sendKeyEvent (int type, int msg, long wParam, long lParam, Event event) 
  * </ul>
  *
  * @since 2.0
- * @see Control#moveAbove
- * @see Control#setFocus
- * @see Control#setVisible
+ * @see NativeControl#moveAbove
+ * @see NativeControl#setFocus
+ * @see NativeControl#setVisible
  * @see Display#getActiveShell
- * @see Decorations#setDefaultButton(Button)
- * @see Shell#open
- * @see Shell#setActive
+ * @see NativeDecorations#setDefaultButton(Button)
+ * @see NativeShell#open
+ * @see NativeShell#setActive
  */
 public void setActive () {
 	checkWidget ();
@@ -1492,11 +1469,11 @@ public void setActive () {
 	// widget could be disposed at this point
 }
 
-void setActiveControl (Control control) {
+void setActiveControl (NativeControl control) {
 	setActiveControl (control, SWT.None);
 }
 
-void setActiveControl (Control control, int type) {
+void setActiveControl (NativeControl control, int type) {
 	if (control != null && control.isDisposed ()) control = null;
 	if (lastActive != null && lastActive.isDisposed ()) lastActive = null;
 	if (lastActive == control) return;
@@ -1506,8 +1483,8 @@ void setActiveControl (Control control, int type) {
 	* deactivated by finding the first common parent
 	* control.
 	*/
-	Control [] activate = (control == null) ? new Control [0] : control.getPath ();
-	Control [] deactivate = (lastActive == null) ? new Control [0] : lastActive.getPath ();
+	NativeControl [] activate = (control == null) ? new NativeControl [0] : control.getPath ();
+	NativeControl [] deactivate = (lastActive == null) ? new NativeControl [0] : lastActive.getPath ();
 	lastActive = control;
 	int index = 0, length = Math.min (activate.length, deactivate.length);
 	while (index < length) {
@@ -2095,7 +2072,7 @@ public void setVisible (boolean visible) {
 			if ((style & (SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL)) != 0) {
 				display.setModalDialog (null);
 			}
-			Control control = display._getFocusControl ();
+			NativeControl control = display._getFocusControl ();
 			if (control != null && !control.isActive ()) {
 				bringToTop ();
 				if (isDisposed ()) return;
@@ -2310,15 +2287,15 @@ long windowProc (long hwnd, int msg, long wParam, long lParam) {
 	if (hwnd == toolTipHandle || hwnd == balloonTipHandle || hwnd == menuItemToolTipHandle) {
 		switch (msg) {
 			case OS.WM_TIMER: {
-				if (wParam != ToolTip.TIMER_ID) break;
-				ToolTip tip = getCurrentToolTip (hwnd);
+				if (wParam != NativeToolTip.TIMER_ID) break;
+				NativeToolTip tip = getCurrentToolTip (hwnd);
 				if (tip != null && tip.autoHide) {
 					tip.setVisible (false);
 				}
 				break;
 			}
 			case OS.WM_LBUTTONDOWN: {
-				ToolTip tip = getCurrentToolTip (hwnd);
+				NativeToolTip tip = getCurrentToolTip (hwnd);
 				if (tip != null) {
 					tip.setVisible (false);
 					tip.sendSelectionEvent (SWT.Selection);
@@ -2331,7 +2308,7 @@ long windowProc (long hwnd, int msg, long wParam, long lParam) {
 	if (hwnd == handle) {
 		if (msg == Display.TASKBARBUTTONCREATED) {
 			if (display.taskBar != null) {
-				for (TaskItem item : display.taskBar.items) {
+				for (NativeTaskItem item : Widget.checkNative(display.taskBar).items) {
 					if (item != null && item.shell == this) {
 						item.onTaskbarButtonCreated();
 						break;
@@ -2382,7 +2359,7 @@ LRESULT WM_ACTIVATE (long wParam, long lParam) {
 	if (OS.LOWORD (wParam) == 0) {
 		if (lParam == 0 || (lParam != toolTipHandle && lParam != balloonTipHandle
 				&& lParam != menuItemToolTipHandle)) {
-			ToolTip tip = getCurrentToolTip ();
+			NativeToolTip tip = getCurrentToolTip ();
 			if (tip != null) tip.setVisible (false);
 		}
 	}
@@ -2450,9 +2427,9 @@ LRESULT WM_MOUSEACTIVATE (long wParam, long lParam) {
 		case OS.HTNOWHERE:
 			break;
 		default: {
-			Control control = display._getFocusControl ();
+			NativeControl control = display._getFocusControl ();
 			if (control != null) {
-				Decorations decorations = control.menuShell ();
+				NativeDecorations decorations = control.menuShell ();
 				if (decorations.getShell () == this && decorations != this) {
 					display.ignoreRestoreFocus = true;
 					display.lastHittest = hittest;
@@ -2487,7 +2464,7 @@ LRESULT WM_MOUSEACTIVATE (long wParam, long lParam) {
 	}
 	long hwnd = OS.WindowFromPoint (pt);
 	if (hwnd == 0) return null;
-	Control control = display.findControl (hwnd);
+	NativeControl control = display.findControl (hwnd);
 
 	/*
 	* When a shell is created with SWT.ON_TOP and SWT.NO_FOCUS,
@@ -2515,7 +2492,7 @@ LRESULT WM_MOUSEACTIVATE (long wParam, long lParam) {
 LRESULT WM_MOVE (long wParam, long lParam) {
 	LRESULT result = super.WM_MOVE (wParam, lParam);
 	if (result != null) return result;
-	ToolTip tip = getCurrentToolTip ();
+	NativeToolTip tip = getCurrentToolTip ();
 	if (tip != null) tip.setVisible (false);
 	return result;
 }
@@ -2553,7 +2530,7 @@ LRESULT WM_NCLBUTTONDOWN (long wParam, long lParam) {
 	display.lockActiveWindow = true;
 	long code = callWindowProc (handle, OS.WM_NCLBUTTONDOWN, wParam, lParam);
 	display.lockActiveWindow = false;
-	Control focusControl = display.lastHittestControl;
+	NativeControl focusControl = display.lastHittestControl;
 	if (focusControl != null && !focusControl.isDisposed ()) {
 		focusControl.setFocus ();
 	}
@@ -2575,7 +2552,7 @@ LRESULT WM_SETCURSOR (long wParam, long lParam) {
 	int msg = OS.HIWORD (lParam);
 	if (msg == OS.WM_LBUTTONDOWN) {
 		if (!Display.TrimEnabled) {
-			Shell modalShell = display.getModalShell ();
+			NativeShell modalShell = display.getModalShell ();
 			if (modalShell != null && !isActive ()) {
 				long hwndModal = modalShell.handle;
 				if (OS.IsWindowEnabled (hwndModal)) {
@@ -2608,7 +2585,7 @@ LRESULT WM_SETCURSOR (long wParam, long lParam) {
 	int hitTest = (short) OS.LOWORD (lParam);
 	if (hitTest == OS.HTERROR) {
 		if (!getEnabled ()) {
-			Control control = display.getControl (wParam);
+			NativeControl control = display.getControl (wParam);
 			if (control == this && cursor != null) {
 				POINT pt = new POINT ();
 				int pos = OS.GetMessagePos ();
@@ -2646,9 +2623,9 @@ LRESULT WM_SHOWWINDOW (long wParam, long lParam) {
 	* when the parent is shown.
 	*/
 	if (lParam == OS.SW_PARENTOPENING) {
-		Control control = this;
+		NativeControl control = this;
 		while (control != null) {
-			Shell shell = control.getShell ();
+			NativeShell shell = control.getShell ();
 			if (!shell.showWithParent) return LRESULT.ZERO;
 			control = control.parent;
 		}
@@ -2686,9 +2663,13 @@ LRESULT WM_WINDOWPOSCHANGING (long wParam, long lParam) {
 }
 
 private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-	if (!(widget instanceof Shell shell)) {
+	if (!(Widget.checkNative(widget) instanceof NativeShell shell)) {
 		return;
 	}
 	shell.layout (null, SWT.DEFER | SWT.ALL | SWT.CHANGED);
 }
+
+@Override
+public abstract Shell getWrapper();
+
 }

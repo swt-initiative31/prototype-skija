@@ -41,7 +41,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class DirectoryDialog extends Dialog {
+public class NativeDirectoryDialog extends NativeDialog {
 	String message = "", filterPath = "";
 	static final String SEPARATOR = File.separator;
 
@@ -58,7 +58,7 @@ public class DirectoryDialog extends Dialog {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public DirectoryDialog (Shell parent) {
+public NativeDirectoryDialog (NativeShell parent) {
 	this (parent, SWT.APPLICATION_MODAL);
 }
 /**
@@ -85,7 +85,7 @@ public DirectoryDialog (Shell parent) {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public DirectoryDialog (Shell parent, int style) {
+public NativeDirectoryDialog (NativeShell parent, int style) {
 	super (parent, checkStyle (parent, style));
 	checkSubclass ();
 }
@@ -275,7 +275,7 @@ Optional<String> openNativeChooserDialog () {
 			}
 		}
 	}
-	
+
 	Optional<String> result = Optional.empty();
 	if (response == GTK.GTK_RESPONSE_ACCEPT) {
 		result = Optional.ofNullable(selectedPath);

@@ -41,9 +41,9 @@ import org.eclipse.swt.graphics.*;
  * @since 3.2
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class ToolTip extends Widget {
-	Shell parent, tip;
-	TrayItem item;
+public abstract class NativeToolTip extends NativeWidget {
+	NativeShell parent, tip;
+	NativeTrayItem item;
 	int x, y;
 	int [] borderPolygon;
 	boolean spikeAbove, autohide;
@@ -91,13 +91,13 @@ public class ToolTip extends Widget {
  * @see Widget#checkSubclass
  * @see Widget#getStyle
  */
-public ToolTip (Shell parent, int style) {
+protected NativeToolTip (NativeShell parent, int style) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	this.autohide = true;
 	x = y = -1;
 	Display display = getDisplay ();
-	tip = new Shell (parent, SWT.ON_TOP | SWT.NO_TRIM);
+	tip = new Shell (parent.getWrapper(), SWT.ON_TOP | SWT.NO_TRIM).getWrappedWidget();
 	Color background = display.getSystemColor (SWT.COLOR_INFO_BACKGROUND);
 	tip.setBackground (background);
 	listener = event -> {
@@ -319,7 +319,7 @@ public String getMessage () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Shell getParent () {
+public NativeShell getParent () {
 	checkWidget ();
 	return parent;
 }
@@ -382,7 +382,7 @@ public boolean isVisible () {
 }
 
 void onDispose (Event event) {
-	Control parent = getParent ();
+	NativeControl parent = getParent ();
 	parent.removeListener (SWT.Dispose, parentListener);
 	removeListener (SWT.Dispose, listener);
 	notifyListeners (SWT.Dispose, event);
@@ -628,5 +628,8 @@ public void setVisible (boolean visible) {
 		display.timerExec(DELAY, runnable);
 	}
 }
+
+@Override
+public abstract ToolTip getWrapper();
 
 }

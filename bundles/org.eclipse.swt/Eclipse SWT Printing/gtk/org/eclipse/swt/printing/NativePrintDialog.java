@@ -34,7 +34,7 @@ import org.eclipse.swt.widgets.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class PrintDialog extends Dialog {
+public class NativePrintDialog extends NativeDialog {
 	PrinterData printerData = new PrinterData();
 
 	long handle;
@@ -63,7 +63,7 @@ public class PrintDialog extends Dialog {
  * @see Widget#checkSubclass
  * @see Widget#getStyle
  */
-public PrintDialog (Shell parent) {
+public NativePrintDialog (NativeShell parent) {
 	this (parent, SWT.PRIMARY_MODAL);
 }
 
@@ -95,7 +95,7 @@ public PrintDialog (Shell parent) {
  * @see Widget#checkSubclass
  * @see Widget#getStyle
  */
-public PrintDialog (Shell parent, int style) {
+public NativePrintDialog (NativeShell parent, int style) {
 	super (parent, checkStyleBit (parent, style));
 	checkSubclass ();
 }
@@ -141,7 +141,7 @@ static int checkBits (int style, int int0, int int1, int int2, int int3, int int
 	return style;
 }
 
-static int checkStyleBit (Shell parent, int style) {
+static int checkStyleBit (NativeShell parent, int style) {
 	int mask = SWT.PRIMARY_MODAL | SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL;
 	if ((style & SWT.SHEET) != 0) {
 		style &= ~SWT.SHEET;

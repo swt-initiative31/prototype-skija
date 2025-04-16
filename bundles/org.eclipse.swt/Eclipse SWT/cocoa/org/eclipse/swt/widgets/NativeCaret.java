@@ -1,21 +1,15 @@
-/*******************************************************************************
- * Copyright (c) 2000, 2019 IBM Corporation and others.
- *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
- *
- * SPDX-License-Identifier: EPL-2.0
- *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
 package org.eclipse.swt.widgets;
 
+public class Caret extends CCaret {
 
+<<<<<<< HEAD:bundles/org.eclipse.swt/Eclipse SWT/cocoa/org/eclipse/swt/widgets/Caret.java
+	public Caret(Canvas parent, int style) {
+		super(parent, style);
+	}
+=======
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.cocoa.*;
 
 /**
  * Instances of this class provide an i-beam that is typically used
@@ -35,8 +29,8 @@ import org.eclipse.swt.graphics.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class CCaret extends Widget {
-	Canvas parent;
+public abstract class NativeCaret extends NativeWidget {
+	NativeCanvas parent;
 	int x, y, width, height;
 	boolean isVisible, isShowing;
 	int blinkRate;
@@ -70,10 +64,10 @@ public class CCaret extends Widget {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public CCaret (Canvas parent, int style) {
+protected NativeCaret (NativeCanvas parent, int style) {
 	super (parent, style);
 	this.parent = parent;
 	createWidget ();
@@ -92,7 +86,7 @@ void createWidget () {
 	blinkRate = display.getCaretBlinkTime ();
 	isVisible = true;
 	if (parent.getCaret () == null) {
-		parent.setCaret ((Caret) this);
+		parent.setCaret (this);
 	}
 }
 
@@ -101,15 +95,17 @@ boolean drawCaret () {
 	if (parent.isDisposed ()) return false;
 	int nWidth = width, nHeight = height;
 	if (nWidth <= 0) nWidth = DEFAULT_WIDTH;
-
-	GC gc = new GC(parent);
 	if (image != null) {
-		Rectangle imageBounds = image.getBounds();
-		gc.drawImage(image, 0, 0, imageBounds.width, imageBounds.height, x, y, nWidth, nHeight);
+		NSSize size = image.handle.size();
+		nWidth = (int)size.width;
+		nHeight = (int)size.height;
 	}
-	gc.fillRectangle(x, y, nWidth, nHeight);
-	gc.dispose();
-	parent.redraw();
+	NSRect rect = new NSRect();
+	rect.x = x;
+	rect.y = y;
+	rect.width = nWidth;
+	rect.height = nHeight;
+	parent.view.setNeedsDisplayInRect(rect);
 	return true;
 }
 
@@ -194,7 +190,7 @@ public Point getLocation () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Canvas getParent () {
+public NativeCanvas getParent () {
 	checkWidget();
 	return parent;
 }
@@ -283,7 +279,7 @@ void killFocus () {
 void releaseParent () {
 	super.releaseParent ();
 	if (parent != null && this == parent.caret) {
-		if (!parent.isDisposed()) parent.setCaret (null);
+		if (!parent.isDisposed()) parent.setCaret ((NativeCaret) null);
 		else parent.caret = null;
 	}
 }
@@ -348,7 +344,7 @@ public void setBounds (Rectangle rect) {
 
 void setFocus () {
 	if (display.currentCaret == this) return;
-	display.setCurrentCaret ((Caret)this);
+	display.setCurrentCaret (this);
 	if (isVisible) showCaret ();
 }
 
@@ -505,5 +501,9 @@ boolean showCaret () {
 	isShowing = true;
 	return drawCaret ();
 }
+>>>>>>> fa1cdeec5f (Introduce widget facade and adapt Win32 native widgets accordingly):bundles/org.eclipse.swt/Eclipse SWT/cocoa/org/eclipse/swt/widgets/NativeCaret.java
+
+@Override
+public abstract Caret getWrapper();
 
 }

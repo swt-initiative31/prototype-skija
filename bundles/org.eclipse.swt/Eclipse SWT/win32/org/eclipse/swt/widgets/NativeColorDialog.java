@@ -36,7 +36,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class ColorDialog extends Dialog {
+public class NativeColorDialog extends NativeDialog {
 	static final int CUSTOM_COLOR_COUNT = 16; // from the MS spec for CHOOSECOLOR.lpCustColors
 	RGB rgb;
 	RGB [] rgbs;
@@ -56,10 +56,10 @@ public class ColorDialog extends Dialog {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public ColorDialog (Shell parent) {
+public NativeColorDialog (NativeShell parent) {
 	this (parent, SWT.APPLICATION_MODAL);
 }
 
@@ -88,10 +88,10 @@ public ColorDialog (Shell parent) {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public ColorDialog (Shell parent, int style) {
+public NativeColorDialog (NativeShell parent, int style) {
 	super (parent, checkStyle (parent, style));
 	checkSubclass ();
 }
@@ -166,7 +166,7 @@ public RGB open () {
 		if (dialogOrientation == SWT.RIGHT_TO_LEFT) exStyle |= OS.WS_EX_LAYOUTRTL;
 		hwndOwner = OS.CreateWindowEx (
 			exStyle,
-			Shell.DialogClass,
+			NativeShell.DialogClass,
 			null,
 			0,
 			OS.CW_USEDEFAULT, 0, OS.CW_USEDEFAULT, 0,
@@ -225,7 +225,7 @@ public RGB open () {
 	}
 
 	/* Make the parent shell be temporary modal */
-	Dialog oldModal = null;
+	NativeDialog oldModal = null;
 	if ((style & (SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL)) != 0) {
 		oldModal = display.getModalDialog ();
 		display.setModalDialog (this);

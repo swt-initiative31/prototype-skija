@@ -147,7 +147,7 @@ BrowserFunction (Browser browser, String name, boolean top, String[] frameNames,
 		buffer.append (Integer.toHexString (b & 0xff));
 	}
 	token = buffer.toString ();
-	if (create) browser.webBrowser.createFunction (this);
+	if (create) browser.getWrappedWidget().webBrowser.createFunction (this);
 }
 
 /**
@@ -164,7 +164,7 @@ public void dispose () {
 
 void dispose (boolean remove) {
 	if (index < 0) return;
-	if (remove) browser.webBrowser.destroyFunction (this);
+	if (remove) browser.getWrappedWidget().webBrowser.destroyFunction (this);
 	browser = null;
 	name = functionString = null;
 	index = -1;

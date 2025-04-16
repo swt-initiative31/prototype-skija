@@ -43,7 +43,7 @@ import org.eclipse.swt.internal.cocoa.*;
  * @since 3.1
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Spinner extends Composite {
+public abstract class NativeSpinner extends NativeComposite {
 	NSTextField textView;
 	NSNumberFormatter textFormatter;
 	NSStepper buttonView;
@@ -95,10 +95,10 @@ public class Spinner extends Composite {
  *
  * @see SWT#READ_ONLY
  * @see SWT#WRAP
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Spinner (Composite parent, int style) {
+protected NativeSpinner (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
@@ -200,7 +200,7 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -349,7 +349,7 @@ void drawBackground (long id, NSGraphicsContext context, NSRect rect) {
 
 @Override
 void drawInteriorWithFrame_inView(long id, long sel, NSRect cellFrame, long viewid) {
-	Control control = findBackgroundControl();
+	NativeControl control = findBackgroundControl();
 	if (control == null) control = this;
 	Image image = control.backgroundImage;
 	if (image != null && !image.isDisposed()) {
@@ -1138,5 +1138,8 @@ String verifyText (String string, int start, int end, NSEvent keyEvent) {
 	if (!event.doit || isDisposed ()) return null;
 	return event.text;
 }
+
+@Override
+public abstract Spinner getWrapper();
 
 }

@@ -45,7 +45,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Group extends Composite {
+public abstract class NativeGroup extends NativeComposite {
 	long clientHandle, labelHandle;
 	String text = "";
 	// We use this to keep track of the foreground color
@@ -80,10 +80,10 @@ public class Group extends Composite {
  * @see SWT#SHADOW_IN
  * @see SWT#SHADOW_OUT
  * @see SWT#SHADOW_NONE
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Group (Composite parent, int style) {
+protected NativeGroup (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
@@ -100,7 +100,7 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -450,5 +450,8 @@ long paintSurface () {
 	GTK.gtk_widget_realize (paintHandle);
 	return gtk_widget_get_surface (paintHandle);
 }
+
+@Override
+public abstract Group getWrapper();
 
 }

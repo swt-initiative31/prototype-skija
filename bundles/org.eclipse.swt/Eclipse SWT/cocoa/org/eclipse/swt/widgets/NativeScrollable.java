@@ -14,6 +14,8 @@
 package org.eclipse.swt.widgets;
 
 
+import java.util.concurrent.atomic.*;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
@@ -35,11 +37,11 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class Scrollable extends Control {
+public abstract class NativeScrollable extends NativeControl implements IScrollable {
 	NSScrollView scrollView;
-	ScrollBar horizontalBar, verticalBar;
+	NativeScrollBar horizontalBar, verticalBar;
 
-Scrollable () {
+NativeScrollable () {
 	/* Do nothing */
 }
 
@@ -69,10 +71,10 @@ Scrollable () {
  *
  * @see SWT#H_SCROLL
  * @see SWT#V_SCROLL
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Scrollable (Composite parent, int style) {
+protected NativeScrollable (NativeComposite parent, int style) {
 	super (parent, style);
 }
 
@@ -103,6 +105,7 @@ public Scrollable (Composite parent, int style) {
  *
  * @see #getClientArea
  */
+@Override
 public Rectangle computeTrim (int x, int y, int width, int height) {
 	checkWidget();
 	if (scrollView != null) {
@@ -124,9 +127,16 @@ public Rectangle computeTrim (int x, int y, int width, int height) {
 	return new Rectangle (x, y, width, height);
 }
 
-ScrollBar createScrollBar (int style) {
+NativeScrollBar createScrollBar (int style) {
 	if (scrollView == null) return null;
-	ScrollBar bar = new ScrollBar ();
+	AtomicReference<ScrollBar> wrapperBar = new AtomicReference<>();
+	NativeScrollBar bar = new NativeScrollBar () {
+		@Override
+		public ScrollBar getWrapper() {
+			return wrapperBar.get();
+		}
+	};
+	wrapperBar.set(new ScrollBar(bar));
 	bar.parent = this;
 	bar.style = style;
 	bar.display = display;
@@ -189,6 +199,7 @@ void deregister () {
  *
  * @see #computeTrim
  */
+@Override
 public Rectangle getClientArea () {
 	checkWidget();
 	if (scrollView != null) {
@@ -213,9 +224,10 @@ public Rectangle getClientArea () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public ScrollBar getHorizontalBar () {
 	checkWidget();
-	return horizontalBar;
+	return horizontalBar != null ? horizontalBar.getWrapper() : null;
 }
 
 /**
@@ -241,6 +253,7 @@ public ScrollBar getHorizontalBar () {
  *
  * @since 3.8
  */
+@Override
 public int getScrollbarsMode () {
 	checkWidget();
 	int style = SWT.NONE;
@@ -273,6 +286,7 @@ public int getScrollbarsMode () {
  *
  * @since 3.126
  */
+@Override
 public void setScrollbarsMode (int mode) {
 	checkWidget();
 }
@@ -288,9 +302,10 @@ public void setScrollbarsMode (int mode) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public ScrollBar getVerticalBar () {
 	checkWidget();
-	return verticalBar;
+	return verticalBar != null ? verticalBar.getWrapper() : null;
 }
 
 boolean hooksKeys () {
@@ -302,7 +317,7 @@ boolean isEventView (long id) {
 	return id == eventView ().id;
 }
 
-boolean isNeeded(ScrollBar scrollbar) {
+boolean isNeeded(NativeScrollBar scrollbar) {
 	return true;
 }
 
@@ -318,7 +333,7 @@ boolean isTrim (NSView view) {
 
 void redrawBackgroundImage () {
 	if (scrollView != null) {
-		Control control = findBackgroundControl();
+		NativeControl control = findBackgroundControl();
 		if (control != null && control.backgroundImage != null) {
 			redrawWidget(view, false);
 		}
@@ -395,7 +410,7 @@ void enableWidget (boolean enabled) {
 	if (verticalBar != null) verticalBar.enableWidget (enabled && isNeeded(verticalBar));
 }
 
-boolean setScrollBarVisible (ScrollBar bar, boolean visible) {
+boolean setScrollBarVisible (NativeScrollBar bar, boolean visible) {
 	if (scrollView == null) return false;
 	if ((state & CANVAS) == 0) return false;
 	if (visible) {
@@ -435,5 +450,9 @@ void updateCursorRects (boolean enabled) {
 	NSClipView contentView = scrollView.contentView ();
 	updateCursorRects (enabled, contentView);
 }
+
+@Override
+public
+abstract Scrollable getWrapper();
 
 }

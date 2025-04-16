@@ -39,9 +39,9 @@ import org.eclipse.swt.internal.cocoa.*;
  * @since 3.1
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class TreeColumn extends Item {
+public abstract class NativeTreeColumn extends NativeItem {
 	NSTableColumn nsColumn;
-	Tree parent;
+	NativeTree parent;
 	String toolTipText, displayText;
 	boolean movable;
 
@@ -76,10 +76,10 @@ public class TreeColumn extends Item {
  * @see SWT#LEFT
  * @see SWT#RIGHT
  * @see SWT#CENTER
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TreeColumn (Tree parent, int style) {
+protected NativeTreeColumn (NativeTree parent, int style) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	parent.createItem (this, parent.columnCount);
@@ -119,10 +119,10 @@ public TreeColumn (Tree parent, int style) {
  * @see SWT#LEFT
  * @see SWT#RIGHT
  * @see SWT#CENTER
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TreeColumn (Tree parent, int style, int index) {
+protected NativeTreeColumn (NativeTree parent, int style, int index) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	parent.createItem (this, index);
@@ -184,7 +184,7 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -423,7 +423,7 @@ String getNameText () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Tree getParent () {
+public NativeTree getParent () {
 	checkWidget ();
 	return parent;
 }
@@ -441,9 +441,9 @@ public Tree getParent () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Tree#getColumnOrder()
- * @see Tree#setColumnOrder(int[])
- * @see TreeColumn#setMoveable(boolean)
+ * @see NativeTree#getColumnOrder()
+ * @see NativeTree#setColumnOrder(int[])
+ * @see NativeTreeColumn#setMoveable(boolean)
  * @see SWT#Move
  *
  * @since 3.2
@@ -502,7 +502,7 @@ public int getWidth () {
 	checkWidget ();
 	int width = (int)nsColumn.width();
 	// TODO how to differentiate 0 and 1 cases?
-	if (width > 0) width += Tree.CELL_GAP;
+	if (width > 0) width += NativeTree.CELL_GAP;
 	return width;
 }
 
@@ -670,9 +670,9 @@ public void setImage (Image image) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see Tree#setColumnOrder(int[])
- * @see Tree#getColumnOrder()
- * @see TreeColumn#getMoveable()
+ * @see NativeTree#setColumnOrder(int[])
+ * @see NativeTree#getColumnOrder()
+ * @see NativeTreeColumn#getMoveable()
  * @see SWT#Move
  *
  * @since 3.2
@@ -764,7 +764,7 @@ public void setWidth (int width) {
 	checkWidget ();
 	if (width < 0) return;
 	// TODO how to differentiate 0 and 1 cases?
-	width = Math.max (0, width - Tree.CELL_GAP);
+	width = Math.max (0, width - NativeTree.CELL_GAP);
 	nsColumn.setWidth (width);
 }
 
@@ -772,5 +772,8 @@ public void setWidth (int width) {
 String tooltipText () {
 	return toolTipText;
 }
+
+@Override
+public abstract TreeColumn getWrapper();
 
 }

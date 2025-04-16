@@ -43,7 +43,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class FileDialog extends Dialog {
+public class NativeFileDialog extends NativeDialog {
 	String [] filterNames = new String [0];
 	String [] filterExtensions = new String [0];
 	String filterPath = "";
@@ -71,7 +71,7 @@ public class FileDialog extends Dialog {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public FileDialog (Shell parent) {
+public NativeFileDialog (NativeShell parent) {
 	this (parent, SWT.APPLICATION_MODAL);
 }
 /**
@@ -102,7 +102,7 @@ public FileDialog (Shell parent) {
  * @see SWT#OPEN
  * @see SWT#MULTI
  */
-public FileDialog (Shell parent, int style) {
+public NativeFileDialog (NativeShell parent, int style) {
 	super (parent, checkStyle (parent, style));
 	checkSubclass ();
 }
@@ -382,7 +382,7 @@ public Optional<String> openDialog () {
  * requires such access. These are be handled by the GtkNativeDialog API.
  *
  * @return an Optional that contains a string describing the absolute path of the first selected file
- *         or is empty if the dialog is canceled 
+ *         or is empty if the dialog is canceled
  */
 Optional<String> openNativeChooserDialog () {
 	byte [] titleBytes = Converter.wcsToMbcs (title, true);
@@ -470,7 +470,7 @@ Optional<String> openNativeChooserDialog () {
 	if ((style & SWT.RIGHT_TO_LEFT) != 0) {
 		OS.g_signal_remove_emission_hook (signalId, hookId);
 	}
-	
+
 	Optional<String> result = Optional.empty();
 	if (response == GTK.GTK_RESPONSE_ACCEPT) {
 		result = Optional.ofNullable(computeResultChooserDialog (file));

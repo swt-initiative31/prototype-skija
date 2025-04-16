@@ -47,7 +47,7 @@ import org.eclipse.swt.internal.win32.*;
  * @since 3.3
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class DateTime extends Composite {
+public abstract class NativeDateTime extends NativeComposite {
 	static final int MIN_YEAR = 1752; // Gregorian switchover in North America: September 19, 1752
 	static final int MAX_YEAR = 9999;
 	boolean doubleClick, ignoreSelection;
@@ -151,10 +151,10 @@ public class DateTime extends Composite {
  * @see SWT#MEDIUM
  * @see SWT#LONG
  * @see SWT#DROP_DOWN
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public DateTime (Composite parent, int style) {
+protected NativeDateTime (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 	if ((this.style & SWT.SHORT) != 0) {
 		String buffer = ((this.style & SWT.DATE) != 0) ? getCustomShortDateFormat() : getCustomShortTimeFormat();
@@ -213,7 +213,7 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -841,4 +841,8 @@ LRESULT WM_TIMER (long wParam, long lParam) {
 	ignoreSelection = false;
 	return code == 0 ? LRESULT.ZERO : new LRESULT(code);
 }
+
+@Override
+public abstract DateTime getWrapper();
+
 }

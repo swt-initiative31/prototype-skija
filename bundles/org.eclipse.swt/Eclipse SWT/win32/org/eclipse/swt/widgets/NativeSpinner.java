@@ -44,7 +44,7 @@ import org.eclipse.swt.internal.win32.*;
  * @since 3.1
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Spinner extends Composite {
+public abstract class NativeSpinner extends NativeComposite {
 	long hwndText, hwndUpDown;
 	boolean ignoreModify, ignoreCharacter;
 	int pageIncrement, digits;
@@ -103,10 +103,10 @@ public class Spinner extends Composite {
  *
  * @see SWT#READ_ONLY
  * @see SWT#WRAP
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public Spinner (Composite parent, int style) {
+protected NativeSpinner (NativeComposite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
@@ -134,7 +134,7 @@ static int checkStyle (int style) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -1010,7 +1010,7 @@ public void setTextLimit (int limit) {
 }
 
 @Override
-void setToolTipText (Shell shell, String string) {
+void setToolTipText (NativeShell shell, String string) {
 	shell.setToolTipText (hwndText, string);
 	shell.setToolTipText (hwndUpDown, string);
 }
@@ -1472,5 +1472,8 @@ LRESULT wmScrollChild (long wParam, long lParam) {
 	}
 	return super.wmScrollChild (wParam, lParam);
 }
+
+@Override
+public abstract Spinner getWrapper();
 
 }

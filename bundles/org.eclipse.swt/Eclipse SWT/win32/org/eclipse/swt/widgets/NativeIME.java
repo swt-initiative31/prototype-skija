@@ -41,8 +41,8 @@ import org.eclipse.swt.internal.win32.*;
  * @since 3.4
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class IME extends Widget {
-	Canvas parent;
+public abstract class NativeIME extends NativeWidget {
+	NativeCanvas parent;
 	int caretOffset;
 	int startOffset;
 	int commitCount;
@@ -60,7 +60,7 @@ public class IME extends Widget {
 /**
  * Prevents uninitialized instances from being created outside the package.
  */
-IME () {
+NativeIME () {
 }
 
 /**
@@ -87,10 +87,10 @@ IME () {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  *
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public IME (Canvas parent, int style) {
+protected NativeIME (NativeCanvas parent, int style) {
 	super (parent, style);
 	this.parent = parent;
 	createWidget ();
@@ -134,7 +134,7 @@ public int getCaretOffset () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see IME#getText
+ * @see NativeIME#getText
  */
 public int getCommitCount () {
 	checkWidget ();
@@ -224,7 +224,7 @@ TF_DISPLAYATTRIBUTE getDisplayAttribute (short langid, int attInfo) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see IME#getStyles
+ * @see NativeIME#getStyles
  */
 public int [] getRanges () {
 	checkWidget ();
@@ -252,7 +252,7 @@ public int [] getRanges () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  *
- * @see IME#getRanges
+ * @see NativeIME#getRanges
  */
 public TextStyle [] getStyles () {
 	checkWidget ();
@@ -310,7 +310,7 @@ boolean isInlineEnabled () {
 @Override
 void releaseParent () {
 	super.releaseParent ();
-	if (this == parent.getIME ()) parent.setIME (null);
+	if (this.getWrapper() == parent.getIME ()) parent.setIME ((NativeIME) null);
 }
 
 @Override
@@ -587,5 +587,8 @@ LRESULT WM_LBUTTONDOWN (long wParam, long lParam) {
 	}
 	return null;
 }
+
+@Override
+public abstract IME getWrapper();
 
 }

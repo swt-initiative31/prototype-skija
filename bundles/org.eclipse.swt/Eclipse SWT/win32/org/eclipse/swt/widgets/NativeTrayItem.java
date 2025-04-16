@@ -38,11 +38,11 @@ import org.eclipse.swt.internal.win32.*;
  * @since 3.0
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class TrayItem extends Item {
-	Tray parent;
+public abstract class NativeTrayItem extends NativeItem {
+	NativeTray parent;
 	int id;
 	Image image2, highlightImage;
-	ToolTip toolTip;
+	NativeToolTip toolTip;
 	String toolTipText;
 	boolean visible = true;
 
@@ -73,10 +73,10 @@ public class TrayItem extends Item {
  * </ul>
  *
  * @see SWT
- * @see Widget#checkSubclass
- * @see Widget#getStyle
+ * @see NativeWidget#checkSubclass
+ * @see NativeWidget#getStyle
  */
-public TrayItem (Tray parent, int style) {
+protected NativeTrayItem (NativeTray parent, int style) {
 	super (parent, style);
 	this.parent = parent;
 	parent.createItem (this, parent.getItemCount ());
@@ -137,7 +137,7 @@ public void addMenuDetectListener (MenuDetectListener listener) {
 }
 
 @Override
-protected void checkSubclass () {
+public void checkSubclass () {
 	if (!isValidSubclass ()) error (SWT.ERROR_INVALID_SUBCLASS);
 }
 
@@ -200,7 +200,7 @@ public Image getHighlightImage () {
  *
  * @since 3.2
  */
-public Tray getParent () {
+public NativeTray getParent () {
 	checkWidget ();
 	return parent;
 }
@@ -218,7 +218,7 @@ public Tray getParent () {
  *
  * @since 3.2
  */
-public ToolTip getToolTip () {
+public NativeToolTip getToolTip () {
 	checkWidget ();
 	return toolTip;
 }
@@ -487,9 +487,9 @@ public void setImage (Image image) {
  *
  * @since 3.2
  */
-public void setToolTip (ToolTip toolTip) {
+public void setToolTip (NativeToolTip toolTip) {
 	checkWidget ();
-	ToolTip oldTip = this.toolTip, newTip = toolTip;
+	NativeToolTip oldTip = this.toolTip, newTip = toolTip;
 	if (oldTip != null) oldTip.item = null;
 	this.toolTip = newTip;
 	if (newTip != null) newTip.item = this;
@@ -570,5 +570,8 @@ public void setVisible (boolean visible) {
 	OS.Shell_NotifyIcon (OS.NIM_MODIFY, iconData);
 	if (!visible) sendEvent (SWT.Hide);
 }
+
+@Override
+public abstract TrayItem getWrapper();
 
 }
