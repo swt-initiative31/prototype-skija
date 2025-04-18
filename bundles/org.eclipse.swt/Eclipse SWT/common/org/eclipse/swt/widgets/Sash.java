@@ -49,7 +49,8 @@ public class Sash extends CustomControl {
 	private final SashRenderer sashRenderer;
 	Shell dragOverlay;
 	private static final int DRAG_OVERLAY_ALPHA = 150;
-	private Cursor resizeCursor = null;
+	private Image bandImage;
+	private Rectangle bandImageBounds;
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style value
@@ -141,7 +142,6 @@ public class Sash extends CustomControl {
 		if (leftMouseButtonPressed) {
 			return;
 		}
-
 		boolean isArrowKey = switch (key) {
 		case SWT.ARROW_LEFT, SWT.ARROW_RIGHT, SWT.ARROW_UP, SWT.ARROW_DOWN -> true;
 		default -> false;
@@ -224,8 +224,24 @@ public class Sash extends CustomControl {
 		}
 		if (event.doit && !isSmooth()) {
 			dragOverlay = createDragOverlay();
+			createBandImage();
 			redrawDragOverlay();
 		}
+	}
+
+	private void createBandImage() {
+		if (bandImage != null) {
+			bandImage.dispose();
+		}
+		Rectangle bounds = sashRenderer.getSashBounds();
+		bandImageBounds = new Rectangle(0, 0, bounds.width, bounds.height);
+		bandImage = new Image(getDisplay(), bandImageBounds);
+
+		GC gc = new GC(bandImage);
+		Drawing.drawWithGC(this, gc, g -> {
+			sashRenderer.drawBand(g, bandImageBounds);
+		});
+		gc.dispose();
 	}
 
 	private Event sendSelectionEvent(Rectangle sashBounds) {
@@ -246,11 +262,15 @@ public class Sash extends CustomControl {
 
 	private void redrawDragOverlay() {
 		dragOverlay.addListener(SWT.Paint, dragEvent -> {
-			Drawing.drawWithGC(dragOverlay, dragEvent.gc, gc -> {
-				Rectangle bandRect = new Rectangle(lastX, lastY, sashRenderer.getSashBounds().width,
-						sashRenderer.getSashBounds().height);
-				sashRenderer.drawBand(gc, bandRect);
-			});
+			if (bandImage != null) {
+				/** Band flicker and moves slowly using below commented API **/
+//				Drawing.drawWithGC(dragOverlay, dragEvent.gc, gc -> {
+//					gc.drawImage(bandImage, 0, 0, bandImageBounds.width, bandImageBounds.height, lastX, lastY,
+//							bandImageBounds.width, bandImageBounds.height);
+//				});
+				dragEvent.gc.drawImage(bandImage, 0, 0, bandImageBounds.width, bandImageBounds.height, lastX, lastY,
+						bandImageBounds.width, bandImageBounds.height);
+			}
 		});
 		asyncRedraw(dragOverlay);
 	}
@@ -273,12 +293,13 @@ public class Sash extends CustomControl {
 			dragOverlay.dispose();
 			dragOverlay = null;
 		}
-		if (resizeCursor != null && !resizeCursor.isDisposed()) {
-			resizeCursor.dispose();
-		}
 		Rectangle sashRecatngle = sashRenderer.getSashBounds();
 		sendSelectionEvent(new Rectangle(lastX, lastY, sashRecatngle.width, sashRecatngle.height));
 
+		if (bandImage != null) {
+			bandImage.dispose();
+			bandImage = null;
+		}
 		if (!isDisposed()) {
 			asyncRedraw(this);
 		}
@@ -295,45 +316,52 @@ public class Sash extends CustomControl {
 	 * @param event the mouse event containing details about the mouse movement
 	 */
 	private void onMouseMove(Event event) {
-		resizeCursor = new Cursor(display, isHorizontal() ? SWT.CURSOR_SIZENS : SWT.CURSOR_SIZEWE);
+		Cursor resizeCursor = new Cursor(display, isHorizontal() ? SWT.CURSOR_SIZENS : SWT.CURSOR_SIZEWE);
 		setCursor(resizeCursor);
-		if (!sashRenderer.getDragging()) {
-			return;
-		}
-		Rectangle sashBounds = sashRenderer.getSashBounds();
-		Rectangle clientArea = getParent().getClientArea();
-		Point currentPoint = getCurrentPoint(event, sashBounds);
-		int newX = lastX, newY = lastY;
-
-		if (!isHorizontal()) {
-			int maxX = clientArea.width - sashBounds.width;
-			newX = Math.min(Math.max(0, currentPoint.x - startX), maxX);
-		} else {
-			int maxY = clientArea.height - sashBounds.height;
-			newY = Math.min(Math.max(0, currentPoint.y - startY), maxY);
-		}
-
-		if (newX == lastX && newY == lastY) {
-			return;
-		}
-		if (isSmooth()) {
-			Event selectionEvent = sendSelectionEvent(new Rectangle(newX, newY, sashBounds.width, sashBounds.height));
-			if (isDisposed() || !selectionEvent.doit) {
+		try {
+			if (!sashRenderer.getDragging()) {
 				return;
 			}
-			Rectangle bounds = selectionEvent.getBounds();
-			lastX = bounds.x;
-			lastY = bounds.y;
-		} else {
-			lastX = newX;
-			lastY = newY;
+			Rectangle sashBounds = sashRenderer.getSashBounds();
+			Rectangle clientArea = getParent().getClientArea();
+			Point currentPoint = getCurrentPoint(event, sashBounds);
+			int newX = lastX, newY = lastY;
+
+			if (!isHorizontal()) {
+				int maxX = clientArea.width - sashBounds.width;
+				newX = Math.min(Math.max(0, currentPoint.x - startX), maxX);
+			} else {
+				int maxY = clientArea.height - sashBounds.height;
+				newY = Math.min(Math.max(0, currentPoint.y - startY), maxY);
+			}
+
+			if (newX == lastX && newY == lastY) {
+				return;
+			}
+			if (isSmooth()) {
+				Event selectionEvent = sendSelectionEvent(
+						new Rectangle(newX, newY, sashBounds.width, sashBounds.height));
+				if (isDisposed() || !selectionEvent.doit) {
+					return;
+				}
+				Rectangle bounds = selectionEvent.getBounds();
+				lastX = bounds.x;
+				lastY = bounds.y;
+			} else {
+				lastX = newX;
+				lastY = newY;
+			}
+			sashRenderer.setSashBounds(lastX, lastY, sashBounds.width, sashBounds.height);
+			Control target = isSmooth() ? this : dragOverlay;
+			if (!isSmooth()) {
+				dragOverlay.setVisible(true);
+			}
+			asyncRedraw(target);
+		} finally {
+			if (resizeCursor != null && !resizeCursor.isDisposed()) {
+				resizeCursor.dispose();
+			}
 		}
-		sashRenderer.setSashBounds(lastX, lastY, sashBounds.width, sashBounds.height);
-		Control target = isSmooth() ? this : dragOverlay;
-		if (!isSmooth()) {
-			dragOverlay.setVisible(true);
-		}
-		asyncRedraw(target);
 	}
 
 	private boolean isSmooth() {
