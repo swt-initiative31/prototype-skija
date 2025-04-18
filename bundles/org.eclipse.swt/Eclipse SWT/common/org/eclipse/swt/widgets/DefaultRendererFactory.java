@@ -53,4 +53,9 @@ public class DefaultRendererFactory implements RendererFactory {
 	public LinkRenderer createLinkRenderer(Link link) {
 		return new DefaultLinkRenderer(link);
 	}
+
+	@Override
+	public SashRenderer createSashRenderer(Sash sash) {
+		return new DefaultSashRenderer(sash);
+	}
 }
