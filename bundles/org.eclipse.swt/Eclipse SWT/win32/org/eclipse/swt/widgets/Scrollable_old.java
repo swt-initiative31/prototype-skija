@@ -36,8 +36,8 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class Scrollable extends Control {
-	ScrollBar horizontalBar, verticalBar;
+public abstract class Scrollable_old extends Control {
+	ScrollBar_old horizontalBar, verticalBar;
 
 	/**
 	 * The regular expression used to determine the string which should be deleted
@@ -49,7 +49,7 @@ public abstract class Scrollable extends Control {
 /**
  * Prevents uninitialized instances from being created outside the package.
  */
-Scrollable () {
+Scrollable_old () {
 }
 
 /**
@@ -81,7 +81,7 @@ Scrollable () {
  * @see Widget#checkSubclass
  * @see Widget#getStyle
  */
-public Scrollable (Composite parent, int style) {
+public Scrollable_old (Composite parent, int style) {
 	super (parent, style);
 }
 
@@ -144,8 +144,8 @@ void createHandle () {
 	maybeEnableDarkSystemTheme();
 }
 
-ScrollBar createScrollBar (int type) {
-	ScrollBar bar = new ScrollBar (this, type);
+ScrollBar_old createScrollBar(int type) {
+	ScrollBar_old bar = new ScrollBar_old(this, type);
 	if ((state & CANVAS) != 0) {
 		bar.setMaximum (100);
 		bar.setThumb (10);
@@ -241,7 +241,7 @@ Rectangle getClientAreaInPixels () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public ScrollBar getHorizontalBar () {
+public ScrollBar_old getHorizontalBar() {
 	checkWidget ();
 	return horizontalBar;
 }
@@ -310,7 +310,7 @@ public void setScrollbarsMode (int mode) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public ScrollBar getVerticalBar () {
+public ScrollBar_old getVerticalBar() {
 	checkWidget ();
 	return verticalBar;
 }
@@ -419,7 +419,7 @@ LRESULT wmScrollWheel (boolean update, long wParam, long lParam, boolean horzWhe
 			return null;
 		}
 
-		ScrollBar bar = vertical ? verticalBar : horizontalBar;
+		ScrollBar_old bar = vertical ? verticalBar : horizontalBar;
 		MouseWheelData wheelData = new MouseWheelData(vertical, bar, wParam, display.scrollRemainderBar);
 
 		if (wheelData.count == 0) return null;
@@ -469,7 +469,7 @@ LRESULT wmScrollWheel (boolean update, long wParam, long lParam, boolean horzWhe
 	return new LRESULT (code);
 }
 
-LRESULT wmScroll (ScrollBar bar, boolean update, long hwnd, int msg, long wParam, long lParam) {
+LRESULT wmScroll(ScrollBar_old bar, boolean update, long hwnd, int msg, long wParam, long lParam) {
 	LRESULT result = null;
 	if (update) {
 		int type = msg == OS.WM_HSCROLL ? OS.SB_HORZ : OS.SB_VERT;

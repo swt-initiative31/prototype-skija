@@ -472,6 +472,7 @@ public void setAlwaysShowScrollBars(boolean show) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setContent(Control content) {
 	checkWidget();
 	if (this.content != null && !this.content.isDisposed()) {
@@ -500,6 +501,7 @@ public void setContent(Control content) {
 		if (hBar != null) hBar.setVisible(alwaysShowScroll);
 		if (vBar != null) vBar.setVisible(alwaysShowScroll);
 	}
+	super.setContent(this.content);
 }
 /**
  * Configure the ScrolledComposite to resize the content object to be as wide as the
@@ -590,12 +592,14 @@ public void setMinHeight(int height) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setMinSize(Point size) {
 	if (size == null) {
 		setMinSize(0, 0);
 	} else {
 		setMinSize(size.x, size.y);
 	}
+	super.setMinSize(new Point(minWidth, minHeight));
 }
 /**
  * Specify the minimum width and height at which the ScrolledComposite will begin scrolling the
@@ -610,12 +614,14 @@ public void setMinSize(Point size) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setMinSize(int width, int height) {
 	checkWidget();
 	if (width == minWidth && height == minHeight) return;
 	minWidth = Math.max(0, width);
 	minHeight = Math.max(0, height);
 	layout(false);
+	super.setMinSize(width, height);
 }
 /**
  * Specify the minimum width at which the ScrolledComposite will begin scrolling the
