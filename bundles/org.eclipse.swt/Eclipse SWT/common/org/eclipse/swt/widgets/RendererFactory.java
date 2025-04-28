@@ -37,4 +37,7 @@ public interface RendererFactory {
 	SashRenderer createSashRenderer(Sash sash);
 
 	ExpandBarRenderer createExpandBarRenderer(ExpandBar expandBar);
+	
+	ScrollBarRenderer createScrollBarRenderer(ScrollBar scrollBar);
+
 }
