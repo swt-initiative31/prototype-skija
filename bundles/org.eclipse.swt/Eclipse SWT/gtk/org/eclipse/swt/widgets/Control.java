@@ -95,6 +95,14 @@ public abstract class Control extends Widget implements Drawable {
 
 	LinkedList <Event> dragDetectionQueue;
 
+	// custom control properties
+	private int x;
+	private int y;
+	private int width;
+	private int height;
+	private boolean enabled = true;
+	private boolean visible = true;
+
 	static Callback gestureZoom, gestureRotation, gestureSwipe, gestureBegin, gestureEnd;
 	static {
 		gestureZoom = new Callback (Control.class, "magnifyProc", void.class, new Type[] {
@@ -936,6 +944,10 @@ Accessible _getAccessible () {
  * </ul>
  */
 public Rectangle getBounds () {
+	if (isCustomControl()) {
+		return new Rectangle(x, y, width, height);
+	}
+
 	checkWidget();
 	return DPIUtil.autoScaleDown(getBoundsInPixels());
 }
@@ -977,6 +989,14 @@ Rectangle getBoundsInPixels () {
  * </ul>
  */
 public void setBounds (Rectangle rect) {
+	if (isCustomControl()) {
+		checkWidget ();
+		if (rect == null) error (SWT.ERROR_NULL_ARGUMENT);
+
+		setBounds(rect.x, rect.y, rect.width, rect.height);
+		return;
+	}
+
 	checkWidget ();
 	if (rect == null) error (SWT.ERROR_NULL_ARGUMENT);
 	rect = DPIUtil.autoScaleUp(rect);
@@ -1018,6 +1038,18 @@ void setBoundsInPixels (Rectangle rect) {
  * </ul>
  */
 public void setBounds (int x, int y, int width, int height) {
+	if (isCustomControl()) {
+		checkWidget();
+		if (x == this.x && y == this.y && width == this.width && height == this.height) return;
+
+		this.x = x;
+		this.y = y;
+		this.width = width;
+		this.height = height;
+		redraw();
+		return;
+	}
+
 	checkWidget();
 	Rectangle rect = DPIUtil.autoScaleUp(new Rectangle (x, y, width, height));
 	setBounds (rect.x, rect.y, Math.max (0, rect.width), Math.max (0, rect.height), true, true);
@@ -1232,6 +1264,10 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
  * </ul>
  */
 public Point getLocation () {
+	if (isCustomControl()) {
+		return new Point(x, y);
+	}
+
 	checkWidget();
 	return DPIUtil.autoScaleDown(getLocationInPixels());
 }
@@ -1265,6 +1301,14 @@ Point getLocationInPixels () {
  * </ul>
  */
 public void setLocation (Point location) {
+	if (isCustomControl()) {
+		checkWidget ();
+		if (location == null) error (SWT.ERROR_NULL_ARGUMENT);
+
+		setLocation(location.x, location.y);
+		return;
+	}
+
 	checkWidget ();
 	if (location == null) error (SWT.ERROR_NULL_ARGUMENT);
 	location = DPIUtil.autoScaleUp(location);
@@ -1293,6 +1337,16 @@ void setLocationInPixels (Point location) {
  * </ul>
  */
 public void setLocation(int x, int y) {
+	if (isCustomControl()) {
+		checkWidget();
+		if (x == this.x && y == this.y) return;
+
+		this.x = x;
+		this.y = y;
+		redraw();
+		return;
+	}
+
 	checkWidget();
 	Point loc = DPIUtil.autoScaleUp(new Point (x, y));
 	setBounds (loc.x, loc.y, 0, 0, true, false);
@@ -1317,6 +1371,10 @@ void setLocationInPixels(int x, int y) {
  * </ul>
  */
 public Point getSize () {
+	if (isCustomControl()) {
+		return new Point(width, height);
+	}
+
 	checkWidget();
 	return DPIUtil.autoScaleDown(getSizeInPixels());
 }
@@ -1355,6 +1413,14 @@ Point getSizeInPixels () {
  * </ul>
  */
 public void setSize (Point size) {
+	if (isCustomControl()) {
+		checkWidget ();
+		if (size == null) error (SWT.ERROR_NULL_ARGUMENT);
+
+		setSize(size.x, size.y);
+		return;
+	}
+
 	checkWidget ();
 	if (size == null) error (SWT.ERROR_NULL_ARGUMENT);
 	size = DPIUtil.autoScaleUp(size);
@@ -1475,6 +1541,16 @@ void setRelations () {
  * </ul>
  */
 public void setSize (int width, int height) {
+	if (isCustomControl()) {
+		checkWidget();
+		if (width == this.width && height == this.height) return;
+
+		this.width = width;
+		this.height = height;
+		redraw();
+		return;
+	}
+
 	checkWidget();
 	Point size = DPIUtil.autoScaleUp(new Point (width, height));
 	setBounds (0, 0, Math.max (0, size.x), Math.max (0, size.y), false, true);
@@ -3081,6 +3157,10 @@ public boolean getDragDetect () {
  * @see #isEnabled
  */
 public boolean getEnabled () {
+	if (isCustomControl()) {
+		return enabled;
+	}
+
 	checkWidget ();
 	return (state & DISABLED) == 0;
 }
@@ -3368,6 +3448,10 @@ public boolean getTouchEnabled() {
  * </ul>
  */
 public boolean getVisible () {
+	if (isCustomControl()) {
+		return visible;
+	}
+
 	checkWidget();
 	return (state & HIDDEN) == 0;
 }
@@ -4566,6 +4650,10 @@ public boolean isFocusControl () {
  * @see #getVisible
  */
 public boolean isVisible () {
+	if (isCustomControl()) {
+		return visible && parent.isVisible();
+	}
+
 	checkWidget();
 	return getVisible () && parent.isVisible ();
 }
@@ -5403,6 +5491,17 @@ public void setDragDetect (boolean dragDetect) {
  * </ul>
  */
 public void setEnabled (boolean enabled) {
+	if (isCustomControl()) {
+		checkWidget();
+		if (enabled == this.enabled) return;
+
+		this.enabled = enabled;
+		if (parent.isEnabled()) {
+			redraw();
+		}
+		return;
+	}
+
 	checkWidget();
 	if (((state & DISABLED) == 0) == enabled) return;
 	Control control = null;
@@ -6099,6 +6198,27 @@ public void setTouchEnabled(boolean enabled) {
  * </ul>
  */
 public void setVisible (boolean visible) {
+	if (isCustomControl()) {
+		checkWidget();
+		if (visible == this.visible) return;
+
+		if (visible) {
+			sendEvent(SWT.Show);
+			if (isDisposed ()) return;
+		}
+		else {
+			//TODO focus
+		}
+
+		this.visible = visible;
+
+		if (!visible) {
+			sendEvent(SWT.Hide);
+			if (isDisposed ()) return;
+		}
+		return;
+	}
+
 	checkWidget();
 	if (((state & HIDDEN) == 0) == visible) return;
 	long topHandle = topHandle();
@@ -6875,4 +6995,7 @@ Point getSurfaceOrigin () {
 	return success ? new Point((int)originX[0], (int)originY[0]) : new Point(0, 0);
 }
 
+protected boolean isCustomControl() {
+	return false;
+}
 }

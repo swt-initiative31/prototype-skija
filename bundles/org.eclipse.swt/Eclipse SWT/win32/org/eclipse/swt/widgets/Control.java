@@ -82,6 +82,14 @@ public abstract class Control extends Widget implements Drawable {
 	Font font;
 	int drawCount, foreground, background, backgroundAlpha = 255;
 
+	// custom control properties
+	private int x;
+	private int y;
+	private int width;
+	private int height;
+	private boolean enabled = true;
+	private boolean visible = true;
+
 /**
  * Prevents uninitialized instances from being created outside the package.
  */
@@ -1198,6 +1206,10 @@ int getBorderWidthInPixels () {
  * </ul>
  */
 public Rectangle getBounds (){
+	if (isCustomControl()) {
+		return new Rectangle(x, y, width, height);
+	}
+
 	checkWidget ();
 	return DPIUtil.scaleDown(getBoundsInPixels (), getZoom());
 }
@@ -1296,6 +1308,10 @@ boolean getDrawing () {
  * @see #isEnabled
  */
 public boolean getEnabled () {
+	if (isCustomControl()) {
+		return enabled;
+	}
+
 	checkWidget ();
 	return OS.IsWindowEnabled (handle);
 }
@@ -1366,6 +1382,10 @@ public Object getLayoutData () {
  * </ul>
  */
 public Point getLocation () {
+	if (isCustomControl()) {
+		return new Point(x, y);
+	}
+
 	checkWidget ();
 	return DPIUtil.scaleDown(getLocationInPixels(), getZoom());
 }
@@ -1522,6 +1542,10 @@ public Shell getShell () {
  * </ul>
  */
 public Point getSize (){
+	if (isCustomControl()) {
+		return new Point(width, height);
+	}
+
 	checkWidget ();
 	return DPIUtil.scaleDown(getSizeInPixels (), getZoom());
 }
@@ -1668,6 +1692,10 @@ public boolean getTouchEnabled () {
  * </ul>
  */
 public boolean getVisible () {
+	if (isCustomControl()) {
+		return visible;
+	}
+
 	checkWidget ();
 	if (!getDrawing()) return (state & HIDDEN) == 0;
 	int bits = OS.GetWindowLong (handle, OS.GWL_STYLE);
@@ -1959,6 +1987,10 @@ boolean isTabItem () {
  * @see #getVisible
  */
 public boolean isVisible () {
+	if (isCustomControl()) {
+		return visible && parent.isVisible();
+	}
+
 	checkWidget ();
 	if (OS.IsWindowVisible (handle)) return true;
 	return getVisible () && parent.isVisible ();
@@ -3167,6 +3199,18 @@ void setBackgroundPixel (int pixel) {
  * </ul>
  */
 public void setBounds(int x, int y, int width, int height) {
+	if (isCustomControl()) {
+		checkWidget();
+		if (x == this.x && y == this.y && width == this.width && height == this.height) return;
+
+		this.x = x;
+		this.y = y;
+		this.width = width;
+		this.height = height;
+		redraw();
+		return;
+	}
+
 	setBounds(new Rectangle(x, y, width, height));
 }
 
@@ -3242,6 +3286,14 @@ void setBoundsInPixels (int x, int y, int width, int height, int flags, boolean 
  * </ul>
  */
 public void setBounds (Rectangle rect) {
+	if (isCustomControl()) {
+		checkWidget ();
+		if (rect == null) error (SWT.ERROR_NULL_ARGUMENT);
+
+		setBounds(rect.x, rect.y, rect.width, rect.height);
+		return;
+	}
+
 	checkWidget ();
 	if (rect == null) error (SWT.ERROR_NULL_ARGUMENT);
 	setBoundsInPixels(DPIUtil.scaleUp(rect, getZoom()));
@@ -3361,6 +3413,17 @@ public void setDragDetect (boolean dragDetect) {
  * </ul>
  */
 public void setEnabled (boolean enabled) {
+	if (isCustomControl()) {
+		checkWidget ();
+		if (enabled == this.enabled) return;
+
+		this.enabled = enabled;
+		if (parent.isEnabled()) {
+			redraw();
+		}
+		return;
+	}
+
 	checkWidget ();
 	/*
 	* Feature in Windows.  If the receiver has focus, disabling
@@ -3497,6 +3560,16 @@ public void setLayoutData (Object layoutData) {
  * </ul>
  */
 public void setLocation (int x, int y) {
+	if (isCustomControl()) {
+		checkWidget();
+		if (x == this.x && y == this.y) return;
+
+		this.x = x;
+		this.y = y;
+		redraw();
+		return;
+	}
+
 	checkWidget ();
 	int zoom = getZoom();
 	x = DPIUtil.scaleUp(x, zoom);
@@ -3524,6 +3597,14 @@ void setLocationInPixels (int x, int y) {
  * </ul>
  */
 public void setLocation (Point location) {
+	if (isCustomControl()) {
+		checkWidget ();
+		if (location == null) error (SWT.ERROR_NULL_ARGUMENT);
+
+		setLocation(location.x, location.y);
+		return;
+	}
+
 	checkWidget ();
 	if (location == null) error (SWT.ERROR_NULL_ARGUMENT);
 	location = DPIUtil.scaleUp(location, getZoom());
@@ -3751,6 +3832,16 @@ public void setRegion (Region region) {
  * </ul>
  */
 public void setSize (int width, int height) {
+	if (isCustomControl()) {
+		checkWidget();
+		if (width == this.width && height == this.height) return;
+
+		this.width = width;
+		this.height = height;
+		redraw();
+		return;
+	}
+
 	checkWidget ();
 	int zoom = getZoom();
 	width = DPIUtil.scaleUp(width, zoom);
@@ -3759,6 +3850,7 @@ public void setSize (int width, int height) {
 }
 
 void setSizeInPixels (int width, int height) {
+	if (isCustomControl()) error(SWT.ERROR_UNSPECIFIED);
 	int flags = OS.SWP_NOMOVE | OS.SWP_NOZORDER | OS.SWP_DRAWFRAME | OS.SWP_NOACTIVATE;
 	setBoundsInPixels (0, 0, Math.max (0, width), Math.max (0, height), flags);
 }
@@ -3787,6 +3879,14 @@ void setSizeInPixels (int width, int height) {
  * </ul>
  */
 public void setSize (Point size) {
+	if (isCustomControl()) {
+		checkWidget ();
+		if (size == null) error (SWT.ERROR_NULL_ARGUMENT);
+
+		setSize(size.x, size.y);
+		return;
+	}
+
 	checkWidget ();
 	if (size == null) error (SWT.ERROR_NULL_ARGUMENT);
 	size = DPIUtil.scaleUp(size, getZoom());
@@ -3917,6 +4017,27 @@ public void setTouchEnabled(boolean enabled) {
  * </ul>
  */
 public void setVisible (boolean visible) {
+	if (isCustomControl()) {
+		checkWidget ();
+		if (visible == this.visible) return;
+
+		if (visible) {
+			sendEvent (SWT.Show);
+			if (isDisposed ()) return;
+		}
+		else {
+			//TODO focus
+		}
+
+		this.visible = visible;
+
+		if (!visible) {
+			sendEvent (SWT.Hide);
+			if (isDisposed ()) return;
+		}
+		return;
+	}
+
 	checkWidget ();
 	if (!getDrawing()) {
 		if (((state & HIDDEN) == 0) == visible) return;
@@ -5879,6 +6000,10 @@ private static void resizeFont(Control control, int newZoom) {
 	} else {
 		control.setFont(Font.win32_new(font, newZoom));
 	}
+}
+
+protected boolean isCustomControl() {
+	return false;
 }
 }
 
