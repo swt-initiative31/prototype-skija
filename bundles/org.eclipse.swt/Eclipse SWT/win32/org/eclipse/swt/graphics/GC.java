@@ -2155,6 +2155,10 @@ public static GC win32_new(long hDC, GCData data) {
 	return gc;
 }
 
+public void translate(int x, int y) {
+	innerGC.translate(x, y);
+}
+
 public void commit() {
 	innerGC.commit();
 }
