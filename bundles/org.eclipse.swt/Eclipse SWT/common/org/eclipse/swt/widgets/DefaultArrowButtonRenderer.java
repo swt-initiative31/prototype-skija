@@ -34,7 +34,7 @@ public class DefaultArrowButtonRenderer extends ButtonRenderer {
 	@Override
 	protected void paint(GC gc, int width, int height) {
 		final int style = button.getStyle();
-		if (button.hasFocus()) {
+		if (button.isFocusControl()) {
 			gc.drawFocus(3, 3, width - 7, height - 7);
 		}
 
