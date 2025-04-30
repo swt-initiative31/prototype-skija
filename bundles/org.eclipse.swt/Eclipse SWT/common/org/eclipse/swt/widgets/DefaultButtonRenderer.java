@@ -142,7 +142,7 @@ class DefaultButtonRenderer extends ButtonRenderer {
 			}
 			gc.drawText(text, textLeftOffset, textTopOffset, DRAW_FLAGS);
 		}
-		if (button.hasFocus()) {
+		if (button.isFocusControl()) {
 			int inset = 2;
 			gc.drawFocus(inset, inset, width - 2 * inset - 1, height - 2 * inset - 1);
 		}
@@ -177,7 +177,7 @@ class DefaultButtonRenderer extends ButtonRenderer {
 
 		// if the button has focus, the border also changes the color
 		Color fg = getColor(key);
-		if (button.hasFocus()) {
+		if (button.isFocusControl()) {
 			gc.setForeground(getColor(COLOR_SELECTION));
 		}
 		else {
