@@ -38,6 +38,8 @@ public class NativeGC extends GCHandle {
 	GCData data;
 
 	private GC parentGC;
+	private int offsetX;
+	private int offsetY;
 
 	static final int FOREGROUND = 1 << 0;
 	static final int BACKGROUND = 1 << 1;
@@ -97,7 +99,7 @@ public class NativeGC extends GCHandle {
  * </ul>
  * @see #dispose()
  */
-	public NativeGC(Drawable drawable) {
+public NativeGC(Drawable drawable) {
 	this(drawable, SWT.NONE);
 }
 
@@ -526,8 +528,8 @@ void checkGC(int mask) {
 @Override
 public void copyArea(Image image, int x, int y) {
 	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+	x = scaleAndOffsetX(x, deviceZoom);
+	y = scaleAndOffsetY(y, deviceZoom);
 	copyAreaInPixels(image, x, y);
 }
 
@@ -865,8 +867,8 @@ void disposeGdip() {
 @Override
 public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
 	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+	x = scaleAndOffsetX(x, deviceZoom);
+	y = scaleAndOffsetY(y, deviceZoom);
 	width = DPIUtil.scaleUp(drawable, width, deviceZoom);
 	height = DPIUtil.scaleUp(drawable, height, deviceZoom);
 	drawArcInPixels(x, y, width, height, startAngle, arcAngle);
@@ -958,8 +960,8 @@ void drawArcInPixels(int x, int y, int width, int height, int startAngle, int ar
 @Override
 public void drawFocus(int x, int y, int width, int height) {
 	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+	x = scaleAndOffsetX(x, deviceZoom);
+	y = scaleAndOffsetY(y, deviceZoom);
 	width = DPIUtil.scaleUp(drawable, width, deviceZoom);
 	height = DPIUtil.scaleUp(drawable, height, deviceZoom);
 	drawFocusInPixels(x, y, width, height);
@@ -1051,8 +1053,8 @@ void drawFocusInPixels(int x, int y, int width, int height) {
 @Override
 public void drawImage(Image image, int x, int y) {
 	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+	x = scaleAndOffsetX(x, deviceZoom);
+	y = scaleAndOffsetY(y, deviceZoom);
 	drawImageInPixels(image, x, y);
 }
 
@@ -1125,7 +1127,7 @@ public void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeig
 
 	int deviceZoom = getZoom();
 	Rectangle src = DPIUtil.scaleUp(drawable, new Rectangle(srcX, srcY, srcWidth, srcHeight), deviceZoom);
-	Rectangle dest = DPIUtil.scaleUp(drawable, new Rectangle(destX, destY, destWidth, destHeight), deviceZoom);
+	Rectangle dest = DPIUtil.scaleUp(drawable, new Rectangle(destX + offsetX, destY + offsetY, destWidth, destHeight), deviceZoom);
 	if (deviceZoom != 100) {
 		/*
 		 * This is a HACK! Due to rounding errors at fractional scale factors, the
@@ -1840,10 +1842,10 @@ void drawBitmapColor(Image srcImage, int srcX, int srcY, int srcWidth, int srcHe
 @Override
 public void drawLine(int x1, int y1, int x2, int y2) {
 	int deviceZoom = getZoom();
-	x1 = DPIUtil.scaleUp(drawable, x1, deviceZoom);
-	x2 = DPIUtil.scaleUp(drawable, x2, deviceZoom);
-	y1 = DPIUtil.scaleUp(drawable, y1, deviceZoom);
-	y2 = DPIUtil.scaleUp(drawable, y2, deviceZoom);
+	x1 = scaleAndOffsetX(x1, deviceZoom);
+	x2 = scaleAndOffsetX(x2, deviceZoom);
+	y1 = scaleAndOffsetY(y1, deviceZoom);
+	y2 = scaleAndOffsetY(y2, deviceZoom);
 	drawLineInPixels(x1, y1, x2, y2);
 }
 
@@ -1901,8 +1903,8 @@ void drawLineInPixels(int x1, int y1, int x2, int y2) {
 @Override
 public void drawOval(int x, int y, int width, int height) {
 	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+	x = scaleAndOffsetX(x, deviceZoom);
+	y = scaleAndOffsetY(y, deviceZoom);
 	width = DPIUtil.scaleUp(drawable, width, deviceZoom);
 	height = DPIUtil.scaleUp(drawable, height, deviceZoom);
 	drawOvalInPixels(x, y, width, height);
@@ -1966,6 +1968,7 @@ public void drawPath(Path path) {
 		SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 	initGdip();
 	checkGC(DRAW);
+	// TODO apply offsetX/offsetY
 	long gdipGraphics = data.gdipGraphics;
 	Gdip.Graphics_TranslateTransform(gdipGraphics, data.gdipXOffset, data.gdipYOffset, Gdip.MatrixOrderPrepend);
 	Gdip.Graphics_DrawPath(gdipGraphics, data.gdipPen, pathHandle);
@@ -1993,8 +1996,8 @@ public void drawPath(Path path) {
 @Override
 public void drawPoint(int x, int y) {
 	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+	x = scaleAndOffsetX(x, deviceZoom);
+	y = scaleAndOffsetY(y, deviceZoom);
 	drawPointInPixels(x, y);
 }
 
@@ -2034,7 +2037,7 @@ void drawPointInPixels(int x, int y) {
 public void drawPolygon(int[] pointArray) {
 	if (pointArray == null)
 		SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	drawPolygonInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
+	drawPolygonInPixels(scaleAndOffsetPointArray(pointArray));
 }
 
 void drawPolygonInPixels(int[] pointArray) {
@@ -2089,7 +2092,7 @@ void drawPolygonInPixels(int[] pointArray) {
  */
 @Override
 public void drawPolyline(int[] pointArray) {
-	drawPolylineInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
+	drawPolylineInPixels(scaleAndOffsetPointArray(pointArray));
 }
 
 void drawPolylineInPixels(int[] pointArray) {
@@ -2149,8 +2152,8 @@ void drawPolylineInPixels(int[] pointArray) {
 @Override
 public void drawRectangle(int x, int y, int width, int height) {
 	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+	x = scaleAndOffsetX(x, deviceZoom);
+	y = scaleAndOffsetY(y, deviceZoom);
 	width = DPIUtil.scaleUp(drawable, width, deviceZoom);
 	height = DPIUtil.scaleUp(drawable, height, deviceZoom);
 	drawRectangleInPixels(x, y, width, height);
@@ -2216,8 +2219,7 @@ void drawRectangleInPixels(int x, int y, int width, int height) {
 public void drawRectangle(Rectangle rect) {
 	if (rect == null)
 		SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	rect = DPIUtil.scaleUp(drawable, rect, getZoom());
-	drawRectangleInPixels(rect.x, rect.y, rect.width, rect.height);
+	drawRectangle(rect.x, rect.y, rect.width, rect.height);
 }
 
 /**
@@ -2245,8 +2247,8 @@ public void drawRectangle(Rectangle rect) {
 @Override
 public void drawRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight) {
 	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+	x = scaleAndOffsetX(x, deviceZoom);
+	y = scaleAndOffsetY(y, deviceZoom);
 	width = DPIUtil.scaleUp(drawable, width, deviceZoom);
 	height = DPIUtil.scaleUp(drawable, height, deviceZoom);
 	arcWidth = DPIUtil.scaleUp(drawable, arcWidth, deviceZoom);
@@ -2352,8 +2354,8 @@ void drawRoundRectangleGdip(long gdipGraphics, long pen, int x, int y, int width
 @Override
 public void drawString(String string, int x, int y) {
 	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+	x = scaleAndOffsetX(x, deviceZoom);
+	y = scaleAndOffsetY(y, deviceZoom);
 	drawStringInPixels(string, x, y, false);
 }
 
@@ -2396,8 +2398,8 @@ public void drawString(String string, int x, int y) {
 @Override
 public void drawString(String string, int x, int y, boolean isTransparent) {
 	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+	x = scaleAndOffsetX(x, deviceZoom);
+	y = scaleAndOffsetY(y, deviceZoom);
 	drawStringInPixels(string, x, y, isTransparent);
 }
 
@@ -2500,8 +2502,8 @@ void drawStringInPixels(String string, int x, int y, boolean isTransparent) {
 @Override
 public void drawText(String string, int x, int y) {
 	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+	x = scaleAndOffsetX(x, deviceZoom);
+	y = scaleAndOffsetY(y, deviceZoom);
 	drawTextInPixels(string, x, y);
 }
 
@@ -2541,8 +2543,8 @@ void drawTextInPixels(String string, int x, int y) {
 @Override
 public void drawText(String string, int x, int y, boolean isTransparent) {
 	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+	x = scaleAndOffsetX(x, deviceZoom);
+	y = scaleAndOffsetY(y, deviceZoom);
 	drawTextInPixels(string, x, y, isTransparent);
 }
 
@@ -2599,8 +2601,8 @@ void drawTextInPixels(String string, int x, int y, boolean isTransparent) {
 @Override
 public void drawText(String string, int x, int y, int flags) {
 	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+	x = scaleAndOffsetX(x, deviceZoom);
+	y = scaleAndOffsetY(y, deviceZoom);
 	drawTextInPixels(string, x, y, flags);
 }
 
@@ -3023,8 +3025,8 @@ public boolean equals(Object object) {
 @Override
 public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
 	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+	x = scaleAndOffsetX(x, deviceZoom);
+	y = scaleAndOffsetY(y, deviceZoom);
 	width = DPIUtil.scaleUp(drawable, width, deviceZoom);
 	height = DPIUtil.scaleUp(drawable, height, deviceZoom);
 	fillArcInPixels(x, y, width, height, startAngle, arcAngle);
@@ -3109,8 +3111,8 @@ void fillArcInPixels(int x, int y, int width, int height, int startAngle, int ar
 @Override
 public void fillGradientRectangle(int x, int y, int width, int height, boolean vertical) {
 	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+	x = scaleAndOffsetX(x, deviceZoom);
+	y = scaleAndOffsetY(y, deviceZoom);
 	width = DPIUtil.scaleUp(drawable, width, deviceZoom);
 	height = DPIUtil.scaleUp(drawable, height, deviceZoom);
 	fillGradientRectangleInPixels(x, y, width, height, vertical);
@@ -3242,8 +3244,8 @@ void fillGradientRectangleInPixels(int x, int y, int width, int height, boolean 
 @Override
 public void fillOval(int x, int y, int width, int height) {
 	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+	x = scaleAndOffsetX(x, deviceZoom);
+	y = scaleAndOffsetY(y, deviceZoom);
 	width = DPIUtil.scaleUp(drawable, width, deviceZoom);
 	height = DPIUtil.scaleUp(drawable, height, deviceZoom);
 	fillOvalInPixels(x, y, width, height);
@@ -3301,6 +3303,7 @@ public void fillPath(Path path) {
 		SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 	initGdip();
 	checkGC(FILL);
+	// TODO offsetX/offsetY
 	int mode = OS.GetPolyFillMode(handle) == OS.WINDING ? Gdip.FillModeWinding : Gdip.FillModeAlternate;
 	Gdip.GraphicsPath_SetFillMode(pathHandle, mode);
 	Gdip.Graphics_FillPath(data.gdipGraphics, data.gdipBrush, pathHandle);
@@ -3333,7 +3336,7 @@ public void fillPath(Path path) {
 public void fillPolygon(int[] pointArray) {
 	if (pointArray == null)
 		SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	fillPolygonInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
+	fillPolygonInPixels(scaleAndOffsetPointArray(pointArray));
 }
 
 void fillPolygonInPixels(int[] pointArray) {
@@ -3389,8 +3392,8 @@ void fillPolygonInPixels(int[] pointArray) {
 @Override
 public void fillRectangle(int x, int y, int width, int height) {
 	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+	x = scaleAndOffsetX(x, deviceZoom);
+	y = scaleAndOffsetY(y, deviceZoom);
 	width = DPIUtil.scaleUp(drawable, width, deviceZoom);
 	height = DPIUtil.scaleUp(drawable, height, deviceZoom);
 	fillRectangleInPixels(x, y, width, height);
@@ -3439,8 +3442,7 @@ void fillRectangleInPixels(int x, int y, int width, int height) {
 public void fillRectangle(Rectangle rect) {
 	if (rect == null)
 		SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	rect = DPIUtil.scaleUp(drawable, rect, getZoom());
-	fillRectangleInPixels(rect.x, rect.y, rect.width, rect.height);
+	fillRectangle(rect.x, rect.y, rect.width, rect.height);
 }
 
 /**
@@ -3465,8 +3467,8 @@ public void fillRectangle(Rectangle rect) {
 @Override
 public void fillRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight) {
 	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+	x = scaleAndOffsetX(x, deviceZoom);
+	y = scaleAndOffsetY(y, deviceZoom);
 	width = DPIUtil.scaleUp(drawable, width, deviceZoom);
 	height = DPIUtil.scaleUp(drawable, height, deviceZoom);
 	arcWidth = DPIUtil.scaleUp(drawable, arcWidth, deviceZoom);
@@ -4848,8 +4850,8 @@ void setClipping(long clipRgn) {
 @Override
 public void setClipping(int x, int y, int width, int height) {
 	int deviceZoom = getZoom();
-	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+	x = scaleAndOffsetX(x, deviceZoom);
+	y = scaleAndOffsetY(y, deviceZoom);
 	width = DPIUtil.scaleUp(drawable, width, deviceZoom);
 	height = DPIUtil.scaleUp(drawable, height, deviceZoom);
 	setClippingInPixels(x, y, width, height);
@@ -4898,6 +4900,7 @@ public void setClipping(Path path) {
 		SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (path != null && path.isDisposed())
 		SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+	// TODO offsetX/offsetY
 	setClipping(0);
 	if (path != null) {
 		initGdip();
@@ -4928,7 +4931,7 @@ public void setClipping(Rectangle rect) {
 	if (rect == null) {
 		setClipping(0);
 	} else {
-		rect = DPIUtil.scaleUp(drawable, rect, getZoom());
+		rect = DPIUtil.scaleUp(drawable, new Rectangle(rect.x + offsetX, rect.y + offsetY, rect.width, rect.height), getZoom());
 		setClippingInPixels(rect.x, rect.y, rect.width, rect.height);
 	}
 }
@@ -4957,6 +4960,7 @@ public void setClipping(Region region) {
 		SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (region != null && region.isDisposed())
 		SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+	// TODO offsetX/offsetY
 	setClipping(region != null ? Region.win32_getHandle(region, getZoom()) : 0);
 }
 
@@ -5637,6 +5641,7 @@ public void setTransform(Transform transform) {
 	if (data.gdipGraphics == 0 && transform == null)
 		return;
 	initGdip();
+	// TODO offsetX/offsetY
 	long identity = identity();
 	if (transform != null) {
 		Gdip.Matrix_Multiply(identity, transform.getHandle(getZoom()), Gdip.MatrixOrderPrepend);
@@ -5892,4 +5897,25 @@ private int getZoom() {
 	return DPIUtil.getZoomForAutoscaleProperty(data.nativeZoom);
 }
 
+@Override
+protected void translate(int x, int y) {
+	offsetX += x;
+	offsetY += y;
+}
+
+private int scaleAndOffsetX(int x, int deviceZoom) {
+	return DPIUtil.scaleUp(drawable, x + offsetX, deviceZoom);
+}
+
+private int scaleAndOffsetY(int y, int deviceZoom) {
+	return DPIUtil.scaleUp(drawable, y + offsetY, deviceZoom);
+}
+
+private int[] scaleAndOffsetPointArray(int[] pointArray) {
+	pointArray = pointArray.clone();
+	for (int i = 0; i < pointArray.length; i++) {
+		pointArray[i] += (i & 1) == 0 ? offsetX : offsetY;
+	}
+	return DPIUtil.scaleUp(drawable, pointArray, getZoom());
+}
 }
