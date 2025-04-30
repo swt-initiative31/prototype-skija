@@ -2187,6 +2187,10 @@ void initCairo() {
 	}
 }
 
+public void translate(int x, int y) {
+	innerGC.translate(x, y);
+}
+
 public void commit() {
 	innerGC.commit();
 }
