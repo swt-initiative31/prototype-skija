@@ -46,9 +46,14 @@ public class SkijaGC extends GCHandle {
 
 	private NativeGC innerGC;
 
-	private Font font;
+	private Color background;
+	private Color foreground;
+	private org.eclipse.swt.graphics.Font swtFont;
+	private Font skiaFont;
 	private float baseSymbolHeight = 0; // Height of symbol with "usual" height, like "T", to be vertically centered
 	private int lineWidth;
+	private int lineStyle;
+	private int antialias;
 
 	private final Point originalDrawingSize;
 
@@ -131,12 +136,13 @@ public class SkijaGC extends GCHandle {
 	public void dispose() {
 		surface.close();
 		innerGC = null;
-		font = null;
+		skiaFont = null;
+		swtFont = null;
 	}
 
 	@Override
 	public Color getBackground() {
-		return innerGC.getBackground();
+		return background;
 	}
 
 	private void performDraw(Consumer<Paint> operations) {
@@ -222,12 +228,14 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void setBackground(Color color) {
-		innerGC.setBackground(color);
+		if (color == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		this.background = color;
 	}
 
 	@Override
 	public void setForeground(Color color) {
-		innerGC.setForeground(color);
+		if (color == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		this.foreground = color;
 	}
 
 	@Override
@@ -244,6 +252,10 @@ public class SkijaGC extends GCHandle {
 	@Override
 	public void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY,
 			int destWidth, int destHeight) {
+		if (image == null) {
+			System.out.println("SkijaGC.drawImage(..): Error draw image that is null!!");
+			return;
+		}
 		Canvas canvas = surface.getCanvas();
 		canvas.drawImageRect(convertSWTImageToSkijaImage(image),
 				createScaledRectangle(srcX, srcY, srcWidth, srcHeight),
@@ -316,8 +328,10 @@ public class SkijaGC extends GCHandle {
 			}
 		}
 
-		throw new UnsupportedOperationException("Unsupported SWT ColorType: " + Integer.toBinaryString(palette.redMask)
-				+ "__" + Integer.toBinaryString(palette.greenMask) + "__" + Integer.toBinaryString(palette.blueMask));
+		return ColorType.UNKNOWN;
+
+//		throw new UnsupportedOperationException("Unsupported SWT ColorType: " + Integer.toBinaryString(palette.redMask)
+//				+ "__" + Integer.toBinaryString(palette.greenMask) + "__" + Integer.toBinaryString(palette.blueMask));
 	}
 
 	private static io.github.humbleui.skija.Image convertSWTImageToSkijaImage(Image swtImage) {
@@ -519,7 +533,7 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public Color getForeground() {
-		return innerGC.getForeground();
+		return foreground;
 	}
 
 	@Override
@@ -543,7 +557,7 @@ public class SkijaGC extends GCHandle {
 		}
 		if ((flags & (SWT.TRANSPARENT | SWT.DRAW_TRANSPARENT)) == 0) {
 			int textWidth = Math.round(textBlob.getBounds().getWidth());
-			int fontHeight = Math.round(font.getMetrics().getHeight());
+			int fontHeight = Math.round(skiaFont.getMetrics().getHeight());
 			performDrawFilled(
 					paint -> surface.getCanvas().drawRect(new Rect(DPIUtil.autoScaleUp(x), DPIUtil.autoScaleUp(y),
 							DPIUtil.autoScaleUp(x) + textWidth, DPIUtil.autoScaleUp(y) + fontHeight), paint));
@@ -559,7 +573,7 @@ public class SkijaGC extends GCHandle {
 	// according to font metrics)
 	private Point calculateSymbolCenterPoint(int x, int y) {
 		int topLeftTextBoxYPosition = DPIUtil.autoScaleUp(y);
-		float heightOfTextBoxConsideredByClients = font.getMetrics().getHeight();
+		float heightOfTextBoxConsideredByClients = skiaFont.getMetrics().getHeight();
 		float heightOfSymbolToCenter = baseSymbolHeight;
 		Point point = new Point((int) DPIUtil.autoScaleUp(x),
 				(int) (topLeftTextBoxYPosition + heightOfTextBoxConsideredByClients / 2 + heightOfSymbolToCenter / 2));
@@ -570,10 +584,10 @@ public class SkijaGC extends GCHandle {
 		text = replaceMnemonics(text);
 		String[] lines = splitString(text);
 		TextBlobBuilder blobBuilder = new TextBlobBuilder();
-		float lineHeight = font.getMetrics().getHeight();
+		float lineHeight = skiaFont.getMetrics().getHeight();
 		int yOffset = 0;
 		for (String line : lines) {
-			blobBuilder.appendRun(font, line, 0, yOffset);
+			blobBuilder.appendRun(skiaFont, line, 0, yOffset);
 			yOffset += lineHeight;
 		}
 		TextBlob textBlob = blobBuilder.build();
@@ -655,7 +669,7 @@ public class SkijaGC extends GCHandle {
 	private static float[] convertToFloat(int[] array) {
 		float[] arrayAsFloat = new float[array.length];
 		for (int i = 0; i < array.length; i++) {
-			arrayAsFloat[i] = array[i];
+			arrayAsFloat[i] = DPIUtil.autoScaleUp(array[i]);
 		}
 		return arrayAsFloat;
 	}
@@ -690,13 +704,13 @@ public class SkijaGC extends GCHandle {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
 		if (!isTransparent) {
-			int width = (int) DPIUtil.autoScaleDown(font.measureTextWidth(string));
-			int height = (int) DPIUtil.autoScaleDown(font.getMetrics().getHeight());
+			int width = (int) DPIUtil.autoScaleDown(skiaFont.measureTextWidth(string));
+			int height = (int) DPIUtil.autoScaleDown(skiaFont.getMetrics().getHeight());
 			fillRectangle(x, y, width, height);
 		}
 		Point point = calculateSymbolCenterPoint(x, y);
 		performDrawText(paint -> {
-			surface.getCanvas().drawString(string, point.x, point.y, font, paint);
+			surface.getCanvas().drawString(string, point.x, point.y, skiaFont, paint);
 		});
 	}
 
@@ -792,20 +806,25 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public Point textExtent(String string, int flags) {
-		float height = font.getMetrics().getHeight();
-		float width = font.measureTextWidth(replaceMnemonics(string));
+		float height = skiaFont.getMetrics().getHeight();
+		float width = skiaFont.measureTextWidth(replaceMnemonics(string));
 		return new Point(DPIUtil.autoScaleDownToInt(width), DPIUtil.autoScaleDownToInt(height));
 	}
 
 	@Override
 	public void setFont(org.eclipse.swt.graphics.Font font) {
+		if (font != null) {
+			if (font.isDisposed()) {
+				SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+			}
+		} else {
+			font = innerGC.getFont();
+		}
+		this.swtFont = font;
 		innerGC.setFont(font);
 
-		if (font == null)
-			font = innerGC.getFont();
-
-		this.font = convertToSkijaFont(font);
-		this.baseSymbolHeight = this.font.measureText("T").getHeight();
+		this.skiaFont = convertToSkijaFont(font);
+		this.baseSymbolHeight = this.skiaFont.measureText("T").getHeight();
 	}
 
 	static Font convertToSkijaFont(org.eclipse.swt.graphics.Font font) {
@@ -841,12 +860,12 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public org.eclipse.swt.graphics.Font getFont() {
-		return innerGC.getFont();
+		return swtFont;
 	}
 
 	@Override
 	public void setClipping(int x, int y, int width, int height) {
-		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
+		setClipping(new Rectangle(x, y, width, height));
 	}
 
 	@Override
@@ -872,7 +891,7 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public FontMetrics getFontMetrics() {
-		FontMetricsHandle fmh = new SkijaFontMetrics(font.getMetrics());
+		FontMetricsHandle fmh = new SkijaFontMetrics(skiaFont.getMetrics());
 
 		FontMetrics fm = new FontMetrics();
 		fm.innerFontMetrics = fmh;
@@ -882,17 +901,21 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public int getAntialias() {
-		return innerGC.getAntialias();
+		return antialias;
 	}
 
 	@Override
 	public void setAntialias(int antialias) {
-		innerGC.setAntialias(antialias);
+		if (antialias != SWT.DEFAULT
+				&& antialias != SWT.ON
+				&& antialias != SWT.OFF) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
+		this.antialias = antialias;
 	}
 
 	@Override
 	public void setAdvanced(boolean enable) {
-		innerGC.setAdvanced(enable);
 	}
 
 	private Rect offsetRectangle(Rect rect) {
@@ -919,6 +942,10 @@ public class SkijaGC extends GCHandle {
 		}
 	}
 
+	private Rect createScaledRectangle(Rectangle r) {
+		return createScaledRectangle(r.x, r.y, r.width, r.height);
+	}
+
 	private Rect createScaledRectangle(int x, int y, int width, int height) {
 		return new Rect(DPIUtil.autoScaleUp(x), DPIUtil.autoScaleUp(y), DPIUtil.autoScaleUp(x + width),
 				DPIUtil.autoScaleUp(y + height));
@@ -943,19 +970,26 @@ public class SkijaGC extends GCHandle {
 	}
 
 	@Override
-	public void setLineStyle(int lineDot) {
-		innerGC.setLineStyle(lineDot);
-
+	public void setLineStyle(int lineStyle) {
+		if (lineStyle != SWT.LINE_SOLID
+				&& lineStyle != SWT.LINE_DASH
+				&& lineStyle != SWT.LINE_DOT
+				&& lineStyle != SWT.LINE_DASHDOT
+				&& lineStyle != SWT.LINE_DASHDOTDOT
+				&& lineStyle != SWT.LINE_CUSTOM) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
+		this.lineStyle = lineStyle;
 	}
 
 	@Override
 	public int getLineStyle() {
-		return innerGC.getLineStyle();
+		return lineStyle;
 	}
 
 	@Override
 	public int getLineWidth() {
-		return innerGC.getLineWidth();
+		return lineWidth;
 	}
 
 	@Override
@@ -1139,8 +1173,22 @@ public class SkijaGC extends GCHandle {
 	}
 
 	@Override
-	protected void setClipping(Rectangle rect) {
-		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
+	public void setClipping(Rectangle rect) {
+
+		/**
+		 * this is a minimal implementation for set clipping with skija.
+		 */
+
+		// skija seems to work with state layer which will be set on top of each other.
+		// if more layers will be used a more complex handling is necessary
+		surface.getCanvas().restore();
+		if (rect == null) {
+			return;
+		}
+
+		surface.getCanvas().save();
+		surface.getCanvas().clipRect(createScaledRectangle(rect));
+
 	}
 
 	@Override
@@ -1304,4 +1352,5 @@ public class SkijaGC extends GCHandle {
 		Map<ColorType, int[]> colorTypeMap = createColorTypeMap();
 		return colorTypeMap.get(colorType);
 	}
+
 }
