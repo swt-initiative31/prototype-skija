@@ -133,7 +133,7 @@ public class DefaultRadioButtonRenderer extends ButtonRenderer {
 			int textLeftOffset = contentArea.x + imageSpace;
 			gc.drawText(text, textLeftOffset, textTopOffset, DRAW_FLAGS);
 		}
-		if (button.hasFocus()) {
+		if (button.isFocusControl()) {
 			int textTopOffset = (height - 1 - textHeight) / 2;
 			int textLeftOffset = contentArea.x + imageSpace;
 			gc.drawFocus(textLeftOffset - 2, textTopOffset, textWidth + 4,
