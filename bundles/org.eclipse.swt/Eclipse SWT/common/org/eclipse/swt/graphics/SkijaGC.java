@@ -54,6 +54,8 @@ public class SkijaGC extends GCHandle {
 	private int lineWidth;
 	private int lineStyle;
 	private int antialias;
+	private int offsetX;
+	private int offsetY;
 
 	private final Point originalDrawingSize;
 
@@ -246,7 +248,7 @@ public class SkijaGC extends GCHandle {
 	@Override
 	public void drawImage(Image image, int x, int y) {
 		Canvas canvas = surface.getCanvas();
-		canvas.drawImage(convertSWTImageToSkijaImage(image), DPIUtil.autoScaleUp(x), DPIUtil.autoScaleUp(y));
+		canvas.drawImage(convertSWTImageToSkijaImage(image), autoScaleOffsetX(x), autoScaleOffsetY(y));
 	}
 
 	@Override
@@ -254,7 +256,8 @@ public class SkijaGC extends GCHandle {
 			int destWidth, int destHeight) {
 		Canvas canvas = surface.getCanvas();
 		canvas.drawImageRect(convertSWTImageToSkijaImage(image),
-				createScaledRectangle(srcX, srcY, srcWidth, srcHeight),
+				new Rect(DPIUtil.autoScaleUp(srcX), DPIUtil.autoScaleUp(srcY), DPIUtil.autoScaleUp(srcX + srcWidth),
+						DPIUtil.autoScaleUp(srcY + srcHeight)),
 				createScaledRectangle(destX, destY, destWidth, destHeight));
 	}
 
@@ -522,9 +525,9 @@ public class SkijaGC extends GCHandle {
 	@Override
 	public void drawLine(int x1, int y1, int x2, int y2) {
 		float scaledOffsetValue = getScaledOffsetValue();
-		performDrawLine(paint -> surface.getCanvas().drawLine(DPIUtil.autoScaleUp(x1) + scaledOffsetValue,
-				DPIUtil.autoScaleUp(y1) + scaledOffsetValue, DPIUtil.autoScaleUp(x2) + scaledOffsetValue,
-				DPIUtil.autoScaleUp(y2) + scaledOffsetValue, paint));
+		performDrawLine(paint -> surface.getCanvas().drawLine(autoScaleOffsetX(x1) + scaledOffsetValue,
+				autoScaleOffsetY(y1) + scaledOffsetValue, autoScaleOffsetX(x2) + scaledOffsetValue,
+				autoScaleOffsetY(y2) + scaledOffsetValue, paint));
 	}
 
 	@Override
@@ -555,8 +558,12 @@ public class SkijaGC extends GCHandle {
 			int textWidth = Math.round(textBlob.getBounds().getWidth());
 			int fontHeight = Math.round(skiaFont.getMetrics().getHeight());
 			performDrawFilled(
-					paint -> surface.getCanvas().drawRect(new Rect(DPIUtil.autoScaleUp(x), DPIUtil.autoScaleUp(y),
-							DPIUtil.autoScaleUp(x) + textWidth, DPIUtil.autoScaleUp(y) + fontHeight), paint));
+					paint -> {
+						final int scaledX = autoScaleOffsetX(x);
+						final int scaledY = autoScaleOffsetY(y);
+						surface.getCanvas().drawRect(new Rect(scaledX, scaledY,
+								scaledX + textWidth, scaledY + fontHeight), paint);
+					});
 		}
 		Point point = calculateSymbolCenterPoint(x, y);
 		performDrawText(paint -> surface.getCanvas().drawTextBlob(textBlob, point.x, point.y, paint));
@@ -568,10 +575,10 @@ public class SkijaGC extends GCHandle {
 	// parameter y being the top left text box position and the text box height
 	// according to font metrics)
 	private Point calculateSymbolCenterPoint(int x, int y) {
-		int topLeftTextBoxYPosition = DPIUtil.autoScaleUp(y);
+		int topLeftTextBoxYPosition = autoScaleOffsetY(y);
 		float heightOfTextBoxConsideredByClients = skiaFont.getMetrics().getHeight();
 		float heightOfSymbolToCenter = baseSymbolHeight;
-		Point point = new Point((int) DPIUtil.autoScaleUp(x),
+		Point point = new Point((int) autoScaleOffsetX(x),
 				(int) (topLeftTextBoxYPosition + heightOfTextBoxConsideredByClients / 2 + heightOfSymbolToCenter / 2));
 		return point;
 	}
@@ -602,9 +609,9 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-		performDrawLine(paint -> surface.getCanvas().drawArc((float) DPIUtil.autoScaleUp(x),
-				(float) DPIUtil.autoScaleUp(y), (float) DPIUtil.autoScaleUp(x + width),
-				(float) DPIUtil.autoScaleUp(y + height), -startAngle, (float) -arcAngle, false, paint));
+		performDrawLine(paint -> surface.getCanvas().drawArc((float) autoScaleOffsetX(x),
+				(float) autoScaleOffsetY(y), (float) autoScaleOffsetX(x + width),
+				(float) autoScaleOffsetY(y + height), -startAngle, (float) -arcAngle, false, paint));
 	}
 
 	@Override
@@ -662,10 +669,10 @@ public class SkijaGC extends GCHandle {
 		performDrawLine(paint -> surface.getCanvas().drawLines(convertToFloat(pointArray), paint));
 	}
 
-	private static float[] convertToFloat(int[] array) {
+	private float[] convertToFloat(int[] array) {
 		float[] arrayAsFloat = new float[array.length];
 		for (int i = 0; i < array.length; i++) {
-			arrayAsFloat[i] = DPIUtil.autoScaleUp(array[i]);
+			arrayAsFloat[i] = DPIUtil.autoScaleUp(array[i] + (i & 1) == 0 ? offsetX : offsetY);
 		}
 		return arrayAsFloat;
 	}
@@ -712,9 +719,9 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-		performDrawFilled(paint -> surface.getCanvas().drawArc((float) DPIUtil.autoScaleUp(x),
-				(float) DPIUtil.autoScaleUp(y), (float) DPIUtil.autoScaleUp(x + width),
-				(float) DPIUtil.autoScaleUp(y + height), (float) -startAngle, (float) -arcAngle, false, paint));
+		performDrawFilled(paint -> surface.getCanvas().drawArc((float) autoScaleOffsetX(x),
+				(float) autoScaleOffsetY(y), (float) autoScaleOffsetX(x + width),
+				(float) autoScaleOffsetY(y + height), (float) -startAngle, (float) -arcAngle, false, paint));
 	}
 
 	@Override
@@ -753,8 +760,8 @@ public class SkijaGC extends GCHandle {
 	private void performDrawGradientFilled(Consumer<Paint> operations, int x, int y, int x2, int y2,
 			int fromColor, int toColor) {
 		performDraw(paint -> {
-			try (Shader gradient = Shader.makeLinearGradient(DPIUtil.autoScaleUp(x), DPIUtil.autoScaleUp(y),
-					DPIUtil.autoScaleUp(x2), DPIUtil.autoScaleUp(y2), new int[] { fromColor, toColor }, null,
+			try (Shader gradient = Shader.makeLinearGradient(autoScaleOffsetX(x), autoScaleOffsetY(y),
+					autoScaleOffsetX(x2), autoScaleOffsetY(y2), new int[] { fromColor, toColor }, null,
 					GradientStyle.DEFAULT)) {
 				paint.setShader(gradient);
 				paint.setAntiAlias(true);
@@ -779,8 +786,8 @@ public class SkijaGC extends GCHandle {
 		List<io.github.humbleui.types.Point> ps = new ArrayList<>();
 
 		for (int i = 0; i < pointArray.length; i += 2) {
-			int x = DPIUtil.autoScaleUp(pointArray[i]);
-			int y = DPIUtil.autoScaleUp(pointArray[i + 1]);
+			int x = autoScaleOffsetX(pointArray[i]);
+			int y = autoScaleOffsetY(pointArray[i + 1]);
 			ps.add(new io.github.humbleui.types.Point(x, y));
 		}
 
@@ -943,8 +950,8 @@ public class SkijaGC extends GCHandle {
 	}
 
 	private Rect createScaledRectangle(int x, int y, int width, int height) {
-		return new Rect(DPIUtil.autoScaleUp(x), DPIUtil.autoScaleUp(y), DPIUtil.autoScaleUp(x + width),
-				DPIUtil.autoScaleUp(y + height));
+		return new Rect(autoScaleOffsetX(x), autoScaleOffsetY(y), autoScaleOffsetX(x + width),
+				autoScaleOffsetY(y + height));
 	}
 
 	private float getScaledOffsetValue() {
@@ -960,8 +967,8 @@ public class SkijaGC extends GCHandle {
 	}
 
 	private RRect createScaledRoundRectangle(int x, int y, int width, int height, float arcWidth, float arcHeight) {
-		return new RRect(DPIUtil.autoScaleUp(x), DPIUtil.autoScaleUp(y), DPIUtil.autoScaleUp(x + width),
-				DPIUtil.autoScaleUp(y + height),
+		return new RRect(autoScaleOffsetX(x), autoScaleOffsetY(y), autoScaleOffsetX(x + width),
+				autoScaleOffsetY(y + height),
 				new float[] { DPIUtil.autoScaleUp(arcWidth), DPIUtil.autoScaleUp(arcHeight) });
 	}
 
@@ -1042,7 +1049,7 @@ public class SkijaGC extends GCHandle {
 
 		io.github.humbleui.skija.Image copiedArea = surface
 				.makeImageSnapshot(createScaledRectangle(srcX, srcY, width, height).toIRect());
-		surface.getCanvas().drawImage(copiedArea, DPIUtil.autoScaleUp(destX), DPIUtil.autoScaleUp(destY));
+		surface.getCanvas().drawImage(copiedArea, autoScaleOffsetX(destX), autoScaleOffsetY(destY));
 	}
 
 	@Override
@@ -1240,6 +1247,20 @@ public class SkijaGC extends GCHandle {
 	@Override
 	public boolean isDisposed() {
 		return surface.isClosed();
+	}
+
+	@Override
+	protected void translate(int x, int y) {
+		offsetX += x;
+		offsetY += y;
+	}
+
+	private int autoScaleOffsetX(int x) {
+		return DPIUtil.autoScaleUp(x + offsetX);
+	}
+
+	private int autoScaleOffsetY(int y) {
+		return DPIUtil.autoScaleUp(y + offsetY);
 	}
 
 	static PaletteData getPaletteData(ColorType colorType) {
