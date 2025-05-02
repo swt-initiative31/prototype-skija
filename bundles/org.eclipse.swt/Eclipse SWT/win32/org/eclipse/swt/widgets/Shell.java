@@ -2691,4 +2691,9 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 	}
 	shell.layout (null, SWT.DEFER | SWT.ALL | SWT.CHANGED);
 }
+
+@Override
+protected Composite getTabRoot() {
+	return this;
+}
 }

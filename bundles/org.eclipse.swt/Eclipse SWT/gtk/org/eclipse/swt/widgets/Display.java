@@ -2488,6 +2488,9 @@ public int getDoubleClickTime () {
  */
 public Control getFocusControl () {
 	checkDevice ();
+	if (customFocusControl != null && !customFocusControl.isDisposed()) {
+		return customFocusControl;
+	}
 	if (focusControl != null && !focusControl.isDisposed ()) {
 		return focusControl;
 	}
@@ -6318,5 +6321,48 @@ public RendererFactory getRendererFactory() {
 public void setRendererFactory(RendererFactory rendererFactory) {
 	if (rendererFactory == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	this.rendererFactory = rendererFactory;
+}
+
+private Control customFocusControl;
+
+public Control getCustomFocusControl() {
+	return customFocusControl;
+}
+
+public void setFocusControl(Control control) {
+	final Control oldFocusControl = customFocusControl != null ? customFocusControl : focusControl;
+	if (oldFocusControl == control) {
+		return;
+	}
+
+	if (oldFocusControl != null) {
+		System.out.println("Focus lost " + oldFocusControl.toDebugName());
+		oldFocusControl.sendEvent(SWT.FocusOut);
+	}
+
+	if (control != null && control.isCustomControl()) {
+		focusControl = Control.getNativeParentOf(control);
+		customFocusControl = control;
+	} else {
+		focusControl = control;
+		customFocusControl = null;
+	}
+
+	if (control != null) {
+		System.out.println("Focus gained " + control.toDebugName());
+		control.sendEvent(SWT.FocusIn);
+	}
+}
+
+private Control pendingCustomFocusControl;
+
+public Control getPendingCustomFocusControlAndClear() {
+	Control control = pendingCustomFocusControl;
+	pendingCustomFocusControl = null;
+	return control;
+}
+
+public void setPendingCustomFocusControl(Control control) {
+	this.pendingCustomFocusControl = control;
 }
 }
