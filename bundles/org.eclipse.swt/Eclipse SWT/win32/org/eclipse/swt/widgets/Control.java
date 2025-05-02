@@ -16,6 +16,7 @@ package org.eclipse.swt.widgets;
 
 
 import java.util.*;
+import java.util.List;
 import java.util.stream.*;
 
 import org.eclipse.swt.*;
@@ -1081,7 +1082,20 @@ public boolean forceFocus () {
 	* this time.
 	*/
 //	if (OS.GetFocus () != OS.SetFocus (handle)) return false;
-	OS.SetFocus (handle);
+	if (isCustomControl()) {
+		final Control nativeParent = getNativeParentOf(this);
+		if (nativeParent == null) return false;
+		if (OS.GetFocus() == nativeParent.handle) {
+			display.setFocusControl(this);
+		}
+		else {
+			display.setPendingCustomFocusControl(this);
+			OS.SetFocus(nativeParent.handle);
+			display.setPendingCustomFocusControl(null);
+		}
+	} else {
+		OS.SetFocus(handle);
+	}
 	if (isDisposed ()) return false;
 	shell.setSavedFocus (this);
 	return isFocusControl ();
@@ -1741,6 +1755,8 @@ boolean hasCustomForeground() {
 }
 
 boolean hasFocus () {
+	if (isCustomControl()) error(SWT.ERROR_UNSPECIFIED);
+
 	/*
 	* If a non-SWT child of the control has focus,
 	* then this control is considered to have focus
@@ -1909,6 +1925,11 @@ public boolean isEnabled () {
  * </ul>
  */
 public boolean isFocusControl () {
+	if (isCustomControl()) {
+		checkWidget ();
+		return display.getCustomFocusControl() == this;
+	}
+
 	checkWidget ();
 	Control focusControl = display.focusControl;
 	if (focusControl != null && !focusControl.isDisposed ()) {
@@ -4664,6 +4685,35 @@ boolean traverseEscape () {
 }
 
 boolean traverseGroup (boolean next) {
+	if (isCustomControl()) {
+		final Composite root = getTabRoot();
+		if (!root.isVisible() || !root.isEnabled()) {
+			return false;
+		}
+
+		final List<Control> tabControls = new ArrayList<>();
+		root.getCurrentTabStopControls(tabControls);
+		final int index = tabControls.indexOf(this);
+		if (index < 0) {
+			return false;
+		}
+
+		final int offset = next ? 1 : -1;
+		final int length = tabControls.size();
+		int i = index;
+		while (true) {
+			i = (i + offset + length) % length;
+			if (i == index) {
+				break;
+			}
+
+			final Control control = tabControls.get(i);
+			if (!control.isDisposed() && control.setFocus()) {
+				return true;
+			}
+		}
+		return false;
+	}
 	Control root = computeTabRoot ();
 	Widget group = computeTabGroup ();
 	Widget [] list = root.computeTabList ();
@@ -5379,7 +5429,10 @@ LRESULT WM_KILLFOCUS (long wParam, long lParam) {
 	 * to NULL before they open. As a result, Shell is unable to save
 	 * focus control in WM_ACTIVATE. The fix is to save focus here.
 	 */
-	if (wParam == 0) menuShell().setSavedFocus(this);
+	if (wParam == 0) {
+		final Control focusControl = display.getFocusControl();
+		menuShell().setSavedFocus(focusControl);
+	}
 	return wmKillFocus (handle, wParam, lParam);
 }
 
@@ -6070,11 +6123,30 @@ void reskinWidget() {
 	super.reskinWidget();
 }
 
+protected boolean isTabStop() {
+	return (style & SWT.NO_FOCUS) == 0;
+}
+
+protected void getCurrentTabStopControls(List<Control> controls) {
+	if (isTabStop()) {
+		controls.add(this);
+	}
+}
+
+protected Composite getTabRoot() {
+	final Control[] controls = parent._getTabList();
+	if (controls != null) {
+		return parent;
+	}
+
+	return parent.getTabRoot();
+}
+
 protected String toDebugName() {
 	return Integer.toString(System.identityHashCode(this), Character.MAX_RADIX) + "$" + getClass().getName();
 }
 
-public static Control getNativeParentOf(Control control) {
+static Control getNativeParentOf(Control control) {
 	for (; control != null; control = control.parent) {
 		if (!control.isCustomControl()) {
 			return control;

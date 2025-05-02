@@ -3480,4 +3480,8 @@ Point getSurfaceOrigin () {
 	return super.getSurfaceOrigin( );
 }
 
+@Override
+protected Composite getTabRoot() {
+	return this;
+}
 }

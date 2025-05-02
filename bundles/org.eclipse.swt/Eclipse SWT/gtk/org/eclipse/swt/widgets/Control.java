@@ -17,6 +17,7 @@ package org.eclipse.swt.widgets;
 
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.List;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
@@ -2985,6 +2986,12 @@ public boolean forceFocus () {
 	if (!isEnabled () || !isVisible ()) return false;
 	if (display.getActiveShell() != shell && !Display.isActivateShellOnForceFocus()) return false;
 	shell.bringToTop (false);
+	if (isCustomControl()) {
+		final Control nativeParent = getNativeParentOf(this);
+		if (nativeParent == null) return false;
+		display.setPendingCustomFocusControl(this);
+		return nativeParent.forceFocus(nativeParent.focusHandle());
+	}
 	return forceFocus (focusHandle ());
 }
 
@@ -4637,6 +4644,11 @@ boolean isFocusAncestor (Control control) {
  * </ul>
  */
 public boolean isFocusControl () {
+	if (isCustomControl()) {
+		checkWidget ();
+		return display.getCustomFocusControl() == this;
+	}
+
 	checkWidget();
 	Control focusControl = display.focusControl;
 	if (focusControl != null && !focusControl.isDisposed ()) {
@@ -6847,6 +6859,35 @@ boolean traverseEscape () {
 }
 
 boolean traverseGroup (boolean next) {
+	if (isCustomControl()) {
+		final Composite root = getTabRoot();
+		if (!root.isVisible() || !root.isEnabled()) {
+			return false;
+		}
+
+		final List<Control> tabControls = new ArrayList<>();
+		root.getCurrentTabStopControls(tabControls);
+		final int index = tabControls.indexOf(this);
+		if (index < 0) {
+			return false;
+		}
+
+		final int offset = next ? 1 : -1;
+		final int length = tabControls.size();
+		int i = index;
+		while (true) {
+			i = (i + offset + length) % length;
+			if (i == index) {
+				break;
+			}
+
+			final Control control = tabControls.get(i);
+			if (!control.isDisposed() && control.setFocus()) {
+				return true;
+			}
+		}
+		return false;
+	}
 	Control root = computeTabRoot ();
 	Widget group = computeTabGroup ();
 	Widget [] list = root.computeTabList ();
@@ -7029,6 +7070,25 @@ Point getSurfaceOrigin () {
 
 protected boolean isCustomControl() {
 	return false;
+}
+
+protected boolean isTabStop() {
+	return (style & SWT.NO_FOCUS) == 0;
+}
+
+protected void getCurrentTabStopControls(List<Control> controls) {
+	if (isTabStop()) {
+		controls.add(this);
+	}
+}
+
+protected Composite getTabRoot() {
+	final Control[] controls = parent._getTabList();
+	if (controls != null) {
+		return parent;
+	}
+
+	return parent.getTabRoot();
 }
 
 protected String toDebugName() {
