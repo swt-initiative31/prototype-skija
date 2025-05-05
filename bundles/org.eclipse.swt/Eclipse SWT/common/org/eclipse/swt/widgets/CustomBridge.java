@@ -14,14 +14,12 @@
 package org.eclipse.swt.widgets;
 
 import java.util.*;
-import java.util.List;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 
 final class CustomBridge {
 
-	private final List<Control> childs = new ArrayList<>();
 	private final Composite composite;
 
 	private Control mouseOverControl;
@@ -47,42 +45,20 @@ final class CustomBridge {
 		composite.addListener(SWT.MouseUp, listener);
 	}
 
-	public int getChildCount() {
-		return childs.size();
-	}
-
-	public void add(Control child) {
-		Objects.requireNonNull(child);
-		if (childs.contains(child)) {
-			throw new IllegalArgumentException("duplicate child");
-		}
-
-		childs.add(child);
-	}
-
-	public void remove(Control child) {
-		Objects.requireNonNull(child);
-		if (!childs.contains(child)) {
-			throw new IllegalArgumentException("wrong child");
-		}
-
-		childs.remove(child);
-	}
-
-	public Control[] getChildren() {
-		return childs.toArray(new Control[0]);
-	}
-
-	private void onPaint(Event e) {
+private void onPaint(Event e) {
 		final Rectangle clipping = e.gc.getClipping();
 		Drawing.drawWithGC(composite, e.gc, gc -> {
 			e.gc = gc;
-			for (Control customControl : childs) {
-				if (!customControl.getVisible()) {
+			for (Control child : composite.getChildren()) {
+				if (!child.isCustomControl()) {
 					continue;
 				}
 
-				final Rectangle b = customControl.getBounds();
+				if (!child.getVisible()) {
+					continue;
+				}
+
+				final Rectangle b = child.getBounds();
 				if (b.width < 1 || b.height < 1) {
 					continue;
 				}
@@ -94,7 +70,7 @@ final class CustomBridge {
 //				gc.setClipping(b);
 				gc.translate(b.x, b.y);
 				try {
-					sendEvent(customControl, e);
+					sendEvent(child, e);
 				}
 				finally {
 					gc.translate(-b.x, -b.y);
@@ -156,14 +132,18 @@ final class CustomBridge {
 				return mouseOverControl;
 			}
 		}
-		for (Control control : childs) {
-			if (!control.isVisible()) {
+		for (Control child : composite.getChildren()) {
+			if (!child.isCustomControl()) {
 				continue;
 			}
 
-			final Rectangle bounds = control.getBounds();
+			if (!child.isVisible()) {
+				continue;
+			}
+
+			final Rectangle bounds = child.getBounds();
 			if (bounds.contains(e.x, e.y)) {
-				return control;
+				return child;
 			}
 		}
 		return null;

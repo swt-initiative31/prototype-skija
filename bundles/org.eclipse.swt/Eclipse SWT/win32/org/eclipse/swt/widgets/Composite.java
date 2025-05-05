@@ -14,7 +14,7 @@
 package org.eclipse.swt.widgets;
 
 
-import java.util.*;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.*;
@@ -63,6 +63,8 @@ public class Composite extends Scrollable {
 	static {
 		DPIZoomChangeRegistry.registerHandler(Composite::handleDPIChange, Composite.class);
 	}
+
+	private final List<Control> children = new ArrayList<>();
 
 /**
  * Prevents uninitialized instances from being created outside the package.
@@ -127,16 +129,21 @@ Control [] _getChildren () {
 		}
 		count = index;
 	}
-	final Control[] customControls = customBridge != null ? customBridge.getChildren() : null;
-	final int customCount = customControls != null ? customControls.length : 0;
-	Control [] newChildren = new Control [count + customCount];
-	if (children != null) {
-		System.arraycopy (children, 0, newChildren, 0, count);
+
+	int nativeChildIndex = 0;
+	for (Control child : this.children) {
+		if (child.getParent() != this) error(SWT.ERROR_UNSPECIFIED);
+		if (!child.isCustomControl() && !(child instanceof Shell)) {
+			if (children == null) error(SWT.ERROR_UNSPECIFIED);
+			if (nativeChildIndex == children.length)
+				error(SWT.ERROR_UNSPECIFIED);
+			final Control expectedChild = children[nativeChildIndex];
+			if (child != expectedChild) error(SWT.ERROR_UNSPECIFIED);
+			nativeChildIndex++;
+		}
 	}
-	if (customControls != null) {
-		System.arraycopy(customControls, 0, newChildren, count, customCount);
-	}
-	return newChildren;
+	if (children != null && nativeChildIndex != count) error(SWT.ERROR_UNSPECIFIED);
+	return this.children.toArray(new Control[0]);
 }
 
 Control [] _getTabList () {
@@ -495,7 +502,15 @@ int getChildrenCount () {
 		count++;
 		hwndChild = OS.GetWindow (hwndChild, OS.GW_HWNDNEXT);
 	}
-	return count;
+
+	int nativeCount = 0;
+	for (Control child : children) {
+		if (!child.isCustomControl() && !(child instanceof Shell)) {
+			nativeCount++;
+		}
+	}
+	if (nativeCount != count) error(SWT.ERROR_UNSPECIFIED);
+	return children.size();
 }
 
 /**
@@ -2087,20 +2102,14 @@ protected void getCurrentTabStopControls(List<Control> controls) {
 
 private CustomBridge customBridge;
 
-CustomBridge getCustomBridge() {
-	return Objects.requireNonNull(customBridge);
-}
-
-void addCustomChild(Control customControl) {
-	if (customBridge == null) {
+void addChild(Control control) {
+	if (control.isCustomControl() && customBridge == null) {
 		customBridge = new CustomBridge(this);
 	}
-	customBridge.add(customControl);
+	children.add(control);
 }
 
-void removeCustomChild(Control customControl) {
-    if (customBridge != null) {
-        customBridge.remove(customControl);
-    }
+void removeChild(Control control) {
+    if (!children.remove(control)) error(SWT.ERROR_UNSPECIFIED);
 }
 }

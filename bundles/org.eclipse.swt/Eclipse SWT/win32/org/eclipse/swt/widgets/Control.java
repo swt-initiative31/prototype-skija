@@ -719,7 +719,7 @@ void createCustomWidget() {
 	foreground = background = -1;
 	checkOrientation (parent);
 	checkBackground ();
-	parent.addCustomChild(this);
+	parent.addChild(this);
 }
 
 void createWidget () {
@@ -738,6 +738,9 @@ void createWidget () {
 	checkGesture ();
 	if ((state & PARENT_BACKGROUND) != 0) {
 		setBackground ();
+	}
+	if (parent != null) {
+		parent.addChild(this);
 	}
 }
 
@@ -759,9 +762,8 @@ void deregister () {
 
 @Override
 void destroyWidget () {
-	if (isCustomControl()) {
-		parent.removeCustomChild(this);
-		return;
+	if (parent != null) {
+		parent.removeChild(this);
 	}
 	long hwnd = topHandle ();
 	releaseHandle ();
