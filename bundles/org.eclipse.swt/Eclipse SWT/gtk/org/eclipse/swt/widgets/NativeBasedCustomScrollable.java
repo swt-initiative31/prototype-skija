@@ -197,4 +197,9 @@ abstract class NativeBasedCustomScrollable extends Scrollable {
 		foregroundColor = color;
 		super.setForeground(color);
 	}
+
+	@Override
+	protected boolean isCustomControl() {
+		return true;
+	}
 }

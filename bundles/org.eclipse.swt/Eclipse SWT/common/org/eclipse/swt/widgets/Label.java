@@ -130,7 +130,7 @@ public class Label extends CustomControl {
 		addListener(SWT.Traverse, listener);
 		addListener(SWT.Dispose, listener);
 
-		initAccessible();
+//		initAccessible();
 	}
 
 	@Override

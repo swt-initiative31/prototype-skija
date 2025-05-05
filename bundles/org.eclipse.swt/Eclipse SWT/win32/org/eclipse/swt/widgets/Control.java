@@ -129,7 +129,12 @@ Control () {
 public Control (Composite parent, int style) {
 	super (parent, style);
 	this.parent = parent;
-	createWidget ();
+	if (isCustomControl()) {
+		createCustomWidget();
+	}
+	else {
+		createWidget();
+	}
 }
 
 /**
@@ -672,6 +677,8 @@ Widget [] computeTabList () {
 }
 
 void createHandle () {
+	if (isCustomControl()) error(SWT.ERROR_UNSPECIFIED);
+
 	long hwndParent = widgetParent ();
 	handle = OS.CreateWindowEx (
 		widgetExtStyle (),
@@ -691,6 +698,8 @@ void createHandle () {
 }
 
 void checkGesture () {
+	if (isCustomControl()) error(SWT.ERROR_UNSPECIFIED);
+
 	int value =getSystemMetrics (OS.SM_DIGITIZER);
 	if ((value & (OS.NID_READY | OS.NID_MULTI_INPUT)) != 0) {
 		/*
@@ -703,6 +712,13 @@ void checkGesture () {
 		config.dwBlock = 0;
 		OS.SetGestureConfig (handle, 0, 1, config, GESTURECONFIG.sizeof);
 	}
+}
+
+void createCustomWidget() {
+	foreground = background = -1;
+	checkOrientation (parent);
+	checkBackground ();
+	parent.addCustomChild(this);
 }
 
 void createWidget () {
@@ -742,6 +758,10 @@ void deregister () {
 
 @Override
 void destroyWidget () {
+	if (isCustomControl()) {
+		parent.removeCustomChild(this);
+		return;
+	}
 	long hwnd = topHandle ();
 	releaseHandle ();
 	if (hwnd != 0) {
@@ -938,6 +958,8 @@ void enableDrag (boolean enabled) {
 }
 
 void maybeEnableDarkSystemTheme() {
+	if (isCustomControl()) error(SWT.ERROR_UNSPECIFIED);
+
 	maybeEnableDarkSystemTheme(handle);
 }
 
@@ -1919,6 +1941,18 @@ public boolean isReparentable () {
 }
 
 boolean isShowing () {
+	if (isCustomControl()) {
+		if (!isVisible()) return false;
+		Control control = this;
+		while (control != null) {
+			Point size = control.getSize();
+			if (size.x == 0 || size.y == 0) {
+				return false;
+			}
+			control = control.parent;
+		}
+		return true;
+	}
 	/*
 	* This is not complete.  Need to check if the
 	* widget is obscured by a parent or sibling.
@@ -2425,6 +2459,18 @@ public void requestLayout () {
  */
 public void redraw () {
 	checkWidget ();
+	if (isCustomControl()) {
+		if (!isVisible()) {
+			return;
+		}
+
+		final Rectangle bounds = getBounds();
+		if (bounds.width < 1 || bounds.height < 1) {
+			return;
+		}
+		parent.redraw(bounds.x, bounds.y, bounds.width, bounds.height, false);
+		return;
+	}
 	redrawInPixels (null,false);
 }
 
@@ -2510,6 +2556,8 @@ boolean redrawChildren () {
 }
 
 void register () {
+	if (isCustomControl()) error(SWT.ERROR_UNSPECIFIED);
+
 	display.addControl (handle, this);
 }
 
@@ -3318,6 +3366,10 @@ void setBoundsInPixels (Rectangle rect) {
  */
 public void setCapture (boolean capture) {
 	checkWidget ();
+	if (isCustomControl()) {
+		// TODO
+		return;
+	}
 	if (capture) {
 		OS.SetCapture (handle);
 	} else {
@@ -3371,6 +3423,8 @@ public void setCursor (Cursor cursor) {
 }
 
 void setDefaultFont () {
+	if (isCustomControl()) error(SWT.ERROR_UNSPECIFIED);
+
 	long hFont = display.getSystemFont (getShell().nativeZoom).handle;
 	OS.SendMessage (handle, OS.WM_SETFONT, hFont, 0);
 }
@@ -4095,6 +4149,8 @@ void sort (int [] items) {
 }
 
 void subclass () {
+	if (isCustomControl()) error(SWT.ERROR_UNSPECIFIED);
+
 	long oldProc = windowProc ();
 	long newProc = display.windowProc;
 	if (oldProc == newProc) return;
@@ -6004,6 +6060,27 @@ private static void resizeFont(Control control, int newZoom) {
 
 protected boolean isCustomControl() {
 	return false;
+}
+
+@Override
+void reskinWidget() {
+	if (isCustomControl()) {
+		return;
+	}
+	super.reskinWidget();
+}
+
+protected String toDebugName() {
+	return Integer.toString(System.identityHashCode(this), Character.MAX_RADIX) + "$" + getClass().getName();
+}
+
+public static Control getNativeParentOf(Control control) {
+	for (; control != null; control = control.parent) {
+		if (!control.isCustomControl()) {
+			return control;
+		}
+	}
+	return null;
 }
 }
 
