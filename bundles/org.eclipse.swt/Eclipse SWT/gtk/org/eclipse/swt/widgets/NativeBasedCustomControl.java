@@ -172,4 +172,8 @@ abstract class NativeBasedCustomControl extends Control {
 		}
 	}
 
+	@Override
+	protected boolean isCustomControl() {
+		return true;
+	}
 }

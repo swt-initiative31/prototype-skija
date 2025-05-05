@@ -173,7 +173,11 @@ Control () {
 public Control (Composite parent, int style) {
 	super (parent, style);
 	this.parent = parent;
-	createWidget (0);
+	if (isCustomControl()) {
+		createCustomWidget();
+	} else {
+		createWidget(0);
+	}
 }
 
 Font defaultFont () {
@@ -788,6 +792,12 @@ boolean containedInRegion (int x, int y) {
 		return Cairo.cairo_region_contains_point(eventRegion, x, y);
 	}
 	return false;
+}
+
+void createCustomWidget() {
+	checkOrientation(parent);
+	checkBackground();
+	parent.addCustomChild(this);
 }
 
 @Override
@@ -4724,6 +4734,20 @@ public void requestLayout () {
  * @see SWT#DOUBLE_BUFFERED
  */
 public void redraw () {
+	if (isCustomControl()) {
+		checkWidget();
+		if (!isVisible()) {
+			return;
+		}
+
+		final Rectangle bounds = getBounds();
+		if (bounds.width < 1 || bounds.height < 1) {
+			return;
+		}
+		parent.redraw(bounds.x, bounds.y, bounds.width, bounds.height, false);
+		return;
+	}
+
 	checkWidget();
 	redraw (false);
 }
@@ -4909,6 +4933,11 @@ void releaseWidget () {
 
 @Override
 void destroyWidget() {
+	if (isCustomControl()) {
+		parent.removeCustomChild(this);
+		return;
+	}
+
 	if (GTK.GTK4) {
 		// Remove widget from hierarchy  by removing it from parent container
 		if (parent != null) {
@@ -5438,6 +5467,9 @@ public void setCursor (Cursor cursor) {
 	checkWidget();
 	if (cursor != null && cursor.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
 	this.cursor = cursor;
+	if (isCustomControl()) {
+		return;
+	}
 	setCursor (cursor != null ? cursor.handle : 0);
 }
 
@@ -6997,5 +7029,18 @@ Point getSurfaceOrigin () {
 
 protected boolean isCustomControl() {
 	return false;
+}
+
+protected String toDebugName() {
+	return Integer.toString(System.identityHashCode(this), Character.MAX_RADIX) + "$" + getClass().getName();
+}
+
+public static Control getNativeParentOf(Control control) {
+	for (; control != null; control = control.parent) {
+		if (!control.isCustomControl()) {
+			return control;
+		}
+	}
+	return null;
 }
 }

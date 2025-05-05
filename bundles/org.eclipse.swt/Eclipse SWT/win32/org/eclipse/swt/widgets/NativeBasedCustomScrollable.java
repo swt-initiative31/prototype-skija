@@ -28,6 +28,11 @@ abstract class NativeBasedCustomScrollable extends Scrollable {
 	}
 
 	@Override
+	protected final boolean isCustomControl() {
+		return true;
+	}
+
+	@Override
 	public final Color getBackground() {
 		return backgroundColor != null ? backgroundColor : getRenderer().getDefaultBackground();
 	}

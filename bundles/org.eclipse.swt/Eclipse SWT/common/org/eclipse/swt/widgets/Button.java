@@ -155,7 +155,7 @@ public class Button extends CustomControl {
 		addListener(SWT.MouseEnter, listener);
 		addListener(SWT.MouseExit, listener);
 
-		initializeAccessible();
+//		initializeAccessible();
 	}
 
 	@Override
