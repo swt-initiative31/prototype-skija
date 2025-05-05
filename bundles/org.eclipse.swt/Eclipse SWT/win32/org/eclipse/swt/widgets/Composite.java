@@ -499,7 +499,10 @@ int getChildrenCount () {
 	int count = 0;
 	long hwndChild = OS.GetWindow (handle, OS.GW_CHILD);
 	while (hwndChild != 0) {
-		count++;
+		Control control = display.getControl (hwndChild);
+		if (control != null && control != this) {
+			count++;
+		}
 		hwndChild = OS.GetWindow (hwndChild, OS.GW_HWNDNEXT);
 	}
 
