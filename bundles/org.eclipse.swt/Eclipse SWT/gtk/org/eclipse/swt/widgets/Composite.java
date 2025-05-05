@@ -15,6 +15,7 @@ package org.eclipse.swt.widgets;
 
 
 import java.util.*;
+import java.util.List;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
@@ -176,28 +177,27 @@ Control[] _getChildren () {
 		return childrenList.toArray(new Control[childrenList.size()]);
 	} else {
 		long list = GTK3.gtk_container_get_children (parentHandle);
-		if (list == 0) return new Control [0];
-		int count = OS.g_list_length (list);
-		Control [] children = new Control [count];
-		int i = 0;
-		long temp = list;
-		while (temp != 0) {
-			long handle = OS.g_list_data (temp);
-			if (handle != 0) {
-				Widget widget = display.getWidget (handle);
-				if (widget != null && widget != this) {
-					if (widget instanceof Control) {
-						children [i++] = (Control) widget;
+		final List<Control> children = new ArrayList<>();
+		if (list != 0) {
+			long temp = list;
+			while (temp != 0) {
+				long handle = OS.g_list_data(temp);
+				if (handle != 0) {
+					Widget widget = display.getWidget (handle);
+					if (widget != null && widget != this) {
+						if (widget instanceof Control) {
+							children.add((Control) widget);
+						}
 					}
 				}
+				temp = OS.g_list_next (temp);
 			}
-			temp = OS.g_list_next (temp);
+			OS.g_list_free (list);
 		}
-		OS.g_list_free (list);
-		if (i == count) return children;
-		Control [] newChildren = new Control [i];
-		System.arraycopy (children, 0, newChildren, 0, i);
-		return newChildren;
+		if (customBridge != null) {
+			Collections.addAll(children, customBridge.getChildren());
+		}
+		return children.toArray(new Control[0]);
 	}
 }
 
@@ -1906,4 +1906,23 @@ public String toString() {
 	return super.toString() + " [layout=" + layout + "]";
 }
 
+
+private CustomBridge customBridge;
+
+CustomBridge getCustomBridge() {
+	return Objects.requireNonNull(customBridge);
+}
+
+void addCustomChild(Control customControl) {
+	if (customBridge == null) {
+		customBridge = new CustomBridge(this);
+	}
+	customBridge.add(customControl);
+}
+
+void removeCustomChild(Control customControl) {
+	if (customBridge != null) {
+		customBridge.remove(customControl);
+	}
+}
 }
