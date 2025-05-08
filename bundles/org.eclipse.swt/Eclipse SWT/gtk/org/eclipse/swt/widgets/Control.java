@@ -3194,6 +3194,7 @@ public Object getLayoutData () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Menu getMenu () {
 	checkWidget();
 	return menu;
@@ -6286,32 +6287,37 @@ boolean showMenu (int x, int y, int detail) {
 	//widget could be disposed at this point
 	if (isDisposed ()) return false;
 	if (event.doit) {
-		if (menu != null && !menu.isDisposed ()) {
-			if (GTK.GTK4) {
 
-				long temp = 0;
-				if (GTK.gtk_widget_get_parent(menu.handle) != 0) {
-					temp = OS.g_object_ref(menu.handle);
-					GTK.gtk_widget_unparent(menu.handle);
-				}
-				GTK.gtk_widget_set_parent(menu.handle, this.handle);
-				if (temp != 0) OS.g_object_unref(temp);
+		menu.setLocation(x, y);
+		menu.setVisible(true);
+		return true;
 
-
-				menu.setLocationInPixels(x, y);
-				menu.setVisible(true);
-
-				return true;
-			} else {
-				Rectangle rect = DPIUtil.autoScaleUp (event.getBounds ());
-				if (rect.x != x || rect.y != y) {
-					menu.setLocationInPixels (rect.x, rect.y);
-				}
-				menu.setVisible (true);
-				return true;
-			}
-
-		}
+//		if (menu != null && !menu.isDisposed ()) {
+//			if (GTK.GTK4) {
+//
+//				long temp = 0;
+//				if (GTK.gtk_widget_get_parent(menu.handle) != 0) {
+//					temp = OS.g_object_ref(menu.handle);
+//					GTK.gtk_widget_unparent(menu.handle);
+//				}
+//				GTK.gtk_widget_set_parent(menu.handle, this.handle);
+//				if (temp != 0) OS.g_object_unref(temp);
+//
+//
+//				menu.setLocationInPixels(x, y);
+//				menu.setVisible(true);
+//
+//				return true;
+//			} else {
+//				Rectangle rect = DPIUtil.autoScaleUp (event.getBounds ());
+//				if (rect.x != x || rect.y != y) {
+//					menu.setLocationInPixels (rect.x, rect.y);
+//				}
+//				menu.setVisible (true);
+//				return true;
+//			}
+//
+//		}
 	}
 	return false;
 }

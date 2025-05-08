@@ -31,6 +31,7 @@ public class MenuWindow extends Shell implements Listener, DisposeListener {
 	private int openedChildMenuIndex = -1;
 	private MenuWindow openedChildMenu = null;
 	private Point relativeLocation = new Point(0, 0);
+	private int lastEventTime;
 
 	public MenuWindow(Control c, MenuItem[] items, Point p) {
 		super(c.getShell(), SWT.DIALOG_TRIM | SWT.ON_TOP | SWT.NO_MOVE | SWT.NO_TRIM | SWT.DOUBLE_BUFFERED);
@@ -53,10 +54,11 @@ public class MenuWindow extends Shell implements Listener, DisposeListener {
 		setLocation(this.relativeLocation.x + monitorPosition.x, this.relativeLocation.y + monitorPosition.y);
 
 		setSize(size);
-		display.addFilter(SWT.MouseDown, this);
+
 
 		this.addListener(SWT.MouseMove, this);
 		this.addListener(SWT.Paint, this);
+		this.addListener(SWT.Resize, this);
 
 	}
 
@@ -77,9 +79,10 @@ public class MenuWindow extends Shell implements Listener, DisposeListener {
 		if (this.items == null || items.length == 0)
 			return;
 
-		System.out.println("Open");
 
 		super.open();
+		this.lastEventTime = display.getLastEventTime();
+		display.addFilter(SWT.MouseDown, this);
 
 	}
 
@@ -165,6 +168,10 @@ public class MenuWindow extends Shell implements Listener, DisposeListener {
 		}
 
 		if (e.type == SWT.MouseDown) {
+
+			if (e.time <= lastEventTime)
+				return;
+
 
 //			if (e.doit == false) {
 //				System.out.println("MenuWindow: MouseDown: doit = false");
