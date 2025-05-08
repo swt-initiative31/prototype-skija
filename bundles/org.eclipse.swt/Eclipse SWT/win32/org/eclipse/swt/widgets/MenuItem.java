@@ -44,6 +44,12 @@ public class MenuItem extends Item {
 	long hBitmap;
 	int id, accelerator, userId;
 	ToolTip itemToolTip;
+	private boolean enabled = true;
+	private boolean selected = true;
+
+	String text = "";
+	Image image;
+
 	/* Image margin. */
 	final static int MARGIN_WIDTH = 1;
 	final static int MARGIN_HEIGHT = 1;
@@ -372,22 +378,9 @@ public int getAccelerator () {
  */
 public boolean getEnabled () {
 	checkWidget ();
-	/*
-	* Feature in Windows.  For some reason, when the menu item
-	* is a separator, GetMenuItemInfo() always indicates that
-	* the item is not enabled.  The fix is to track the enabled
-	* state for separators.
-	*/
-	if ((style & SWT.SEPARATOR) != 0) {
-		return (state & DISABLED) == 0;
-	}
-	long hMenu = parent.handle;
-	MENUITEMINFO info = new MENUITEMINFO ();
-	info.cbSize = MENUITEMINFO.sizeof;
-	info.fMask = OS.MIIM_STATE;
-	boolean success = OS.GetMenuItemInfo (hMenu, id, false, info);
-	if (!success) error (SWT.ERROR_CANNOT_GET_ENABLED);
-	return (info.fState & (OS.MFS_DISABLED | OS.MFS_GRAYED)) == 0;
+
+	return this.enabled;
+
 }
 
 /**
@@ -465,13 +458,7 @@ public Menu getParent () {
 public boolean getSelection () {
 	checkWidget ();
 	if ((style & (SWT.CHECK | SWT.RADIO)) == 0) return false;
-	long hMenu = parent.handle;
-	MENUITEMINFO info = new MENUITEMINFO ();
-	info.cbSize = MENUITEMINFO.sizeof;
-	info.fMask = OS.MIIM_STATE;
-	boolean success = OS.GetMenuItemInfo (hMenu, id, false, info);
-	if (!success) error (SWT.ERROR_CANNOT_GET_SELECTION);
-	return (info.fState & OS.MFS_CHECKED) !=0;
+	return this.selected;
 }
 
 /**
@@ -683,6 +670,8 @@ public void setAccelerator (int accelerator) {
  */
 public void setEnabled (boolean enabled) {
 	checkWidget ();
+	if (this.enabled == enabled)
+		return;
 	/*
 	* Feature in Windows.  For some reason, when the menu item
 	* is a separator, GetMenuItemInfo() always indicates that
@@ -696,40 +685,8 @@ public void setEnabled (boolean enabled) {
 			state |= DISABLED;
 		}
 	}
-	long hMenu = parent.handle;
-	MENUITEMINFO info = new MENUITEMINFO ();
-	info.cbSize = MENUITEMINFO.sizeof;
-	info.fMask = OS.MIIM_STATE;
-	boolean success = OS.GetMenuItemInfo (hMenu, id, false, info);
-	if (!success) {
-		int error = OS.GetLastError();
-		SWT.error (SWT.ERROR_CANNOT_SET_ENABLED, null, " [GetLastError=0x" + Integer.toHexString(error) + "]");//$NON-NLS-1$ $NON-NLS-2$
-	}
-	int bits = OS.MFS_DISABLED | OS.MFS_GRAYED;
-	if (enabled) {
-		if ((info.fState & bits) == 0) return;
-		info.fState &= ~bits;
-	} else {
-		if ((info.fState & bits) == bits) return;
-		info.fState |= bits;
-	}
-	success = OS.SetMenuItemInfo (hMenu, id, false, info);
-	if (!success) {
-		/*
-		* Bug in Windows.  For some reason SetMenuItemInfo(),
-		* returns a fail code when setting the enabled or
-		* selected state of a default item, but sets the
-		* state anyway.  The fix is to ignore the error.
-		*
-		* NOTE:  This only happens on Vista.
-		*/
-		success = id == OS.GetMenuDefaultItem (hMenu, OS.MF_BYCOMMAND, OS.GMDI_USEDISABLED);
-		if (!success) {
-			int error = OS.GetLastError();
-			SWT.error (SWT.ERROR_CANNOT_SET_ENABLED, null, " [GetLastError=0x" + Integer.toHexString(error) + "]");//$NON-NLS-1$ $NON-NLS-2$
-		}
-	}
-	parent.destroyAccelerators ();
+
+	this.enabled = enabled;
 	parent.redraw ();
 }
 
@@ -773,22 +730,9 @@ public void setImage (Image image) {
 	checkWidget ();
 	if (this.image == image) return;
 	if ((style & SWT.SEPARATOR) != 0) return;
-	super.setImage (image);
-	MENUITEMINFO info = new MENUITEMINFO ();
-	info.cbSize = MENUITEMINFO.sizeof;
-	info.fMask = OS.MIIM_BITMAP;
-	if (parent.needsMenuCallback()) {
-		info.hbmpItem = OS.HBMMENU_CALLBACK;
-	} else {
-		if (OS.IsAppThemed ()) {
-			if (hBitmap != 0) OS.DeleteObject (hBitmap);
-			info.hbmpItem = hBitmap = image != null ? Display.create32bitDIB (image, getZoom()) : 0;
-		} else {
-			info.hbmpItem = image != null ? OS.HBMMENU_CALLBACK : 0;
-		}
-	}
-	long hMenu = parent.handle;
-	OS.SetMenuItemInfo (hMenu, id, false, info);
+
+	this.image = image;
+
 	parent.redraw ();
 }
 
@@ -931,31 +875,10 @@ void setOrientation (int orientation) {
  */
 public void setSelection (boolean selected) {
 	checkWidget ();
-	if ((style & (SWT.CHECK | SWT.RADIO)) == 0) return;
-	long hMenu = parent.handle;
-	MENUITEMINFO info = new MENUITEMINFO ();
-	info.cbSize = MENUITEMINFO.sizeof;
-	info.fMask = OS.MIIM_STATE;
-	boolean success = OS.GetMenuItemInfo (hMenu, id, false, info);
-	if (!success) error (SWT.ERROR_CANNOT_SET_SELECTION);
-	info.fState &= ~OS.MFS_CHECKED;
-	if (selected) info.fState |= OS.MFS_CHECKED;
-	success = OS.SetMenuItemInfo (hMenu, id, false, info);
-	if (!success) {
-		/*
-		* Bug in Windows.  For some reason SetMenuItemInfo(),
-		* returns a fail code when setting the enabled or
-		* selected state of a default item, but sets the
-		* state anyway.  The fix is to ignore the error.
-		*
-		* NOTE:  This only happens on Vista.
-		*/
-		success = id == OS.GetMenuDefaultItem (hMenu, OS.MF_BYCOMMAND, OS.GMDI_USEDISABLED);
-		if (!success) {
-			int error = OS.GetLastError();
-			SWT.error (SWT.ERROR_CANNOT_SET_SELECTION, null, " [GetLastError=0x" + Integer.toHexString(error) + "]");//$NON-NLS-1$ $NON-NLS-2$
-		}
-	}
+
+	if (this.selected == selected)
+		return;
+	this.selected = selected;
 	parent.redraw ();
 }
 /**
@@ -1001,31 +924,25 @@ public void setText (String string) {
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if ((style & SWT.SEPARATOR) != 0) return;
 	if (text.equals (string)) return;
-	super.setText (string);
-	long hHeap = OS.GetProcessHeap ();
-	long pszText = 0;
-	MENUITEMINFO info = new MENUITEMINFO ();
-	info.cbSize = MENUITEMINFO.sizeof;
-	long hMenu = parent.handle;
 
-	TCHAR buffer = new TCHAR (0, string, true);
-	int byteCount = buffer.length () * TCHAR.sizeof;
-	pszText = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
-	OS.MoveMemory (pszText, buffer, byteCount);
-	/*
-	* Bug in Windows 2000.  For some reason, when MIIM_TYPE is set
-	* on a menu item that also has MIIM_BITMAP, the MIIM_TYPE clears
-	* the MIIM_BITMAP style.  The fix is to use MIIM_STRING.
-	*/
-	info.fMask = OS.MIIM_STRING;
-	info.dwTypeData = pszText;
-	boolean success = OS.SetMenuItemInfo (hMenu, id, false, info);
-	if (pszText != 0) OS.HeapFree (hHeap, 0, pszText);
-	if (!success) {
-		int error = OS.GetLastError();
-		SWT.error (SWT.ERROR_CANNOT_SET_TEXT, null, " [GetLastError=0x" + Integer.toHexString(error) + "]");//$NON-NLS-1$ $NON-NLS-2$
-	}
+	this.text = string;
+
 	parent.redraw ();
+}
+
+@Override
+public String getText() {
+	return text;
+}
+
+@Override
+public Image getImage() {
+	return image;
+}
+
+@Override
+public int getStyle() {
+	return style;
 }
 
 /**

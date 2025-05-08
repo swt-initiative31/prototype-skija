@@ -1212,13 +1212,7 @@ public class Decorations extends Canvas {
 			display.removeBar(menu);
 		menuBar = menu;
 
-		if (SWT.NATIVE_DECORATIONS) {
-			long hMenu = menuBar != null ? menuBar.handle : 0;
-			OS.SetMenu(handle, hMenu);
-			destroyAccelerators();
-		} else {
-			decoListener.recalculateMenu();
-		}
+		decoListener.recalculateMenu();
 	}
 
 	/**
@@ -1696,69 +1690,68 @@ public class Decorations extends Canvas {
 	@Override
 	LRESULT WM_ACTIVATE(long wParam, long lParam) {
 		LRESULT result = super.WM_ACTIVATE(wParam, lParam);
-		if (result != null)
 			return result;
-		/*
-		 * Feature in AWT. When an AWT Window is activated, for some reason, it seems to
-		 * forward the WM_ACTIVATE message to the parent. Normally, the parent is an AWT
-		 * Frame. When AWT is embedded in SWT, the SWT shell gets the WM_ACTIVATE and
-		 * assumes that it came from Windows. When an SWT shell is activated it restores
-		 * focus to the last control that had focus. If this control is an embedded
-		 * composite, it takes focus from the AWT Window. The fix is to ignore
-		 * WM_ACTIVATE messages that come from AWT Windows.
-		 */
-		if (OS.GetParent(lParam) == handle) {
-			char[] buffer = new char[128];
-			int length = OS.GetClassName(lParam, buffer, buffer.length);
-			String className = new String(buffer, 0, length);
-			if (className.equals(Display.AWT_WINDOW_CLASS)) {
-				return LRESULT.ZERO;
-			}
-		}
-		int loWord = OS.LOWORD(wParam);
-		if (loWord != 0) {
-			/*
-			 * When the high word of wParam is non-zero, the activation state of the window
-			 * is being changed while the window is minimized. If this is the case, do not
-			 * report activation events or restore the focus.
-			 */
-			if (OS.HIWORD(wParam) != 0)
-				return result;
-			Control control = display.findControl(lParam);
-			if (control == null || control instanceof Shell) {
-				if (this instanceof Shell) {
-					Event event = new Event();
-					event.detail = loWord == OS.WA_CLICKACTIVE ? SWT.MouseDown : SWT.None;
-					sendEvent(SWT.Activate, event);
-					if (isDisposed())
-						return LRESULT.ZERO;
-				}
-			}
-			if (restoreFocus())
-				return LRESULT.ZERO;
-		} else {
-			Display display = this.display;
-			boolean lockWindow = display.isXMouseActive();
-			if (lockWindow)
-				display.lockActiveWindow = true;
-			Control control = display.findControl(lParam);
-			if (control == null || control instanceof Shell) {
-				if (this instanceof Shell) {
-					sendEvent(SWT.Deactivate);
-					if (!isDisposed()) {
-						Shell shell = getShell();
-						shell.setActiveControl(null);
-						// widget could be disposed at this point
-					}
-				}
-			}
-			if (lockWindow)
-				display.lockActiveWindow = false;
-			if (isDisposed())
-				return LRESULT.ZERO;
-			saveFocus();
-		}
-		return result;
+//		/*
+//		 * Feature in AWT. When an AWT Window is activated, for some reason, it seems to
+//		 * forward the WM_ACTIVATE message to the parent. Normally, the parent is an AWT
+//		 * Frame. When AWT is embedded in SWT, the SWT shell gets the WM_ACTIVATE and
+//		 * assumes that it came from Windows. When an SWT shell is activated it restores
+//		 * focus to the last control that had focus. If this control is an embedded
+//		 * composite, it takes focus from the AWT Window. The fix is to ignore
+//		 * WM_ACTIVATE messages that come from AWT Windows.
+//		 */
+//		if (OS.GetParent(lParam) == handle) {
+//			char[] buffer = new char[128];
+//			int length = OS.GetClassName(lParam, buffer, buffer.length);
+//			String className = new String(buffer, 0, length);
+//			if (className.equals(Display.AWT_WINDOW_CLASS)) {
+//				return LRESULT.ZERO;
+//			}
+//		}
+//		int loWord = OS.LOWORD(wParam);
+//		if (loWord != 0) {
+//			/*
+//			 * When the high word of wParam is non-zero, the activation state of the window
+//			 * is being changed while the window is minimized. If this is the case, do not
+//			 * report activation events or restore the focus.
+//			 */
+//			if (OS.HIWORD(wParam) != 0)
+//				return result;
+//			Control control = display.findControl(lParam);
+//			if (control == null || control instanceof Shell) {
+//				if (this instanceof Shell) {
+//					Event event = new Event();
+//					event.detail = loWord == OS.WA_CLICKACTIVE ? SWT.MouseDown : SWT.None;
+//					sendEvent(SWT.Activate, event);
+//					if (isDisposed())
+//						return LRESULT.ZERO;
+//				}
+//			}
+//			if (restoreFocus())
+//				return LRESULT.ZERO;
+//		} else {
+//			Display display = this.display;
+//			boolean lockWindow = display.isXMouseActive();
+//			if (lockWindow)
+//				display.lockActiveWindow = true;
+//			Control control = display.findControl(lParam);
+//			if (control == null || control instanceof Shell) {
+//				if (this instanceof Shell) {
+//					sendEvent(SWT.Deactivate);
+//					if (!isDisposed()) {
+//						Shell shell = getShell();
+//						shell.setActiveControl(null);
+//						// widget could be disposed at this point
+//					}
+//				}
+//			}
+//			if (lockWindow)
+//				display.lockActiveWindow = false;
+//			if (isDisposed())
+//				return LRESULT.ZERO;
+//			saveFocus();
+//		}
+//		return result;
 	}
 
 	@Override

@@ -30,6 +30,7 @@ public class MenuWindow extends Shell implements Listener, DisposeListener {
 
 	private int openedChildMenuIndex = -1;
 	private MenuWindow openedChildMenu = null;
+	private Point relativeLocation = new Point(0, 0);
 
 	public MenuWindow(Control c, MenuItem[] items, Point p) {
 		super(c.getShell(), SWT.DIALOG_TRIM | SWT.ON_TOP | SWT.NO_MOVE | SWT.NO_TRIM | SWT.DOUBLE_BUFFERED);
@@ -45,9 +46,11 @@ public class MenuWindow extends Shell implements Listener, DisposeListener {
 
 		setBackground(getDisplay().getSystemColor(SWT.COLOR_WHITE));
 
+		if (p == null)
+			p = new Point(0, 0);
 		var monitorPosition = c.toDisplay(p);
 
-		setLocation(monitorPosition);
+		setLocation(this.relativeLocation.x + monitorPosition.x, this.relativeLocation.y + monitorPosition.y);
 
 		setSize(size);
 		display.addFilter(SWT.MouseDown, this);
@@ -73,6 +76,8 @@ public class MenuWindow extends Shell implements Listener, DisposeListener {
 
 		if (this.items == null || items.length == 0)
 			return;
+
+		System.out.println("Open");
 
 		super.open();
 
@@ -160,69 +165,63 @@ public class MenuWindow extends Shell implements Listener, DisposeListener {
 		}
 
 		if (e.type == SWT.MouseDown) {
+
+//			if (e.doit == false) {
+//				System.out.println("MenuWindow: MouseDown: doit = false");
+//				return;
+//			}
+
 			System.out.println("Handle MouseDown: " + e);
 			System.out.println("Disposed: " + isDisposed() + "  " + this.getClass().getName());
-			if (isDisposed()) {
-				if (display != null) {
-					display.removeListener(SWT.MouseDown, this);
-					display.removeFilter(SWT.MouseDown, this);
-				}
-				System.out.println("Remove listener");
-			} else {
 
-				System.out.println(
-						"Bounds: " + getBounds() + "  " + e.x + "/" + e.y + "  " + e.widget.getClass().getName());
+			if (e.widget != null && e.widget.equals(this)) {
+				System.out.println("triggerevent and close");
 
-				if (e.widget != null && e.widget.equals(this)) {
-					System.out.println("triggerevent and close");
+				for (var r : itemRect) {
+					if (r.contains(e.x, e.y)) {
+						var ind = getIndex(r);
+						if (ind >= 0 && ind < items.length) {
+							var i = items[ind];
+							i.sendSelectionEvent(SWT.Selection);
 
-					for (var r : itemRect) {
-						if (r.contains(e.x, e.y)) {
-							var ind = getIndex(r);
-							if (ind >= 0 && ind < items.length) {
-								var i = items[ind];
-								i.sendSelectionEvent(SWT.Selection);
-
-							}
 						}
 					}
-
-					close();
-					parent.setFocus();
-					e.doit = false;
-
-				} else {
-					System.out.println("Event not triggered, not right widget...");
-					close();
-					e.doit = false;
-					parent.setFocus();
-
 				}
 
-//				if (getBounds().contains(e.x, e.y)) {
-//				} else {
-//				}
+				close();
+				if (!parent.isDisposed())
+					parent.setFocus();
+				e.doit = false;
+
+			} else {
+				System.out.println("Event not triggered, not right widget...");
+				close();
+				e.doit = false;
+				if (!parent.isDisposed())
+					parent.setFocus();
 
 			}
 
-			return;
-
+			if (display != null && !display.isDisposed()) {
+				display.removeListener(SWT.MouseDown, this);
+				display.removeFilter(SWT.MouseDown, this);
+			}
 		}
 
-		// if (!isDisposed())
-		// close();
-		//
-		// if (display != null)
-		// display.removeFilter(SWT.MouseDown, this);
-
-		// if (parent instanceof MenuWindow) {
-		//
-		// } else {
-		// parent.getShell().setCurrent();
-		// parent.getShell().redraw();
-		// }
-
 	}
+
+	// if (!isDisposed())
+	// close();
+	//
+	// if (display != null)
+	// display.removeFilter(SWT.MouseDown, this);
+
+	// if (parent instanceof MenuWindow) {
+	//
+	// } else {
+	// parent.getShell().setCurrent();
+	// parent.getShell().redraw();
+	// }
 
 	@Override
 	public void close() {
@@ -230,7 +229,8 @@ public class MenuWindow extends Shell implements Listener, DisposeListener {
 			display.removeFilter(SWT.MouseDown, this);
 			display.removeListener(SWT.MouseDown, this);
 		}
-		super.close();
+		if (!isDisposed())
+			super.close();
 	}
 
 	@Override
@@ -280,7 +280,6 @@ public class MenuWindow extends Shell implements Listener, DisposeListener {
 			redraw(preRec.x, preRec.y, preRec.width, preRec.height, true);
 		}
 
-
 		if ((it.getStyle() & SWT.CASCADE) != 0) {
 
 			var its = it.getMenu().getItems();
@@ -312,7 +311,6 @@ public class MenuWindow extends Shell implements Listener, DisposeListener {
 	private void drawMenuSelection(Event event) {
 
 //		var gc = event.gc;
-
 
 		Drawing.drawWithGC(this, event.gc, gc -> {
 
@@ -403,6 +401,10 @@ public class MenuWindow extends Shell implements Listener, DisposeListener {
 			openedChildMenu = null;
 		}
 
+	}
+
+	public void setRelativePosition(Point location) {
+		this.relativeLocation = location;
 	}
 
 }

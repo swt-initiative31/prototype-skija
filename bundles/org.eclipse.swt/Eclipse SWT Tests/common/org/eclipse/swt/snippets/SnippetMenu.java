@@ -31,7 +31,7 @@ public class SnippetMenu {
 	public static void main(String[] args) {
 
 	    SWT.NATIVE_MENUS = false;
-	    SWT.NATIVE_DECORATIONS = false;
+		SWT.NATIVE_DECORATIONS = false;
 
 		Display display = new Display();
 		Shell shell = new Shell(display);

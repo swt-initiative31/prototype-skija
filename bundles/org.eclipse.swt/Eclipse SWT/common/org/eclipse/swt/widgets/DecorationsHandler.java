@@ -248,6 +248,10 @@ class DecorationsHandler implements Listener {
 
 		System.out.println("MouseMove");
 
+		if (decorations.isDisposed() || decorations.display == null) {
+			return;
+		}
+
 		if (!showsDecoration() && !showsMenuBar())
 			return;
 
@@ -269,24 +273,8 @@ class DecorationsHandler implements Listener {
 
 		if (onLeft(e) || onRight(e)) {
 			decorations.setCursor(decorations.getDisplay().getSystemCursor(SWT.CURSOR_SIZEW));
-			decorations.getDisplay().addFilter(SWT.MouseMove, (event) -> {
-
-				if (onLeft(event) || onRight(event) || mouseDownRight || mouseDownLeft)
-					return;
-
-				decorations.setCursor(null);
-				decorations.getDisplay().removeFilter(SWT.MouseMove, this);
-			});
 		} else if (onBottom(e)) {
 			decorations.setCursor(decorations.getDisplay().getSystemCursor(SWT.CURSOR_SIZES));
-			decorations.getDisplay().addFilter(SWT.MouseMove, (event) -> {
-
-				if (onBottom(event) || mouseDownBottom)
-					return;
-
-				decorations.setCursor(null);
-				decorations.getDisplay().removeFilter(SWT.MouseMove, this);
-			});
 		} else {
 			decorations.setCursor(null);
 		}
@@ -421,6 +409,7 @@ class DecorationsHandler implements Listener {
 				var r = en.getKey();
 				var i = en.getValue();
 
+
 				if (highlightedMenuItem != null && highlightedMenuItem.equals(r)) {
 
 					var col = decorations.getDisplay().getSystemColor(SWT.COLOR_INFO_BACKGROUND);
@@ -435,7 +424,8 @@ class DecorationsHandler implements Listener {
 					gr.setBackground(beg);
 
 				} else {
-					gr.drawText(replaceMnemonics(i.getText()), r.x + 8, r.y);
+					if (i.getText() != null)
+						gr.drawText(replaceMnemonics(i.getText()), r.x + 8, r.y);
 
 				}
 
@@ -449,6 +439,8 @@ class DecorationsHandler implements Listener {
 	}
 
 	private String replaceMnemonics(String text) {
+		if (text == null)
+			return "";
 		int mnemonicIndex = text.lastIndexOf('&');
 		if (mnemonicIndex != -1) {
 			text = text.replaceAll("&", "");

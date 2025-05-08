@@ -14,6 +14,8 @@
 package org.eclipse.swt.widgets;
 
 
+import java.util.*;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
@@ -65,6 +67,10 @@ public class Menu extends Widget {
 	MenuItem cascade;
 	Decorations parent;
 	MenuItem selectedMenuItem;
+
+	java.util.List<MenuItem> items = new ArrayList<>();
+
+	private Point location;
 
 	/* Timer ID for MenuItem ToolTip */
 	static final int ID_TOOLTIP_TIMER = 110;
@@ -324,60 +330,25 @@ static int checkStyle (int style) {
 }
 
 void createHandle () {
-	if (handle != 0) return;
-	if ((style & SWT.BAR) != 0) {
-		handle = OS.CreateMenu ();
-	} else {
-		handle = OS.CreatePopupMenu ();
-	}
-	if (handle == 0) error (SWT.ERROR_NO_HANDLES);
-	updateBackground ();
+//	if (handle != 0)
+//		return;
+//	if ((style & SWT.BAR) != 0) {
+//		handle = OS.CreateMenu();
+//	} else {
+//		handle = OS.CreatePopupMenu();
+//	}
+//	if (handle == 0)
+//		error(SWT.ERROR_NO_HANDLES);
+//	updateBackground();
 }
 
 void createItem (MenuItem item, int index) {
-	int count = OS.GetMenuItemCount (handle);
+	int count = items.size();
 	if (!(0 <= index && index <= count)) error (SWT.ERROR_INVALID_RANGE);
 	display.addMenuItem (item);
-	/*
-	* Bug in Windows.  For some reason, when InsertMenuItem()
-	* is used to insert an item without text, it is not possible
-	* to use SetMenuItemInfo() to set the text at a later time.
-	* The fix is to insert the item with some text.
-	*
-	* Feature in Windows.  When an empty string is used instead
-	* of a space and InsertMenuItem() is used to set a submenu
-	* before setting text to a non-empty string, the menu item
-	* becomes unexpectedly disabled.  The fix is to insert a
-	* space.
-	*/
-	long hHeap = OS.GetProcessHeap ();
-	long pszText = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, 4);
-	OS.MoveMemory (pszText, new char [] {' ', '\0'}, 4);
-	MENUITEMINFO info = new MENUITEMINFO ();
-	info.cbSize = MENUITEMINFO.sizeof;
-	info.fMask = OS.MIIM_ID | OS.MIIM_TYPE | OS.MIIM_DATA;
-	info.wID = item.id;
-	info.dwItemData = item.id;
-	info.fType = (style & SWT.BAR) != 0 && needsMenuCallback() ? OS.MFT_OWNERDRAW :  item.widgetStyle ();
-	info.dwTypeData = pszText;
-	boolean success = OS.InsertMenuItem (handle, index, true, info);
-	if (pszText != 0) OS.HeapFree (hHeap, 0, pszText);
-	if (!success) {
-		display.removeMenuItem (item);
-		error (SWT.ERROR_ITEM_NOT_ADDED);
-	}
 
-	if (needsMenuCallback()) {
-		/*
-		 * Bug in Windows: when MIIM_BITMAP is used together with MFT_STRING,
-		 * InsertMenuItem() fails. The workaround is to set MIIM_BITMAP with
-		 * a separate SetMenuItemInfo().
-		 */
+	items.add(index, item);
 
-		info.fMask = OS.MIIM_BITMAP;
-		info.hbmpItem = OS.HBMMENU_CALLBACK;
-		OS.SetMenuItemInfo (handle, index, true, info);
-	}
 
 	redraw ();
 }
@@ -402,9 +373,9 @@ void destroyAccelerators () {
 }
 
 void destroyItem (MenuItem item) {
-	if (!OS.DeleteMenu (handle, item.id, OS.MF_BYCOMMAND)) {
-		error (SWT.ERROR_ITEM_NOT_REMOVED);
-	}
+
+	items.remove(item);
+
 	redraw ();
 }
 
@@ -595,15 +566,9 @@ public boolean getEnabled () {
  */
 public MenuItem getItem (int index) {
 	checkWidget ();
-	int id = 0;
-	MENUITEMINFO info = new MENUITEMINFO ();
-	info.cbSize = MENUITEMINFO.sizeof;
-	info.fMask = OS.MIIM_DATA;
-	if (!OS.GetMenuItemInfo (handle, index, true, info)) {
-		error (SWT.ERROR_INVALID_RANGE);
-	}
-	id = (int)info.dwItemData;
-	return display.getMenuItem (id);
+
+	return items.get(index);
+
 }
 
 /**
@@ -618,7 +583,7 @@ public MenuItem getItem (int index) {
  */
 public int getItemCount () {
 	checkWidget ();
-	return OS.GetMenuItemCount (handle);
+	return items.size();
 }
 
 /**
@@ -639,30 +604,7 @@ public int getItemCount () {
  */
 public MenuItem [] getItems () {
 	checkWidget ();
-	int index = 0, count = 0;
-	int length = OS.GetMenuItemCount (handle);
-	if (length < 0) {
-		int error = OS.GetLastError();
-		SWT.error(SWT.ERROR_CANNOT_GET_COUNT, null, " [GetLastError=0x" + Integer.toHexString(error) + "]");//$NON-NLS-1$ $NON-NLS-2$
-	}
-	MenuItem [] items = new MenuItem [length];
-	MENUITEMINFO info = new MENUITEMINFO ();
-	info.cbSize = MENUITEMINFO.sizeof;
-	info.fMask = OS.MIIM_DATA;
-	while (OS.GetMenuItemInfo (handle, index, true, info)) {
-		if (count == items.length) {
-			MenuItem [] newItems = new MenuItem [count + 4];
-			System.arraycopy (items, 0, newItems, 0, count);
-			items = newItems;
-		}
-		MenuItem item = display.getMenuItem ((int)info.dwItemData);
-		if (item != null) items [count++] = item;
-		index++;
-	}
-	if (count == items.length) return items;
-	MenuItem [] result = new MenuItem [count];
-	System.arraycopy (items, 0, result, 0, count);
-	return result;
+	return items.toArray(new MenuItem[0]);
 }
 
 @Override
@@ -1225,6 +1167,9 @@ void setLocationInPixels (int x, int y) {
 public void setLocation (Point location) {
 	checkWidget ();
 	if (location == null) error (SWT.ERROR_NULL_ARGUMENT);
+
+	this.location = location;
+
 	Point locationInPixels = getDisplay().translateToDisplayCoordinates(location, getZoom());
 	setLocationInPixels(locationInPixels.x, locationInPixels.y);
 }
@@ -1277,13 +1222,26 @@ void _setOrientation (int orientation) {
  */
 public void setVisible (boolean visible) {
 	checkWidget ();
-	if ((style & (SWT.BAR | SWT.DROP_DOWN)) != 0) return;
-	if (visible) {
-		display.addPopup (this);
-	} else {
-		display.removePopup (this);
-		_setVisible (false);
-	}
+
+	sendEvent(SWT.Show);
+
+	var menuWindow = new MenuWindow(parent, getItems(), this.location);
+
+//	menuWindow.setRelativePosition(this.location);
+
+
+	menuWindow.setLocation(this.location);
+	System.out.println("MenuWindowBounds: " + menuWindow.getBounds());
+
+	menuWindow.open();
+
+//	if ((style & (SWT.BAR | SWT.DROP_DOWN)) != 0) return;
+//	if (visible) {
+//		display.addPopup (this);
+//	} else {
+//		display.removePopup (this);
+//		_setVisible (false);
+//	}
 }
 
 void update () {
