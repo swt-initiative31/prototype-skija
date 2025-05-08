@@ -20,7 +20,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.win32.*;
 
 /**
  * Instances of this class are user interface objects that contain
@@ -61,7 +60,8 @@ public class Menu extends Widget {
 
 	int x, y;
 	long hBrush;
-	int foreground = -1, background = -1;
+	Color foreground = null;
+	Color background = null;
 	Image backgroundImage;
 	boolean hasLocation;
 	MenuItem cascade;
@@ -71,6 +71,8 @@ public class Menu extends Widget {
 	java.util.List<MenuItem> items = new ArrayList<>();
 
 	private Point location;
+
+	private MenuItem defaultItem;
 
 	/* Timer ID for MenuItem ToolTip */
 	static final int ID_TOOLTIP_TIMER = 110;
@@ -211,59 +213,6 @@ Menu (Decorations parent, int style, long handle) {
 	createWidget ();
 }
 
-void _setVisible (boolean visible) {
-	if ((style & (SWT.BAR | SWT.DROP_DOWN)) != 0) return;
-	long hwndParent = parent.handle;
-	if (visible) {
-		int flags = OS.TPM_LEFTBUTTON;
-		if (OS.GetKeyState (OS.VK_LBUTTON) >= 0) flags |= OS.TPM_RIGHTBUTTON;
-		if ((style & SWT.RIGHT_TO_LEFT) != 0) flags |= OS.TPM_RIGHTALIGN;
-		if ((parent.style & SWT.MIRRORED) != 0) {
-			flags &= ~OS.TPM_RIGHTALIGN;
-			if ((style & SWT.LEFT_TO_RIGHT) != 0) flags |= OS.TPM_RIGHTALIGN;
-		}
-		int nX = x, nY = y;
-		if (!hasLocation) {
-			int pos = OS.GetMessagePos ();
-			nX = OS.GET_X_LPARAM (pos);
-			nY = OS.GET_Y_LPARAM (pos);
-		}
-		hasLocation = false;
-		Display display = this.display;
-		display.sendPreExternalEventDispatchEvent ();
-		/*
-		* Feature in Windows.  It is legal use TrackPopupMenu()
-		* to display an empty menu as long as menu items are added
-		* inside of WM_INITPOPUPMENU.  If no items are added, then
-		* TrackPopupMenu() fails and does not send an indication
-		* that the menu has been closed.  This is not strictly a
-		* bug but leads to unwanted behavior when application code
-		* assumes that every WM_INITPOPUPMENU will eventually result
-		* in a WM_MENUSELECT, wParam=MAKEWPARAM (0, 0xFFFF), lParam=0 to
-		* indicate that the menu has been closed.  The fix is to detect
-		* the case when TrackPopupMenu() fails and the number of items in
-		* the menu is zero and issue a fake WM_MENUSELECT.
-		*/
-		boolean success = OS.TrackPopupMenu (handle, flags, nX, nY, 0, hwndParent, null);
-		// widget could be disposed at this point
-		display.sendPostExternalEventDispatchEvent ();
-		if (!success && OS.GetMenuItemCount (handle) == 0) {
-			OS.SendMessage (hwndParent, OS.WM_MENUSELECT, OS.MAKEWPARAM (0, 0xFFFF), 0);
-		}
-	} else {
-		OS.SendMessage (hwndParent, OS.WM_CANCELMODE, 0, 0);
-	}
-	/*
-	* Bug in Windows.  After closing a popup menu, the accessibility focus
-	* is not returned to the focus control.  This causes confusion for AT users.
-	* The fix is to explicitly set the accessibility focus back to the focus control.
-	*/
-	long hFocus = OS.GetFocus();
-	if (hFocus != 0) {
-		OS.NotifyWinEvent (OS.EVENT_OBJECT_FOCUS, hFocus, OS.OBJID_CLIENT, 0);
-	}
-}
-
 /**
  * Adds the listener to the collection of listeners who will
  * be notified when help events are generated for the control,
@@ -360,13 +309,6 @@ void createWidget () {
 	parent.addMenu (this);
 }
 
-int defaultBackground () {
-	return OS.GetSysColor (OS.COLOR_MENU);
-}
-
-int defaultForeground () {
-	return OS.GetSysColor (OS.COLOR_MENUTEXT);
-}
 
 void destroyAccelerators () {
 	parent.destroyAccelerators ();
@@ -382,12 +324,10 @@ void destroyItem (MenuItem item) {
 @Override
 void destroyWidget () {
 	MenuItem cascade = this.cascade;
-	long hMenu = handle;
 	releaseHandle ();
 	if (cascade != null) {
 		cascade.setMenu (null, true);
 	} else {
-		if (hMenu != 0) OS.DestroyMenu (hMenu);
 	}
 }
 
@@ -418,7 +358,7 @@ void fixMenus (Decorations newParent) {
  */
 /*public*/ Color getBackground () {
 	checkWidget ();
-	return Color.win32_new (display, background != -1 ? background : defaultBackground ());
+	return background;
 }
 
 /**
@@ -460,33 +400,7 @@ void fixMenus (Decorations newParent) {
  */
 /*public*/ Rectangle getBounds () {
 	checkWidget ();
-	if ((style & SWT.BAR) != 0) {
-		if (parent.menuBar != this) {
-			return new Rectangle (0, 0, 0, 0);
-		}
-		long hwndShell = parent.handle;
-		MENUBARINFO info = new MENUBARINFO ();
-		info.cbSize = MENUBARINFO.sizeof;
-		if (OS.GetMenuBarInfo (hwndShell, OS.OBJID_MENU, 0, info)) {
-			int width = info.right - info.left;
-			int height = info.bottom - info.top;
-			return new Rectangle (info.left, info.top, width, height);
-		}
-	} else {
-		int count = OS.GetMenuItemCount (handle);
-		if (count != 0) {
-			RECT rect1 = new RECT ();
-			if (OS.GetMenuItemRect (0, handle, 0, rect1)) {
-				RECT rect2 = new RECT ();
-				if (OS.GetMenuItemRect (0, handle, count - 1, rect2)) {
-					int x = rect1.left - 2, y = rect1.top - 2;
-					int width = (rect2.right - rect2.left) + 4;
-					int height = (rect2.bottom - rect1.top) + 4;
-					return new Rectangle (x, y, width, height);
-				}
-			}
-		}
-	}
+
 	return new Rectangle (0, 0, 0, 0);
 }
 
@@ -503,14 +417,6 @@ void fixMenus (Decorations newParent) {
  */
 public MenuItem getDefaultItem () {
 	checkWidget ();
-	int id = OS.GetMenuDefaultItem (handle, OS.MF_BYCOMMAND, OS.GMDI_USEDISABLED);
-	if (id == -1) return null;
-	MENUITEMINFO info = new MENUITEMINFO ();
-	info.cbSize = MENUITEMINFO.sizeof;
-	info.fMask = OS.MIIM_ID;
-	if (OS.GetMenuItemInfo (handle, id, false, info)) {
-		return display.getMenuItem (info.wID);
-	}
 	return null;
 }
 
@@ -546,7 +452,7 @@ public boolean getEnabled () {
  */
 /*public*/ Color getForeground () {
 	checkWidget ();
-	return Color.win32_new (display, foreground != -1 ? foreground : defaultForeground ());
+	return foreground;
 }
 
 /**
@@ -775,22 +681,12 @@ public int indexOf (MenuItem item) {
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
 	if (item.parent != this) return -1;
-	int index = 0;
-	MENUITEMINFO info = new MENUITEMINFO ();
-	info.cbSize = MENUITEMINFO.sizeof;
-	info.fMask = OS.MIIM_DATA;
-	while (OS.GetMenuItemInfo (handle, index, true, info)) {
-		if (info.dwItemData == item.id) return index;
-		index++;
-	}
-	return -1;
+
+	return items.indexOf(item);
+
 }
 
 void initThemeColors () {
-	if ((style & SWT.BAR) != 0) {
-		foreground = display.menuBarForegroundPixel;
-		background = display.menuBarBackgroundPixel;
-	}
 }
 
 /**
@@ -837,32 +733,6 @@ public boolean isVisible () {
 }
 
 
-boolean needsMenuCallback() {
-	/*
-	 * Note: using `HBMMENU_CALLBACK` disables XP theme for entire menu
-	 * containing the menu item. This has at least the following side
-	 * effects:
-	 * 1) Menu bar: items are no longer highlighted when mouse hovers
-	 * 2) Menu bar: text is now left-aligned without any margin
-	 * 3) Popup menu: Images and checkboxes are no longer merged into a single column
-	 */
-
-	if ((background != -1) || (backgroundImage != null)) {
-		/*
-		 * Since XP theming, `MENUINFO.hbrBack` has two issues:
-		 * 1) Menu bar completely ignores it
-		 * 2) Popup menus ignore it for image/checkbox area
-		 * The workaround is to disable XP theme via `HBMMENU_CALLBACK`.
-		 */
-		return true;
-	}
-
-	/*
-	 * Otherwise, if menu has foreground color configured, use
-	 * `HBMMENU_CALLBACK` to set color in `MenuItem.wmDrawChild` callback.
-	 */
-	return (foreground != -1);
-}
 
 void redraw () {
 	if (!isVisible ()) return;
@@ -909,8 +779,8 @@ void releaseParent () {
 void releaseWidget () {
 	super.releaseWidget ();
 	backgroundImage = null;
-	if (hBrush != 0) OS.DeleteObject (hBrush);
-	hBrush = 0;
+	background = null;
+	foreground = null;
 	if (parent != null) parent.removeMenu (this);
 	parent = null;
 }
@@ -991,14 +861,7 @@ void reskinChildren (int flags) {
  */
 /*public*/ void setBackground (Color color) {
 	checkWidget ();
-	int pixel = -1;
-	if (color != null) {
-		if (color.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
-		pixel = color.handle;
-	}
-	if (pixel == background) return;
-	background = pixel;
-	updateBackground ();
+	this.background = color;
 }
 
 /**
@@ -1050,14 +913,7 @@ void reskinChildren (int flags) {
  */
 /*public*/ void setForeground (Color color) {
 	checkWidget ();
-	int pixel = -1;
-	if (color != null) {
-		if (color.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
-		pixel = color.handle;
-	}
-	if (pixel == foreground) return;
-	foreground = pixel;
-	updateForeground ();
+	this.foreground = color;
 }
 
 /**
@@ -1076,15 +932,11 @@ void reskinChildren (int flags) {
  */
 public void setDefaultItem (MenuItem item) {
 	checkWidget ();
-	int newID = -1;
-	if (item != null) {
-		if (item.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
-		if (item.parent != this) return;
-		newID = item.id;
-	}
-	int oldID = OS.GetMenuDefaultItem (handle, OS.MF_BYCOMMAND, OS.GMDI_USEDISABLED);
-	if (newID == oldID) return;
-	OS.SetMenuDefaultItem (handle, newID, OS.MF_BYCOMMAND);
+
+	if (this.defaultItem == item)
+		return;
+
+	this.defaultItem = item;
 	redraw ();
 }
 
@@ -1245,10 +1097,6 @@ public void setVisible (boolean visible) {
 }
 
 void update () {
-	if ((style & SWT.BAR) != 0) {
-		if (this == parent.menuBar) OS.DrawMenuBar (parent.handle);
-		return;
-	}
 	boolean hasCheck = false, hasImage = false;
 	for (MenuItem item : getItems ()) {
 		if (item.image != null) {
@@ -1259,71 +1107,16 @@ void update () {
 		}
 	}
 
-	/* Update the menu to hide or show the space for bitmaps */
-	MENUINFO lpcmi = new MENUINFO ();
-	lpcmi.cbSize = MENUINFO.sizeof;
-	lpcmi.fMask = OS.MIM_STYLE;
-	OS.GetMenuInfo (handle, lpcmi);
-	if (hasImage && !hasCheck) {
-		lpcmi.dwStyle |= OS.MNS_CHECKORBMP;
-	} else {
-		lpcmi.dwStyle &= ~OS.MNS_CHECKORBMP;
-	}
-	OS.SetMenuInfo (handle, lpcmi);
 }
 
 void updateBackground () {
-	if (hBrush != 0) OS.DeleteObject (hBrush);
-	hBrush = 0;
 
-	if (backgroundImage != null)
-		hBrush = OS.CreatePatternBrush (Image.win32_getHandle(backgroundImage, getZoom()));
-	else if (background != -1)
-		hBrush = OS.CreateSolidBrush (background);
-
-	MENUINFO lpcmi = new MENUINFO ();
-	lpcmi.cbSize = MENUINFO.sizeof;
-	lpcmi.fMask = OS.MIM_BACKGROUND;
-	lpcmi.hbrBack = hBrush;
-	OS.SetMenuInfo (handle, lpcmi);
 }
 
 void updateForeground () {
-	MENUITEMINFO info = new MENUITEMINFO ();
-	info.cbSize = MENUITEMINFO.sizeof;
-	int index = 0;
-	while (OS.GetMenuItemInfo (handle, index, true, info)) {
-		info.fMask = OS.MIIM_BITMAP;
-		info.hbmpItem = OS.HBMMENU_CALLBACK;
-		OS.SetMenuItemInfo (handle, index, true, info);
-		index++;
-	}
 	redraw ();
 }
 
-LRESULT wmTimer (long wParam, long lParam) {
-	if (wParam == ID_TOOLTIP_TIMER) {
-		POINT pt = new POINT ();
-		OS.GetCursorPos (pt);
-		if (selectedMenuItem != null && selectedMenuItem.parent != null) {
-			RECT rect = new RECT ();
-			boolean success = OS.GetMenuItemRect (0, selectedMenuItem.parent.handle, indexOf(selectedMenuItem), rect);
-			if (!success) return null;
-			if (OS.PtInRect (rect, pt)) {
-				// Mouse cursor is within the bounds of menu item
-				selectedMenuItem.showTooltip (pt.x, pt.y + getSystemMetrics(OS.SM_CYCURSOR) / 2 + 5);
-			} else {
-				/*
-				 * Mouse cursor is outside the bounds of the menu item:
-				 * Keyboard or mnemonic was used to select menu item
-				 */
-				selectedMenuItem.showTooltip ((rect.right + rect.left) / 2, rect.bottom + 5);
-			}
-		}
-	}
-
-	return null;
-}
 
 private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
 	if (!(widget instanceof Menu menu)) {

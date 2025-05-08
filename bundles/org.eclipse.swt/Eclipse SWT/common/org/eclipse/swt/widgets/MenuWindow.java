@@ -188,9 +188,9 @@ public class MenuWindow extends Shell implements Listener, DisposeListener {
 					}
 				}
 
-				close();
 				if (!parent.isDisposed())
 					parent.setFocus();
+				close();
 				e.doit = false;
 
 			} else {

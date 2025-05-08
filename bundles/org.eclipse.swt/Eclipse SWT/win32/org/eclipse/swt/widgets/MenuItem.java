@@ -18,7 +18,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.win32.*;
+//import org.eclipse.swt.internal.win32.*;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -49,6 +49,7 @@ public class MenuItem extends Item {
 
 	String text = "";
 	Image image;
+	private int orientation;
 
 	/* Image margin. */
 	final static int MARGIN_WIDTH = 1;
@@ -240,46 +241,46 @@ void destroyWidget () {
 	releaseHandle ();
 }
 
-boolean fillAccel (ACCEL accel) {
-	accel.cmd = accel.key = accel.fVirt = 0;
-	if (accelerator == 0 || !getEnabled ()) return false;
-	if ((accelerator & SWT.COMMAND) != 0) return false;
-	int fVirt = OS.FVIRTKEY;
-	int key = accelerator & SWT.KEY_MASK;
-	int vKey = Display.untranslateKey (key);
-	if (vKey != 0) {
-		key = vKey;
-	} else {
-		switch (key) {
-			/*
-			* Bug in Windows.  For some reason, VkKeyScan
-			* fails to map ESC to VK_ESCAPE and DEL to
-			* VK_DELETE.  The fix is to map these keys
-			* as a special case.
-			*/
-			case 27: key = OS.VK_ESCAPE; break;
-			case 127: key = OS.VK_DELETE; break;
-			default: {
-				if (key == 0) return false;
-				vKey = OS.VkKeyScan ((short) key);
-				if (vKey == -1) {
-					if (key != (int)OS.CharUpper (OS.LOWORD (key))) {
-						fVirt = 0;
-					}
-				} else {
-					key = vKey & 0xFF;
-				}
-			}
-		}
-	}
-	accel.key = (short) key;
-	accel.cmd = (short) id;
-	accel.fVirt = (byte) fVirt;
-	if ((accelerator & SWT.ALT) != 0) accel.fVirt |= OS.FALT;
-	if ((accelerator & SWT.SHIFT) != 0) accel.fVirt |= OS.FSHIFT;
-	if ((accelerator & SWT.CONTROL) != 0) accel.fVirt |= OS.FCONTROL;
-	return true;
-}
+//boolean fillAccel (ACCEL accel) {
+//	accel.cmd = accel.key = accel.fVirt = 0;
+//	if (accelerator == 0 || !getEnabled ()) return false;
+//	if ((accelerator & SWT.COMMAND) != 0) return false;
+//	int fVirt = OS.FVIRTKEY;
+//	int key = accelerator & SWT.KEY_MASK;
+//	int vKey = Display.untranslateKey (key);
+//	if (vKey != 0) {
+//		key = vKey;
+//	} else {
+//		switch (key) {
+//			/*
+//			* Bug in Windows.  For some reason, VkKeyScan
+//			* fails to map ESC to VK_ESCAPE and DEL to
+//			* VK_DELETE.  The fix is to map these keys
+//			* as a special case.
+//			*/
+//			case 27: key = OS.VK_ESCAPE; break;
+//			case 127: key = OS.VK_DELETE; break;
+//			default: {
+//				if (key == 0) return false;
+//				vKey = OS.VkKeyScan ((short) key);
+//				if (vKey == -1) {
+//					if (key != (int)OS.CharUpper (OS.LOWORD (key))) {
+//						fVirt = 0;
+//					}
+//				} else {
+//					key = vKey & 0xFF;
+//				}
+//			}
+//		}
+//	}
+//	accel.key = (short) key;
+//	accel.cmd = (short) id;
+//	accel.fVirt = (byte) fVirt;
+//	if ((accelerator & SWT.ALT) != 0) accel.fVirt |= OS.FALT;
+//	if ((accelerator & SWT.SHIFT) != 0) accel.fVirt |= OS.FSHIFT;
+//	if ((accelerator & SWT.CONTROL) != 0) accel.fVirt |= OS.FCONTROL;
+//	return true;
+//}
 
 void fixMenus (Decorations newParent) {
 	this.nativeZoom = newParent.nativeZoom;
@@ -322,43 +323,46 @@ public int getAccelerator () {
 	checkWidget ();
 	int index = parent.indexOf (this);
 	if (index == -1) return new Rectangle (0, 0, 0, 0);
-	if ((parent.style & SWT.BAR) != 0) {
-		Decorations shell = parent.parent;
-		if (shell.menuBar != parent) {
-			return new Rectangle (0, 0, 0, 0);
-		}
-		long hwndShell = shell.handle;
-		MENUBARINFO info1 = new MENUBARINFO ();
-		info1.cbSize = MENUBARINFO.sizeof;
-		if (!OS.GetMenuBarInfo (hwndShell, OS.OBJID_MENU, 1, info1)) {
-			return new Rectangle (0, 0, 0, 0);
-		}
-		MENUBARINFO info2 = new MENUBARINFO ();
-		info2.cbSize = MENUBARINFO.sizeof;
-		if (!OS.GetMenuBarInfo (hwndShell, OS.OBJID_MENU, index + 1, info2)) {
-			return new Rectangle (0, 0, 0, 0);
-		}
-		int x = info2.left - info1.left;
-		int y = info2.top - info1.top;
-		int width = info2.right - info2.left;
-		int height = info2.bottom - info2.top;
-		return new Rectangle (x, y, width, height);
-	} else {
-		long hMenu = parent.handle;
-		RECT rect1 = new RECT ();
-		if (!OS.GetMenuItemRect (0, hMenu, 0, rect1)) {
-			return new Rectangle (0, 0, 0, 0);
-		}
-		RECT rect2 = new RECT ();
-		if (!OS.GetMenuItemRect (0, hMenu, index, rect2)) {
-			return new Rectangle (0, 0, 0, 0);
-		}
-		int x = rect2.left - rect1.left + 2;
-		int y = rect2.top - rect1.top + 2;
-		int width = rect2.right - rect2.left;
-		int height = rect2.bottom - rect2.top;
-		return new Rectangle (x, y, width, height);
-	}
+
+	return new Rectangle(0, 0, 0, 0);
+
+//	if ((parent.style & SWT.BAR) != 0) {
+//		Decorations shell = parent.parent;
+//		if (shell.menuBar != parent) {
+//			return new Rectangle (0, 0, 0, 0);
+//		}
+//		long hwndShell = shell.handle;
+//		MENUBARINFO info1 = new MENUBARINFO ();
+//		info1.cbSize = MENUBARINFO.sizeof;
+//		if (!OS.GetMenuBarInfo (hwndShell, OS.OBJID_MENU, 1, info1)) {
+//			return new Rectangle (0, 0, 0, 0);
+//		}
+//		MENUBARINFO info2 = new MENUBARINFO ();
+//		info2.cbSize = MENUBARINFO.sizeof;
+//		if (!OS.GetMenuBarInfo (hwndShell, OS.OBJID_MENU, index + 1, info2)) {
+//			return new Rectangle (0, 0, 0, 0);
+//		}
+//		int x = info2.left - info1.left;
+//		int y = info2.top - info1.top;
+//		int width = info2.right - info2.left;
+//		int height = info2.bottom - info2.top;
+//		return new Rectangle (x, y, width, height);
+//	} else {
+//		long hMenu = parent.handle;
+//		RECT rect1 = new RECT ();
+//		if (!OS.GetMenuItemRect (0, hMenu, 0, rect1)) {
+//			return new Rectangle (0, 0, 0, 0);
+//		}
+//		RECT rect2 = new RECT ();
+//		if (!OS.GetMenuItemRect (0, hMenu, index, rect2)) {
+//			return new Rectangle (0, 0, 0, 0);
+//		}
+//		int x = rect2.left - rect1.left + 2;
+//		int y = rect2.top - rect1.top + 2;
+//		int width = rect2.right - rect2.left;
+//		int height = rect2.bottom - rect2.top;
+//		return new Rectangle (x, y, width, height);
+//	}
 }
 
 /**
@@ -528,12 +532,12 @@ void releaseParent () {
 @Override
 void releaseWidget () {
 	super.releaseWidget ();
-	if (hBitmap != 0) OS.DeleteObject (hBitmap);
-	hBitmap = 0;
-	if (accelerator != 0) {
-		parent.destroyAccelerators ();
-	}
-	accelerator = 0;
+//	if (hBitmap != 0) OS.DeleteObject (hBitmap);
+//	hBitmap = 0;
+//	if (accelerator != 0) {
+//		parent.destroyAccelerators ();
+//	}
+//	accelerator = 0;
 	if (itemToolTip!= null && !itemToolTip.isDisposed()) {
 		itemToolTip.setVisible (false);
 		itemToolTip.dispose();
@@ -788,57 +792,58 @@ void setMenu (Menu menu, boolean dispose) {
 	if (oldMenu != null) oldMenu.cascade = null;
 	this.menu = menu;
 
-	long hMenu = parent.handle;
-	MENUITEMINFO info = new MENUITEMINFO ();
-	info.cbSize = MENUITEMINFO.sizeof;
-	info.fMask = OS.MIIM_DATA;
-	int index = 0;
-	while (OS.GetMenuItemInfo (hMenu, index, true, info)) {
-		if (info.dwItemData == id) break;
-		index++;
-	}
-	if (info.dwItemData != id) return;
-	int cch = 128;
-	long hHeap = OS.GetProcessHeap ();
-	int byteCount = cch * 2;
-	long pszText = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
-	info.fMask = OS.MIIM_STATE | OS.MIIM_ID | OS.MIIM_DATA;
-	/*
-	* Bug in Windows.  When GetMenuItemInfo() is used to get the text,
-	* for an item that has a bitmap set using MIIM_BITMAP, the text is
-	* not returned.  This means that when SetMenuItemInfo() is used to
-	* set the submenu and the current menu state, the text is lost.
-	* The fix is use MIIM_BITMAP and MIIM_STRING.
-	*/
-	info.fMask |= OS.MIIM_BITMAP | OS.MIIM_STRING;
-	info.dwTypeData = pszText;
-	info.cch = cch;
-	boolean success = OS.GetMenuItemInfo (hMenu, index, true, info);
-	if (menu != null) {
-		menu.cascade = this;
-		info.fMask |= OS.MIIM_SUBMENU;
-		info.hSubMenu = menu.handle;
-	}
-	if (dispose || oldMenu == null) {
-		success = OS.SetMenuItemInfo (hMenu, index, true, info);
-	} else {
-		/*
-		* Feature in Windows.  When SetMenuItemInfo () is used to
-		* set a submenu and the menu item already has a submenu,
-		* Windows destroys the previous menu.  This is undocumented
-		* and unexpected but not necessarily wrong.  The fix is to
-		* remove the item with RemoveMenu () which does not destroy
-		* the submenu and then insert the item with InsertMenuItem ().
-		*/
-		OS.RemoveMenu (hMenu, index, OS.MF_BYPOSITION);
-		success = OS.InsertMenuItem (hMenu, index, true, info);
-	}
-	if (pszText != 0) OS.HeapFree (hHeap, 0, pszText);
-	if (!success) {
-		int error = OS.GetLastError();
-		SWT.error (SWT.ERROR_CANNOT_SET_MENU, null, " [GetLastError=0x" + Integer.toHexString(error) + "]");//$NON-NLS-1$ $NON-NLS-2$
-	}
-	parent.destroyAccelerators ();
+
+//	long hMenu = parent.handle;
+//	MENUITEMINFO info = new MENUITEMINFO ();
+//	info.cbSize = MENUITEMINFO.sizeof;
+//	info.fMask = OS.MIIM_DATA;
+//	int index = 0;
+//	while (OS.GetMenuItemInfo (hMenu, index, true, info)) {
+//		if (info.dwItemData == id) break;
+//		index++;
+//	}
+//	if (info.dwItemData != id) return;
+//	int cch = 128;
+//	long hHeap = OS.GetProcessHeap ();
+//	int byteCount = cch * 2;
+//	long pszText = OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
+//	info.fMask = OS.MIIM_STATE | OS.MIIM_ID | OS.MIIM_DATA;
+//	/*
+//	* Bug in Windows.  When GetMenuItemInfo() is used to get the text,
+//	* for an item that has a bitmap set using MIIM_BITMAP, the text is
+//	* not returned.  This means that when SetMenuItemInfo() is used to
+//	* set the submenu and the current menu state, the text is lost.
+//	* The fix is use MIIM_BITMAP and MIIM_STRING.
+//	*/
+//	info.fMask |= OS.MIIM_BITMAP | OS.MIIM_STRING;
+//	info.dwTypeData = pszText;
+//	info.cch = cch;
+//	boolean success = OS.GetMenuItemInfo (hMenu, index, true, info);
+//	if (menu != null) {
+//		menu.cascade = this;
+//		info.fMask |= OS.MIIM_SUBMENU;
+//		info.hSubMenu = menu.handle;
+//	}
+//	if (dispose || oldMenu == null) {
+//		success = OS.SetMenuItemInfo (hMenu, index, true, info);
+//	} else {
+//		/*
+//		* Feature in Windows.  When SetMenuItemInfo () is used to
+//		* set a submenu and the menu item already has a submenu,
+//		* Windows destroys the previous menu.  This is undocumented
+//		* and unexpected but not necessarily wrong.  The fix is to
+//		* remove the item with RemoveMenu () which does not destroy
+//		* the submenu and then insert the item with InsertMenuItem ().
+//		*/
+//		OS.RemoveMenu (hMenu, index, OS.MF_BYPOSITION);
+//		success = OS.InsertMenuItem (hMenu, index, true, info);
+//	}
+//	if (pszText != 0) OS.HeapFree (hHeap, 0, pszText);
+//	if (!success) {
+//		int error = OS.GetLastError();
+//		SWT.error (SWT.ERROR_CANNOT_SET_MENU, null, " [GetLastError=0x" + Integer.toHexString(error) + "]");//$NON-NLS-1$ $NON-NLS-2$
+//	}
+//	parent.destroyAccelerators ();
 }
 
 boolean setRadioSelection (boolean value) {
@@ -851,13 +856,16 @@ boolean setRadioSelection (boolean value) {
 }
 
 void setOrientation (int orientation) {
-	long hMenu = parent.handle;
-	MENUITEMINFO info = new MENUITEMINFO ();
-	info.cbSize = MENUITEMINFO.sizeof;
-	info.fMask = OS.MIIM_FTYPE;
-	info.fType = widgetStyle ();
-	OS.SetMenuItemInfo (hMenu, id, false, info);
-	if (menu != null) menu._setOrientation (orientation);
+
+	this.orientation = orientation;
+
+//	long hMenu = parent.handle;
+//	MENUITEMINFO info = new MENUITEMINFO ();
+//	info.cbSize = MENUITEMINFO.sizeof;
+//	info.fMask = OS.MIIM_FTYPE;
+//	info.fType = widgetStyle ();
+//	OS.SetMenuItemInfo (hMenu, id, false, info);
+//	if (menu != null) menu._setOrientation (orientation);
 }
 
 /**
@@ -1001,48 +1009,49 @@ void showTooltip (int x, int y) {
 	itemToolTip.setVisible (true);
 }
 
-int widgetStyle () {
-	int bits = 0;
-	Decorations shell = parent.parent;
-	if ((shell.style & SWT.MIRRORED) != 0) {
-		if ((parent.style & SWT.LEFT_TO_RIGHT) != 0) {
-			bits |= OS.MFT_RIGHTJUSTIFY | OS.MFT_RIGHTORDER;
-		}
-	} else {
-		if ((parent.style & SWT.RIGHT_TO_LEFT) != 0) {
-			bits |= OS.MFT_RIGHTJUSTIFY | OS.MFT_RIGHTORDER;
-		}
-	}
-	if ((style & SWT.SEPARATOR) != 0) return bits | OS.MFT_SEPARATOR;
-	if ((style & SWT.RADIO) != 0) return bits | OS.MFT_RADIOCHECK;
-	return bits | OS.MFT_STRING;
-}
+//int widgetStyle () {
+//	int bits = 0;
+//	return bits;
+////	Decorations shell = parent.parent;
+////	if ((shell.style & SWT.MIRRORED) != 0) {
+////		if ((parent.style & SWT.LEFT_TO_RIGHT) != 0) {
+////			bits |= OS.MFT_RIGHTJUSTIFY | OS.MFT_RIGHTORDER;
+////		}
+////	} else {
+////		if ((parent.style & SWT.RIGHT_TO_LEFT) != 0) {
+////			bits |= OS.MFT_RIGHTJUSTIFY | OS.MFT_RIGHTORDER;
+////		}
+////	}
+////	if ((style & SWT.SEPARATOR) != 0) return bits | OS.MFT_SEPARATOR;
+////	if ((style & SWT.RADIO) != 0) return bits | OS.MFT_RADIOCHECK;
+////	return bits | OS.MFT_STRING;
+//}
 
-LRESULT wmCommandChild (long wParam, long lParam) {
-	if ((style & SWT.CHECK) != 0) {
-		setSelection (!getSelection ());
-	} else {
-		if ((style & SWT.RADIO) != 0) {
-			if ((parent.getStyle () & SWT.NO_RADIO_GROUP) != 0) {
-				setSelection (!getSelection ());
-			} else {
-				selectRadio ();
-			}
-		}
-	}
-	sendSelectionEvent (SWT.Selection);
-	return null;
-}
+//LRESULT wmCommandChild (long wParam, long lParam) {
+//	if ((style & SWT.CHECK) != 0) {
+//		setSelection (!getSelection ());
+//	} else {
+//		if ((style & SWT.RADIO) != 0) {
+//			if ((parent.getStyle () & SWT.NO_RADIO_GROUP) != 0) {
+//				setSelection (!getSelection ());
+//			} else {
+//				selectRadio ();
+//			}
+//		}
+//	}
+//	sendSelectionEvent (SWT.Selection);
+//	return null;
+//}
 
-@Override
-GC createNewGC(long hDC, GCData data) {
-	if (getDisplay().isRescalingAtRuntime()) {
-		return super.createNewGC(hDC, data);
-	} else {
-		data.nativeZoom = getMonitorZoom();
-		return GC.win32_new(hDC, data);
-	}
-}
+//@Override
+//GC createNewGC(long hDC, GCData data) {
+//	if (getDisplay().isRescalingAtRuntime()) {
+//		return super.createNewGC(hDC, data);
+//	} else {
+//		data.nativeZoom = getMonitorZoom();
+//		return GC.win32_new(hDC, data);
+//	}
+//}
 
 private int getMonitorZoom() {
 	return getMenu().getShell().getMonitor().zoom;
@@ -1056,127 +1065,127 @@ private int getMenuZoom() {
 	}
 }
 
-LRESULT wmDrawChild(long wParam, long lParam) {
-	DRAWITEMSTRUCT struct = new DRAWITEMSTRUCT();
-	OS.MoveMemory(struct, lParam, DRAWITEMSTRUCT.sizeof);
-	if ((text != null || image != null)) {
-		GCData data = new GCData();
-		data.device = display;
-		GC gc = createNewGC(struct.hDC, data);
-		/*
-		* Bug in Windows.  When a bitmap is included in the
-		* menu bar, the HDC seems to already include the left
-		* coordinate.  The fix is to ignore this value when
-		* the item is in a menu bar.
-		*/
-		int x = (parent.style & SWT.BAR) == 0 ? MARGIN_WIDTH * 2 : struct.left;
-		int zoom = getMenuZoom();
-		Rectangle menuItemArea = null;
-		if (text != null) {
-			this.getParent().redraw();
-			int flags = SWT.DRAW_DELIMITER;
-			boolean isInactive = ((struct.itemState & OS.ODS_INACTIVE) != 0);
-			boolean isSelected = ((struct.itemState & OS.ODS_SELECTED) != 0);
-			boolean isNoAccel = ((struct.itemState & OS.ODS_NOACCEL) != 0);
-
-			String drawnText = "";
-			if(isNoAccel) {
-				drawnText = this.text.replace("&", "");
-			} else {
-				drawnText = this.text;
-				flags |= SWT.DRAW_MNEMONIC;
-			}
-			Rectangle menuItemBounds = this.getBounds();
-
-			int fillMenuWidth =  DPIUtil.scaleDown(menuItemBounds.width, zoom);
-			int fillMenuHeight = DPIUtil.scaleDown(menuItemBounds.height, zoom);
-			menuItemArea = new Rectangle(DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(struct.top, zoom), fillMenuWidth, fillMenuHeight);
-
-			gc.setForeground(isInactive ? display.getSystemColor(SWT.COLOR_GRAY) : display.getSystemColor(SWT.COLOR_WHITE));
-			gc.setBackground(isSelected ? display.getSystemColor(SWT.COLOR_DARK_GRAY) : parent.getBackground());
-			gc.fillRectangle(menuItemArea);
-
-			int xPositionText = LEFT_TEXT_MARGIN + DPIUtil.scaleDown(x, zoom) + (this.image != null ? this.image.getBounds().width + IMAGE_TEXT_GAP : 0);
-			int yPositionText = DPIUtil.scaleDown(struct.top, zoom) + MARGIN_HEIGHT;
-			gc.drawText(drawnText, xPositionText, yPositionText, flags);
-		}
-		if (image != null) {
-			Image image = getEnabled() ? this.image : new Image(display, this.image, SWT.IMAGE_DISABLE);
-			int gap = (menuItemArea.height - image.getBounds().height) / 2;
-			gc.drawImage(image, LEFT_TEXT_MARGIN + DPIUtil.scaleDown(x, zoom), gap + DPIUtil.scaleDown(struct.top, zoom));
-			if (this.image != image) {
-				image.dispose();
-			}
-		}
-		gc.dispose();
-	}
-	if (parent.foreground != -1) {
-		OS.SetTextColor(struct.hDC, parent.foreground);
-	}
-	return null;
-}
-
-LRESULT wmMeasureChild (long wParam, long lParam) {
-	MEASUREITEMSTRUCT struct = new MEASUREITEMSTRUCT ();
-	OS.MoveMemory (struct, lParam, MEASUREITEMSTRUCT.sizeof);
-
-	if ((parent.style & SWT.BAR) != 0) {
-		if (parent.needsMenuCallback()) {
-			Point point = calculateRenderedTextSize();
-			int menuZoom = getDisplay().isRescalingAtRuntime() ? super.getZoom() : getMonitorZoom();
-			struct.itemHeight = DPIUtil.scaleUp(point.y, menuZoom);
-			/*
-			 * Weirdness in Windows. Setting `HBMMENU_CALLBACK` causes
-			 * item sizes to mean something else. It seems that it is
-			 * the size of left margin before the text. At the same time,
-			 * if menu item has a mnemonic, it's always drawn at a fixed
-			 * position. I have tested on Win7, Win8.1, Win10 and found
-			 * that value of 5 works well in matching text to mnemonic.
-			 */
-			int horizontalSpaceImage = this.image != null ? this.image.getBounds().width + IMAGE_TEXT_GAP: 0;
-			struct.itemWidth = DPIUtil.scaleUp(LEFT_TEXT_MARGIN + point.x - WINDOWS_OVERHEAD + horizontalSpaceImage, menuZoom);
-			OS.MoveMemory (lParam, struct, MEASUREITEMSTRUCT.sizeof);
-			return null;
-		}
-	}
-
-	int width = 0, height = 0;
-	if (image != null) {
-		Rectangle rect = image.getBoundsInPixels ();
-		width = rect.width;
-		height = rect.height;
-	} else {
-		/*
-		* Bug in Windows.  If a menu contains items that have
-		* images and can be checked, Windows does not include
-		* the width of the image and the width of the check when
-		* computing the width of the menu.  When the longest item
-		* does not have an image, the label and the accelerator
-		* text can overlap.  The fix is to use SetMenuItemInfo()
-		* to indicate that all items have a bitmap and then include
-		* the width of the widest bitmap in WM_MEASURECHILD.
-		*/
-		MENUINFO lpcmi = new MENUINFO ();
-		lpcmi.cbSize = MENUINFO.sizeof;
-		lpcmi.fMask = OS.MIM_STYLE;
-		long hMenu = parent.handle;
-		OS.GetMenuInfo (hMenu, lpcmi);
-		if ((lpcmi.dwStyle & OS.MNS_CHECKORBMP) == 0) {
-			for (MenuItem item : parent.getItems ()) {
-				if (item.image != null) {
-					Rectangle rect = item.image.getBoundsInPixels ();
-					width = Math.max (width, rect.width);
-				}
-			}
-		}
-	}
-	if (width != 0 || height != 0) {
-		struct.itemWidth = width + MARGIN_WIDTH * 2;
-		struct.itemHeight = height + MARGIN_HEIGHT * 2;
-		OS.MoveMemory (lParam, struct, MEASUREITEMSTRUCT.sizeof);
-	}
-	return null;
-}
+//LRESULT wmDrawChild(long wParam, long lParam) {
+//	DRAWITEMSTRUCT struct = new DRAWITEMSTRUCT();
+//	OS.MoveMemory(struct, lParam, DRAWITEMSTRUCT.sizeof);
+//	if ((text != null || image != null)) {
+//		GCData data = new GCData();
+//		data.device = display;
+//		GC gc = createNewGC(struct.hDC, data);
+//		/*
+//		* Bug in Windows.  When a bitmap is included in the
+//		* menu bar, the HDC seems to already include the left
+//		* coordinate.  The fix is to ignore this value when
+//		* the item is in a menu bar.
+//		*/
+//		int x = (parent.style & SWT.BAR) == 0 ? MARGIN_WIDTH * 2 : struct.left;
+//		int zoom = getMenuZoom();
+//		Rectangle menuItemArea = null;
+//		if (text != null) {
+//			this.getParent().redraw();
+//			int flags = SWT.DRAW_DELIMITER;
+//			boolean isInactive = ((struct.itemState & OS.ODS_INACTIVE) != 0);
+//			boolean isSelected = ((struct.itemState & OS.ODS_SELECTED) != 0);
+//			boolean isNoAccel = ((struct.itemState & OS.ODS_NOACCEL) != 0);
+//
+//			String drawnText = "";
+//			if(isNoAccel) {
+//				drawnText = this.text.replace("&", "");
+//			} else {
+//				drawnText = this.text;
+//				flags |= SWT.DRAW_MNEMONIC;
+//			}
+//			Rectangle menuItemBounds = this.getBounds();
+//
+//			int fillMenuWidth =  DPIUtil.scaleDown(menuItemBounds.width, zoom);
+//			int fillMenuHeight = DPIUtil.scaleDown(menuItemBounds.height, zoom);
+//			menuItemArea = new Rectangle(DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(struct.top, zoom), fillMenuWidth, fillMenuHeight);
+//
+//			gc.setForeground(isInactive ? display.getSystemColor(SWT.COLOR_GRAY) : display.getSystemColor(SWT.COLOR_WHITE));
+//			gc.setBackground(isSelected ? display.getSystemColor(SWT.COLOR_DARK_GRAY) : parent.getBackground());
+//			gc.fillRectangle(menuItemArea);
+//
+//			int xPositionText = LEFT_TEXT_MARGIN + DPIUtil.scaleDown(x, zoom) + (this.image != null ? this.image.getBounds().width + IMAGE_TEXT_GAP : 0);
+//			int yPositionText = DPIUtil.scaleDown(struct.top, zoom) + MARGIN_HEIGHT;
+//			gc.drawText(drawnText, xPositionText, yPositionText, flags);
+//		}
+//		if (image != null) {
+//			Image image = getEnabled() ? this.image : new Image(display, this.image, SWT.IMAGE_DISABLE);
+//			int gap = (menuItemArea.height - image.getBounds().height) / 2;
+//			gc.drawImage(image, LEFT_TEXT_MARGIN + DPIUtil.scaleDown(x, zoom), gap + DPIUtil.scaleDown(struct.top, zoom));
+//			if (this.image != image) {
+//				image.dispose();
+//			}
+//		}
+//		gc.dispose();
+//	}
+//	if (parent.foreground != -1) {
+//		OS.SetTextColor(struct.hDC, parent.foreground);
+//	}
+//	return null;
+//}
+//
+//LRESULT wmMeasureChild (long wParam, long lParam) {
+//	MEASUREITEMSTRUCT struct = new MEASUREITEMSTRUCT ();
+//	OS.MoveMemory (struct, lParam, MEASUREITEMSTRUCT.sizeof);
+//
+//	if ((parent.style & SWT.BAR) != 0) {
+//		if (parent.needsMenuCallback()) {
+//			Point point = calculateRenderedTextSize();
+//			int menuZoom = getDisplay().isRescalingAtRuntime() ? super.getZoom() : getMonitorZoom();
+//			struct.itemHeight = DPIUtil.scaleUp(point.y, menuZoom);
+//			/*
+//			 * Weirdness in Windows. Setting `HBMMENU_CALLBACK` causes
+//			 * item sizes to mean something else. It seems that it is
+//			 * the size of left margin before the text. At the same time,
+//			 * if menu item has a mnemonic, it's always drawn at a fixed
+//			 * position. I have tested on Win7, Win8.1, Win10 and found
+//			 * that value of 5 works well in matching text to mnemonic.
+//			 */
+//			int horizontalSpaceImage = this.image != null ? this.image.getBounds().width + IMAGE_TEXT_GAP: 0;
+//			struct.itemWidth = DPIUtil.scaleUp(LEFT_TEXT_MARGIN + point.x - WINDOWS_OVERHEAD + horizontalSpaceImage, menuZoom);
+//			OS.MoveMemory (lParam, struct, MEASUREITEMSTRUCT.sizeof);
+//			return null;
+//		}
+//	}
+//
+//	int width = 0, height = 0;
+//	if (image != null) {
+//		Rectangle rect = image.getBoundsInPixels ();
+//		width = rect.width;
+//		height = rect.height;
+//	} else {
+//		/*
+//		* Bug in Windows.  If a menu contains items that have
+//		* images and can be checked, Windows does not include
+//		* the width of the image and the width of the check when
+//		* computing the width of the menu.  When the longest item
+//		* does not have an image, the label and the accelerator
+//		* text can overlap.  The fix is to use SetMenuItemInfo()
+//		* to indicate that all items have a bitmap and then include
+//		* the width of the widest bitmap in WM_MEASURECHILD.
+//		*/
+//		MENUINFO lpcmi = new MENUINFO ();
+//		lpcmi.cbSize = MENUINFO.sizeof;
+//		lpcmi.fMask = OS.MIM_STYLE;
+//		long hMenu = parent.handle;
+//		OS.GetMenuInfo (hMenu, lpcmi);
+//		if ((lpcmi.dwStyle & OS.MNS_CHECKORBMP) == 0) {
+//			for (MenuItem item : parent.getItems ()) {
+//				if (item.image != null) {
+//					Rectangle rect = item.image.getBoundsInPixels ();
+//					width = Math.max (width, rect.width);
+//				}
+//			}
+//		}
+//	}
+//	if (width != 0 || height != 0) {
+//		struct.itemWidth = width + MARGIN_WIDTH * 2;
+//		struct.itemHeight = height + MARGIN_HEIGHT * 2;
+//		OS.MoveMemory (lParam, struct, MEASUREITEMSTRUCT.sizeof);
+//	}
+//	return null;
+//}
 
 private Point calculateRenderedTextSize() {
 	GC gc = new GC(this.getMenu().getShell());

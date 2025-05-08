@@ -4915,10 +4915,10 @@ LRESULT WM_COMMAND (long wParam, long lParam) {
 		Decorations shell = menuShell ();
 		if (shell.isEnabled ()) {
 			int id = OS.LOWORD (wParam);
-			MenuItem item = display.getMenuItem (id);
-			if (item != null && item.isEnabled ()) {
-				return item.wmCommandChild (wParam, lParam);
-			}
+//			MenuItem item = display.getMenuItem (id);
+//			if (item != null && item.isEnabled ()) {
+//				return item.wmCommandChild (wParam, lParam);
+//			}
 		}
 		return null;
 	}
@@ -4992,9 +4992,7 @@ LRESULT WM_DRAWITEM (long wParam, long lParam) {
 	DRAWITEMSTRUCT struct = new DRAWITEMSTRUCT ();
 	OS.MoveMemory (struct, lParam, DRAWITEMSTRUCT.sizeof);
 	if (struct.CtlType == OS.ODT_MENU) {
-		MenuItem item = display.getMenuItem (struct.itemID);
-		if (item == null) return null;
-		return item.wmDrawChild (wParam, lParam);
+		return null;
 	}
 	Control control = display.getControl (struct.hwndItem);
 	if (control == null) return null;
@@ -5250,9 +5248,7 @@ LRESULT WM_MEASUREITEM (long wParam, long lParam) {
 	MEASUREITEMSTRUCT struct = new MEASUREITEMSTRUCT ();
 	OS.MoveMemory (struct, lParam, MEASUREITEMSTRUCT.sizeof);
 	if (struct.CtlType == OS.ODT_MENU) {
-		MenuItem item = display.getMenuItem (struct.itemID);
-		if (item == null) return null;
-		return item.wmMeasureChild (wParam, lParam);
+		return null;
 	}
 	long hwnd = OS.GetDlgItem (handle, struct.CtlID);
 	Control control = display.getControl (hwnd);
@@ -5523,8 +5519,8 @@ LRESULT WM_SYSCOMMAND (long wParam, long lParam) {
 	if ((wParam & 0xF000) == 0) {
 		Decorations shell = menuShell ();
 		if (shell.isEnabled ()) {
-			MenuItem item = display.getMenuItem (OS.LOWORD (wParam));
-			if (item != null) item.wmCommandChild (wParam, lParam);
+//			MenuItem item = display.getMenuItem (OS.LOWORD (wParam));
+//			if (item != null) item.wmCommandChild (wParam, lParam);
 		}
 		return LRESULT.ZERO;
 	}
@@ -5707,7 +5703,7 @@ LRESULT WM_TOUCH (long wParam, long lParam) {
 LRESULT WM_TIMER (long wParam, long lParam) {
 	if (wParam == Menu.ID_TOOLTIP_TIMER && activeMenu != null) {
 		OS.KillTimer (this.handle, Menu.ID_TOOLTIP_TIMER);
-		activeMenu.wmTimer (wParam, lParam);
+//		activeMenu.wmTimer (wParam, lParam);
 	}
 	return null;
 }
