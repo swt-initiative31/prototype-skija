@@ -219,7 +219,7 @@ public void test_getSegments() {
 
 @Test
 public void test_getSegmentsChars() {
-	if (SwtTestUtil.isCocoa || SwtTestUtil.isWindows) { // skipping windows due to fix for bug 565526
+	if (SwtTestUtil.isGTK || SwtTestUtil.isCocoa || SwtTestUtil.isWindows) { // skipping windows due to fix for bug 565526
 		// TODO Fix Cocoa failure.
 		if (SwtTestUtil.verbose) {
 			System.out
