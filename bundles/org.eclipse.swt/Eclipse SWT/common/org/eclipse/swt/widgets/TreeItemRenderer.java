@@ -19,6 +19,7 @@ public class TreeItemRenderer {
 	private static final int rightMargin = DEFAULT_MARGIN;
 	private static final int topMargin = DEFAULT_MARGIN_UP_DOWN;
 	private static final int bottomMargin = DEFAULT_MARGIN_UP_DOWN;
+	private static final int INDENT_WIDTH = 10;
 
 	private final TreeItem item;
 	private boolean selected;
@@ -28,6 +29,7 @@ public class TreeItemRenderer {
 	private final Map<Integer, Point> computedCellSizes = new HashMap<>();
 	private final Map<Integer, Rectangle> internalComputedCellTextBounds = new HashMap<>();
 	private Point computedSize;
+	Rectangle arrowBounds;
 
 	public TreeItemRenderer(TreeItem tableItem) {
 		this.item = tableItem;
@@ -54,6 +56,7 @@ public class TreeItemRenderer {
 			this.hovered = false;
 		}
 
+		drawArrow(gc);
 		drawCheckbox(gc);
 
 		Tree parent = getParent();
@@ -69,6 +72,21 @@ public class TreeItemRenderer {
 		gc.setBackground(bgBefore);
 	}
 
+	private void drawArrow(GC gc) {
+
+		var itemBounds = item.getFullBounds();
+
+		this.arrowBounds = new Rectangle(itemBounds.x + 5, itemBounds.y + 3, 20, 20);
+
+		var prev = gc.getBackground();
+
+		gc.setBackground(item.getDisplay().getSystemColor(SWT.COLOR_CYAN));
+		gc.fillRectangle(this.arrowBounds);
+
+		gc.setBackground(prev);
+
+	}
+
 	private Tree getParent() {
 		return item.getParent();
 	}
@@ -79,7 +97,7 @@ public class TreeItemRenderer {
 
 		var itemBounds = item.getFullBounds();
 
-		this.checkboxBounds = new Rectangle(itemBounds.x + 5, itemBounds.y + 3, 20, 20);
+		this.checkboxBounds = new Rectangle(arrowBounds.x + arrowBounds.width + 5, itemBounds.y + 3, 20, 20);
 
 		gc.drawRectangle(this.checkboxBounds);
 		if (item.getChecked()) {
@@ -179,9 +197,11 @@ public class TreeItemRenderer {
 			gc.fillRectangle(b);
 		}
 
-		int currentWidthPosition = b.x + leftMargin;
 
-		int xPosition = currentWidthPosition;
+		int xPosition = b.x + leftMargin;
+
+		xPosition += INDENT_WIDTH * item.getIndent();
+
 		int yPosition = b.y + topMargin;
 
 		var image = item.getImage();
@@ -198,7 +218,7 @@ public class TreeItemRenderer {
 			if (Tree.DRAW_IMAGES) {
 				gc.drawImage(image, xPosition, yPosition);
 			}
-			currentWidthPosition += image.getBounds().width + GAP;
+			xPosition += image.getBounds().width + GAP;
 		}
 
 		var prevFG = gc.getForeground();
@@ -207,7 +227,6 @@ public class TreeItemRenderer {
 			gc.setForeground(fgCol);
 		}
 
-		xPosition = currentWidthPosition;
 		yPosition = b.y + topMargin;
 
 		if (Tree.FILL_TEXT_AREAS) {
@@ -220,7 +239,7 @@ public class TreeItemRenderer {
 		}
 
 		if (Tree.DRAW_TEXTS) {
-			gc.drawText(item.getText(), currentWidthPosition, b.y + topMargin);
+			gc.drawText(item.getText(), xPosition, b.y + topMargin);
 		}
 
 		gc.setForeground(prevFG);
@@ -332,6 +351,7 @@ public class TreeItemRenderer {
 			Point textExtent = getParent().computeTextExtent(item.getText());
 			lineHeight = textExtent.y;
 			width += textExtent.x;
+			width += INDENT_WIDTH * item.getIndent();
 		}
 
 		this.computedSize = new Point(width, height);

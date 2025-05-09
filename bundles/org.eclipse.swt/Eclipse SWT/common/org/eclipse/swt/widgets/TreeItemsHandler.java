@@ -73,6 +73,7 @@ class TreeItemsHandler {
 		var fgBef = gc.getForeground();
 
 		this.lastVisibleElementIndex = -1;
+		TreeItem lastIteration = null;
 
 		for (int i = tree.getTopIndex(); i < tree.getItemCount(); i++) {
 			var item = tree.getItem(i);
@@ -81,7 +82,9 @@ class TreeItemsHandler {
 				tree.checkData(item, i, false);
 			}
 
-			item.doPaint(gc);
+			item.setLastIteration(lastIteration);
+
+			lastIteration = paintItem(item, gc, null);
 
 			final Rectangle bounds = item.getFullBounds();
 			if (bounds.y + bounds.height > itemsArea.y + itemsArea.height) {
@@ -95,6 +98,21 @@ class TreeItemsHandler {
 		}
 
 		gc.setForeground(fgBef);
+	}
+
+	private TreeItem paintItem(TreeItem item, GC gc, TreeItem lastIteration) {
+
+		item.setLastIteration(lastIteration);
+		item.doPaint(gc);
+		lastIteration = item;
+		var its = item.getItems();
+		if (its != null && its.length > 0)
+			for (var it : its) {
+				it.setLastIteration(lastIteration);
+				lastIteration = paintItem(it, gc, lastIteration);
+			}
+
+		return lastIteration;
 	}
 
 	public Point getSize() {

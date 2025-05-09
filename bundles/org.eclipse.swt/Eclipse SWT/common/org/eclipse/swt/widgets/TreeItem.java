@@ -48,6 +48,8 @@ public class TreeItem extends Item {
 
 	Tree parent;
 	TreeItem parentItem;
+	int indents = -1;
+	private java.util.List<TreeItem> itemsList = new ArrayList<>();
 	String[] strings;
 	Image[] images;
 	Font font;
@@ -62,7 +64,6 @@ public class TreeItem extends Item {
 	private Point location;
 	private Rectangle bounds;
 
-
 	// TODO implement alignment
 	/** the alignment. Either CENTER, RIGHT, LEFT. Default is LEFT */
 	private int align = SWT.LEFT;
@@ -74,6 +75,10 @@ public class TreeItem extends Item {
 	private int itemIndex = -2;
 
 	private final TreeItemRenderer renderer = new TreeItemRenderer(this);
+
+	private boolean expanded;
+
+	private TreeItem lastIteration;
 
 	/**
 	 * Constructs a new instance of this class given its parent (which must be a
@@ -321,12 +326,29 @@ public class TreeItem extends Item {
 		super(rootItem, style, index);
 		parent = rootItem.getParent();
 		parentItem = rootItem;
+
+		if (index < 0 || index > parentItem.getItemCount())
+			error(SWT.ERROR_INVALID_RANGE);
+
+		parentItem.createItem(this, index);
+
+	}
+
+	private void createItem(TreeItem treeItem, int index) {
+		this.itemsList.add(index, treeItem);
+	}
+
+	private void createItem(TreeItem treeItem) {
+		this.itemsList.add(treeItem);
 	}
 
 	public TreeItem(TreeItem rootItem, int style) {
 		super(rootItem, style);
 		parent = rootItem.getParent();
 		parentItem = rootItem;
+
+		parentItem.createItem(this);
+
 	}
 
 	static Tree checkNull(Tree control) {
@@ -447,6 +469,8 @@ public class TreeItem extends Item {
 			shift = Tree.Tree_CHECKBOX_RIGHT_SHIFT;
 		}
 
+		shift += Tree.Tree_ARROWBOX_RIGHT_SHIFT;
+
 		if (getParent().columnsExist()) {
 			width = width - shift;
 			width = Math.max(0, width);
@@ -460,7 +484,15 @@ public class TreeItem extends Item {
 
 	private int getItemIndex() {
 		if (this.itemIndex == -2) {
-			this.itemIndex = parent.indexOf(this);
+
+			if (parentItem == null) {
+				this.itemIndex = parent.indexOf(this);
+				return this.itemIndex;
+			} else {
+				this.itemIndex = parentItem.indexOf(this);
+				return this.itemIndex;
+			}
+
 		}
 		return this.itemIndex;
 
@@ -505,32 +537,55 @@ public class TreeItem extends Item {
 
 	private void calculateLocation() {
 		int index = getItemIndex();
+		if (parentItem == null) {
 
-		final int topIndex = getParent().getTopIndex();
-		if (topIndex == index) {
-			setLocation(getParent().getTopIndexItemPosition());
-		} else if (topIndex < index) {
-			for (int i = topIndex; i < index; i = Math.min(i + 1000, index)) {
-				var it = getParent()._getItem(i, false);
-				it.getLocation();
+			final int topIndex = getParent().getTopIndex();
+			if (topIndex == index) {
+				setLocation(getParent().getTopIndexItemPosition());
+			} else if (topIndex < index) {
+				for (int i = topIndex; i < index; i = Math.min(i + 1000, index)) {
+					var it = getParent()._getItem(i, false);
+					it.getLocation();
+				}
+
+				var prevItem = getParent().getItem(index - 1);
+				var prevBounds = prevItem.getLocation();
+				int fullHeightDiff = TreeItemsHandler.getItemsHeight(prevItem);
+				setLocation(new Point(prevBounds.x, prevBounds.y + fullHeightDiff));
+			} else {
+				for (int i = topIndex; i > index; i = Math.max(i - 1000, index)) {
+					var it = getParent().getItem(i);
+					it.getLocation();
+				}
+
+				var prevItem = getParent().getItem(index + 1);
+				var prevBounds = prevItem.getLocation();
+				int fullHeightDiff = TreeItemsHandler.getItemsHeight(this);
+				setLocation(new Point(prevBounds.x, prevBounds.y - fullHeightDiff));
 			}
+			topIndexAtCalculation = topIndex;
 
-			var prevItem = getParent().getItem(index - 1);
-			var prevBounds = prevItem.getLocation();
-			int fullHeightDiff = TreeItemsHandler.getItemsHeight(prevItem);
-			setLocation(new Point(prevBounds.x, prevBounds.y + fullHeightDiff));
-		} else {
-			for (int i = topIndex; i > index; i = Math.max(i - 1000, index)) {
-				var it = getParent().getItem(i);
-				it.getLocation();
-			}
-
-			var prevItem = getParent().getItem(index + 1);
-			var prevBounds = prevItem.getLocation();
-			int fullHeightDiff = TreeItemsHandler.getItemsHeight(this);
-			setLocation(new Point(prevBounds.x, prevBounds.y - fullHeightDiff));
+			return;
 		}
-		topIndexAtCalculation = topIndex;
+
+		var currentIndex = parentItem.indexOf(this);
+		TreeItem prevItem = null;
+
+		if (lastIteration == null) {
+
+		if (currentIndex == 0) {
+			prevItem = parentItem;
+		} else {
+			prevItem = parentItem.getItem(currentIndex - 1);
+		}
+	} else {
+		prevItem = lastIteration;
+	}
+
+		var prevBounds = prevItem.getLocation();
+		int fullHeightDiff = TreeItemsHandler.getItemsHeight(prevItem);
+		setLocation(new Point(prevBounds.x, prevBounds.y + fullHeightDiff));
+
 	}
 
 	private void setLocation(Point l) {
@@ -540,7 +595,6 @@ public class TreeItem extends Item {
 	Point getSize() {
 		return renderer.computeSize(false);
 	}
-
 
 	/**
 	 * Returns a rectangle describing the receiver's size and location relative to
@@ -1634,6 +1688,10 @@ public class TreeItem extends Item {
 		}
 	}
 
+	boolean isInArrowArea(Point p) {
+		return renderer.arrowBounds != null && renderer.arrowBounds.contains(p);
+	}
+
 	boolean isInCheckArea(Point p) {
 		return renderer.checkboxBounds != null && renderer.checkboxBounds.contains(p);
 	}
@@ -1648,46 +1706,57 @@ public class TreeItem extends Item {
 	}
 
 	public boolean getExpanded() {
-		// TODO Auto-generated method stub
-		return false;
+		return true;
 	}
 
 	public TreeItem getItem(int i) {
-		// TODO Auto-generated method stub
-		return null;
+		return itemsList.get(i);
 	}
 
 	public int getItemCount() {
-		// TODO Auto-generated method stub
-		return 0;
+		return itemsList.size();
 	}
 
 	public TreeItem[] getItems() {
-		// TODO Auto-generated method stub
-		return null;
+		return itemsList.toArray(new TreeItem[0]);
 	}
 
 	public TreeItem getParentItem() {
-		// TODO Auto-generated method stub
-		return null;
+		return parentItem;
 	}
 
 	public int indexOf(TreeItem childItem) {
-		// TODO Auto-generated method stub
-		return 0;
+		return itemsList.indexOf(childItem);
+	}
+
+	int getIndent() {
+
+		if (parentItem == null)
+			return 0;
+		return parentItem.getIndent() + 1;
 	}
 
 	public void setExpanded(boolean b) {
-		// TODO Auto-generated method stub
+		this.expanded = b;
 
 	}
 
 	public void removeAll() {
-		// TODO Auto-generated method stub
+
+		java.util.List<TreeItem> list = new ArrayList<>();
+		list.addAll(itemsList);
+
+		itemsList.clear();
+
+		itemsList.stream().forEach(t -> t.dispose());
 
 	}
 
 	public void setItemCount(int perfNumItems) {
 		// TODO Auto-generated method stub
+	}
+
+	public void setLastIteration(TreeItem lastIteration) {
+		this.lastIteration = lastIteration;
 	}
 }
