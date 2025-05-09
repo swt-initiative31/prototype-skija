@@ -16,7 +16,7 @@ public class SnippetTextLayout2 {
 		Listener listener = event -> {
 			switch (event.type) {
 				case SWT.Paint :
-					layout.draw(event.gc, 10, 10);
+			layout.draw(event.gc, 0, 0);
 					break;
 				case SWT.Resize :
 					layout.setWidth(shell.getSize().x - 20);
