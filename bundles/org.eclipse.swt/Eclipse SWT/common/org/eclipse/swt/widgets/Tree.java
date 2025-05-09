@@ -110,6 +110,7 @@ public class Tree extends CustomComposite {
 
 	final static int Tree_INITIAL_RIGHT_SHIFT = 3;
 	final static int Tree_CHECKBOX_RIGHT_SHIFT = 35;
+	public static final int Tree_ARROWBOX_RIGHT_SHIFT = 35;
 
 	final static int Tree_GRID_LINE_SIZE = 1;
 
