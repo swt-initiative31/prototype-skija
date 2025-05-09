@@ -295,33 +295,32 @@ public class Text extends NativeBasedCustomScrollable {
 	}
 
 	private Point computeTextSize() {
-		GC gc = new GC(this);
-		gc.setFont(getFont());
-		int width = 0, height = 0;
-		if ((style & SWT.SINGLE) != 0) {
-			String str = model.getLines()[0];
-			Point size = gc.textExtent(str);
-			if (str.length() > 0) {
-				width = (int) Math.ceil(size.x);
+		return Drawing.measure(this, gc -> {
+			gc.setFont(getFont());
+			int width = 0, height = 0;
+			if ((style & SWT.SINGLE) != 0) {
+				String str = model.getLines()[0];
+				Point size = gc.textExtent(str);
+				if (str.length() > 0) {
+					width = (int)Math.ceil(size.x);
+				}
+				height = (int)Math.ceil(size.y);
+			} else {
+				Point size = null;
+				for (String line : model.getLines()) {
+					size = gc.textExtent(line);
+					width = Math.max(width, size.x);
+				}
+				height = size.y * model.getLineCount();
+				if (horizontalBar != null) {
+					height += horizontalBar.getSize().y;
+				}
+				if (verticalBar != null) {
+					width += verticalBar.getSize().x;
+				}
 			}
-			height = (int) Math.ceil(size.y);
-		} else {
-			Point size = null;
-			for (String line : model.getLines()) {
-				size = gc.textExtent(line);
-				width = Math.max(width, size.x);
-			}
-			height = size.y * model.getLineCount();
-			if (horizontalBar != null) {
-				height += horizontalBar.getSize().y;
-			}
-			if (verticalBar != null) {
-				width += verticalBar.getSize().x;
-			}
-		}
-		gc.dispose();
-
-		return new Point(width, height);
+			return new Point(width, height);
+		});
 	}
 
 	private void selectionChanged() {
@@ -330,33 +329,33 @@ public class Text extends NativeBasedCustomScrollable {
 	}
 
 	private void keepCaretInVisibleArea() {
-		GC gc = new GC(this);
-		Point caretLocation = getLocationByOffset(model.getCaretOffset(), gc);
-		Rectangle visibleArea = renderer.getVisibleArea();
+		Drawing.measure(this, gc -> {
+			Point caretLocation = getLocationByOffset(model.getCaretOffset(), gc);
+			Rectangle visibleArea = renderer.getVisibleArea();
 
-		if (horizontalBar != null) {
-			if (caretLocation.x < visibleArea.x) {
-				horizontalBar.setSelection(caretLocation.x);
-			} else {
-				int maxVisibleAreaWidth = visibleArea.width - 5;
-				if (caretLocation.x > visibleArea.x + maxVisibleAreaWidth) {
-					horizontalBar.setSelection(caretLocation.x - maxVisibleAreaWidth);
+			if (horizontalBar != null) {
+				if (caretLocation.x < visibleArea.x) {
+					horizontalBar.setSelection(caretLocation.x);
+				} else {
+					int maxVisibleAreaWidth = visibleArea.width - 5;
+					if (caretLocation.x > visibleArea.x + maxVisibleAreaWidth) {
+						horizontalBar.setSelection(caretLocation.x - maxVisibleAreaWidth);
+					}
 				}
 			}
-		}
 
-		if (verticalBar != null) {
-			if (caretLocation.y < visibleArea.y) {
-				verticalBar.setSelection(caretLocation.y);
-			} else {
-				int maxVisibleAreaHeight = visibleArea.height - renderer.getLineHeight(gc);
-				if (caretLocation.y > visibleArea.y + maxVisibleAreaHeight) {
-					verticalBar.setSelection(caretLocation.y - maxVisibleAreaHeight);
+			if (verticalBar != null) {
+				if (caretLocation.y < visibleArea.y) {
+					verticalBar.setSelection(caretLocation.y);
+				} else {
+					int maxVisibleAreaHeight = visibleArea.height - renderer.getLineHeight(gc);
+					if (caretLocation.y > visibleArea.y + maxVisibleAreaHeight) {
+						verticalBar.setSelection(caretLocation.y - maxVisibleAreaHeight);
+					}
 				}
 			}
-		}
-
-		gc.dispose();
+			return null;
+		});
 	}
 
 	protected void focusLost(Event e) {
@@ -451,6 +450,7 @@ public class Text extends NativeBasedCustomScrollable {
 
 	private void onTraverse(Event e) {
 		switch (e.detail) {
+		case SWT.TRAVERSE_TAB_PREVIOUS -> e.doit = true;
 		case SWT.TRAVERSE_TAB_NEXT -> {
 			e.doit = (style & SWT.MULTI) == 0 || (e.stateMask & SWT.MODIFIER_MASK & ~SWT.SHIFT) == SWT.MOD1;
 		}
@@ -467,39 +467,37 @@ public class Text extends NativeBasedCustomScrollable {
 		int x = Math.max(selectedX + visibleArea.x, 0);
 		int y = Math.max(selectedY + visibleArea.y, 0);
 
-		GC gc = new GC(this);
-		String[] textLines = model.getLines();
-		int clickedLine = Math.min(y / renderer.getLineHeight(gc), textLines.length - 1);
-		int selectedLine = Math.min(clickedLine, textLines.length - 1);
-		String text = textLines[selectedLine];
-		if (clickedLine == selectedLine && text.length() > 0) {
-			int before = 0;
-			int after = text.length();
-			while (true) {
-				int middle = (before + after) / 2;
-				final int middleX = renderer.getLocationByTextLocation(new TextLocation(selectedLine, middle), gc).x;
-				if (middleX > x) {
-					after = middle;
-					continue;
-				}
+		return Drawing.measure(this, gc -> {
+			String[] textLines = model.getLines();
+			int clickedLine = Math.min(y / renderer.getLineHeight(gc), textLines.length - 1);
+			int selectedLine = Math.min(clickedLine, textLines.length - 1);
+			String text = textLines[selectedLine];
+			if (clickedLine == selectedLine && text.length() > 0) {
+				int before = 0;
+				int after = text.length();
+				while (true) {
+					int middle = (before + after) / 2;
+					final int middleX = renderer.getLocationByTextLocation(new TextLocation(selectedLine, middle), gc).x;
+					if (middleX > x) {
+						if (after > before + 1) {
+							after = middle;
+							continue;
+						}
+						return new TextLocation(clickedLine, 0);
+					}
 
-				if (after - middle == 1) {
-					final int afterX = renderer.getLocationByTextLocation(new TextLocation(selectedLine, after), gc).x;
-					if (afterX - x < x - middleX) {
-						text = text.substring(0, after);
+					if (after - middle <= 1) {
+						final int afterX = renderer.getLocationByTextLocation(new TextLocation(selectedLine, after), gc).x;
+						if (afterX - x < x - middleX) {
+							return new TextLocation(clickedLine, after);
+						}
+						return new TextLocation(clickedLine, middle);
 					}
-					else {
-						text = text.substring(0, middle);
-					}
-					break;
+					before = middle;
 				}
-				before = middle;
 			}
-		}
-		gc.dispose();
-
-		TextLocation location = new TextLocation(clickedLine, text.length());
-		return location;
+			return new TextLocation(clickedLine, text.length());
+		});
 	}
 
 	protected void widgetDisposed(Event e) {

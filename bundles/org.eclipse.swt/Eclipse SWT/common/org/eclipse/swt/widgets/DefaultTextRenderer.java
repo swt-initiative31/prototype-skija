@@ -28,7 +28,7 @@ public class DefaultTextRenderer extends TextRenderer {
 
 		final int style = text.getStyle();
 		final boolean editable = text.getEditable();
-		if (!enabled || ((style & SWT.BORDER) == 1 && !editable)) {
+		if (!enabled || !editable) {
 			gc.setBackground(getColor(COLOR_BACKGROUND_READONLY));
 		}
 
