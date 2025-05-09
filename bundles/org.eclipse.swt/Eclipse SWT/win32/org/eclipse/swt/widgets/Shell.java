@@ -1360,6 +1360,18 @@ public void open () {
 			setFocus ();
 		}
 	}
+
+	if (!SWT.NATIVE_DECORATIONS) {
+		forceActive();
+		forceFocus();
+
+		sendEvent(SWT.Activate);
+		var children = getChildren();
+		if (children != null && children.length > 0)
+			getChildren()[0].setFocus();
+
+	}
+
 }
 
 @Override
@@ -1516,6 +1528,9 @@ public void setActive () {
 	if (!isVisible ()) return;
 	bringToTop ();
 	// widget could be disposed at this point
+
+	if (!SWT.NATIVE_DECORATIONS)
+		sendEvent(SWT.Activate);
 }
 
 void setActiveControl (Control control) {
@@ -2726,4 +2741,27 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 	}
 	shell.layout (null, SWT.DEFER | SWT.ALL | SWT.CHANGED);
 }
+
+@Override
+public void dispose() {
+	if (isDisposed())
+		return;
+
+	var sh = getDisplay().getShells();
+
+	super.dispose();
+
+	if (!SWT.NATIVE_DECORATIONS) {
+
+		if (sh != null && sh.length > 0) {
+			for (var s : sh) {
+				if (s != this && !s.isDisposed())
+				s.setActive();
+			}
+		}
+
+	}
+
+}
+
 }
