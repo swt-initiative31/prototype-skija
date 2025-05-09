@@ -1745,6 +1745,11 @@ LRESULT wmChar (long hwnd, long wParam, long lParam) {
 LRESULT wmContextMenu (long hwnd, long wParam, long lParam) {
 	if (wParam != hwnd) return null;
 
+	// if SWT uses custom menus
+	if (!SWT.NATIVE_MENUS) {
+	    return null;
+	}
+	
 	/*
 	* Feature in Windows.  When the user presses  WM_NCRBUTTONUP,
 	* a WM_CONTEXTMENU message is generated.  This happens when

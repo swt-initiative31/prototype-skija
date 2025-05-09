@@ -629,4 +629,9 @@ public void setVisible (boolean visible) {
 	}
 }
 
+public void setLocationInPixels(int x2, int y2) {
+	setLocation(x2, y2);
+
+}
+
 }

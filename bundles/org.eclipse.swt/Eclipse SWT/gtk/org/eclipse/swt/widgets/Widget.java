@@ -2750,4 +2750,8 @@ void notifyDisposalTracker() {
 	}
 }
 
+Menu getMenu() {
+	return null;
+}
+
 }
