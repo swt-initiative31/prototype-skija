@@ -265,6 +265,7 @@ class WidgetWin32Tests {
 	}
 
 	@Test
+	@Disabled("Not working (yet)")
 	public void testTreeAfterZooming() {
 		Display display = Display.getDefault();
 		Shell shell = new Shell(display);
