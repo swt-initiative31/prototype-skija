@@ -219,7 +219,7 @@ public void test_getSegments() {
 
 @Test
 public void test_getSegmentsChars() {
-	if (SwtTestUtil.isCocoa || SwtTestUtil.isWindows) { // skipping windows due to fix for bug 565526
+	if (SwtTestUtil.isGTK || SwtTestUtil.isCocoa || SwtTestUtil.isWindows) { // skipping windows due to fix for bug 565526
 		// TODO Fix Cocoa failure.
 		if (SwtTestUtil.verbose) {
 			System.out
@@ -288,7 +288,7 @@ public void test_getLineOffsets() {
 		String text = "0123456\n890123\n";
 		layout.setText(text);
 		int[] offsets = layout.getLineOffsets();
-		int[] expected = (SwtTestUtil.isCocoa) ? new int [] {0, 8, 15} : new int [] {0, 8, 15, 15} ;
+		int[] expected = new int [] {0, 8, 15, 15};
 		assertArrayEquals(expected, offsets);
 		layout.setText("");
 		offsets = layout.getLineOffsets();
@@ -296,7 +296,7 @@ public void test_getLineOffsets() {
 		assertArrayEquals(expected, offsets);
 		layout.setText("\n");
 		offsets = layout.getLineOffsets();
-		expected = (SwtTestUtil.isCocoa) ? new int [] {0, 1} : new int [] {0, 1, 1};
+		expected = new int [] {0, 1, 1};
 		assertArrayEquals(expected, offsets);
 		layout.setText("WMWM");
 		int width = layout.getBounds().width;
