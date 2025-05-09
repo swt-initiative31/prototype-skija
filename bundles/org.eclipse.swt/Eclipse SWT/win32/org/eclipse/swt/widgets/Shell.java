@@ -288,6 +288,12 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
 	if (!SWT.NATIVE_DECORATIONS) {
 		style = SWT.NO_MOVE | SWT.NO_TRIM;
 
+		if ((outerStyle & SWT.V_SCROLL) != 0)
+			style |= SWT.V_SCROLL;
+
+		if ((outerStyle & SWT.H_SCROLL) != 0)
+			style |= SWT.H_SCROLL;
+
 		if (this instanceof MenuWindow)
 			style |= SWT.DOUBLE_BUFFERED;
 
@@ -1981,7 +1987,16 @@ void setParent () {
 @Override
 public void setRegion (Region region) {
 	checkWidget ();
-	if ((style & SWT.NO_TRIM) == 0) return;
+
+	if (!SWT.NATIVE_DECORATIONS) {
+		if ((outerStyle & SWT.NO_TRIM) == 0)
+			return;
+	}
+
+	if ((style & SWT.NO_TRIM) == 0) {
+		return;
+	}
+
 	if (region != null) {
 		Rectangle bounds = region.getBounds ();
 		setSize (bounds.x + bounds.width, bounds.y + bounds.height);

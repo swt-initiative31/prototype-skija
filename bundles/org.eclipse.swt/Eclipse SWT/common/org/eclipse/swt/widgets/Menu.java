@@ -457,7 +457,7 @@ public class Menu extends Widget {
 	 */
 	public MenuItem getDefaultItem() {
 		checkWidget();
-		return null;
+		return this.defaultItem;
 	}
 
 	/**

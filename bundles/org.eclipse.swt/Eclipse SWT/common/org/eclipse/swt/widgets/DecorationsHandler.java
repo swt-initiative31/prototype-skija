@@ -157,6 +157,15 @@ class DecorationsHandler implements Listener {
 
 	private void handleMouseDown(Event e) {
 
+		if (e.widget == null || (e.widget instanceof Control c && !c.isVisible()) || e.width == 0 || e.height == 0)
+			return;
+
+		var boud = decorations.getBounds();
+		if (boud.width == 0 || boud.height == 0) {
+
+			return;
+		}
+
 		if (onLeft(e)) {
 			mouseDownLeft = true;
 		} else if (onRight(e)) {

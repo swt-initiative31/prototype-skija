@@ -905,6 +905,8 @@ public class MenuItem extends Item {
 			oldMenu.cascade = null;
 		this.menu = menu;
 
+		this.menu.cascade = this;
+
 //	long hMenu = parent.handle;
 //	MENUITEMINFO info = new MENUITEMINFO ();
 //	info.cbSize = MENUITEMINFO.sizeof;
