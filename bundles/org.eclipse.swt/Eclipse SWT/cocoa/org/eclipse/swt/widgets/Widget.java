@@ -2449,4 +2449,25 @@ void notifyDisposalTracker() {
 	}
 }
 
+/**
+ * Returns the receiver's cascade menu if it has one or null if it does not.
+ * Only <code>CASCADE</code> menu items can have a pull down menu. The sequence
+ * of key strokes, button presses and/or button releases that are used to
+ * request a pull down menu is platform specific.
+ *
+ * @return the receiver's menu
+ *
+ * @exception SWTException
+ *                         <ul>
+ *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+ *                         disposed</li>
+ *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
+ *                         the thread that created the receiver</li>
+ *                         </ul>
+ */
+public Menu getMenu() {
+	// TODO Auto-generated method stub
+	return null;
+}
+
 }
