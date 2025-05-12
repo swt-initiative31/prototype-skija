@@ -336,7 +336,7 @@ public class TreeItem extends Item {
 	private void createItem(TreeItem treeItem, int index) {
 		this.itemsList.add(index, treeItem);
 
-		parent.synchronizeArrangements();
+		parent.synchronizeArrangements(true);
 
 	}
 
@@ -1730,7 +1730,20 @@ public class TreeItem extends Item {
 			return;
 		}
 
-		this.expanded = b;
+		if (this.expanded != b)
+			this.expanded = b;
+		else
+			return;
+
+		Event event = new Event();
+		event.item = this;
+
+		if (this.expanded) {
+			getParent().notifyListeners(SWT.Expand, event);
+		} else {
+			getParent().notifyListeners(SWT.Collapse, event);
+
+		}
 
 	}
 
@@ -1751,10 +1764,24 @@ public class TreeItem extends Item {
 
 	public boolean toggleExpand() {
 
-		if (getItemCount() == 0)
+		if (getItemCount() == 0) {
+			this.expanded = false;
 			return false;
+		}
 
 		this.expanded = !this.expanded;
+
+		Event event = new Event();
+		event.item = this;
+
+		if (this.expanded) {
+			notifyListeners(SWT.Expand, event);
+			getParent().notifyListeners(SWT.Expand, event);
+		} else {
+			notifyListeners(SWT.Collapse, event);
+			getParent().notifyListeners(SWT.Collapse, event);
+
+		}
 
 		return true;
 	}
