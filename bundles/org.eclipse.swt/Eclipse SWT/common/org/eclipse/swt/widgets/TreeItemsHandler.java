@@ -73,6 +73,7 @@ class TreeItemsHandler {
 		var fgBef = gc.getForeground();
 
 		this.lastVisibleElementIndex = -1;
+		tree.synchronizeArrangements(false);
 		var list = tree.treeItemsArrangement;
 
 		for (int i = tree.getTopIndex(); i < list.size(); i++) {
@@ -155,17 +156,19 @@ class TreeItemsHandler {
 		}
 
 		int topIndex = tree.getTopIndex();
-			for (int i = topIndex; i < Math.min(this.lastVisibleElementIndex + ITEMS_OVERLAY,
-					tree.treeItemsArrangement.size()); i++) {
-				var item = tree.treeItemsArrangement.get(i);
-				if (item.getBounds().contains(p)) {
-					tree.mouseHoverElement = item;
-					item.redraw();
-					return;
-				}
-
+		for (int i = topIndex; i < Math.min(this.lastVisibleElementIndex + ITEMS_OVERLAY,
+				tree.treeItemsArrangement.size()); i++) {
+			var item = tree.treeItemsArrangement.get(i);
+			if (item.isDisposed())
+				continue;
+			if (item.getBounds().contains(p)) {
+				tree.mouseHoverElement = item;
+				item.redraw();
+				return;
 			}
+
 		}
+	}
 
 	public int getLastVisibleElementIndex() {
 		return this.lastVisibleElementIndex;

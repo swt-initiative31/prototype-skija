@@ -461,7 +461,7 @@ public class Tree extends CustomComposite {
 
 					if (it.isInArrowArea(p)) {
 						if (it.toggleExpand()) {
-							synchronizeArrangements();
+							synchronizeArrangements(true);
 							break;
 						}
 					}
@@ -943,7 +943,7 @@ public class Tree extends CustomComposite {
 			}
 		}
 
-		synchronizeArrangements();
+		synchronizeArrangements(true);
 
 		if (!isVirtual()) {
 			updateScrollBarWithTextSize();
@@ -953,7 +953,7 @@ public class Tree extends CustomComposite {
 		}
 	}
 
-	void synchronizeArrangements() {
+	void synchronizeArrangements(boolean redraw) {
 
 		boolean treeEmpty = treeItemsArrangement.isEmpty();
 
@@ -974,12 +974,15 @@ public class Tree extends CustomComposite {
 			e.detail = 1;
 			notifyListeners(SWT.EmptinessChanged, e);
 		}
-		redraw();
+		if (redraw)
+			redraw();
 
 	}
 
 	private void addToArrangements(TreeItem i) {
 
+		if (i.isDisposed())
+			return;
 		this.treeItemsArrangement.add(i);
 
 		if (i.getExpanded()) {
@@ -1117,7 +1120,7 @@ public class Tree extends CustomComposite {
 		if (!isVirtual()) {
 			itemsList.remove(item);
 
-			synchronizeArrangements();
+			synchronizeArrangements(true);
 
 		}
 		// for virtual items, we have to take care, that these are not in
@@ -1455,8 +1458,9 @@ public class Tree extends CustomComposite {
 	}
 
 	TreeItem getItemInPixels(Point point) {
-		for (int i = getTopIndex(); i <= itemsHandler.getLastVisibleElementIndex(); i++) {
-			var it = getItem(i);
+		for (int i = getTopIndex(); i < Math.min(treeItemsArrangement.size(),
+				itemsHandler.getLastVisibleElementIndex() + 5); i++) {
+			var it = _getArrangementItem(i);
 			if (it != null && it.getBounds().contains(point)) {
 				return it;
 			}
@@ -1812,7 +1816,6 @@ public class Tree extends CustomComposite {
 	 */
 	public int indexOf(TreeItem item) {
 		checkWidget();
-
 		if (item == null)
 			error(SWT.ERROR_NULL_ARGUMENT);
 		if (isVirtual()) {
@@ -3189,12 +3192,17 @@ public class Tree extends CustomComposite {
 	}
 
 	public TreeItem getParentItem() {
-		// TODO Auto-generated method stub
-		return null;
+
+		if (itemsList.isEmpty())
+			return null;
+
+		return itemsList.get(0);
 	}
 
 	public void select(TreeItem jItem) {
-		// TODO Auto-generated method stub
+
+		selectedTreeItems.clear();
+		selectedTreeItems.add(jItem);
 
 	}
 
