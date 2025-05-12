@@ -116,10 +116,12 @@ public class Tree extends CustomComposite {
 
 	private java.util.List<TreeItem> itemsList = new ArrayList<>();
 	private TreeMap<Integer, TreeItem> virtualItemsList = new TreeMap<>();
-	TreeSet<TreeItem> selectedTreeItems = new TreeSet<>((o1, o2) -> Integer.compare(indexOf(o1), indexOf(o2)));
+	TreeSet<TreeItem> selectedTreeItems = new TreeSet<>(
+			(o1, o2) -> Integer.compare(arrangementIndexOf(o1), arrangementIndexOf(o2)));
 	// TODO implement focusHandling
 	private TreeItem focusItem;
 	Item mouseHoverElement;
+	List<TreeItem> treeItemsArrangement = new ArrayList<>();
 	private java.util.List<TreeColumn> columnsList = new ArrayList<>();
 
 	private TreeColumnsHandler columnsHandler = new TreeColumnsHandler(this);
@@ -437,8 +439,9 @@ public class Tree extends CustomComposite {
 		if (columnsHandler.getColumnsBounds().contains(e.x, e.y)) {
 			columnsHandler.handleMouseDown(e);
 		} else if (itemsHandler.getItemsClientArea().contains(e.x, e.y)) {
-			for (int i = getTopIndex(); i <= itemsHandler.getLastVisibleElementIndex(); i++) {
-				var it = getItem(i);
+			for (int i = getTopIndex(); i <= Math.min(treeItemsArrangement.size(),
+					itemsHandler.getLastVisibleElementIndex()); i++) {
+				var it = _getArrangementItem(i);
 
 				Rectangle b = it.getBounds();
 				if (b.contains(p)) {
@@ -453,13 +456,24 @@ public class Tree extends CustomComposite {
 						}
 					}
 				} else {
+
+					if (it.isInArrowArea(p)) {
+						if (it.toggleExpand()) {
+							synchronizeArrangements();
+							break;
+						}
+					}
+
 					if (it.isInCheckArea(p)) {
 						it.toggleCheck();
+						break;
 					}
 				}
 			}
 			redraw();
 		}
+
+		System.out.println("SelectedTreeItems: " + selectedTreeItems);
 	}
 
 	private void handleSelection() {
@@ -923,19 +937,9 @@ public class Tree extends CustomComposite {
 			} else {
 				itemsList.add(item);
 			}
-
-			if (index < topIndex) {
-				for (int i = 0; i < index; i++) {
-					itemsList.get(i).clearCache();
-				}
-			}
-
-			if (index >= topIndex) {
-				for (int i = index; i < itemsList.size(); i++) {
-					itemsList.get(i).clearCache();
-				}
-			}
 		}
+
+		synchronizeArrangements();
 
 		if (!isVirtual()) {
 			updateScrollBarWithTextSize();
@@ -943,6 +947,33 @@ public class Tree extends CustomComposite {
 		if ((index >= getTopIndex() && index <= itemsHandler.getLastVisibleElementIndex())) {
 			redraw();
 		}
+	}
+
+	void synchronizeArrangements() {
+
+		for (var i : treeItemsArrangement) {
+			i.clearCache();
+		}
+		this.treeItemsArrangement.clear();
+
+		for (var i : getItems()) {
+			addToArrangements(i);
+		}
+
+		redraw();
+
+	}
+
+	private void addToArrangements(TreeItem i) {
+
+		this.treeItemsArrangement.add(i);
+
+		if (i.getExpanded()) {
+			for (var it : i.getItems()) {
+				addToArrangements(it);
+			}
+		}
+
 	}
 
 	private boolean customHeaderDrawing() {
@@ -1692,9 +1723,13 @@ public class Tree extends CustomComposite {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
-	public int getTopIndex() {
+	int getTopIndex() {
 		checkWidget();
 		return topIndex;
+	}
+
+	public TreeItem getTopItem() {
+		return treeItemsArrangement.get(topIndex);
 	}
 
 	boolean hasChildren() {
@@ -1772,7 +1807,10 @@ public class Tree extends CustomComposite {
 			return -1;
 		}
 		return itemsList.indexOf(item);
+	}
 
+	int arrangementIndexOf(TreeItem item) {
+		return treeItemsArrangement.indexOf(item);
 	}
 
 	public int[] indicesOf(TreeItem[] items) {
@@ -3100,11 +3138,6 @@ public class Tree extends CustomComposite {
 
 	}
 
-	public TreeItem getTopItem() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 	public void removeTreeListener(TreeListener treeListener) {
 		// TODO Auto-generated method stub
 
@@ -3129,4 +3162,9 @@ public class Tree extends CustomComposite {
 		// TODO Auto-generated method stub
 
 	}
+
+	public TreeItem _getArrangementItem(int i) {
+		return treeItemsArrangement.get(i);
+	}
+
 }

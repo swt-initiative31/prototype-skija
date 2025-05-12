@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.swt.widgets;
 
+
 import java.util.*;
 import java.util.stream.*;
 
@@ -336,10 +337,13 @@ public class TreeItem extends Item {
 
 	private void createItem(TreeItem treeItem, int index) {
 		this.itemsList.add(index, treeItem);
+
+		parent.synchronizeArrangements();
+
 	}
 
 	private void createItem(TreeItem treeItem) {
-		this.itemsList.add(treeItem);
+		createItem(treeItem, getItemCount());
 	}
 
 	public TreeItem(TreeItem rootItem, int style) {
@@ -479,20 +483,13 @@ public class TreeItem extends Item {
 			x += shift;
 		}
 
+
 		return new Rectangle(x, full.y, width, full.height);
 	}
 
 	private int getItemIndex() {
 		if (this.itemIndex == -2) {
-
-			if (parentItem == null) {
-				this.itemIndex = parent.indexOf(this);
-				return this.itemIndex;
-			} else {
-				this.itemIndex = parentItem.indexOf(this);
-				return this.itemIndex;
-			}
-
+			this.itemIndex = parent.arrangementIndexOf(this);
 		}
 		return this.itemIndex;
 
@@ -537,55 +534,32 @@ public class TreeItem extends Item {
 
 	private void calculateLocation() {
 		int index = getItemIndex();
-		if (parentItem == null) {
 
-			final int topIndex = getParent().getTopIndex();
-			if (topIndex == index) {
-				setLocation(getParent().getTopIndexItemPosition());
-			} else if (topIndex < index) {
-				for (int i = topIndex; i < index; i = Math.min(i + 1000, index)) {
-					var it = getParent()._getItem(i, false);
-					it.getLocation();
-				}
-
-				var prevItem = getParent().getItem(index - 1);
-				var prevBounds = prevItem.getLocation();
-				int fullHeightDiff = TreeItemsHandler.getItemsHeight(prevItem);
-				setLocation(new Point(prevBounds.x, prevBounds.y + fullHeightDiff));
-			} else {
-				for (int i = topIndex; i > index; i = Math.max(i - 1000, index)) {
-					var it = getParent().getItem(i);
-					it.getLocation();
-				}
-
-				var prevItem = getParent().getItem(index + 1);
-				var prevBounds = prevItem.getLocation();
-				int fullHeightDiff = TreeItemsHandler.getItemsHeight(this);
-				setLocation(new Point(prevBounds.x, prevBounds.y - fullHeightDiff));
+		final int topIndex = getParent().getTopIndex();
+		if (topIndex == index) {
+			setLocation(getParent().getTopIndexItemPosition());
+		} else if (topIndex < index) {
+			for (int i = topIndex; i < index; i = Math.min(i + 1000, index)) {
+				var it = getParent()._getArrangementItem(i);
+				it.getLocation();
 			}
-			topIndexAtCalculation = topIndex;
 
-			return;
-		}
-
-		var currentIndex = parentItem.indexOf(this);
-		TreeItem prevItem = null;
-
-		if (lastIteration == null) {
-
-		if (currentIndex == 0) {
-			prevItem = parentItem;
+			var prevItem = getParent()._getArrangementItem(index - 1);
+			var prevBounds = prevItem.getLocation();
+			int fullHeightDiff = TreeItemsHandler.getItemsHeight(prevItem);
+			setLocation(new Point(prevBounds.x, prevBounds.y + fullHeightDiff));
 		} else {
-			prevItem = parentItem.getItem(currentIndex - 1);
+			for (int i = topIndex; i > index; i = Math.max(i - 1000, index)) {
+				var it = getParent()._getArrangementItem(i);
+				it.getLocation();
+			}
+
+			var prevItem = getParent()._getArrangementItem(index + 1);
+			var prevBounds = prevItem.getLocation();
+			int fullHeightDiff = TreeItemsHandler.getItemsHeight(this);
+			setLocation(new Point(prevBounds.x, prevBounds.y - fullHeightDiff));
 		}
-	} else {
-		prevItem = lastIteration;
-	}
-
-		var prevBounds = prevItem.getLocation();
-		int fullHeightDiff = TreeItemsHandler.getItemsHeight(prevItem);
-		setLocation(new Point(prevBounds.x, prevBounds.y + fullHeightDiff));
-
+		topIndexAtCalculation = topIndex;
 	}
 
 	private void setLocation(Point l) {
@@ -1706,7 +1680,7 @@ public class TreeItem extends Item {
 	}
 
 	public boolean getExpanded() {
-		return true;
+		return this.expanded;
 	}
 
 	public TreeItem getItem(int i) {
@@ -1723,6 +1697,21 @@ public class TreeItem extends Item {
 
 	public TreeItem getParentItem() {
 		return parentItem;
+	}
+
+	public TreeItem getRootItem() {
+
+		var element = this;
+
+		while (getParentItem() != null) {
+
+			if (element != getParentItem())
+				element = getParentItem();
+			return getParentItem();
+		}
+
+		return element;
+
 	}
 
 	public int indexOf(TreeItem childItem) {
@@ -1758,5 +1747,15 @@ public class TreeItem extends Item {
 
 	public void setLastIteration(TreeItem lastIteration) {
 		this.lastIteration = lastIteration;
+	}
+
+	public boolean toggleExpand() {
+
+		if (getItemCount() == 0)
+			return false;
+
+		this.expanded = !this.expanded;
+
+		return true;
 	}
 }
