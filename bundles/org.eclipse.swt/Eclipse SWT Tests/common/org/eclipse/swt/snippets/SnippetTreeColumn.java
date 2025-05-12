@@ -23,7 +23,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 
-public class SnippetTree {
+public class SnippetTreeColumn {
 
 	public static void main(String[] args) {
 		Display display = new Display();
@@ -31,6 +31,14 @@ public class SnippetTree {
 		shell.setText("SnippetTree");
 		shell.setLayout(new FillLayout());
 		final Tree tree = new Tree(shell, SWT.BORDER | SWT.CHECK | SWT.MULTI);
+
+		final TreeColumn c1 = new TreeColumn(tree, SWT.NONE);
+		final TreeColumn c2 = new TreeColumn(tree, SWT.NONE);
+
+		c1.setText("Name");
+		c1.setWidth(200);
+		c2.setText("Type");
+		c2.setWidth(100);
 		for (int i = 0; i < 2; i++) {
 			TreeItem iItem = new TreeItem(tree, 0);
 			iItem.setText("TreeItem (0) -" + i);
@@ -73,6 +81,8 @@ public class SnippetTree {
 
 	private static void printIndexOf(Tree tree, TreeItem i) {
 		System.out.println(i.getText() + "  " + tree.indexOf(i));
+
+		i.setText(1, "Dummy");
 
 		if (i.getExpanded() && i.getItems() != null) {
 			for (var it : i.getItems())

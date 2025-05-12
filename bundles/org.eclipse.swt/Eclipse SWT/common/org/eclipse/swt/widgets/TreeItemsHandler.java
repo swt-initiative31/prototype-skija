@@ -73,18 +73,16 @@ class TreeItemsHandler {
 		var fgBef = gc.getForeground();
 
 		this.lastVisibleElementIndex = -1;
-		TreeItem lastIteration = null;
+		var list = tree.treeItemsArrangement;
 
-		for (int i = tree.getTopIndex(); i < tree.getItemCount(); i++) {
-			var item = tree.getItem(i);
+		for (int i = tree.getTopIndex(); i < list.size(); i++) {
+			var item = list.get(i);
 
 			if (tree.isVirtual()) {
 				tree.checkData(item, i, false);
 			}
 
-			item.setLastIteration(lastIteration);
-
-			lastIteration = paintItem(item, gc, null);
+			item.doPaint(gc);
 
 			final Rectangle bounds = item.getFullBounds();
 			if (bounds.y + bounds.height > itemsArea.y + itemsArea.height) {
@@ -94,26 +92,26 @@ class TreeItemsHandler {
 		}
 
 		if (this.lastVisibleElementIndex == -1) {
-			this.lastVisibleElementIndex = tree.getItemCount() - 1;
+			this.lastVisibleElementIndex = list.size() - 1;
 		}
 
 		gc.setForeground(fgBef);
 	}
 
-	private TreeItem paintItem(TreeItem item, GC gc, TreeItem lastIteration) {
-
-		item.setLastIteration(lastIteration);
-		item.doPaint(gc);
-		lastIteration = item;
-		var its = item.getItems();
-		if (its != null && its.length > 0)
-			for (var it : its) {
-				it.setLastIteration(lastIteration);
-				lastIteration = paintItem(it, gc, lastIteration);
-			}
-
-		return lastIteration;
-	}
+//	private TreeItem paintItem(TreeItem item, GC gc) {
+//
+//		item.setLastIteration(lastIteration);
+//		item.doPaint(gc);
+//		lastIteration = item;
+//		var its = item.getItems();
+//		if (its != null && its.length > 0)
+//			for (var it : its) {
+//				it.setLastIteration(lastIteration);
+//				lastIteration = paintItem(it, gc, lastIteration);
+//			}
+//
+//		return lastIteration;
+//	}
 
 	public Point getSize() {
 		if (computedSize == null || this.itemsCountAtCalculation != tree.getItemCount()) {
@@ -156,12 +154,10 @@ class TreeItemsHandler {
 			item.redraw();
 		}
 
-		var items = tree.getItems();
 		int topIndex = tree.getTopIndex();
-		if (items != null) {
 			for (int i = topIndex; i < Math.min(this.lastVisibleElementIndex + ITEMS_OVERLAY,
-					tree.getItemCount()); i++) {
-				var item = tree.getItem(i);
+					tree.treeItemsArrangement.size()); i++) {
+				var item = tree.treeItemsArrangement.get(i);
 				if (item.getBounds().contains(p)) {
 					tree.mouseHoverElement = item;
 					item.redraw();
@@ -170,7 +166,6 @@ class TreeItemsHandler {
 
 			}
 		}
-	}
 
 	public int getLastVisibleElementIndex() {
 		return this.lastVisibleElementIndex;

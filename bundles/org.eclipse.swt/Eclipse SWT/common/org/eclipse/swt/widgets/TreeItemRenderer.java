@@ -40,8 +40,10 @@ public class TreeItemRenderer {
 
 		Color bgBefore = gc.getBackground();
 
+		System.out.println(getParent().selectedTreeItems);
 		if (getParent().selectedTreeItems.contains(item)) {
 			this.selected = true;
+			System.out.println("selected: " + item.getText());
 
 			gc.setBackground(Tree.SELECTION_COLOR);
 			gc.fillRectangle(b);
@@ -56,7 +58,7 @@ public class TreeItemRenderer {
 			this.hovered = false;
 		}
 
-		drawArrow(gc);
+		drawArrowArea(gc);
 		drawCheckbox(gc);
 
 		Tree parent = getParent();
@@ -72,19 +74,84 @@ public class TreeItemRenderer {
 		gc.setBackground(bgBefore);
 	}
 
-	private void drawArrow(GC gc) {
+	private void drawArrowArea(GC gc) {
 
 		var itemBounds = item.getFullBounds();
 
 		this.arrowBounds = new Rectangle(itemBounds.x + 5, itemBounds.y + 3, 20, 20);
 
 		var prev = gc.getBackground();
+		try {
 
-		gc.setBackground(item.getDisplay().getSystemColor(SWT.COLOR_CYAN));
-		gc.fillRectangle(this.arrowBounds);
+			gc.setBackground(item.getDisplay().getSystemColor(SWT.COLOR_CYAN));
+			gc.fillRectangle(this.arrowBounds);
 
-		gc.setBackground(prev);
+			if (item.getItemCount() == 0)
+				return;
 
+			if (item.getExpanded()) {
+
+				drawArrow(gc, this.arrowBounds, SWT.DOWN);
+
+			} else {
+				drawArrow(gc, this.arrowBounds, SWT.RIGHT);
+			}
+		} finally {
+			gc.setBackground(prev);
+		}
+
+	}
+
+	private void drawArrow(GC gc, Rectangle arrowBounds2, int style) {
+
+		gc.setBackground(item.getDisplay().getSystemColor(SWT.COLOR_RED));
+
+		int width = arrowBounds2.width;
+		int height = arrowBounds2.height;
+
+		int centerHeight = height / 2;
+		int centerWidth = width / 2;
+
+		// TODO: in the next version use a bezier path
+
+		int[] curve;
+		if ((style & SWT.DOWN) != 0) {
+			curve = new int[] { centerWidth, centerHeight + 5, centerWidth - 5, centerHeight - 5, centerWidth + 5,
+					centerHeight - 5 };
+
+		} else if ((style & SWT.LEFT) != 0) {
+			curve = new int[] { centerWidth - 5, centerHeight, centerWidth + 5, centerHeight + 5, centerWidth + 5,
+					centerHeight - 5 };
+
+		} else if ((style & SWT.RIGHT) != 0) {
+			curve = new int[] { centerWidth + 5, centerHeight, centerWidth - 5, centerHeight - 5, centerWidth - 5,
+					centerHeight + 5 };
+
+		} else {
+			curve = new int[] { centerWidth, centerHeight - 5, centerWidth - 5, centerHeight + 5, centerWidth + 5,
+					centerHeight + 5 };
+		}
+
+		curve = translateCurve(arrowBounds2.x, arrowBounds2.y, curve);
+
+		gc.fillPolygon(curve);
+	}
+
+
+	private int[] translateCurve(int x, int y, int[] curve) {
+
+		int[] newCurve = new int[curve.length];
+
+		for (int i = 0; i < curve.length / 2; i++) {
+			int px = curve[2 * i];
+			int py = curve[2 * i + 1];
+
+			newCurve[2 * i] = px + x;
+			newCurve[2 * i + 1] = py + y;
+
+		}
+
+		return newCurve;
 	}
 
 	private Tree getParent() {
@@ -196,7 +263,6 @@ public class TreeItemRenderer {
 			gc.setBackground(bgCol);
 			gc.fillRectangle(b);
 		}
-
 
 		int xPosition = b.x + leftMargin;
 
