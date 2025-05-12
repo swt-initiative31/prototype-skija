@@ -13,7 +13,6 @@
  *******************************************************************************/
 package org.eclipse.swt.widgets;
 
-
 import java.util.*;
 import java.util.stream.*;
 
@@ -79,7 +78,6 @@ public class TreeItem extends Item {
 
 	private boolean expanded;
 
-	private TreeItem lastIteration;
 
 	/**
 	 * Constructs a new instance of this class given its parent (which must be a
@@ -388,7 +386,13 @@ public class TreeItem extends Item {
 	@Override
 	void destroyWidget() {
 		parent.destroyItem(this);
+		if (parentItem != null)
+			parentItem.destroyItem(this);
 		releaseHandle();
+	}
+
+	private void destroyItem(TreeItem treeItem) {
+		itemsList.remove(treeItem);
 	}
 
 	/**
@@ -483,6 +487,9 @@ public class TreeItem extends Item {
 			x += shift;
 		}
 
+		int itemIndent = TreeItemRenderer.INDENT_WIDTH * getIndent();
+
+		x += itemIndent;
 
 		return new Rectangle(x, full.y, width, full.height);
 	}
@@ -605,26 +612,17 @@ public class TreeItem extends Item {
 		var b = getBounds();
 		var column = parent.getColumn(index).getBounds();
 
-		int y = b.y;
-		int height = b.height;
-
-		int width = column.width;
-		int x = column.x;
-
 		if (index == 0) {
-			int shift = Tree.Tree_INITIAL_RIGHT_SHIFT;
 
-			if ((getParent().getStyle() & SWT.CHECK) != 0) {
-				shift = Tree.Tree_CHECKBOX_RIGHT_SHIFT;
-			}
-			// reduce width by shift. This cell must be by default smaller than the others.
-			// If there is a checkbox, this also must be considered.
-			width = width - shift;
-			width = Math.max(0, width);
-			x += shift;
+			int y = b.y;
+			int height = b.height;
+
+			int rightShift = column.x + column.width - b.x;
+			return new Rectangle(b.x, y, column.width - rightShift, height);
 		}
 
-		return new Rectangle(x, y, width, height);
+		return new Rectangle(column.x, b.y, column.width, b.height);
+
 	}
 
 	/**
@@ -1726,6 +1724,12 @@ public class TreeItem extends Item {
 	}
 
 	public void setExpanded(boolean b) {
+
+		if (itemsList.isEmpty()) {
+			this.expanded = false;
+			return;
+		}
+
 		this.expanded = b;
 
 	}
@@ -1737,16 +1741,12 @@ public class TreeItem extends Item {
 
 		itemsList.clear();
 
-		itemsList.stream().forEach(t -> t.dispose());
+		list.stream().forEach(t -> t.dispose());
 
 	}
 
 	public void setItemCount(int perfNumItems) {
 		// TODO Auto-generated method stub
-	}
-
-	public void setLastIteration(TreeItem lastIteration) {
-		this.lastIteration = lastIteration;
 	}
 
 	public boolean toggleExpand() {
