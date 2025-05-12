@@ -28,7 +28,7 @@ class TreeItemsHandler {
 			return;
 		}
 
-		var items = tree.getItems();
+		var items = tree.treeItemsArrangement;
 		var columns = tree.getColumnsArea();
 
 		int gridLineSize = getGridSize(tree);
@@ -39,8 +39,8 @@ class TreeItemsHandler {
 		if (tree.columnsExist()) {
 			width = columns.width;
 		} else {
-			for (int i = 0; i < items.length; i++) {
-				var it = items[i];
+			for (int i = 0; i < items.size(); i++) {
+				var it = items.get(i);
 				if (i == 0) {
 					heightPerLine = getItemsHeight(it);
 				}
