@@ -177,6 +177,8 @@ public class Tree extends CustomComposite {
 
 	private int virtualItemCount;
 
+	private TreeItem topItem;
+
 	/**
 	 * Constructs a new instance of this class given its parent and a style value
 	 * describing its behavior and appearance.
@@ -538,6 +540,8 @@ public class Tree extends CustomComposite {
 		}
 
 		if (index >= getItemCount())
+			error(SWT.ERROR_INVALID_RANGE);
+		if (index < 0)
 			error(SWT.ERROR_INVALID_RANGE);
 
 		return itemsList.get(index);
@@ -951,6 +955,8 @@ public class Tree extends CustomComposite {
 
 	void synchronizeArrangements() {
 
+		boolean treeEmpty = treeItemsArrangement.isEmpty();
+
 		for (var i : treeItemsArrangement) {
 			i.clearCache();
 		}
@@ -960,6 +966,14 @@ public class Tree extends CustomComposite {
 			addToArrangements(i);
 		}
 
+		if ((treeEmpty && !treeItemsArrangement.isEmpty()))
+			notifyListeners(SWT.EmptinessChanged, new Event());
+
+		if ((!treeEmpty && treeItemsArrangement.isEmpty())) {
+			var e = new Event();
+			e.detail = 1;
+			notifyListeners(SWT.EmptinessChanged, e);
+		}
 		redraw();
 
 	}
@@ -1102,6 +1116,9 @@ public class Tree extends CustomComposite {
 	void destroyItem(TreeItem item) {
 		if (!isVirtual()) {
 			itemsList.remove(item);
+
+			synchronizeArrangements();
+
 		}
 		// for virtual items, we have to take care, that these are not in
 		// virtualItemsList
@@ -1729,7 +1746,7 @@ public class Tree extends CustomComposite {
 	}
 
 	public TreeItem getTopItem() {
-		return treeItemsArrangement.get(topIndex);
+		return this.topItem;
 	}
 
 	boolean hasChildren() {
@@ -2734,6 +2751,10 @@ public class Tree extends CustomComposite {
 		int length = items.length;
 		if (length == 0 || ((style & SWT.SINGLE) != 0 && length > 1))
 			return;
+
+		if (length == 1 && items[0] == null)
+			return;
+
 		int focusIndex = -1;
 		for (int i = length - 1; i >= 0; --i) {
 			int index = indexOf(items[i]);
@@ -3135,11 +3156,17 @@ public class Tree extends CustomComposite {
 	}
 
 	public void addTreeListener(TreeListener l) {
-
+		addTypedListener(l, SWT.Expand, SWT.Collapse);
 	}
 
-	public void removeTreeListener(TreeListener treeListener) {
-		// TODO Auto-generated method stub
+	public void removeTreeListener(TreeListener listener) {
+		checkWidget();
+		if (listener == null)
+			error(SWT.ERROR_NULL_ARGUMENT);
+		if (eventTable == null)
+			return;
+		eventTable.unhook(SWT.Expand, listener);
+		eventTable.unhook(SWT.Collapse, listener);
 
 	}
 
@@ -3148,8 +3175,16 @@ public class Tree extends CustomComposite {
 
 	}
 
-	public void setTopItem(TreeItem top) {
-		// TODO Auto-generated method stub
+	public void setTopItem(TreeItem item) {
+		if (item == null)
+			error(SWT.ERROR_NULL_ARGUMENT);
+		if (item.isDisposed())
+			error(SWT.ERROR_INVALID_ARGUMENT);
+
+		this.topItem = item;
+		this.topIndex = treeItemsArrangement.indexOf(this.topItem);
+
+		redraw();
 
 	}
 

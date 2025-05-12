@@ -19,7 +19,7 @@ public class TreeItemRenderer {
 	private static final int rightMargin = DEFAULT_MARGIN;
 	private static final int topMargin = DEFAULT_MARGIN_UP_DOWN;
 	private static final int bottomMargin = DEFAULT_MARGIN_UP_DOWN;
-	private static final int INDENT_WIDTH = 10;
+	public static final int INDENT_WIDTH = 10;
 
 	private final TreeItem item;
 	private boolean selected;
@@ -266,7 +266,6 @@ public class TreeItemRenderer {
 
 		int xPosition = b.x + leftMargin;
 
-		xPosition += INDENT_WIDTH * item.getIndent();
 
 		int yPosition = b.y + topMargin;
 
@@ -417,7 +416,6 @@ public class TreeItemRenderer {
 			Point textExtent = getParent().computeTextExtent(item.getText());
 			lineHeight = textExtent.y;
 			width += textExtent.x;
-			width += INDENT_WIDTH * item.getIndent();
 		}
 
 		this.computedSize = new Point(width, height);
