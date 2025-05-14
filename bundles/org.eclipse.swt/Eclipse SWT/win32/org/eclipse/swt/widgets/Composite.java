@@ -14,6 +14,9 @@
 package org.eclipse.swt.widgets;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
@@ -49,7 +52,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/snippets/#composite">Composite snippets</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public class Composite extends Scrollable {
+public class Composite extends CompositeCommon {
 	Layout layout;
 	WINDOWPOS [] lpwp;
 	Control [] tabList;
@@ -104,27 +107,44 @@ public Composite (Composite parent, int style) {
 }
 
 Control [] _getChildren () {
-	int count = 0;
-	long hwndChild = OS.GetWindow (handle, OS.GW_CHILD);
-	if (hwndChild == 0) return new Control [0];
-	while (hwndChild != 0) {
-		count++;
-		hwndChild = OS.GetWindow (hwndChild, OS.GW_HWNDNEXT);
-	}
-	Control [] children = new Control [count];
-	int index = 0;
-	hwndChild = OS.GetWindow (handle, OS.GW_CHILD);
-	while (hwndChild != 0) {
-		Control control = display.getControl (hwndChild);
-		if (control != null && control != this) {
-			children [index++] = control;
+	final List<Control> this_children = this_children();
+	if (!isCustomControl()) {
+		long hwndChild = OS.GetWindow (handle, OS.GW_CHILD);
+		Control [] children = null;
+		int count = 0;
+		if (hwndChild != 0) {
+			while (hwndChild != 0) {
+				count++;
+				hwndChild = OS.GetWindow (hwndChild, OS.GW_HWNDNEXT);
+			}
+			children = new Control[count];
+			int index = 0;
+			hwndChild = OS.GetWindow (handle, OS.GW_CHILD);
+			while (hwndChild != 0) {
+				Control control = display.getControl (hwndChild);
+				if (control != null && control != this) {
+					children [index++] = control;
+				}
+				hwndChild = OS.GetWindow (hwndChild, OS.GW_HWNDNEXT);
+			}
+			count = index;
 		}
-		hwndChild = OS.GetWindow (hwndChild, OS.GW_HWNDNEXT);
+
+		int nativeChildIndex = 0;
+		for (Control child : this_children) {
+			if (child.getParent() != this) error(SWT.ERROR_UNSPECIFIED);
+			if (!child.isCustomControl() && !(child instanceof Shell)) {
+				if (children == null) error(SWT.ERROR_UNSPECIFIED);
+				if (nativeChildIndex == children.length)
+					error(SWT.ERROR_UNSPECIFIED);
+				final Control expectedChild = children[nativeChildIndex];
+				if (child != expectedChild) error(SWT.ERROR_UNSPECIFIED);
+				nativeChildIndex++;
+			}
+		}
+		if (children != null && nativeChildIndex != count) error(SWT.ERROR_UNSPECIFIED);
 	}
-	if (count == index) return children;
-	Control [] newChildren = new Control [index];
-	System.arraycopy (children, 0, newChildren, 0, index);
-	return newChildren;
+	return this_children.toArray(new Control[0]);
 }
 
 Control [] _getTabList () {
@@ -483,7 +503,16 @@ int getChildrenCount () {
 		count++;
 		hwndChild = OS.GetWindow (hwndChild, OS.GW_HWNDNEXT);
 	}
-	return count;
+
+	int nativeCount = 0;
+	final List<Control> this_children = this_children();
+	for (Control child : this_children) {
+		if (!child.isCustomControl() && !(child instanceof Shell)) {
+			nativeCount++;
+		}
+	}
+	if (nativeCount != count) error(SWT.ERROR_UNSPECIFIED);
+	return this_children.size();
 }
 
 /**

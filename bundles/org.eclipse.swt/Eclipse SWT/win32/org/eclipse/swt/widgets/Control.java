@@ -119,7 +119,13 @@ Control () {
  */
 public Control (Composite parent, int style) {
 	super (parent, style);
-	createWidget ();
+	if (isCustomControl()) {
+		createCustomWidget();
+	}
+	else {
+		if (parent.isCustomControl()) error(SWT.ERROR_UNSPECIFIED);
+		createWidget();
+	}
 }
 
 /**
@@ -662,6 +668,8 @@ Widget [] computeTabList () {
 }
 
 void createHandle () {
+	assertIsNativeControl();
+
 	long hwndParent = widgetParent ();
 	handle = OS.CreateWindowEx (
 		widgetExtStyle (),
@@ -681,6 +689,8 @@ void createHandle () {
 }
 
 void checkGesture () {
+	assertIsNativeControl();
+
 	int value =getSystemMetrics (OS.SM_DIGITIZER);
 	if ((value & (OS.NID_READY | OS.NID_MULTI_INPUT)) != 0) {
 		/*
@@ -693,6 +703,14 @@ void checkGesture () {
 		config.dwBlock = 0;
 		OS.SetGestureConfig (handle, 0, 1, config, GESTURECONFIG.sizeof);
 	}
+}
+
+void createCustomWidget() {
+	foreground = -1;
+	background = -1;
+	checkOrientation (parent);
+	checkBackground ();
+	parent.addChild(this);
 }
 
 void createWidget () {
@@ -711,6 +729,9 @@ void createWidget () {
 	checkGesture ();
 	if ((state & PARENT_BACKGROUND) != 0) {
 		setBackground ();
+	}
+	if (parent != null) {
+		parent.addChild(this);
 	}
 }
 
@@ -732,6 +753,9 @@ void deregister () {
 
 @Override
 void destroyWidget () {
+	if (parent != null) {
+		parent.removeChild(this);
+	}
 	long hwnd = topHandle ();
 	releaseHandle ();
 	if (hwnd != 0) {
@@ -928,6 +952,8 @@ void enableDrag (boolean enabled) {
 }
 
 void maybeEnableDarkSystemTheme() {
+	assertIsNativeControl();
+
 	maybeEnableDarkSystemTheme(handle);
 }
 
@@ -1909,6 +1935,9 @@ public boolean isReparentable () {
 }
 
 boolean isShowing () {
+	if (isCustomControl()) {
+		return super.isShowing();
+	}
 	/*
 	* This is not complete.  Need to check if the
 	* widget is obscured by a parent or sibling.
@@ -2414,6 +2443,11 @@ public void requestLayout () {
  * @see SWT#DOUBLE_BUFFERED
  */
 public void redraw () {
+	if (isCustomControl()) {
+		super.redraw();
+		return;
+	}
+
 	checkWidget ();
 	redrawInPixels (null,false);
 }
@@ -2500,6 +2534,8 @@ boolean redrawChildren () {
 }
 
 void register () {
+	assertIsNativeControl();
+
 	display.addControl (handle, this);
 }
 
@@ -3297,6 +3333,12 @@ void setBoundsInPixels (Rectangle rect) {
  * </ul>
  */
 public void setCapture (boolean capture) {
+	if (isCustomControl()) {
+		checkWidget();
+		// TODO
+		return;
+	}
+
 	checkWidget ();
 	if (capture) {
 		OS.SetCapture (handle);
@@ -3351,6 +3393,8 @@ public void setCursor (Cursor cursor) {
 }
 
 void setDefaultFont () {
+	assertIsNativeControl();
+
 	long hFont = display.getSystemFont (getShell().nativeZoom).handle;
 	OS.SendMessage (handle, OS.WM_SETFONT, hFont, 0);
 }
@@ -4038,6 +4082,8 @@ void sort (int [] items) {
 }
 
 void subclass () {
+	assertIsNativeControl();
+
 	long oldProc = windowProc ();
 	long newProc = display.windowProc;
 	if (oldProc == newProc) return;
@@ -5947,6 +5993,14 @@ private static void resizeFont(Control control, int newZoom) {
 
 protected final ColorProvider getColorProvider() {
 	return display.getColorProvider();
+}
+
+@Override
+void reskinWidget() {
+	if (isCustomControl()) {
+		return;
+	}
+	super.reskinWidget();
 }
 }
 

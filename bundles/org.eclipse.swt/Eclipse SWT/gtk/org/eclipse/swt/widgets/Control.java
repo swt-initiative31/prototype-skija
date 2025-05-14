@@ -163,7 +163,11 @@ Control () {
  */
 public Control (Composite parent, int style) {
 	super (parent, style);
-	createWidget (0);
+	if (isCustomControl()) {
+		createCustomWidget();
+	} else {
+		createWidget(0);
+	}
 }
 
 Font defaultFont () {
@@ -780,6 +784,12 @@ boolean containedInRegion (int x, int y) {
 	return false;
 }
 
+void createCustomWidget() {
+	checkOrientation(parent);
+	checkBackground();
+	parent.addChild(this);
+}
+
 @Override
 void createWidget(int index) {
 	state |= DRAG_DETECT;
@@ -794,6 +804,9 @@ void createWidget(int index) {
 	if (!GTK.GTK4) setRelations();
 	checkMirrored();
 	checkBorder();
+	if (parent != null) {
+		parent.addChild(this);
+	}
 }
 
 /**
@@ -4513,6 +4526,9 @@ public boolean isReparentable () {
 	return true;
 }
 boolean isShowing () {
+	if (isCustomControl()) {
+		return super.isShowing();
+	}
 	/*
 	* This is not complete.  Need to check if the
 	* widget is obscurred by a parent or sibling.
@@ -4687,6 +4703,11 @@ public void requestLayout () {
  * @see SWT#DOUBLE_BUFFERED
  */
 public void redraw () {
+	if (isCustomControl()) {
+		super.redraw();
+		return;
+	}
+
 	checkWidget();
 	redraw (false);
 }
@@ -5401,6 +5422,9 @@ public void setCursor (Cursor cursor) {
 	checkWidget();
 	if (cursor != null && cursor.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
 	this.cursor = cursor;
+	if (isCustomControl()) {
+		return;
+	}
 	setCursor (cursor != null ? cursor.handle : 0);
 }
 
@@ -6938,5 +6962,16 @@ Point getSurfaceOrigin () {
 
 protected final ColorProvider getColorProvider() {
 	return display.getColorProvider();
+}
+
+@Override
+protected void doRelease(boolean destroy) {
+	if (parent != null) {
+		parent.removeChild(this);
+	}
+	if (isCustomControl()) {
+		return;
+	}
+	super.doRelease(destroy);
 }
 }
