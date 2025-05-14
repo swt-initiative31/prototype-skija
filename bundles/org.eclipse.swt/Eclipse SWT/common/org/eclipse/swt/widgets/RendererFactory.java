@@ -31,4 +31,6 @@ public interface RendererFactory {
 	LinkRenderer createLinkRenderer(Link link);
 
 	TabFolderRenderer createTabFolderRenderer(TabFolder tabFolder);
+
+	CoolbarRenderer createCoolbarRenderer(CoolBar coolBar);
 }
