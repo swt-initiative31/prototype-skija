@@ -11,7 +11,18 @@ public class SharedGCTest {
 		final Display display = new Display();
 
 		final Shell shell = new Shell(display);
-		createLeafControls(shell);
+		shell.setLayout(new GridLayout(2, true));
+
+		final Composite composite = new Composite(shell, SWT.NONE);
+		composite.setBackground(new Color(255, 240, 200));
+		composite.setBackgroundMode(SWT.INHERIT_FORCE);
+		composite.setLayoutData(new GridData(GridData.FILL, GridData.FILL, true, true));
+		createLeafControls(composite);
+
+		final Group group = new Group(shell, SWT.NONE);
+		group.setLayoutData(new GridData(GridData.FILL, GridData.FILL, true, true));
+		group.setText("Group");
+		createLeafControls(group);
 
 		final Point size = shell.computeSize(SWT.DEFAULT, SWT.DEFAULT);
 		size.x = Math.max(size.x, 500);
