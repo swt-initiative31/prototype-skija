@@ -215,4 +215,9 @@ abstract class NativeBasedCustomScrollable extends Scrollable {
 	protected boolean isCustomControl() {
 		return true;
 	}
+
+	@Override
+	boolean isTabGroup() {
+		return true;
+	}
 }

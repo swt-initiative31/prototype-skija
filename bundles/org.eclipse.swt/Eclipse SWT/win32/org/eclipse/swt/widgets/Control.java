@@ -16,6 +16,7 @@ package org.eclipse.swt.widgets;
 
 
 import java.util.*;
+import java.util.List;
 import java.util.stream.*;
 
 import org.eclipse.swt.*;
@@ -1075,7 +1076,20 @@ public boolean forceFocus () {
 	* this time.
 	*/
 //	if (OS.GetFocus () != OS.SetFocus (handle)) return false;
-	OS.SetFocus (handle);
+	if (isCustomControl()) {
+		final Control nativeParent = getNativeParentOf(this);
+		if (nativeParent == null) return false;
+		if (OS.GetFocus() == nativeParent.handle) {
+			display.setFocusControl(this);
+		}
+		else {
+			display.setPendingCustomFocusControl(this);
+			OS.SetFocus(nativeParent.handle);
+			display.setPendingCustomFocusControl(null);
+		}
+	} else {
+		OS.SetFocus(handle);
+	}
 	if (isDisposed ()) return false;
 	shell.setSavedFocus (this);
 	return isFocusControl ();
@@ -1735,6 +1749,8 @@ boolean hasCustomForeground() {
 }
 
 boolean hasFocus () {
+	assertIsNativeControl();
+
 	/*
 	* If a non-SWT child of the control has focus,
 	* then this control is considered to have focus
@@ -1903,6 +1919,10 @@ public boolean isEnabled () {
  * </ul>
  */
 public boolean isFocusControl () {
+	if (isCustomControl()) {
+		return super.isFocusControl();
+	}
+
 	checkWidget ();
 	Control focusControl = display.focusControl;
 	if (focusControl != null && !focusControl.isDisposed ()) {
@@ -4597,6 +4617,10 @@ boolean traverseEscape () {
 }
 
 boolean traverseGroup (boolean next) {
+	if (isCustomControl()) {
+		return super.traverseGroup(next);
+	}
+
 	Control root = computeTabRoot ();
 	Widget group = computeTabGroup ();
 	Widget [] list = root.computeTabList ();
@@ -5312,7 +5336,10 @@ LRESULT WM_KILLFOCUS (long wParam, long lParam) {
 	 * to NULL before they open. As a result, Shell is unable to save
 	 * focus control in WM_ACTIVATE. The fix is to save focus here.
 	 */
-	if (wParam == 0) menuShell().setSavedFocus(this);
+	if (wParam == 0) {
+		final Control focusControl = display.getFocusControl();
+		menuShell().setSavedFocus(focusControl);
+	}
 	return wmKillFocus (handle, wParam, lParam);
 }
 

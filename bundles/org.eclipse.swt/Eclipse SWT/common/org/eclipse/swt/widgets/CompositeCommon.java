@@ -40,4 +40,17 @@ void addChild(Control control) {
 void removeChild(Control control) {
 	if (!children.remove(control)) error(SWT.ERROR_UNSPECIFIED);
 }
+
+protected void getCurrentTabStopControls(List<Control> controls) {
+	super.getCurrentTabStopControls(controls);
+
+	final List<Control> children = this_children();
+	for (Control child : children) {
+		if (!child.getVisible() || !child.getEnabled()) {
+			continue;
+		}
+
+		child.getCurrentTabStopControls(controls);
+	}
+}
 }
