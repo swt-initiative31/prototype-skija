@@ -70,7 +70,6 @@ public class Composite extends CompositeCommon {
 	 */
 	public long  embeddedHandle;
 	long imHandle, socketHandle;
-	Layout layout;
 	Control[] tabList;
 	int layoutCount, backgroundMode;
 	/**

@@ -53,7 +53,6 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
 public class Composite extends CompositeCommon {
-	Layout layout;
 	WINDOWPOS [] lpwp;
 	Control [] tabList;
 	int layoutCount, backgroundMode;
@@ -905,6 +904,10 @@ void markLayout (boolean changed, boolean all) {
 }
 
 Point minimumSize (int wHint, int hHint, boolean changed) {
+	if (isCustomControl()) {
+		return super.minimumSize(wHint, hHint, changed);
+	}
+
 	/*
 	 * Since getClientArea can be overridden by subclasses, we cannot
 	 * call getClientAreaInPixels directly.
