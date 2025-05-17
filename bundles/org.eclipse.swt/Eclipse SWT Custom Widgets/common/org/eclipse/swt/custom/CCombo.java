@@ -680,7 +680,9 @@ void dropDown (boolean drop) {
 	 * Fix is to reduce height of list and shell in that case, bug 388126.
 	 */
 	ScrollBar hBar = list.getHorizontalBar();
-	int emptyHBarSpace = hBar.isVisible () ? 0 : hBar.getSize ().y;
+	int emptyHBarSpace = hBar != null
+			? hBar.isVisible () ? 0 : hBar.getSize ().y
+			: 0;
 	list.setSize (listRect.width, listRect.height - emptyHBarSpace);
 	popup.setBounds (x, y, width, height - emptyHBarSpace);
 	popup.setVisible (true);
