@@ -53,9 +53,7 @@ public class DefaultCoolbarRenderer extends CoolbarRenderer {
 				/* Draw gripper. */
 				if (!coolbar.isLocked) {
 					rect = coolbar.fixRectangle(bounds.x, bounds.y, CoolItem.MINIMUM_WIDTH, bounds.height);
-					if (!flat) {
-						nativeGripper = drawGripper(gc, rect.x, rect.y, rect.width, rect.height, vertical);
-					} else {
+					if (flat) {
 						int grabberTrim = 2;
 						int grabberHeight = bounds.height - (2 * grabberTrim) - 1;
 						gc.setForeground(COLOR_WIDGET_NORMAL_SHADOW);
@@ -69,6 +67,8 @@ public class DefaultCoolbarRenderer extends CoolbarRenderer {
 						rect = coolbar.fixRectangle(bounds.x + CoolItem.MARGIN_WIDTH, bounds.y + grabberTrim,
 								bounds.x + CoolItem.MARGIN_WIDTH + 1, bounds.y + grabberTrim);
 						gc.drawLine(rect.x, rect.y, rect.width, rect.height);
+					} else {
+						nativeGripper = drawGripper(gc, rect.x, rect.y, rect.width, rect.height, vertical);
 					}
 				}
 
@@ -98,21 +98,21 @@ public class DefaultCoolbarRenderer extends CoolbarRenderer {
 	boolean drawGripper(GC gc, int x, int y, int width, int height, boolean vertical) {
 		int dotSpacing = 3;
 		int dotLength = 1;
-		if (!vertical) {
-			int centerX = x + width / 2;
-			for (int i = y + 2; i < y + height - 2; i += dotSpacing) {
-				gc.setForeground(COLOR_WIDGET_NORMAL_SHADOW);
-				gc.drawLine(centerX, i, centerX, i + dotLength);
-				gc.setForeground(COLOR_WIDGET_HIGHLIGHT_SHADOW);
-				gc.drawLine(centerX + 1, i, centerX + 1, i + dotLength);
-			}
-		} else {
+		if (vertical) {
 			int centerY = y + height / 2;
 			for (int i = x + 2; i < x + width - 2; i += dotSpacing) {
 				gc.setForeground(COLOR_WIDGET_NORMAL_SHADOW);
 				gc.drawLine(i, centerY, i + dotLength, centerY);
 				gc.setForeground(COLOR_WIDGET_HIGHLIGHT_SHADOW);
 				gc.drawLine(i, centerY + 1, i + dotLength, centerY + 1);
+			}
+		} else {
+			int centerX = x + width / 2;
+			for (int i = y + 2; i < y + height - 2; i += dotSpacing) {
+				gc.setForeground(COLOR_WIDGET_NORMAL_SHADOW);
+				gc.drawLine(centerX, i, centerX, i + dotLength);
+				gc.setForeground(COLOR_WIDGET_HIGHLIGHT_SHADOW);
+				gc.drawLine(centerX + 1, i, centerX + 1, i + dotLength);
 			}
 		}
 		return true;
