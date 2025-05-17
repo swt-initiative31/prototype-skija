@@ -687,7 +687,7 @@ public class TableColumn extends Item {
 	}
 
 	Point getLocation() {
-		int horizontalShift = getParent().getHorizontalBar().getSelection();
+		int horizontalShift = getHorizontalScrollBarSelection();
 		if (this.location == null || this.horizontalShiftAtCalculation == null
 				|| this.horizontalShiftAtCalculation != horizontalShift) {
 			calculateLocation();
@@ -696,10 +696,15 @@ public class TableColumn extends Item {
 		return this.location;
 	}
 
+	private int getHorizontalScrollBarSelection() {
+		final ScrollBar scrollBar = getParent().getHorizontalBar();
+		return scrollBar != null ? scrollBar.getSelection() : 0;
+	}
+
 	private void calculateLocation() {
 		var index = getParent().indexOf(this);
 		if (index == 0) {
-			this.horizontalShiftAtCalculation = getParent().getHorizontalBar().getSelection();
+			this.horizontalShiftAtCalculation = getHorizontalScrollBarSelection();
 			this.location = new Point(-horizontalShiftAtCalculation, 0);
 		} else {
 			var prevBounds = getParent().getColumn(index - 1).getBounds();
