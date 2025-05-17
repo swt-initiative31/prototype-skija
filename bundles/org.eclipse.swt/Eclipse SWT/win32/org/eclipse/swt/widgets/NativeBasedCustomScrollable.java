@@ -28,8 +28,8 @@ abstract class NativeBasedCustomScrollable extends Scrollable {
 	}
 
 	@Override
-	protected final boolean isCustomControl() {
-		return true;
+	protected boolean allowCreateNativeControl() {
+		return false;
 	}
 
 	@Override

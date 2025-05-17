@@ -9,6 +9,8 @@ import java.util.List;
 
 abstract class ControlCommon extends Widget {
 
+protected abstract boolean isCustomControl();
+
 protected abstract int getBorderWidth();
 
 public static Control getNativeParentOf(Control control) {
@@ -44,10 +46,6 @@ protected ControlCommon(Composite parent, int style) {
 
 protected String toDebugName() {
 	return Integer.toString(System.identityHashCode(this), Character.MAX_RADIX) + "$" + getClass().getName();
-}
-
-protected boolean isCustomControl() {
-	return false;
 }
 
 protected final void assertIsCustomControl() {

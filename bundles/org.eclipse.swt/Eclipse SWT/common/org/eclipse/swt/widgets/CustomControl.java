@@ -33,8 +33,8 @@ public abstract class CustomControl extends NativeBasedCustomControl {
 	}
 
 	@Override
-	protected final boolean isCustomControl() {
-		return true;
+	protected final boolean allowCreateNativeControl() {
+		return false;
 	}
 
 	@Override

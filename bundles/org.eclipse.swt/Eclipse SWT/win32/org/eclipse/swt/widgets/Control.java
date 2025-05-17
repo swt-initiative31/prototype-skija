@@ -16,7 +16,6 @@ package org.eclipse.swt.widgets;
 
 
 import java.util.*;
-import java.util.List;
 import java.util.stream.*;
 
 import org.eclipse.swt.*;
@@ -120,13 +119,21 @@ Control () {
  */
 public Control (Composite parent, int style) {
 	super (parent, style);
-	if (isCustomControl()) {
-		createCustomWidget();
-	}
-	else {
+	if (allowCreateNativeControl()) {
 		if (parent.isCustomControl()) error(SWT.ERROR_UNSPECIFIED);
 		createWidget();
+	} else {
+		createCustomWidget();
 	}
+}
+
+protected boolean allowCreateNativeControl() {
+	return true;
+}
+
+@Override
+protected final boolean isCustomControl() {
+	return handle == 0;
 }
 
 /**
@@ -673,8 +680,6 @@ Widget [] computeTabList () {
 }
 
 void createHandle () {
-	assertIsNativeControl();
-
 	long hwndParent = widgetParent ();
 	handle = OS.CreateWindowEx (
 		widgetExtStyle (),

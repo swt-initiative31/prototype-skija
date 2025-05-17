@@ -107,11 +107,6 @@ public class Group extends CustomComposite {
 		return renderer;
 	}
 
-	@Override
-	protected boolean isCustomControl() {
-		return true;
-	}
-
 	private void onPaint(Event event) {
 		renderer.paint(event.gc);
 	}
