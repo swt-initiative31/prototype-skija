@@ -52,6 +52,9 @@ import org.eclipse.swt.widgets.*;
 public class SWT {
 	public static boolean USE_SKIJA = true;
 
+	public static boolean NATIVE_DECORATIONS = false;
+	public static boolean NATIVE_MENUS = false;
+
 	/* Widget Event Constants */
 
 	/**

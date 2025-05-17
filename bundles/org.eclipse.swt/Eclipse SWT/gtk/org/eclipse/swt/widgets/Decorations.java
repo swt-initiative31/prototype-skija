@@ -273,7 +273,6 @@ void createWidget (int index) {
 
 void destroyAccelGroup () {
 	if (accelGroup == 0) return;
-	if (menuBar != null) menuBar.removeAccelerators(accelGroup);
 	long shellHandle = topHandle ();
 	GTK3.gtk_window_remove_accel_group (shellHandle, accelGroup);
 	OS.g_object_unref (accelGroup);
@@ -284,7 +283,6 @@ void fixAccelGroup () {
 	if (menuBar == null) return;
 	destroyAccelGroup ();
 	createAccelGroup ();
-	menuBar.addAccelerators (accelGroup);
 }
 
 void fixDecorations (Decorations newDecorations, Control control, Menu [] menus) {

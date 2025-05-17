@@ -14,6 +14,8 @@
 package org.eclipse.swt.widgets;
 
 
+import java.util.*;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
@@ -105,6 +107,7 @@ public class Decorations extends Canvas {
 	boolean minimized, maximized;
 	Control savedFocus;
 	Button defaultButton;
+	private java.util.List<Menu> menus = new ArrayList<>();;
 
 Decorations () {
 	/* Do nothing */
@@ -204,7 +207,7 @@ void fixDecorations (Decorations newDecorations, Control control, Menu [] menus)
 	if (control == savedFocus) savedFocus = null;
 	if (control == defaultButton) defaultButton = null;
 	if (menus == null) return;
-	Menu menu = control.menu;
+	Menu menu = control.getMenu();
 	if (menu != null) {
 		int index = 0;
 		while (index < menus.length) {
@@ -713,6 +716,16 @@ boolean traverseReturn () {
 	if (!defaultButton.isVisible () || !defaultButton.isEnabled ()) return false;
 	defaultButton.click ();
 	return true;
+}
+
+public void addMenu(Menu menu) {
+
+	this.menus.add(menu);
+
+}
+
+public void removeMenu(Menu menu) {
+	this.menus.remove(menu);
 }
 
 }
