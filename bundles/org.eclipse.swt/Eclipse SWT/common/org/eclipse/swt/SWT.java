@@ -1842,6 +1842,8 @@ public class SWT {
 	 */
 	public static final int SHEET = 1 << 28;
 
+	public static final int FORCE_NATIVE = SHEET;
+
 	/**
 	 * Trim style convenience constant for the most common top level shell appearance
 	 * (value is CLOSE|TITLE|MIN|MAX|RESIZE).

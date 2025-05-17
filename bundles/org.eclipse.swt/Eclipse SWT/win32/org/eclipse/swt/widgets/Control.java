@@ -119,7 +119,7 @@ Control () {
  */
 public Control (Composite parent, int style) {
 	super (parent, style);
-	if (allowCreateNativeControl()) {
+	if ((style & SWT.FORCE_NATIVE) != 0 && allowCreateNativeControl()) {
 		if (parent.isCustomControl()) error(SWT.ERROR_UNSPECIFIED);
 		createWidget();
 	} else {
