@@ -15,7 +15,10 @@ package org.eclipse.swt.widgets;
 
 public abstract class CoolbarRenderer extends ControlRenderer {
 
-	public CoolbarRenderer(Control control) {
-		super(control);
+	protected final CoolBar coolbar;
+
+	public CoolbarRenderer(CoolBar coolbar) {
+		super(coolbar);
+		this.coolbar = coolbar;
 	}
 }

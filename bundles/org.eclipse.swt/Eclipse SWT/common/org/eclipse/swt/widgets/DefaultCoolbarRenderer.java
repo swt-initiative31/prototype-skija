@@ -18,14 +18,11 @@ import org.eclipse.swt.graphics.*;
 
 public class DefaultCoolbarRenderer extends CoolbarRenderer {
 
-	private CoolBar coolbar;
-	Display display = Display.getCurrent();
-	Color COLOR_WIDGET_NORMAL_SHADOW = display.getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW);
-	Color COLOR_WIDGET_HIGHLIGHT_SHADOW = display.getSystemColor(SWT.COLOR_WIDGET_HIGHLIGHT_SHADOW);
+	protected static final String COLOR_SHADOW_NORMAL = "coolBar.shadow.normal"; //$NON-NLS-1$
+	protected static final String COLOR_SHADOW_HIGHLIGHT = "coolBar.shadow.highlight"; //$NON-NLS-1$
 
-	protected DefaultCoolbarRenderer(CoolBar control) {
-		super(control);
-		this.coolbar = control;
+	protected DefaultCoolbarRenderer(CoolBar coolBar) {
+		super(coolBar);
 	}
 
 	@Override
@@ -34,6 +31,10 @@ public class DefaultCoolbarRenderer extends CoolbarRenderer {
 		if (items.length == 0) {
 			return;
 		}
+
+		final Color normalShadow = getColor(COLOR_SHADOW_NORMAL);
+		final Color highlightShadow = getColor(COLOR_SHADOW_HIGHLIGHT);
+
 		int style = coolbar.getStyle();
 		boolean vertical = (style & SWT.VERTICAL) != 0;
 		boolean flat = (style & SWT.FLAT) != 0;
@@ -56,11 +57,11 @@ public class DefaultCoolbarRenderer extends CoolbarRenderer {
 					if (flat) {
 						int grabberTrim = 2;
 						int grabberHeight = bounds.height - (2 * grabberTrim) - 1;
-						gc.setForeground(COLOR_WIDGET_NORMAL_SHADOW);
+						gc.setForeground(normalShadow);
 						rect = coolbar.fixRectangle(bounds.x + CoolItem.MARGIN_WIDTH, bounds.y + grabberTrim, 2,
 								grabberHeight);
 						gc.drawRectangle(rect);
-						gc.setForeground(COLOR_WIDGET_HIGHLIGHT_SHADOW);
+						gc.setForeground(highlightShadow);
 						rect = coolbar.fixRectangle(bounds.x + CoolItem.MARGIN_WIDTH, bounds.y + grabberTrim + 1,
 								bounds.x + CoolItem.MARGIN_WIDTH, bounds.y + grabberTrim + grabberHeight - 1);
 						gc.drawLine(rect.x, rect.y, rect.width, rect.height);
@@ -74,10 +75,10 @@ public class DefaultCoolbarRenderer extends CoolbarRenderer {
 
 				/* Draw separator. */
 				if (!flat && !nativeGripper && i != 0) {
-					gc.setForeground(COLOR_WIDGET_NORMAL_SHADOW);
+					gc.setForeground(normalShadow);
 					rect = coolbar.fixRectangle(bounds.x, bounds.y, bounds.x, bounds.y + bounds.height - 1);
 					gc.drawLine(rect.x, rect.y, rect.width, rect.height);
-					gc.setForeground(COLOR_WIDGET_HIGHLIGHT_SHADOW);
+					gc.setForeground(highlightShadow);
 					rect = coolbar.fixRectangle(bounds.x + 1, bounds.y, bounds.x + 1, bounds.y + bounds.height - 1);
 					gc.drawLine(rect.x, rect.y, rect.width, rect.height);
 				}
@@ -85,10 +86,10 @@ public class DefaultCoolbarRenderer extends CoolbarRenderer {
 			if (!flat && row + 1 < items.length) {
 				/* Draw row separator. */
 				int separatorY = bounds.y + bounds.height;
-				gc.setForeground(COLOR_WIDGET_NORMAL_SHADOW);
+				gc.setForeground(normalShadow);
 				rect = coolbar.fixRectangle(0, separatorY, stopX, separatorY);
 				gc.drawLine(rect.x, rect.y, rect.width, rect.height);
-				gc.setForeground(COLOR_WIDGET_HIGHLIGHT_SHADOW);
+				gc.setForeground(highlightShadow);
 				rect = coolbar.fixRectangle(0, separatorY + 1, stopX, separatorY + 1);
 				gc.drawLine(rect.x, rect.y, rect.width, rect.height);
 			}
@@ -96,22 +97,24 @@ public class DefaultCoolbarRenderer extends CoolbarRenderer {
 	}
 
 	boolean drawGripper(GC gc, int x, int y, int width, int height, boolean vertical) {
+		final Color normalShadow = getColor(COLOR_SHADOW_NORMAL);
+		final Color highlightShadow = getColor(COLOR_SHADOW_HIGHLIGHT);
 		int dotSpacing = 3;
 		int dotLength = 1;
 		if (vertical) {
 			int centerY = y + height / 2;
 			for (int i = x + 2; i < x + width - 2; i += dotSpacing) {
-				gc.setForeground(COLOR_WIDGET_NORMAL_SHADOW);
+				gc.setForeground(normalShadow);
 				gc.drawLine(i, centerY, i + dotLength, centerY);
-				gc.setForeground(COLOR_WIDGET_HIGHLIGHT_SHADOW);
+				gc.setForeground(highlightShadow);
 				gc.drawLine(i, centerY + 1, i + dotLength, centerY + 1);
 			}
 		} else {
 			int centerX = x + width / 2;
 			for (int i = y + 2; i < y + height - 2; i += dotSpacing) {
-				gc.setForeground(COLOR_WIDGET_NORMAL_SHADOW);
+				gc.setForeground(normalShadow);
 				gc.drawLine(centerX, i, centerX, i + dotLength);
-				gc.setForeground(COLOR_WIDGET_HIGHLIGHT_SHADOW);
+				gc.setForeground(highlightShadow);
 				gc.drawLine(centerX + 1, i, centerX + 1, i + dotLength);
 			}
 		}
