@@ -366,8 +366,9 @@ public Point getPreferredSize () {
 
 Point getPreferredSizeInPixels() {
 	int index = parent.indexOf(this);
-	if (index == -1)
+	if (index == -1) {
 		return new Point(0, 0);
+	}
 
 	Control control = getControl();
 	if (control == null || control.isDisposed()) {

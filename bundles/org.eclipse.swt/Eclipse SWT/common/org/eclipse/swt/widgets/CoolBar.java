@@ -54,11 +54,12 @@ public class CoolBar extends Composite {
 	int mouseXOffset, itemXOffset;
 	boolean isLocked = false;
 	boolean inDispose = false;
-	private CoolbarRenderer renderer;
 	static final int ROW_SPACING = 2;
 	static final int CLICK_DISTANCE = 3;
 	static final int DEFAULT_COOLBAR_WIDTH = 0;
 	static final int DEFAULT_COOLBAR_HEIGHT = 0;
+
+	private final CoolbarRenderer renderer;
 
 /**
  * Constructs a new instance of this class given its parent

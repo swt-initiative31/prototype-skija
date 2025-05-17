@@ -18,6 +18,4 @@ public abstract class CoolbarRenderer extends ControlRenderer {
 	public CoolbarRenderer(Control control) {
 		super(control);
 	}
-
-
 }

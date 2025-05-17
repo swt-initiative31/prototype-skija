@@ -31,8 +31,9 @@ public class DefaultCoolbarRenderer extends CoolbarRenderer {
 	@Override
 	protected void paint(GC gc, int width, int height) {
 		CoolItem[][] items = coolbar.items;
-		if (items.length == 0)
+		if (items.length == 0) {
 			return;
+		}
 		int style = coolbar.getStyle();
 		boolean vertical = (style & SWT.VERTICAL) != 0;
 		boolean flat = (style & SWT.FLAT) != 0;
@@ -44,8 +45,9 @@ public class DefaultCoolbarRenderer extends CoolbarRenderer {
 			for (int i = 0; i < items[row].length; i++) {
 				bounds = items[row][i].internalGetBounds();
 				rect = coolbar.fixRectangle(bounds.x, bounds.y, bounds.width, bounds.height);
-				if (!clipping.intersects(rect))
+				if (!clipping.intersects(rect)) {
 					continue;
+				}
 				boolean nativeGripper = false;
 
 				/* Draw gripper. */
@@ -91,7 +93,6 @@ public class DefaultCoolbarRenderer extends CoolbarRenderer {
 				gc.drawLine(rect.x, rect.y, rect.width, rect.height);
 			}
 		}
-
 	}
 
 	boolean drawGripper(GC gc, int x, int y, int width, int height, boolean vertical) {
@@ -112,9 +113,8 @@ public class DefaultCoolbarRenderer extends CoolbarRenderer {
 				gc.drawLine(i, centerY, i + dotLength, centerY);
 				gc.setForeground(COLOR_WIDGET_HIGHLIGHT_SHADOW);
 				gc.drawLine(i, centerY + 1, i + dotLength, centerY + 1);
-	        }
-	    }
-	    return true;
+			}
+		}
+		return true;
 	}
-
 }
