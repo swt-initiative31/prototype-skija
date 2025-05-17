@@ -700,8 +700,7 @@ void onMouseDoubleClick(Event event) {
 	fixEvent(event);
 }
 void onPaint(Event event) {
-	Rectangle clipping = event.gc.getClipping();
-	Drawing.drawWithGC(this, event.gc, gc -> renderer.paint(gc, clipping.width, clipping.height));
+	Drawing.drawWithGC(this, event.gc, renderer::paint);
 }
 void onResize () {
 	layoutItems ();
