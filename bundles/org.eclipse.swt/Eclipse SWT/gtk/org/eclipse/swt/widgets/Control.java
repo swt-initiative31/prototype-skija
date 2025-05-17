@@ -164,7 +164,7 @@ Control () {
  */
 public Control (Composite parent, int style) {
 	super (parent, style);
-	if (requiresBeingNative()) {
+	if ((style & SWT.FORCE_NATIVE) != 0 || requiresBeingNative()) {
 		parent.assertIsNative();
 		createWidget(0);
 	} else {
