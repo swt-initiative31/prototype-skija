@@ -60,7 +60,7 @@ class DefaultRendererFactory implements RendererFactory {
 	}
 
 	@Override
-	public CoolbarRenderer createCoolbarRenderer(CoolBar coolBar) {
-		return new DefaultCoolbarRenderer(coolBar);
+	public CoolBarRenderer createCoolBarRenderer(CoolBar coolBar) {
+		return new DefaultCoolBarRenderer(coolBar);
 	}
 }

@@ -16,12 +16,12 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 
-public class DefaultCoolbarRenderer extends CoolbarRenderer {
+public class DefaultCoolBarRenderer extends CoolBarRenderer {
 
 	protected static final String COLOR_SHADOW_NORMAL = "coolBar.shadow.normal"; //$NON-NLS-1$
 	protected static final String COLOR_SHADOW_HIGHLIGHT = "coolBar.shadow.highlight"; //$NON-NLS-1$
 
-	protected DefaultCoolbarRenderer(CoolBar coolBar) {
+	protected DefaultCoolBarRenderer(CoolBar coolBar) {
 		super(coolBar);
 	}
 

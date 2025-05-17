@@ -67,8 +67,8 @@ public final class DefaultColorProvider implements ColorProvider {
 
 		p.put(DefaultButtonRenderer.COLOR_BACKGROUND, white);
 
-		p.put(DefaultCoolbarRenderer.COLOR_SHADOW_NORMAL, gray160);
-		p.put(DefaultCoolbarRenderer.COLOR_SHADOW_HIGHLIGHT, white);
+		p.put(DefaultCoolBarRenderer.COLOR_SHADOW_NORMAL, gray160);
+		p.put(DefaultCoolBarRenderer.COLOR_SHADOW_HIGHLIGHT, white);
 
 		p.put(LabelRenderer.COLOR_SHADOW_IN1, gray160);
 		p.put(LabelRenderer.COLOR_SHADOW_IN2, white);
@@ -148,8 +148,8 @@ public final class DefaultColorProvider implements ColorProvider {
 
 		p.put(DefaultButtonRenderer.COLOR_BACKGROUND, gray64);
 
-		p.put(DefaultCoolbarRenderer.COLOR_SHADOW_NORMAL, gray80);
-		p.put(DefaultCoolbarRenderer.COLOR_SHADOW_HIGHLIGHT, gray128);
+		p.put(DefaultCoolBarRenderer.COLOR_SHADOW_NORMAL, gray80);
+		p.put(DefaultCoolBarRenderer.COLOR_SHADOW_HIGHLIGHT, gray128);
 
 		p.put(LabelRenderer.COLOR_SHADOW_IN1, black);
 		p.put(LabelRenderer.COLOR_SHADOW_IN2, gray80);

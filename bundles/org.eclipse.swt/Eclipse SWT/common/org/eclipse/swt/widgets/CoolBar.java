@@ -59,7 +59,7 @@ public class CoolBar extends Composite {
 	static final int DEFAULT_COOLBAR_WIDTH = 0;
 	static final int DEFAULT_COOLBAR_HEIGHT = 0;
 
-	private final CoolbarRenderer renderer;
+	private final CoolBarRenderer renderer;
 
 /**
  * Constructs a new instance of this class given its parent
@@ -129,7 +129,7 @@ public CoolBar (Composite parent, int style) {
 	}
 
 	final RendererFactory rendererFactory = parent.getDisplay().getRendererFactory();
-	renderer = rendererFactory.createCoolbarRenderer(this);
+	renderer = rendererFactory.createCoolBarRenderer(this);
 }
 static int checkStyle (int style) {
 	style |= SWT.NO_FOCUS;

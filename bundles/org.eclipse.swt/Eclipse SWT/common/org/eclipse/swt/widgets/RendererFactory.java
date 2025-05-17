@@ -32,5 +32,5 @@ public interface RendererFactory {
 
 	TabFolderRenderer createTabFolderRenderer(TabFolder tabFolder);
 
-	CoolbarRenderer createCoolbarRenderer(CoolBar coolBar);
+	CoolBarRenderer createCoolBarRenderer(CoolBar coolBar);
 }
