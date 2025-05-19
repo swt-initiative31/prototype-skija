@@ -10,17 +10,14 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Raghunandana Murthappa (Advantest) - Platform independent implementation.
  *******************************************************************************/
 package org.eclipse.swt.widgets;
-
-
 import java.util.*;
 
 import org.eclipse.swt.*;
-import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
+import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.layout.*;
 
 /**
  * Instances of this class are used to inform or warn the user.
@@ -149,119 +146,128 @@ public void setMessage (String string) {
  * </ul>
  */
 public int open() {
-	long parentHandle = (parent != null) ? parent.topHandle() : 0;
-	int dialogFlags = GTK.GTK_DIALOG_DESTROY_WITH_PARENT;
-	if ((style & (SWT.PRIMARY_MODAL | SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL)) != 0) {
-		dialogFlags |= GTK.GTK_DIALOG_MODAL;
+	Shell dialog = new Shell(parent, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+	if (title != null) {
+		dialog.setText(title);
 	}
-	int messageType = GTK.GTK_MESSAGE_INFO;
-	if ((style & (SWT.ICON_WARNING)) != 0)  messageType = GTK.GTK_MESSAGE_WARNING;
-	if ((style & (SWT.ICON_QUESTION)) != 0) messageType = GTK.GTK_MESSAGE_QUESTION;
-	if ((style & (SWT.ICON_ERROR)) != 0)    messageType = GTK.GTK_MESSAGE_ERROR;
 
-	byte[] format = Converter.wcsToMbcs("%s", true);
-	byte[] buffer = Converter.wcsToMbcs(title, true);
-	handle = GTK.gtk_message_dialog_new(parentHandle, dialogFlags, messageType, 0, format, buffer);
-	if (handle == 0) error(SWT.ERROR_NO_HANDLES);
+	Image iconImage = getIcon(dialog.getDisplay(), style);
+	int numOfColumns = iconImage == null ? 1 : 2;
+	dialog.setLayout(new GridLayout(numOfColumns, false));
 
-	// Copy parent's icon
-	if (parentHandle != 0) {
-		if (GTK.GTK4) {
-			/*
-			 * TODO: This may not work as we are setting the icon list of the GtkWindow through
-			 * GdkToplevel (which has no way of retrieving the icon list set. See bug 572200.
-			 */
-			long iconName = GTK4.gtk_window_get_icon_name(parentHandle);
-			if (iconName != 0) {
-				GTK4.gtk_window_set_icon_name(handle, iconName);
-			}
-		} else {
-			long pixbufs = GTK3.gtk_window_get_icon_list(parentHandle);
-			if (pixbufs != 0) {
-				GTK3.gtk_window_set_icon_list(handle, pixbufs);
-				OS.g_list_free (pixbufs);
+	if (iconImage != null) {
+		Label iconLabel = new Label(dialog, SWT.NONE);
+		iconLabel.setImage(iconImage);
+		iconLabel.setLayoutData(new GridData(SWT.CENTER, SWT.BOTTOM, false, false));
+	}
+	Label messageLabel = new Label(dialog, SWT.WRAP);
+	messageLabel.setText(message);
+	messageLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+
+	String[] buttonLabels = getButtonLabels(style);
+	Composite buttonComp = new Composite(dialog, SWT.NONE);
+	buttonComp.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, numOfColumns, 1));
+	numOfColumns = buttonLabels.length;
+	buttonComp.setLayout(new GridLayout(numOfColumns, true));
+
+	Color labelBackground = messageLabel.getBackground();
+	dialog.setBackground(labelBackground);
+	buttonComp.setBackground(labelBackground);
+
+	final int[] result = { SWT.CANCEL };
+
+	for (String label : buttonLabels) {
+		Button button = new Button(buttonComp, SWT.PUSH);
+		button.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+		button.setText(label);
+		button.addListener(SWT.Selection, e -> {
+			result[0] = mapButtonResult(label);
+			dialog.close();
+		});
+	}
+
+	dialog.pack();
+	dialog.open();
+
+	Display display = dialog.getDisplay();
+	while (!dialog.isDisposed()) {
+		if (!display.readAndDispatch())
+			display.sleep();
+	}
+
+	return result[0];
+}
+
+private Image getIcon(Display display, int style) {
+	int iconID = -1;
+	if ((style & SWT.ICON_ERROR) != 0)
+		iconID = SWT.ICON_ERROR;
+	else if ((style & SWT.ICON_INFORMATION) != 0)
+		iconID = SWT.ICON_INFORMATION;
+	else if ((style & SWT.ICON_QUESTION) != 0)
+		iconID = SWT.ICON_QUESTION;
+	else if ((style & SWT.ICON_WARNING) != 0)
+		iconID = SWT.ICON_WARNING;
+	else if ((style & SWT.ICON_WORKING) != 0)
+		iconID = SWT.ICON_INFORMATION;
+
+	if (iconID != -1)
+		return display.getSystemImage(iconID);
+	return null;
+}
+
+private String[] getButtonLabels(int style) {
+	if ((style & SWT.OK) != 0 && (style & SWT.CANCEL) != 0)
+		return new String[] { getLabel(SWT.OK, "OK"), getLabel(SWT.CANCEL, "Cancel") };
+	if ((style & SWT.YES) != 0 && (style & SWT.NO) != 0 && (style & SWT.CANCEL) != 0)
+		return new String[] { getLabel(SWT.YES, "Yes"), getLabel(SWT.NO, "No"), getLabel(SWT.CANCEL, "Cancel") };
+	if ((style & SWT.YES) != 0 && (style & SWT.NO) != 0)
+		return new String[] { getLabel(SWT.YES, "Yes"), getLabel(SWT.NO, "No") };
+	if ((style & SWT.RETRY) != 0 && (style & SWT.CANCEL) != 0)
+		return new String[] { getLabel(SWT.RETRY, "Retry"), getLabel(SWT.CANCEL, "Cancel") };
+	if ((style & SWT.ABORT) != 0 && (style & SWT.RETRY) != 0 && (style & SWT.IGNORE) != 0)
+		return new String[] { getLabel(SWT.ABORT, "Abort"), getLabel(SWT.RETRY, "Retry"),
+				getLabel(SWT.IGNORE, "Ignore") };
+	if ((style & SWT.OK) != 0)
+		return new String[] { getLabel(SWT.OK, "OK") };
+	return new String[] { getLabel(SWT.OK, "OK") };
+}
+
+private String getLabel(int buttonId, String defaultLabel) {
+	if (labels != null && labels.containsKey(buttonId) && labels.get(buttonId) != null) {
+		return labels.get(buttonId);
+	}
+	return defaultLabel;
+}
+
+private int mapButtonResult(String label) {
+	if (labels != null && !labels.isEmpty()) {
+		for (Map.Entry<Integer, String> entry : labels.entrySet()) {
+			String customLabel = entry.getValue();
+			if (customLabel != null && customLabel.equals(label)) {
+				return entry.getKey();
 			}
 		}
 	}
 
-	Display display = parent != null ? parent.getDisplay() : Display.getCurrent();
-	createButtons(display.getDismissalAlignment());
-	GTK.gtk_message_dialog_format_secondary_text(handle, format, Converter.javaStringToCString(message));
-
-	display.addIdleProc();
-	Dialog oldModal = null;
-	if (GTK.gtk_window_get_modal(handle)) {
-		oldModal = display.getModalDialog();
-		display.setModalDialog(this);
+	switch (label) {
+	case "OK":
+		return SWT.OK;
+	case "Cancel":
+		return SWT.CANCEL;
+	case "Yes":
+		return SWT.YES;
+	case "No":
+		return SWT.NO;
+	case "Retry":
+		return SWT.RETRY;
+	case "Abort":
+		return SWT.ABORT;
+	case "Ignore":
+		return SWT.IGNORE;
+	default:
+		return SWT.CANCEL;
 	}
-	/*
-	* In order to allow the dialog to be modal of it's
-	* parent shells, it is required to assign the
-	* dialog to the same window group as of the shells.
-	*/
-	long defaultWindowGroup = GTK.gtk_window_get_group(0);
-	GTK.gtk_window_group_add_window(defaultWindowGroup, handle);
-
-	int signalId = 0;
-	long hookId = 0;
-	if ((style & SWT.RIGHT_TO_LEFT) != 0) {
-		signalId = OS.g_signal_lookup(OS.map, GTK.GTK_TYPE_WIDGET());
-		hookId = OS.g_signal_add_emission_hook(signalId, 0, display.emissionProc, handle, 0);
-	}
-
-	int response;
-	if (GTK.GTK4) {
-		response = SyncDialogUtil.run(display, handle, false);
-	} else {
-		display.externalEventLoop = true;
-		display.sendPreExternalEventDispatchEvent();
-		response = GTK3.gtk_dialog_run(handle);
-		display.externalEventLoop = false;
-		display.sendPostExternalEventDispatchEvent();
-	}
-
-	if ((style & SWT.RIGHT_TO_LEFT) != 0) {
-		OS.g_signal_remove_emission_hook(signalId, hookId);
-	}
-	if (GTK.gtk_window_get_modal(handle)) {
-		display.setModalDialog(oldModal);
-	}
-	display.removeIdleProc();
-
-	if (GTK.GTK4) {
-		GTK4.gtk_window_destroy(handle);
-	} else {
-		GTK3.gtk_widget_destroy(handle);
-	}
-
-	return response;
-}
-
-private void createButtons (int alignment) {
-	if (alignment == SWT.LEFT) {
-		if ((style & SWT.OK) != 0) GTK.gtk_dialog_add_button(handle, getLabelForButton(SWT.OK, "SWT_OK"), SWT.OK);
-		if ((style & SWT.ABORT) != 0) GTK.gtk_dialog_add_button(handle, getLabelForButton(SWT.ABORT, "SWT_Abort"), SWT.ABORT);
-		if ((style & SWT.RETRY) != 0) GTK.gtk_dialog_add_button(handle, getLabelForButton(SWT.RETRY, "SWT_Retry"), SWT.RETRY);
-		if ((style & SWT.YES) != 0) GTK.gtk_dialog_add_button(handle, getLabelForButton(SWT.YES, "SWT_Yes"), SWT.YES);
-		if ((style & SWT.NO) != 0) GTK.gtk_dialog_add_button(handle, getLabelForButton(SWT.NO, "SWT_No"), SWT.NO);
-		if ((style & SWT.IGNORE) != 0) GTK.gtk_dialog_add_button(handle, getLabelForButton(SWT.IGNORE, "SWT_Ignore"), SWT.IGNORE);
-		if ((style & SWT.CANCEL) != 0) GTK.gtk_dialog_add_button(handle, getLabelForButton(SWT.CANCEL, "SWT_Cancel"), SWT.CANCEL);
-	} else {
-		if ((style & SWT.CANCEL) != 0) GTK.gtk_dialog_add_button(handle, getLabelForButton(SWT.CANCEL, "SWT_Cancel"), SWT.CANCEL);
-		if ((style & SWT.OK) != 0) GTK.gtk_dialog_add_button(handle, getLabelForButton(SWT.OK, "SWT_OK"), SWT.OK);
-		if ((style & SWT.NO) != 0) GTK.gtk_dialog_add_button(handle, getLabelForButton(SWT.NO, "SWT_No"), SWT.NO);
-		if ((style & SWT.YES) != 0) GTK.gtk_dialog_add_button(handle, getLabelForButton(SWT.YES, "SWT_Yes"), SWT.YES);
-		if ((style & SWT.IGNORE) != 0) GTK.gtk_dialog_add_button(handle, getLabelForButton(SWT.IGNORE, "SWT_Ignore"), SWT.IGNORE);
-		if ((style & SWT.RETRY) != 0) GTK.gtk_dialog_add_button(handle, getLabelForButton(SWT.RETRY, "SWT_Retry"), SWT.RETRY);
-		if ((style & SWT.ABORT) != 0) GTK.gtk_dialog_add_button(handle, getLabelForButton(SWT.ABORT, "SWT_Abort"), SWT.ABORT);
-	}
-}
-
-private byte[] getLabelForButton(int buttonId, String messageId) {
-	if (labels !=null && labels.containsKey(buttonId) && labels.get(buttonId)!=null) {
-		return Converter.wcsToMbcs (labels.get(buttonId), true);
-	}
-	return Converter.wcsToMbcs(SWT.getMessage(messageId), true);
 }
 
 private static int checkStyle (int style) {
