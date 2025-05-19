@@ -5394,4 +5394,16 @@ private void runWithProperDPIAwareness(Runnable operation) {
 		operation.run();
 	}
 }
+
+private Control pendingLightWeightFocusControl;
+
+Control getPendingLightWeightFocusControlAndClear() {
+	Control control = pendingLightWeightFocusControl;
+	pendingLightWeightFocusControl = null;
+	return control;
+}
+
+void setPendingLightWeightFocusControl(Control control) {
+	this.pendingLightWeightFocusControl = control;
+}
 }

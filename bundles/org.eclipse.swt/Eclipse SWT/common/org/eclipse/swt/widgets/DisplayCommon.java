@@ -8,6 +8,7 @@ import org.eclipse.swt.graphics.DeviceData;
 public abstract class DisplayCommon extends Device {
 
 Control focusControl;
+private Control lightWeightFocusControl;
 
 private ColorProvider colorProvider;
 private RendererFactory rendererFactory;
@@ -20,6 +21,13 @@ public DisplayCommon(DeviceData data) {
 }
 
 protected Control getFocusControl () {
+	if (lightWeightFocusControl != null) {
+		if (!lightWeightFocusControl.isDisposed()) {
+			return lightWeightFocusControl;
+		}
+
+		lightWeightFocusControl = null;
+	}
 	if (focusControl != null && focusControl.isDisposed()) {
 		focusControl = null;
 	}
@@ -59,5 +67,34 @@ public final void setColorProvider(ColorProvider colorProvider) {
 	if (colorProvider == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	this.colorProvider = colorProvider;
 	// todo: redraw all (custom-drawn) widgets
+}
+
+protected final Control getLightWeightFocusControl() {
+	return lightWeightFocusControl;
+}
+
+protected final void setFocusControl(Control control) {
+	final Control oldFocusControl = lightWeightFocusControl != null ? lightWeightFocusControl : focusControl;
+	if (oldFocusControl == control) {
+		return;
+	}
+
+	if (oldFocusControl != null) {
+		System.out.println("Focus lost " + oldFocusControl.toDebugName());
+		oldFocusControl.sendEvent(SWT.FocusOut);
+	}
+
+	if (control != null && control.isLightWeight()) {
+		focusControl = Control.getNativeParentOf(control);
+		lightWeightFocusControl = control;
+	} else {
+		focusControl = control;
+		lightWeightFocusControl = null;
+	}
+
+	if (control != null) {
+		System.out.println("Focus gained " + control.toDebugName());
+		control.sendEvent(SWT.FocusIn);
+	}
 }
 }

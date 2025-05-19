@@ -1701,7 +1701,11 @@ boolean sendKeyEvent (int type, long event) {
 		Event javaEvent = new Event ();
 		javaEvent.time = GDK.gdk_event_get_time(event);
 		if (!setKeyState (javaEvent, event)) return true;
-		sendEvent (type, javaEvent);
+		Control focusControl = display.getFocusControl();
+		if (focusControl == null) {
+			return false;
+		}
+		focusControl.sendEvent (type, javaEvent);
 		// widget could be disposed at this point
 
 		/*
@@ -1710,7 +1714,7 @@ boolean sendKeyEvent (int type, long event) {
 		* events.  If this happens, end the processing of
 		* the key by returning false.
 		*/
-		if (isDisposed ()) return false;
+		if (focusControl.isDisposed ()) return false;
 		return javaEvent.doit;
 	}
 	byte [] buffer = new byte [length];
