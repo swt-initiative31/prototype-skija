@@ -3959,8 +3959,10 @@ long gtk_draw (long widget, long cairo) {
 	GC gc = event.gc = GC.gtk_new (this, data);
 	// Note: use GC#setClipping(x,y,width,height) because GC#setClipping(Rectangle) got broken by bug 446075
 	gc.setClipping (eventBounds.x, eventBounds.y, eventBounds.width, eventBounds.height);
-	drawWidget (gc);
-	sendEvent (SWT.Paint, event);
+	Drawing.drawWithGC(this, gc, actualGc -> {
+		event.gc = actualGc;
+		sendEvent (SWT.Paint, event);
+	});
 	gc.dispose ();
 	event.gc = null;
 	return 0;

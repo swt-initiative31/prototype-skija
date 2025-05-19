@@ -52,7 +52,6 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
 public class Composite extends CompositeCommon {
-	Layout layout;
 	WINDOWPOS [] lpwp;
 	Control [] tabList;
 	int layoutCount, backgroundMode;
@@ -848,6 +847,10 @@ void markLayout (boolean changed, boolean all) {
 }
 
 Point minimumSize (int wHint, int hHint, boolean changed) {
+	if (isLightWeight()) {
+		return super.minimumSize(wHint, hHint, changed);
+	}
+
 	/*
 	 * Since getClientArea can be overridden by subclasses, we cannot
 	 * call getClientAreaInPixels directly.
@@ -1583,7 +1586,7 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 						drawBackground(ngc.handle, rect);
 					}
 				}
-				Event event = new Event ();
+				final Event event = new Event ();
 				event.gc = gc;
 				NativeGC ngc = (NativeGC) gc.innerGC;
 				RECT rect = null;
@@ -1604,13 +1607,16 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 						sendEvent (SWT.Paint, event);
 					}
 				} else {
-					if ((style & (SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND | SWT.TRANSPARENT)) == 0) {
-						if (rect == null) rect = new RECT ();
-						OS.SetRect (rect, ps.left, ps.top, ps.right, ps.bottom);
-						drawBackground(ngc.handle, rect);
-					}
 					event.setBounds(DPIUtil.scaleDown(new Rectangle(ps.left, ps.top, width, height), zoom));
-					sendEvent (SWT.Paint, event);
+					Drawing.drawWithGC(this, event.gc,
+							actualGC -> {
+								event.gc = actualGC;
+								if ((style & (SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND | SWT.TRANSPARENT)) == 0) {
+									final Point size = getSize();
+									event.gc.fillRectangle(0, 0, size.x, size.y);
+								}
+								sendEvent (SWT.Paint, event);
+							});
 				}
 				// widget could be disposed at this point
 				event.gc = null;

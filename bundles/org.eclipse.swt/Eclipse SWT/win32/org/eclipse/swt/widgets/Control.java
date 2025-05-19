@@ -628,6 +628,10 @@ public Point computeSize (int wHint, int hHint) {
  * @see "computeTrim, getClientArea for controls that implement them"
  */
 public Point computeSize (int wHint, int hHint, boolean changed){
+	if (isLightWeight()) {
+		return super.computeSize(wHint, hHint, changed);
+	}
+
 	checkWidget ();
 	int zoom = getZoom();
 	wHint = (wHint != SWT.DEFAULT ? DPIUtil.scaleUp(wHint, zoom) : wHint);
@@ -1201,6 +1205,9 @@ int getBackgroundPixel () {
  * </ul>
  */
 public int getBorderWidth () {
+	if (isLightWeight()) {
+		return 0;
+	}
 	checkWidget ();
 	return DPIUtil.scaleDown(getBorderWidthInPixels (), getZoom());
 }
