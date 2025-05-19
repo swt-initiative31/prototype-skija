@@ -52,7 +52,7 @@ import org.eclipse.swt.ole.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class Control extends Widget implements Drawable {
+public abstract class Control extends ControlCommon implements Drawable {
 
 	static {
 		DPIZoomChangeRegistry.registerHandler(Control::handleDPIChange, Control.class);
@@ -71,7 +71,6 @@ public abstract class Control extends Widget implements Drawable {
 	 * @noreference This field is not intended to be referenced by clients.
 	 */
 	public long handle;
-	Composite parent;
 	Cursor cursor;
 	Menu menu, activeMenu;
 	String toolTipText;
@@ -120,8 +119,12 @@ Control () {
  */
 public Control (Composite parent, int style) {
 	super (parent, style);
-	this.parent = parent;
 	createWidget ();
+}
+
+@Override
+protected final boolean isLightWeight() {
+	return handle == 0;
 }
 
 /**
@@ -1204,6 +1207,10 @@ int getBorderWidthInPixels () {
  * </ul>
  */
 public Rectangle getBounds (){
+	if (isLightWeight()) {
+		return super.getBounds();
+	}
+
 	checkWidget ();
 	return DPIUtil.scaleDown(getBoundsInPixels (), getZoom());
 }
@@ -1302,6 +1309,10 @@ boolean getDrawing () {
  * @see #isEnabled
  */
 public boolean getEnabled () {
+	if (isLightWeight()) {
+		return super.getEnabled();
+	}
+
 	checkWidget ();
 	return OS.IsWindowEnabled (handle);
 }
@@ -1372,6 +1383,10 @@ public Object getLayoutData () {
  * </ul>
  */
 public Point getLocation () {
+	if (isLightWeight()) {
+		return super.getLocation();
+	}
+
 	checkWidget ();
 	return DPIUtil.scaleDown(getLocationInPixels(), getZoom());
 }
@@ -1528,6 +1543,10 @@ public Shell getShell () {
  * </ul>
  */
 public Point getSize (){
+	if (isLightWeight()) {
+		return super.getSize();
+	}
+
 	checkWidget ();
 	return DPIUtil.scaleDown(getSizeInPixels (), getZoom());
 }
@@ -1674,6 +1693,10 @@ public boolean getTouchEnabled () {
  * </ul>
  */
 public boolean getVisible () {
+	if (isLightWeight()) {
+		return super.getVisible();
+	}
+
 	checkWidget ();
 	if (!getDrawing()) return (state & HIDDEN) == 0;
 	int bits = OS.GetWindowLong (handle, OS.GWL_STYLE);
@@ -1965,6 +1988,10 @@ boolean isTabItem () {
  * @see #getVisible
  */
 public boolean isVisible () {
+	if (isLightWeight()) {
+		return super.isVisible();
+	}
+
 	checkWidget ();
 	if (OS.IsWindowVisible (handle)) return true;
 	return getVisible () && parent.isVisible ();
@@ -3174,6 +3201,11 @@ void setBackgroundPixel (int pixel) {
  * </ul>
  */
 public void setBounds(int x, int y, int width, int height) {
+	if (isLightWeight()) {
+		super.setBounds(x, y, width, height);
+		return;
+	}
+
 	setBounds(new Rectangle(x, y, width, height));
 }
 
@@ -3249,6 +3281,11 @@ void setBoundsInPixels (int x, int y, int width, int height, int flags, boolean 
  * </ul>
  */
 public void setBounds (Rectangle rect) {
+	if (isLightWeight()) {
+		super.setBounds(rect);
+		return;
+	}
+
 	checkWidget ();
 	if (rect == null) error (SWT.ERROR_NULL_ARGUMENT);
 	setBoundsInPixels(DPIUtil.scaleUp(rect, getZoom()));
@@ -3368,6 +3405,11 @@ public void setDragDetect (boolean dragDetect) {
  * </ul>
  */
 public void setEnabled (boolean enabled) {
+	if (isLightWeight()) {
+		super.setEnabled(enabled);
+		return;
+	}
+
 	checkWidget ();
 	/*
 	* Feature in Windows.  If the receiver has focus, disabling
@@ -3504,6 +3546,11 @@ public void setLayoutData (Object layoutData) {
  * </ul>
  */
 public void setLocation (int x, int y) {
+	if (isLightWeight()) {
+		super.setLocation(x, y);
+		return;
+	}
+
 	checkWidget ();
 	int zoom = getZoom();
 	x = DPIUtil.scaleUp(x, zoom);
@@ -3531,6 +3578,11 @@ void setLocationInPixels (int x, int y) {
  * </ul>
  */
 public void setLocation (Point location) {
+	if (isLightWeight()) {
+		super.setLocation(location);
+		return;
+	}
+
 	checkWidget ();
 	if (location == null) error (SWT.ERROR_NULL_ARGUMENT);
 	location = DPIUtil.scaleUp(location, getZoom());
@@ -3758,6 +3810,11 @@ public void setRegion (Region region) {
  * </ul>
  */
 public void setSize (int width, int height) {
+	if (isLightWeight()) {
+		super.setSize(width, height);
+		return;
+	}
+
 	checkWidget ();
 	int zoom = getZoom();
 	width = DPIUtil.scaleUp(width, zoom);
@@ -3766,6 +3823,8 @@ public void setSize (int width, int height) {
 }
 
 void setSizeInPixels (int width, int height) {
+	assertIsNative();
+
 	int flags = OS.SWP_NOMOVE | OS.SWP_NOZORDER | OS.SWP_DRAWFRAME | OS.SWP_NOACTIVATE;
 	setBoundsInPixels (0, 0, Math.max (0, width), Math.max (0, height), flags);
 }
@@ -3794,6 +3853,11 @@ void setSizeInPixels (int width, int height) {
  * </ul>
  */
 public void setSize (Point size) {
+	if (isLightWeight()) {
+		super.setSize(size);
+		return;
+	}
+
 	checkWidget ();
 	if (size == null) error (SWT.ERROR_NULL_ARGUMENT);
 	size = DPIUtil.scaleUp(size, getZoom());
@@ -3924,6 +3988,11 @@ public void setTouchEnabled(boolean enabled) {
  * </ul>
  */
 public void setVisible (boolean visible) {
+	if (isLightWeight()) {
+		super.setVisible(visible);
+		return;
+	}
+
 	checkWidget ();
 	if (!getDrawing()) {
 		if (((state & HIDDEN) == 0) == visible) return;
