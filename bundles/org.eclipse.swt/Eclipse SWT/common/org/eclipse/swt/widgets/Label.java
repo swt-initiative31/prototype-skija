@@ -157,6 +157,11 @@ public class Label extends CustomControl {
 	}
 
 	@Override
+	protected boolean isTabStop() {
+		return false;
+	}
+
+	@Override
 	boolean isTabItem() {
 		// to not be focused by traverse events, e.g. tab key
 		return false;

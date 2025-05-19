@@ -53,4 +53,9 @@ abstract class NativeBasedCustomScrollable extends Scrollable {
 		foregroundColor = color;
 		super.setForeground(color);
 	}
+
+	@Override
+	boolean isTabGroup() {
+		return true;
+	}
 }
