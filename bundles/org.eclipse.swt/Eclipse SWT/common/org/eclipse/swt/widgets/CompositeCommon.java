@@ -62,4 +62,17 @@ void moveChildAbove(Control child1, Control child2) {
 	children.remove(index1);
 	children.add(newIndex, child1);
 }
+
+protected void getCurrentTabStopControls(List<Control> controls) {
+	super.getCurrentTabStopControls(controls);
+
+	final List<Control> children = this_children();
+	for (Control child : children) {
+		if (!child.getVisible() || !child.getEnabled()) {
+			continue;
+		}
+
+		child.getCurrentTabStopControls(controls);
+	}
+}
 }

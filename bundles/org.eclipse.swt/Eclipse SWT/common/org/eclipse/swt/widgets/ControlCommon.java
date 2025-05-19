@@ -4,6 +4,9 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 
+import java.util.ArrayList;
+import java.util.List;
+
 abstract class ControlCommon extends Widget {
 
 protected abstract boolean isLightWeight();
@@ -212,5 +215,59 @@ protected void redraw(int x, int y, int width, int height) {
 	else {
 		parent.redraw(bounds.x, bounds.y, bounds.width, bounds.height, false);
 	}
+}
+
+public boolean isFocusControl () {
+	checkWidget ();
+	return display.getLightWeightFocusControl() == this;
+}
+
+protected void getCurrentTabStopControls(List<Control> controls) {
+	if (isTabStop()) {
+		controls.add((Control) this);
+	}
+}
+
+protected boolean isTabStop() {
+	return (style & SWT.NO_FOCUS) == 0;
+}
+
+protected Composite getTabRoot() {
+	final Control[] controls = parent._getTabList();
+	if (controls != null) {
+		return parent;
+	}
+
+	return parent.getTabRoot();
+}
+
+boolean traverseGroup (boolean next) {
+	final Composite root = getTabRoot();
+	if (!root.isVisible() || !root.isEnabled()) {
+		return false;
+	}
+
+	final List<Control> tabControls = new ArrayList<>();
+	root.getCurrentTabStopControls(tabControls);
+	final int index = tabControls.indexOf(this);
+	if (index < 0) {
+		return false;
+	}
+
+	final int offset = next ? 1 : -1;
+	final int length = tabControls.size();
+	int i = index;
+	while (true) {
+		i = (i + offset + length) % length;
+		if (i == index) {
+			break;
+		}
+
+		final Control control = tabControls.get(i);
+		if (!control.isDisposed() && control.setFocus()) {
+			return true;
+		}
+	}
+	return false;
 }
 }

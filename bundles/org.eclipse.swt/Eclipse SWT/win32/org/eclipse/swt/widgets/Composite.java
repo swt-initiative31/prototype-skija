@@ -14,7 +14,6 @@
 package org.eclipse.swt.widgets;
 
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.*;
@@ -1403,7 +1402,7 @@ LRESULT WM_LBUTTONDOWN (long wParam, long lParam) {
 	if (result == LRESULT.ZERO) return result;
 
 	/* Set focus for a canvas with no children */
-	if ((state & CANVAS) != 0) {
+	if ((state & CANVAS) != 0 && !isLightWeightChildHandling()) {
 		if ((style & SWT.NO_FOCUS) == 0 && hooksKeys ()) {
 			if (OS.GetWindow (handle, OS.GW_CHILD) == 0) setFocus ();
 		}
@@ -1963,5 +1962,73 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 		DPIZoomChangeRegistry.applyChange(child, newZoom, scalingFactor);
 	}
 	composite.redrawInPixels (null, true);
+}
+
+@Override
+boolean sendFocusEvent(int type) {
+	Shell shell = getShell();
+
+	/*
+	* Feature in Windows.  During the processing of WM_KILLFOCUS,
+	* when the focus window is queried using GetFocus(), it has
+	* already been assigned to the new window.  The fix is to
+	* remember the control that is losing or gaining focus and
+	* answer it during WM_KILLFOCUS.  If a WM_SETFOCUS occurs
+	* during WM_KILLFOCUS, the focus control needs to be updated
+	* to the current control.  At any other time, the focus
+	* control matches Windows.
+	*/
+	Display display = this.display;
+//	display.focusEvent = type;
+	if (type == SWT.FocusIn) {
+		final Control pendingCustomFocusControl = display.getPendingLightWeightFocusControlAndClear();
+		final Control newCustomFocusControl = getNativeParentOf(pendingCustomFocusControl) == this
+				? pendingCustomFocusControl
+				: null;
+		final Control newFocusControl = newCustomFocusControl != null ? newCustomFocusControl : this;
+		display.setFocusControl(newFocusControl);
+	} else {
+		display.setFocusControl(null);
+	}
+//	display.focusEvent = SWT.None;
+
+	if (!shell.isDisposed ()) {
+		switch (type) {
+			case SWT.FocusIn:
+				final Control focusControl = display.getFocusControl();
+				shell.setActiveControl (focusControl);
+				break;
+			case SWT.FocusOut:
+				if (shell != display.getActiveShell ()) {
+					shell.setActiveControl (null);
+				}
+				break;
+		}
+	}
+	return true;
+}
+
+@Override
+boolean sendKeyEvent(int type, int msg, long wParam, long lParam, Event event) {
+	final Control focusControl = display.getFocusControl();
+	if (getNativeParentOf(focusControl) == this) {
+		System.out.println("key event for focusControl = " + focusControl.toDebugName());
+		focusControl.sendEvent(type, event);
+		return event.doit && !isDisposed();
+	}
+
+	return super.sendKeyEvent(type, msg, wParam, lParam, event);
+}
+
+@Override
+boolean traverse(Event event) {
+	final Control focusControl = display.getFocusControl();
+	if (focusControl != this && getNativeParentOf(focusControl) == this) {
+		System.out.println("focusControl = " + focusControl.toDebugName());
+		event.doit = true;
+		return focusControl.traverse(event);
+	}
+
+	return super.traverse(event);
 }
 }

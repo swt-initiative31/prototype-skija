@@ -2490,6 +2490,9 @@ public int getDoubleClickTime () {
  */
 public Control getFocusControl () {
 	checkDevice ();
+	if (lightWeightFocusControl != null && !lightWeightFocusControl.isDisposed()) {
+		return lightWeightFocusControl;
+	}
 	if (focusControl != null && !focusControl.isDisposed ()) {
 		return focusControl;
 	}
@@ -6340,5 +6343,48 @@ public final void setColorProvider(ColorProvider colorProvider) {
 	if (colorProvider == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	this.colorProvider = colorProvider;
 	// todo: redraw all (custom-drawn) widgets
+}
+
+private Control lightWeightFocusControl;
+
+public Control getLightWeightFocusControl() {
+	return lightWeightFocusControl;
+}
+
+public void setFocusControl(Control control) {
+	final Control oldFocusControl = lightWeightFocusControl != null ? lightWeightFocusControl : focusControl;
+	if (oldFocusControl == control) {
+		return;
+	}
+
+	if (oldFocusControl != null) {
+		System.out.println("Focus lost " + oldFocusControl.toDebugName());
+		oldFocusControl.sendEvent(SWT.FocusOut);
+	}
+
+	if (control != null && control.isLightWeight()) {
+		focusControl = Control.getNativeParentOf(control);
+		lightWeightFocusControl = control;
+	} else {
+		focusControl = control;
+		lightWeightFocusControl = null;
+	}
+
+	if (control != null) {
+		System.out.println("Focus gained " + control.toDebugName());
+		control.sendEvent(SWT.FocusIn);
+	}
+}
+
+private Control pendingLightWeightFocusControl;
+
+public Control getPendingLightWeightFocusControlAndClear() {
+	Control control = pendingLightWeightFocusControl;
+	pendingLightWeightFocusControl = null;
+	return control;
+}
+
+public void setPendingLightWeightFocusControl(Control control) {
+	this.pendingLightWeightFocusControl = control;
 }
 }
