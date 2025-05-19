@@ -163,7 +163,16 @@ Control () {
  */
 public Control (Composite parent, int style) {
 	super (parent, style);
-	createWidget (0);
+	if (requiresBeingNative()) {
+		parent.assertIsNative();
+		createWidget(0);
+	} else {
+		createCustomWidget();
+	}
+}
+
+protected boolean requiresBeingNative() {
+	return true;
 }
 
 @Override
@@ -783,6 +792,12 @@ boolean containedInRegion (int x, int y) {
 		return Cairo.cairo_region_contains_point(eventRegion, x, y);
 	}
 	return false;
+}
+
+void createCustomWidget() {
+	checkOrientation(parent);
+	checkBackground();
+	parent.addChild(this);
 }
 
 @Override
@@ -4521,6 +4536,9 @@ public boolean isReparentable () {
 	return true;
 }
 boolean isShowing () {
+	if (isLightWeight()) {
+		return super.isShowing();
+	}
 	/*
 	* This is not complete.  Need to check if the
 	* widget is obscurred by a parent or sibling.
@@ -4695,6 +4713,11 @@ public void requestLayout () {
  * @see SWT#DOUBLE_BUFFERED
  */
 public void redraw () {
+	if (isLightWeight()) {
+		super.redraw();
+		return;
+	}
+
 	checkWidget();
 	redraw (false);
 }
@@ -5409,6 +5432,9 @@ public void setCursor (Cursor cursor) {
 	checkWidget();
 	if (cursor != null && cursor.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
 	this.cursor = cursor;
+	if (isLightWeight()) {
+		return;
+	}
 	setCursor (cursor != null ? cursor.handle : 0);
 }
 
@@ -6952,6 +6978,9 @@ protected final ColorProvider getColorProvider() {
 protected void doRelease(boolean destroy) {
 	if (parent != null) {
 		parent.removeChild(this);
+	}
+	if (isLightWeight()) {
+		return;
 	}
 	super.doRelease(destroy);
 }

@@ -53,29 +53,41 @@ public final class Drawing {
 	 * @param drawOperation the operation that draws the control
 	 */
 	public static void drawWithGC(Control control, GC originalGC, Consumer<GC> drawOperation) {
-		Rectangle bounds = control.getBounds();
+		final int width;
+		final int height;
+		if (control instanceof Composite composite) {
+			final Rectangle clientArea = composite.getClientArea();
+			width = clientArea.width;
+			height = clientArea.height;
+		}
+		else {
+			final Point size = control.getSize();
+			width = size.x;
+			height = size.y;
+		}
+
+		final Rectangle clipping;
+		boolean usingTemporaryGC = false;
 		if (originalGC != null && originalGC.innerGC instanceof NativeGC nativeGC
 				&& nativeGC.drawable instanceof Control gcControl) {
 			if (gcControl != control) {
 				throw new IllegalStateException("given GC was not created for given control");
 			}
-		}
 
-		boolean usingTemporaryGC = false;
-		if (originalGC == null) {
+			clipping = originalGC.getClipping();
+		} else {
 			originalGC = new GC(control);
+			clipping = new Rectangle(0, 0, width, height);
 			usingTemporaryGC = true;
 		}
-		originalGC.setFont(control.getFont());
-		originalGC.setForeground(control.getForeground());
-		originalGC.setBackground(control.getBackground());
-		originalGC.setClipping(new Rectangle(0, 0, bounds.width, bounds.height));
-		originalGC.setAntialias(SWT.ON);
 
 		GC gc = createGraphicsContext(originalGC, control);
 
 		try {
+			gc.fillRectangle(clipping);
+
 			drawOperation.accept(gc);
+
 			gc.commit();
 		} finally {
 			gc.dispose();

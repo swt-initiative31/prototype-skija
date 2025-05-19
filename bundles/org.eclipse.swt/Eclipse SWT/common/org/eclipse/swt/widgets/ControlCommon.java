@@ -8,6 +8,15 @@ abstract class ControlCommon extends Widget {
 
 protected abstract boolean isLightWeight();
 
+public static Control getNativeParentOf(Control control) {
+	for (; control != null; control = control.parent) {
+		if (!control.isLightWeight()) {
+			return control;
+		}
+	}
+	return null;
+}
+
 public static String toDebugName(Control control) {
 	return control != null ? control.toDebugName() : "null";
 }
@@ -161,6 +170,19 @@ public void setVisible(boolean visible) {
 		sendEvent(SWT.Hide);
 		if (isDisposed()) return;
 	}
+}
+
+boolean isShowing () {
+	if (!isVisible()) return false;
+	ControlCommon control = this;
+	while (control != null) {
+		Point size = control.getSize();
+		if (size.x == 0 || size.y == 0) {
+			return false;
+		}
+		control = control.parent;
+	}
+	return true;
 }
 
 public void redraw() {

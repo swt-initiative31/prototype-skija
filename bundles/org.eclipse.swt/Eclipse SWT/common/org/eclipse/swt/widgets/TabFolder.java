@@ -370,7 +370,7 @@ void init(int style) {
 		addListener(folderEvent, listener);
 	}
 
-	initAccessible();
+//	initAccessible();
 }
 
 private void onZoomChange(Event event) {
@@ -861,7 +861,7 @@ public boolean getBorderVisible() {
 ToolBar getChevron() {
 	if (chevronTb == null) {
 		chevronTb = new ToolBar(this, SWT.FLAT);
-		initAccessibleChevronTb();
+//		initAccessibleChevronTb();
 		addTabControl(chevronTb, SWT.TRAIL, -1, false);
 	}
 	if (chevronItem == null) {

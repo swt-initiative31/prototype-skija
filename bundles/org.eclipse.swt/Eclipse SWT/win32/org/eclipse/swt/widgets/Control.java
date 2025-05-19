@@ -119,7 +119,16 @@ Control () {
  */
 public Control (Composite parent, int style) {
 	super (parent, style);
-	createWidget ();
+	if (requiresBeingNative()) {
+		parent.assertIsNative();
+		createWidget();
+	} else {
+		createCustomWidget();
+	}
+}
+
+protected boolean requiresBeingNative() {
+	return true;
 }
 
 @Override
@@ -686,6 +695,8 @@ void createHandle () {
 }
 
 void checkGesture () {
+	assertIsNative();
+
 	int value =getSystemMetrics (OS.SM_DIGITIZER);
 	if ((value & (OS.NID_READY | OS.NID_MULTI_INPUT)) != 0) {
 		/*
@@ -698,6 +709,14 @@ void checkGesture () {
 		config.dwBlock = 0;
 		OS.SetGestureConfig (handle, 0, 1, config, GESTURECONFIG.sizeof);
 	}
+}
+
+void createCustomWidget() {
+	foreground = -1;
+	background = -1;
+	checkOrientation (parent);
+	checkBackground ();
+	parent.addChild(this);
 }
 
 void createWidget () {
@@ -939,6 +958,8 @@ void enableDrag (boolean enabled) {
 }
 
 void maybeEnableDarkSystemTheme() {
+	assertIsNative();
+
 	maybeEnableDarkSystemTheme(handle);
 }
 
@@ -1920,6 +1941,9 @@ public boolean isReparentable () {
 }
 
 boolean isShowing () {
+	if (isLightWeight()) {
+		return super.isShowing();
+	}
 	/*
 	* This is not complete.  Need to check if the
 	* widget is obscured by a parent or sibling.
@@ -2426,6 +2450,11 @@ public void requestLayout () {
  * @see SWT#DOUBLE_BUFFERED
  */
 public void redraw () {
+	if (isLightWeight()) {
+		super.redraw();
+		return;
+	}
+
 	checkWidget ();
 	redrawInPixels (null,false);
 }
@@ -2512,6 +2541,8 @@ boolean redrawChildren () {
 }
 
 void register () {
+	assertIsNative();
+
 	display.addControl (handle, this);
 }
 
@@ -3309,6 +3340,12 @@ void setBoundsInPixels (Rectangle rect) {
  * </ul>
  */
 public void setCapture (boolean capture) {
+	if (isLightWeight()) {
+		checkWidget();
+		// TODO
+		return;
+	}
+
 	checkWidget ();
 	if (capture) {
 		OS.SetCapture (handle);
@@ -3363,6 +3400,8 @@ public void setCursor (Cursor cursor) {
 }
 
 void setDefaultFont () {
+	assertIsNative();
+
 	long hFont = display.getSystemFont (getShell().nativeZoom).handle;
 	OS.SendMessage (handle, OS.WM_SETFONT, hFont, 0);
 }
@@ -4050,6 +4089,8 @@ void sort (int [] items) {
 }
 
 void subclass () {
+	assertIsNative();
+
 	long oldProc = windowProc ();
 	long newProc = display.windowProc;
 	if (oldProc == newProc) return;
@@ -5959,6 +6000,14 @@ private static void resizeFont(Control control, int newZoom) {
 
 protected final ColorProvider getColorProvider() {
 	return display.getColorProvider();
+}
+
+@Override
+void reskinWidget() {
+	if (isLightWeight()) {
+		return;
+	}
+	super.reskinWidget();
 }
 }
 

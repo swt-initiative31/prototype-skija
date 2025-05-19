@@ -33,6 +33,11 @@ public abstract class CustomControl extends NativeBasedCustomControl {
 	}
 
 	@Override
+	protected final boolean requiresBeingNative() {
+		return false;
+	}
+
+	@Override
 	public final Color getBackground() {
 		return background != null ? background : getRenderer().getDefaultBackground();
 	}

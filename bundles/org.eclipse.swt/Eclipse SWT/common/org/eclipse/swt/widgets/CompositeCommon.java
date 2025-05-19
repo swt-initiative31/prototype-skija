@@ -13,6 +13,8 @@ abstract class CompositeCommon extends Scrollable {
 
 private final List<Control> children = new ArrayList<>();
 
+private CompositeLightWeightChildHandling lightWeightChildHandling;
+
 protected CompositeCommon() {
 }
 
@@ -24,7 +26,14 @@ protected final List<Control> this_children() {
 	return Collections.unmodifiableList(children);
 }
 
+protected final boolean isLightWeightChildHandling() {
+	return lightWeightChildHandling != null;
+}
+
 void addChild(Control control) {
+	if (control.isLightWeight() && lightWeightChildHandling == null) {
+		lightWeightChildHandling = new CompositeLightWeightChildHandling((Composite) this);
+	}
 	children.add(control);
 }
 
