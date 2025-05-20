@@ -1233,8 +1233,13 @@ public class Tree extends CustomComposite {
 			synchronizeArrangements(true);
 
 		}
-		// for virtual items, we have to take care, that these are not in
-		// virtualItemsList
+
+		if (isVirtual()) {
+			for (var e : virtualItemsList.entrySet()) {
+				if (e.getValue() == item)
+					virtualItemsList.remove(e.getKey());
+			}
+		}
 	}
 
 	/**
