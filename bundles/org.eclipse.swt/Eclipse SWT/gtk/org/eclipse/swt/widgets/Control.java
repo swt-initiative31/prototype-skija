@@ -796,6 +796,9 @@ void createWidget(int index) {
 	if (!GTK.GTK4) setRelations();
 	checkMirrored();
 	checkBorder();
+	if (parent != null && !(this instanceof Shell)) {
+		parent.addChild(this);
+	}
 }
 
 /**
@@ -6876,5 +6879,13 @@ Point getSurfaceOrigin () {
 
 protected final ColorProvider getColorProvider() {
 	return display.getColorProvider();
+}
+
+@Override
+protected void doRelease(boolean destroy) {
+	if (parent != null) {
+		parent.removeChild(this);
+	}
+	super.doRelease(destroy);
 }
 }
