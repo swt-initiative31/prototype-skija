@@ -31,9 +31,6 @@ public class MessageBoxExample {
 		shell.setSize(400, 300);
 		shell.setLayout(new GridLayout(1, false));
 
-		Label label = new Label(shell, SWT.PUSH);
-		label.setText("Click here to open the message box");
-
 		Button testButton = new Button(shell, SWT.PUSH);
 		testButton.setText("Show Custom MessageBox");
 		testButton.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
