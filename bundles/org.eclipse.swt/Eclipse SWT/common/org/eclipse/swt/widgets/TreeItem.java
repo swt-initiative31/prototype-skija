@@ -436,16 +436,6 @@ public class TreeItem extends Item {
 
 	private void destroyItem(TreeItem treeItem) {
 		itemsList.remove(treeItem);
-
-		parent.destroyItem(treeItem);
-
-		if (isVirtual()) {
-			for (var e : virtualItemsList.entrySet()) {
-				if (e.getValue() == treeItem)
-					virtualItemsList.remove(e.getKey());
-			}
-		}
-
 	}
 
 	/**
@@ -670,8 +660,8 @@ public class TreeItem extends Item {
 			int y = b.y;
 			int height = b.height;
 
-			int itemWidth = column.x + column.width - b.x;
-			return new Rectangle(b.x, y, itemWidth, height);
+			int rightShift = column.x + column.width - b.x;
+			return new Rectangle(b.x, y, column.width - rightShift, height);
 		}
 
 		return new Rectangle(column.x, b.y, column.width, b.height);
@@ -1962,34 +1952,6 @@ public class TreeItem extends Item {
 			}
 		}
 		return;
-	}
-
-	public void clear(int index, boolean all) {
-
-		clear(new int[] { index });
-
-	}
-
-	public void clear(int[] indices) {
-		checkWidget();
-
-		if (indices == null)
-			error(SWT.ERROR_NULL_ARGUMENT);
-		if (indices.length == 0)
-			return;
-
-		int count = getItemCount();
-		for (int i = 0; i < indices.length; i++) {
-			final int index = indices[i];
-			if (0 > index || index >= count)
-				error(SWT.ERROR_INVALID_RANGE);
-
-			TreeItem item = _getItem(index, false);
-			if (item != null) {
-				item.clear();
-				item.redraw();
-			}
-		}
 	}
 
 }
