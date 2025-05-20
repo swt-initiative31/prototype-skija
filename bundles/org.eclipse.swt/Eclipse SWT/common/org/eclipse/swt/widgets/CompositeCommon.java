@@ -36,10 +36,7 @@ protected final boolean isLightWeightChildHandling() {
 }
 
 void addChild(Control control) {
-	if (isLightWeight()) {
-		control.assertIsLightWeight();
-	}
-	else {
+	if (!isLightWeight()) {
 		if (control.isLightWeight() && lightWeightChildHandling == null) {
 			lightWeightChildHandling = new CompositeLightWeightChildHandling((Composite) this);
 		}

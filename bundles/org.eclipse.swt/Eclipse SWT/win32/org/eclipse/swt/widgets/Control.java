@@ -120,7 +120,6 @@ Control () {
 public Control (Composite parent, int style) {
 	super (parent, style);
 	if (requiresBeingNative()) {
-		parent.assertIsNative();
 		createWidget();
 	} else {
 		createCustomWidget();
@@ -1424,12 +1423,12 @@ public Object getLayoutData () {
  * </ul>
  */
 public Point getLocation () {
-	if (isLightWeight()) {
-		return super.getLocation();
+	if (this instanceof Shell) {
+		checkWidget ();
+		return DPIUtil.scaleDown(getLocationInPixels(), getZoom());
 	}
 
-	checkWidget ();
-	return DPIUtil.scaleDown(getLocationInPixels(), getZoom());
+	return super.getLocation();
 }
 
 Point getLocationInPixels () {
@@ -3258,8 +3257,8 @@ void setBackgroundPixel (int pixel) {
  * </ul>
  */
 public void setBounds(int x, int y, int width, int height) {
+	super.setBounds(x, y, width, height);
 	if (isLightWeight()) {
-		super.setBounds(x, y, width, height);
 		return;
 	}
 
@@ -3310,6 +3309,16 @@ void setBoundsInPixels (int x, int y, int width, int height, int flags, boolean 
 			lpwp [index] = wp;
 			return;
 		}
+	}
+	if (parent != null && parent.isLightWeight()) {
+		Composite p = parent;
+		do {
+			final Point location = p.getLocation();
+			x += DPIUtil.scaleUp(location.x, getZoom());
+			y += DPIUtil.scaleUp(location.y, getZoom());
+			if (p.parent == null) error(SWT.ERROR_UNSPECIFIED);
+			p = p.parent;
+		} while (p.isLightWeight());
 	}
 	OS.SetWindowPos (topHandle, 0, x, y, width, height, flags);
 }
@@ -4833,7 +4842,8 @@ int widgetExtStyle () {
 }
 
 long widgetParent () {
-	return parent.handle;
+	final Control nativeParent = getNativeParentOf(this);
+	return nativeParent.handle;
 }
 
 int widgetStyle () {

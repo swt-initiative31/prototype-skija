@@ -130,6 +130,9 @@ public void setBounds(int x, int y, int width, int height) {
 	this.y = y;
 	this.width = width;
 	this.height = height;
+	if (!isLightWeight()) {
+		return;
+	}
 	redraw();
 	if (move) {
 		moved();
