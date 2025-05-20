@@ -62,6 +62,9 @@ public class SharedGCTest {
 
 		createRadioButton(parent, "Radio 1");
 		createRadioButton(parent, "Radio 2");
+
+		final Spinner spinner = new Spinner(parent, SWT.NORMAL);
+		spinner.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 	}
 
 	private static void createButton(Composite parent, String text) {

@@ -119,6 +119,9 @@ long callWindowProc (long hwnd, int msg, long wParam, long lParam) {
  * @see #getClientArea
  */
 public Rectangle computeTrim (int x, int y, int width, int height) {
+	if (isLightWeight()) {
+		return new Rectangle(x, y, width, height);
+	}
 	checkWidget ();
 	int zoom = getZoom();
 	Rectangle rectangle = DPIUtil.scaleUp(new Rectangle(x, y, width, height), zoom);

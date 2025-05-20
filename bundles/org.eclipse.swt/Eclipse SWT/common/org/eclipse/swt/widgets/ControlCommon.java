@@ -11,6 +11,8 @@ abstract class ControlCommon extends Widget {
 
 protected abstract boolean isLightWeight();
 
+protected abstract int getBorderWidth();
+
 public static Control getNativeParentOf(Control control) {
 	for (; control != null; control = control.parent) {
 		if (!control.isLightWeight()) {
@@ -104,6 +106,9 @@ protected void resized() {
 	sendEvent(SWT.Resize);
 }
 
+protected void _updateLayout(boolean all) {
+}
+
 public Rectangle getBounds() {
 	return new Rectangle(x, y, width, height);
 }
@@ -125,6 +130,9 @@ public void setBounds(int x, int y, int width, int height) {
 	this.y = y;
 	this.width = width;
 	this.height = height;
+	if (!isLightWeight()) {
+		return;
+	}
 	redraw();
 	if (move) {
 		moved();
@@ -132,6 +140,22 @@ public void setBounds(int x, int y, int width, int height) {
 	if (resize) {
 		resized();
 	}
+}
+
+public Point computeSize(int wHint, int hHint, boolean changed) {
+	checkWidget();
+	int width = DEFAULT_WIDTH;
+	int height = DEFAULT_HEIGHT;
+	if (wHint != SWT.DEFAULT) {
+		width = wHint;
+	}
+	if (hHint != SWT.DEFAULT) {
+		height = hHint;
+	}
+	int border = getBorderWidth();
+	width += border * 2;
+	height += border * 2;
+	return new Point(width, height);
 }
 
 public boolean getEnabled() {

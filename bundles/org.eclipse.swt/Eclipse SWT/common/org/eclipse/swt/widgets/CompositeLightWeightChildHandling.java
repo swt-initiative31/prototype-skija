@@ -25,6 +25,7 @@ final class CompositeLightWeightChildHandling {
 	private Control mouseOverControl;
 
 	public CompositeLightWeightChildHandling(Composite composite) {
+		composite.assertIsNative();
 		this.composite = Objects.requireNonNull(composite);
 
 		final Listener listener = e -> {
@@ -108,6 +109,10 @@ final class CompositeLightWeightChildHandling {
 	}
 
 	private Control getChildAt(Point location) {
+		return getChildAt(location, composite);
+	}
+
+	private Control getChildAt(Point location, Composite composite) {
 		for (Control child : composite.getChildren()) {
 			if (!child.isLightWeight()) {
 				continue;
@@ -121,6 +126,12 @@ final class CompositeLightWeightChildHandling {
 			if (bounds.contains(location.x, location.y)) {
 				location.x -= bounds.x;
 				location.y -= bounds.y;
+				if (child instanceof Composite childComposite) {
+					final Control grandChild = getChildAt(location, childComposite);
+					if (grandChild != null) {
+						return grandChild;
+					}
+				}
 				return child;
 			}
 		}
@@ -153,6 +164,13 @@ final class CompositeLightWeightChildHandling {
 				e.gc.setBackground(child.getBackground());
 				e.widget = child;
 				child.sendEvent(e);
+
+				if (child instanceof Composite childComposite) {
+					final Rectangle subClipping = b.intersection(clipping);
+					subClipping.x -= b.x;
+					subClipping.y -= b.y;
+					drawChildren(childComposite, subClipping, e);
+				}
 			}
 			finally {
 				e.gc.translate(-b.x, -b.y);
