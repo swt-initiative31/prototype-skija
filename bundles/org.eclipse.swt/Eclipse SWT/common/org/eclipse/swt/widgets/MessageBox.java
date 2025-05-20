@@ -44,8 +44,7 @@ import org.eclipse.swt.layout.*;
  */
 public class MessageBox extends Dialog {
 
-	String message = "";
-	long handle;
+	private String message = "";
 	private Map<Integer, String> labels;
 
 /**
@@ -61,8 +60,8 @@ public class MessageBox extends Dialog {
  *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
  * </ul>
  */
-public MessageBox (Shell parent) {
-	this (parent, SWT.OK | SWT.ICON_INFORMATION | SWT.APPLICATION_MODAL);
+public MessageBox(Shell parent) {
+	this(parent, SWT.OK | SWT.ICON_INFORMATION | SWT.APPLICATION_MODAL);
 }
 
 /**
@@ -101,9 +100,9 @@ public MessageBox (Shell parent) {
  * @see SWT#RETRY
  * @see SWT#IGNORE
  */
-public MessageBox (Shell parent, int style) {
-	super (parent, checkStyle (parent, checkStyle (style)));
-	checkSubclass ();
+public MessageBox(Shell parent, int style) {
+	super(parent, checkStyle(parent, checkStyle(style)));
+	checkSubclass();
 }
 
 /**
@@ -113,7 +112,7 @@ public MessageBox (Shell parent, int style) {
  *
  * @return the message
  */
-public String getMessage () {
+public String getMessage() {
 	return message;
 }
 
@@ -128,8 +127,8 @@ public String getMessage () {
  *    <li>ERROR_NULL_ARGUMENT - if the string is null</li>
  * </ul>
  */
-public void setMessage (String string) {
-	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
+public void setMessage(String string) {
+	if (string == null) error(SWT.ERROR_NULL_ARGUMENT);
 	message = string;
 }
 
@@ -191,8 +190,9 @@ public int open() {
 
 	Display display = dialog.getDisplay();
 	while (!dialog.isDisposed()) {
-		if (!display.readAndDispatch())
+		if (!display.readAndDispatch()) {
 			display.sleep();
+		}
 	}
 
 	return result[0];
@@ -200,36 +200,41 @@ public int open() {
 
 private Image getIcon(Display display, int style) {
 	int iconID = -1;
-	if ((style & SWT.ICON_ERROR) != 0)
+	if ((style & SWT.ICON_ERROR) != 0) {
 		iconID = SWT.ICON_ERROR;
-	else if ((style & SWT.ICON_INFORMATION) != 0)
+	} else if ((style & SWT.ICON_INFORMATION) != 0) {
 		iconID = SWT.ICON_INFORMATION;
-	else if ((style & SWT.ICON_QUESTION) != 0)
+	} else if ((style & SWT.ICON_QUESTION) != 0) {
 		iconID = SWT.ICON_QUESTION;
-	else if ((style & SWT.ICON_WARNING) != 0)
+	} else if ((style & SWT.ICON_WARNING) != 0) {
 		iconID = SWT.ICON_WARNING;
-	else if ((style & SWT.ICON_WORKING) != 0)
+	} else if ((style & SWT.ICON_WORKING) != 0) {
 		iconID = SWT.ICON_INFORMATION;
+	}
 
-	if (iconID != -1)
+	if (iconID != -1) {
 		return display.getSystemImage(iconID);
+	}
 	return null;
 }
 
 private String[] getButtonLabels(int style) {
-	if ((style & SWT.OK) != 0 && (style & SWT.CANCEL) != 0)
+	if ((style & SWT.OK) != 0 && (style & SWT.CANCEL) != 0) {
 		return new String[] { getLabel(SWT.OK, "OK"), getLabel(SWT.CANCEL, "Cancel") };
-	if ((style & SWT.YES) != 0 && (style & SWT.NO) != 0 && (style & SWT.CANCEL) != 0)
+	}
+	if ((style & SWT.YES) != 0 && (style & SWT.NO) != 0 && (style & SWT.CANCEL) != 0) {
 		return new String[] { getLabel(SWT.YES, "Yes"), getLabel(SWT.NO, "No"), getLabel(SWT.CANCEL, "Cancel") };
-	if ((style & SWT.YES) != 0 && (style & SWT.NO) != 0)
+	}
+	if ((style & SWT.YES) != 0 && (style & SWT.NO) != 0) {
 		return new String[] { getLabel(SWT.YES, "Yes"), getLabel(SWT.NO, "No") };
-	if ((style & SWT.RETRY) != 0 && (style & SWT.CANCEL) != 0)
+	}
+	if ((style & SWT.RETRY) != 0 && (style & SWT.CANCEL) != 0) {
 		return new String[] { getLabel(SWT.RETRY, "Retry"), getLabel(SWT.CANCEL, "Cancel") };
-	if ((style & SWT.ABORT) != 0 && (style & SWT.RETRY) != 0 && (style & SWT.IGNORE) != 0)
+	}
+	if ((style & SWT.ABORT) != 0 && (style & SWT.RETRY) != 0 && (style & SWT.IGNORE) != 0) {
 		return new String[] { getLabel(SWT.ABORT, "Abort"), getLabel(SWT.RETRY, "Retry"),
 				getLabel(SWT.IGNORE, "Ignore") };
-	if ((style & SWT.OK) != 0)
-		return new String[] { getLabel(SWT.OK, "OK") };
+	}
 	return new String[] { getLabel(SWT.OK, "OK") };
 }
 
@@ -250,27 +255,19 @@ private int mapButtonResult(String label) {
 		}
 	}
 
-	switch (label) {
-	case "OK":
-		return SWT.OK;
-	case "Cancel":
-		return SWT.CANCEL;
-	case "Yes":
-		return SWT.YES;
-	case "No":
-		return SWT.NO;
-	case "Retry":
-		return SWT.RETRY;
-	case "Abort":
-		return SWT.ABORT;
-	case "Ignore":
-		return SWT.IGNORE;
-	default:
-		return SWT.CANCEL;
-	}
+	return switch (label) {
+		case "OK" -> SWT.OK;
+		case "Cancel" -> SWT.CANCEL;
+		case "Yes" -> SWT.YES;
+		case "No" -> SWT.NO;
+		case "Retry" -> SWT.RETRY;
+		case "Abort" -> SWT.ABORT;
+		case "Ignore" -> SWT.IGNORE;
+		default -> SWT.CANCEL;
+	};
 }
 
-private static int checkStyle (int style) {
+private static int checkStyle(int style) {
 	int mask = (SWT.YES | SWT.NO | SWT.OK | SWT.CANCEL | SWT.ABORT | SWT.RETRY | SWT.IGNORE);
 	int bits = style & mask;
 	if (bits == SWT.OK || bits == SWT.CANCEL || bits == (SWT.OK | SWT.CANCEL)) return style;
@@ -299,7 +296,7 @@ private static int checkStyle (int style) {
  * @since 3.121
  */
 public void setButtonLabels(Map<Integer, String> labels) {
-	if (labels == null) error (SWT.ERROR_NULL_ARGUMENT);
+	if (labels == null) error(SWT.ERROR_NULL_ARGUMENT);
 	this.labels = labels;
 }
 }
