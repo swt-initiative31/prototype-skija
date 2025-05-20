@@ -120,7 +120,6 @@ Control () {
 public Control (Composite parent, int style) {
 	super (parent, style);
 	if (requiresBeingNative()) {
-		parent.assertIsNative();
 		createWidget();
 	} else {
 		createCustomWidget();
@@ -628,6 +627,10 @@ public Point computeSize (int wHint, int hHint) {
  * @see "computeTrim, getClientArea for controls that implement them"
  */
 public Point computeSize (int wHint, int hHint, boolean changed){
+	if (isLightWeight()) {
+		return super.computeSize(wHint, hHint, changed);
+	}
+
 	checkWidget ();
 	int zoom = getZoom();
 	wHint = (wHint != SWT.DEFAULT ? DPIUtil.scaleUp(wHint, zoom) : wHint);
@@ -1201,6 +1204,9 @@ int getBackgroundPixel () {
  * </ul>
  */
 public int getBorderWidth () {
+	if (isLightWeight()) {
+		return 0;
+	}
 	checkWidget ();
 	return DPIUtil.scaleDown(getBorderWidthInPixels (), getZoom());
 }
@@ -1417,12 +1423,12 @@ public Object getLayoutData () {
  * </ul>
  */
 public Point getLocation () {
-	if (isLightWeight()) {
-		return super.getLocation();
+	if (this instanceof Shell) {
+		checkWidget ();
+		return DPIUtil.scaleDown(getLocationInPixels(), getZoom());
 	}
 
-	checkWidget ();
-	return DPIUtil.scaleDown(getLocationInPixels(), getZoom());
+	return super.getLocation();
 }
 
 Point getLocationInPixels () {
@@ -3255,8 +3261,8 @@ void setBackgroundPixel (int pixel) {
  * </ul>
  */
 public void setBounds(int x, int y, int width, int height) {
+	super.setBounds(x, y, width, height);
 	if (isLightWeight()) {
-		super.setBounds(x, y, width, height);
 		return;
 	}
 
@@ -3307,6 +3313,16 @@ void setBoundsInPixels (int x, int y, int width, int height, int flags, boolean 
 			lpwp [index] = wp;
 			return;
 		}
+	}
+	if (parent != null && parent.isLightWeight()) {
+		Composite p = parent;
+		do {
+			final Point location = p.getLocation();
+			x += DPIUtil.scaleUp(location.x, getZoom());
+			y += DPIUtil.scaleUp(location.y, getZoom());
+			if (p.parent == null) error(SWT.ERROR_UNSPECIFIED);
+			p = p.parent;
+		} while (p.isLightWeight());
 	}
 	OS.SetWindowPos (topHandle, 0, x, y, width, height, flags);
 }
@@ -4203,6 +4219,17 @@ public Point toControl (Point point) {
  */
 public Point toDisplay (int x, int y) {
 	checkWidget ();
+	if (isLightWeight()) {
+		Control c = this;
+		do {
+			final Point location = c.getLocation();
+			x += location.x;
+			y += location.y;
+			c = c.parent;
+		} while (c.isLightWeight());
+		return c.toDisplay(x, y);
+	}
+
 	int zoom = getZoom();
 	Point displayPointInPixels = toDisplayInPixels(DPIUtil.scaleUp(x, zoom), DPIUtil.scaleUp(y, zoom));
 	return getDisplay().translateFromDisplayCoordinates(displayPointInPixels, zoom);
@@ -4830,7 +4857,8 @@ int widgetExtStyle () {
 }
 
 long widgetParent () {
-	return parent.handle;
+	final Control nativeParent = getNativeParentOf(this);
+	return nativeParent.handle;
 }
 
 int widgetStyle () {

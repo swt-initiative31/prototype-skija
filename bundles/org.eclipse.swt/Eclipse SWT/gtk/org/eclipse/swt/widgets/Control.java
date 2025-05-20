@@ -165,7 +165,6 @@ Control () {
 public Control (Composite parent, int style) {
 	super (parent, style);
 	if (requiresBeingNative()) {
-		parent.assertIsNative();
 		createWidget(0);
 	} else {
 		createCustomWidget();
@@ -1049,8 +1048,8 @@ void setBoundsInPixels (Rectangle rect) {
  * </ul>
  */
 public void setBounds (int x, int y, int width, int height) {
+	super.setBounds(x, y, width, height);
 	if (isLightWeight()) {
-		super.setBounds(x, y, width, height);
 		return;
 	}
 
@@ -1070,7 +1069,21 @@ void markLayout (boolean changed, boolean all) {
 
 void moveHandle (int x, int y) {
 	long topHandle = topHandle ();
-	long parentHandle = parent.parentingHandle ();
+	long parentHandle;
+	if (parent.isLightWeight()) {
+		Composite p = parent;
+		do {
+			final Point location = p.getLocation();
+			x += location.x;
+			y += location.y;
+			if (p.parent == null) error(SWT.ERROR_UNSPECIFIED);
+			p = p.parent;
+		} while (p.isLightWeight());
+		parentHandle = p.parentingHandle ();
+	}
+	else {
+		parentHandle = parent.parentingHandle ();
+	}
 	OS.swt_fixed_move (parentHandle, topHandle, x, y);
 }
 
@@ -1268,12 +1281,12 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
  * </ul>
  */
 public Point getLocation () {
-	if (isLightWeight()) {
-		return super.getLocation();
+	if (this instanceof Shell) {
+		checkWidget ();
+		return DPIUtil.autoScaleDown(getLocationInPixels());
 	}
 
-	checkWidget();
-	return DPIUtil.autoScaleDown(getLocationInPixels());
+	return super.getLocation();
 }
 
 Point getLocationInPixels () {
@@ -3959,8 +3972,10 @@ long gtk_draw (long widget, long cairo) {
 	GC gc = event.gc = GC.gtk_new (this, data);
 	// Note: use GC#setClipping(x,y,width,height) because GC#setClipping(Rectangle) got broken by bug 446075
 	gc.setClipping (eventBounds.x, eventBounds.y, eventBounds.width, eventBounds.height);
-	drawWidget (gc);
-	sendEvent (SWT.Paint, event);
+	Drawing.drawWithGC(this, gc, actualGc -> {
+		event.gc = actualGc;
+		sendEvent (SWT.Paint, event);
+	});
 	gc.dispose ();
 	event.gc = null;
 	return 0;
@@ -6336,15 +6351,16 @@ void setZOrder (Control sibling, boolean above, boolean fixRelations, boolean fi
 			}
 		}
 	}
+	Composite nativeParent = (Composite) getNativeParentOf(parent);
 	if (fixChildren) {
 		if (above) {
-			parent.moveAbove (topHandle, siblingHandle);
+			nativeParent.moveAbove (topHandle, siblingHandle);
 		} else {
-			parent.moveBelow (topHandle, siblingHandle);
+			nativeParent.moveBelow (topHandle, siblingHandle);
 		}
 	}
 	/*  Make sure that the parent internal windows are on the bottom of the stack	*/
-	if (!above && fixChildren) 	parent.fixZOrder ();
+	if (!above && fixChildren) 	nativeParent.fixZOrder ();
 
 	if (fixRelations) {
 		/* determine the receiver's new index in the parent */
@@ -6433,7 +6449,8 @@ void showWidget () {
 	// Comment this line to disable zero-sized widgets
 	state |= ZERO_WIDTH | ZERO_HEIGHT;
 	long topHandle = topHandle ();
-	long parentHandle = parent.parentingHandle ();
+	Composite nativeParent = (Composite) getNativeParentOf(parent);
+	long parentHandle = nativeParent.parentingHandle ();
 	parent.setParentGdkResource (this);
 	if (GTK.GTK4) {
 		OS.swt_fixed_add(parentHandle, topHandle);

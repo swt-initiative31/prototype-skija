@@ -741,11 +741,7 @@ String getAssociatedLabel () {
 public int getAlignment() {
 	return text.getStyle() & (SWT.LEFT | SWT.CENTER | SWT.RIGHT);
 }
-@Override
-public Control [] getChildren () {
-	checkWidget();
-	return new Control [0];
-}
+
 /**
  * Gets the editable state.
  *
