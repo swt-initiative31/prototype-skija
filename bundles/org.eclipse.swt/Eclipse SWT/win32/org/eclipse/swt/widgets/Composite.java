@@ -49,7 +49,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/snippets/#composite">Composite snippets</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public class Composite extends Scrollable {
+public class Composite extends CompositeCommon {
 	Layout layout;
 	WINDOWPOS [] lpwp;
 	Control [] tabList;
@@ -104,27 +104,7 @@ public Composite (Composite parent, int style) {
 }
 
 Control [] _getChildren () {
-	int count = 0;
-	long hwndChild = OS.GetWindow (handle, OS.GW_CHILD);
-	if (hwndChild == 0) return new Control [0];
-	while (hwndChild != 0) {
-		count++;
-		hwndChild = OS.GetWindow (hwndChild, OS.GW_HWNDNEXT);
-	}
-	Control [] children = new Control [count];
-	int index = 0;
-	hwndChild = OS.GetWindow (handle, OS.GW_CHILD);
-	while (hwndChild != 0) {
-		Control control = display.getControl (hwndChild);
-		if (control != null && control != this) {
-			children [index++] = control;
-		}
-		hwndChild = OS.GetWindow (hwndChild, OS.GW_HWNDNEXT);
-	}
-	if (count == index) return children;
-	Control [] newChildren = new Control [index];
-	System.arraycopy (children, 0, newChildren, 0, index);
-	return newChildren;
+	return this_children().toArray(new Control[0]);
 }
 
 Control [] _getTabList () {
@@ -473,17 +453,7 @@ public Control [] getChildren () {
 }
 
 int getChildrenCount () {
-	/*
-	* NOTE: The current implementation will count
-	* non-registered children.
-	*/
-	int count = 0;
-	long hwndChild = OS.GetWindow (handle, OS.GW_CHILD);
-	while (hwndChild != 0) {
-		count++;
-		hwndChild = OS.GetWindow (hwndChild, OS.GW_HWNDNEXT);
-	}
-	return count;
+	return this_children().size();
 }
 
 /**
