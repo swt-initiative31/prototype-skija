@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
@@ -1034,6 +1035,7 @@ public void test_setItemCount_itemOrderRoot() {
 
 			// Create items
 			{
+				System.out.println("TreeVirtual: " + ((tree.getStyle() & SWT.VIRTUAL) != 0) );
 				new TreeItem (parent, 0).setText ("0");
 				new TreeItem (parent, 0).setText ("2");
 				new TreeItem (parent, 0, 1).setText ("1");
@@ -1058,7 +1060,13 @@ public void test_setItemCount_itemOrderRoot() {
 			// Test items
 			TreeItem[] items = parent.getItems();
 			assertEquals(12, items.length);
+
+			System.out.println("TreeVirtual: " + ((tree.getStyle() & SWT.VIRTUAL) != 0) );
+			System.out.println(Arrays.toString(items));
 			for (int iItem = 0; iItem < items.length; iItem++) {
+
+				System.out.println(iItem  + " -pos: " + items[iItem].getText());
+
 				assertEquals(Integer.toString(iItem), items[iItem].getText());
 			}
 		}
@@ -1093,6 +1101,9 @@ public void test_setItemCount_itemOrderRoot() {
 			// Test items
 			TreeItem[] items = parent.getItems();
 			assertEquals(12, items.length);
+
+			System.out.println("TreeVirtual: " + ((tree.getStyle() & SWT.VIRTUAL) != 0) );
+			System.out.println(Arrays.toString(items));
 			for (int iItem = 0; iItem < items.length; iItem++) {
 				assertEquals(Integer.toString(iItem), items[iItem].getText());
 			}

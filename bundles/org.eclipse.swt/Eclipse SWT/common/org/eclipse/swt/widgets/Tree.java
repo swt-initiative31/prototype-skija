@@ -812,6 +812,39 @@ public class Tree extends CustomComposite {
 		clear(0, getItemCount() - 1);
 	}
 
+	// TODO handle all true or false.
+
+	/**
+	 * public void clearAll(boolean all) Clears all the items in the receiver. The
+	 * text, icon and other attributes of the items are set to their default values.
+	 * If the tree was created with the SWT.VIRTUAL style, these attributes are
+	 * requested again as needed. Parameters: all - true if all child items should
+	 * be cleared recursively, and false otherwise Throws: SWTException -
+	 * ERROR_WIDGET_DISPOSED - if the receiver has been disposed
+	 * ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the
+	 * receiver Since: 3.2 See Also: SWT.VIRTUAL SWT.SetData
+	 *
+	 * @param all
+	 */
+	public void clearAll(boolean all) {
+
+		if (getItemCount() == 0)
+			return;
+
+		if (isVirtual()) {
+			for (var e : virtualItemsList.entrySet()) {
+				final TreeItem value = e.getValue();
+				if (value != null) {
+					value.clear();
+				}
+			}
+			return;
+		}
+
+		clear(0, getItemCount() - 1);
+
+	}
+
 	@Override
 	public Point computeSize(int wHint, int hHint, boolean changed) {
 		checkWidget();
@@ -874,6 +907,9 @@ public class Tree extends CustomComposite {
 
 		columnsList.add(index, column);
 
+		if (sortColumn == null)
+			sortColumn = column;
+
 		moveTextsItemsToRight(index);
 
 		if (getItems() != null) {
@@ -929,14 +965,32 @@ public class Tree extends CustomComposite {
 	void createItem(TreeItem item, int index) {
 		if (isVirtual()) {
 			var previous = virtualItemsList.get(index);
-			if (previous != null) {
-				virtualItemsList.remove(index);
-				previous.dispose();
+			var previousIndex = index;
+
+			// move all other elements one up until an element was not yet set
+			while (previous != null) {
+
+
+				virtualItemsList.remove(previousIndex);
+
+				var nextPrevious = virtualItemsList.get(previousIndex + 1);
+				virtualItemsList.put(previousIndex + 1, previous);
+				previous = nextPrevious;
+				previousIndex = previousIndex + 1;
+
+			}
+
+			if (previousIndex >= virtualItemCount) {
+				virtualItemCount = previousIndex + 1;
 			}
 
 			virtualItemsList.put(index, item);
+
+			if (index >= virtualItemCount)
+				virtualItemCount = index + 1;
+
 		} else {
-			if (index < itemsList.size() - 1) {
+			if (index < itemsList.size()) {
 				itemsList.add(index, item);
 			} else {
 				itemsList.add(item);
@@ -955,6 +1009,38 @@ public class Tree extends CustomComposite {
 
 	void synchronizeArrangements(boolean redraw) {
 
+		if (isVirtual()) {
+
+			var ca = getClientArea();
+			var itemHeight = TreeItemRenderer.guessItemHeight(this);
+			int visibleElements = ca.height / itemHeight + 2;
+
+			boolean treeEmpty = treeItemsArrangement.isEmpty();
+
+			for (var i : treeItemsArrangement) {
+				i.clearCache();
+			}
+			this.treeItemsArrangement.clear();
+
+			for (var i : getItemsUpNumber(visibleElements)) {
+				addToArrangements(i, visibleElements);
+			}
+
+			if ((treeEmpty && !treeItemsArrangement.isEmpty()))
+				notifyListeners(SWT.EmptinessChanged, new Event());
+
+			if ((!treeEmpty && treeItemsArrangement.isEmpty())) {
+				var e = new Event();
+				e.detail = 1;
+				notifyListeners(SWT.EmptinessChanged, e);
+			}
+			if (redraw)
+				redraw();
+
+			return;
+
+		}
+
 		boolean treeEmpty = treeItemsArrangement.isEmpty();
 
 		for (var i : treeItemsArrangement) {
@@ -963,7 +1049,7 @@ public class Tree extends CustomComposite {
 		this.treeItemsArrangement.clear();
 
 		for (var i : getItems()) {
-			addToArrangements(i);
+			addToArrangements(i, null);
 		}
 
 		if ((treeEmpty && !treeItemsArrangement.isEmpty()))
@@ -979,15 +1065,39 @@ public class Tree extends CustomComposite {
 
 	}
 
-	private void addToArrangements(TreeItem i) {
+	private TreeItem[] getItemsUpNumber(int visibleElements) {
+		checkWidget();
+
+		if (isVirtual()) {
+			int count = Math.min(getItemCount(), visibleElements);
+			var result = new TreeItem[count];
+			for (int i = 0; i < count; i++) {
+				result[i] = _getItem(i);
+			}
+			return result;
+		}
+
+		return itemsList.toArray(new TreeItem[0]);
+	}
+
+	private void addToArrangements(TreeItem i, Integer upToElements) {
 
 		if (i.isDisposed())
 			return;
 		this.treeItemsArrangement.add(i);
 
+		if (upToElements != null) {
+			upToElements = upToElements - 1;
+
+			if (upToElements <= 0) {
+				return;
+			}
+
+		}
+
 		if (i.getExpanded()) {
-			for (var it : i.getItems()) {
-				addToArrangements(it);
+			for (var it : i.getItemsUpToNumber(upToElements)) {
+				addToArrangements(it, upToElements);
 			}
 		}
 

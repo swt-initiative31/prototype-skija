@@ -14,6 +14,7 @@
 package org.eclipse.swt.widgets;
 
 import java.util.*;
+import java.util.List;
 import java.util.stream.*;
 
 import org.eclipse.swt.*;
@@ -78,6 +79,9 @@ public class TreeItem extends Item {
 
 	private boolean expanded;
 
+	private int virtualItemCount;
+
+	private TreeMap<Integer, TreeItem> virtualItemsList = new TreeMap<>();
 
 	/**
 	 * Constructs a new instance of this class given its parent (which must be a
@@ -333,10 +337,49 @@ public class TreeItem extends Item {
 
 	}
 
-	private void createItem(TreeItem treeItem, int index) {
-		this.itemsList.add(index, treeItem);
+	private void createItem(TreeItem item, int index) {
+
+		if (isVirtual()) {
+			var previous = virtualItemsList.get(index);
+			var previousIndex = index;
+
+			// move all other elements one up until an element was not yet set
+			while (previous != null) {
+
+				virtualItemsList.remove(previousIndex);
+
+				var nextPrevious = virtualItemsList.get(previousIndex + 1);
+				virtualItemsList.put(previousIndex + 1, previous);
+				previous = nextPrevious;
+				previousIndex = previousIndex + 1;
+
+			}
+
+			if (previousIndex >= virtualItemCount) {
+				virtualItemCount = previousIndex + 1;
+			}
+
+			virtualItemsList.put(index, item);
+
+			if (index >= virtualItemCount)
+				virtualItemCount = index + 1;
+
+		} else {
+			if (index < itemsList.size()) {
+				itemsList.add(index, item);
+			} else {
+				itemsList.add(item);
+			}
+		}
 
 		parent.synchronizeArrangements(true);
+
+		if (!isVirtual()) {
+			parent.updateScrollBarWithTextSize();
+		}
+		if ((index >= parent.getTopIndex() && index <= parent.getItemsHandler().getLastVisibleElementIndex())) {
+			redraw();
+		}
 
 	}
 
@@ -1681,16 +1724,70 @@ public class TreeItem extends Item {
 		return this.expanded;
 	}
 
-	public TreeItem getItem(int i) {
-		return itemsList.get(i);
+	public TreeItem getItem(int index) {
+		checkWidget();
+		return _getItem(index);
 	}
 
 	public int getItemCount() {
+
+		if (isVirtual())
+			return virtualItemCount;
 		return itemsList.size();
 	}
 
 	public TreeItem[] getItems() {
+
+		if (isVirtual()) {
+			var result = new TreeItem[getItemCount()];
+			for (int i = 0; i < getItemCount(); i++) {
+				result[i] = _getItem(i);
+			}
+			return result;
+		}
 		return itemsList.toArray(new TreeItem[0]);
+	}
+
+	TreeItem[] getItemsUpToNumber(Integer upToElements) {
+
+		if (isVirtual()) {
+			int count = Math.min(getItemCount(), upToElements);
+			var result = new TreeItem[count];
+			for (int i = 0; i < count; i++) {
+				result[i] = _getItem(i);
+			}
+			return result;
+		}
+		return itemsList.toArray(new TreeItem[0]);
+
+	}
+
+	TreeItem _getItem(int index) {
+		return _getItem(index, true);
+	}
+
+	TreeItem _getItem(int index, boolean create) {
+		return _getItem(index, create, -1);
+	}
+
+	TreeItem _getItem(int index, boolean create, int count) {
+		if (isVirtual()) {
+			if (index < virtualItemCount) {
+				var e = virtualItemsList.get(index);
+				if (e == null && create) {
+					e = new TreeItem(this, SWT.None, index);
+				}
+				return e;
+			}
+			error(SWT.ERROR_INVALID_RANGE);
+		}
+
+		if (index >= getItemCount())
+			error(SWT.ERROR_INVALID_RANGE);
+		if (index < 0)
+			error(SWT.ERROR_INVALID_RANGE);
+
+		return itemsList.get(index);
 	}
 
 	public TreeItem getParentItem() {
@@ -1712,8 +1809,20 @@ public class TreeItem extends Item {
 
 	}
 
-	public int indexOf(TreeItem childItem) {
-		return itemsList.indexOf(childItem);
+	public int indexOf(TreeItem item) {
+		checkWidget();
+
+		if (item == null)
+			error(SWT.ERROR_NULL_ARGUMENT);
+		if (isVirtual()) {
+			for (var e : virtualItemsList.entrySet()) {
+				if (item.equals(e.getValue())) {
+					return e.getKey();
+				}
+			}
+			return -1;
+		}
+		return itemsList.indexOf(item);
 	}
 
 	int getIndent() {
@@ -1725,10 +1834,13 @@ public class TreeItem extends Item {
 
 	public void setExpanded(boolean b) {
 
-		if (itemsList.isEmpty()) {
-			this.expanded = false;
-			return;
-		}
+		boolean before = this.expanded;
+
+		if (!isVirtual() || (isVirtual() && virtualItemCount <= 0))
+			if (itemsList.isEmpty()) {
+				this.expanded = false;
+				return;
+			}
 
 		if (this.expanded != b)
 			this.expanded = b;
@@ -1745,6 +1857,10 @@ public class TreeItem extends Item {
 
 		}
 
+		if (before != this.expanded) {
+			getParent().synchronizeArrangements(true);
+		}
+
 	}
 
 	public void removeAll() {
@@ -1758,8 +1874,47 @@ public class TreeItem extends Item {
 
 	}
 
-	public void setItemCount(int perfNumItems) {
-		// TODO Auto-generated method stub
+	public void setItemCount(int count) {
+
+		checkWidget();
+
+		count = Math.max(0, count);
+		if (isVirtual()) {
+			boolean redraw = count > this.virtualItemCount;
+			this.virtualItemCount = count;
+
+			while (!virtualItemsList.isEmpty()) {
+				var key = virtualItemsList.lastKey();
+				if (key >= count) {
+					virtualItemsList.remove(key);
+				} else {
+					break;
+				}
+			}
+
+			if (redraw) {
+				this.redraw();
+			}
+
+			return;
+		}
+
+		if (count == itemsList.size()) {
+			return;
+		} else if (count > itemsList.size()) {
+			for (int i = itemsList.size(); i < count; i++) {
+				new TreeItem(this, SWT.None);
+			}
+		} else {
+			for (int i = itemsList.size() - 1; i >= count; i--) {
+				itemsList.get(i).dispose();
+			}
+		}
+
+	}
+
+	private boolean isVirtual() {
+		return getParent().isVirtual();
 	}
 
 	public boolean toggleExpand() {
@@ -1785,4 +1940,18 @@ public class TreeItem extends Item {
 
 		return true;
 	}
+
+	public void clearAll(boolean all) {
+
+		if (getItemCount() == 0)
+			return;
+
+		for (var e : itemsList) {
+			if (e != null) {
+				e.clear();
+			}
+		}
+		return;
+	}
+
 }
