@@ -1954,4 +1954,30 @@ public class TreeItem extends Item {
 		return;
 	}
 
+	public void clear(int index, boolean all) {
+		clear(new int[] { index });
+	}
+
+	public void clear(int[] indices) {
+		checkWidget();
+
+		if (indices == null)
+			error(SWT.ERROR_NULL_ARGUMENT);
+		if (indices.length == 0)
+			return;
+
+		int count = getItemCount();
+		for (int i = 0; i < indices.length; i++) {
+			final int index = indices[i];
+			if (0 > index || index >= count)
+				error(SWT.ERROR_INVALID_RANGE);
+
+			TreeItem item = _getItem(index, false);
+			if (item != null) {
+				item.clear();
+				item.redraw();
+			}
+		}
+	}
+
 }

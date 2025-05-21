@@ -609,7 +609,11 @@ public class Tree extends CustomComposite {
 	boolean checkData(TreeItem item, boolean redraw) {
 		if ((style & SWT.VIRTUAL) == 0)
 			return true;
-		return checkData(item, indexOf(item), redraw);
+		if (!item.cached) {
+			TreeItem parentItem = item.getParentItem();
+			return checkData(item, parentItem == null ? indexOf(item) : parentItem.indexOf(item), redraw);
+		}
+		return true;
 	}
 
 	boolean checkData(TreeItem item, int index, boolean redraw) {
@@ -620,18 +624,19 @@ public class Tree extends CustomComposite {
 			Event event = new Event();
 			event.item = item;
 			event.index = index;
+			TreeItem oldItem = currentItem;
 			currentItem = item;
 			sendEvent(SWT.SetData, event);
 			// widget could be disposed at this point
-			currentItem = null;
+			currentItem = oldItem;
 			if (isDisposed() || item.isDisposed())
 				return false;
-			if (redraw && !setScrollWidth(item, false)) {
+			if (redraw)
 				item.redraw();
-			}
 		}
 		return true;
 	}
+
 
 	@Override
 	protected void checkSubclass() {
