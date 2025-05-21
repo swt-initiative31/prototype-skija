@@ -660,8 +660,8 @@ public class TreeItem extends Item {
 			int y = b.y;
 			int height = b.height;
 
-			int rightShift = column.x + column.width - b.x;
-			return new Rectangle(b.x, y, column.width - rightShift, height);
+			int cellWidth = column.x + column.width - b.x;
+			return new Rectangle(b.x, y, cellWidth, height);
 		}
 
 		return new Rectangle(column.x, b.y, column.width, b.height);
