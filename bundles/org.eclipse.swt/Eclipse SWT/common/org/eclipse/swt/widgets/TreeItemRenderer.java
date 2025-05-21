@@ -137,7 +137,6 @@ public class TreeItemRenderer {
 		gc.fillPolygon(curve);
 	}
 
-
 	private int[] translateCurve(int x, int y, int[] curve) {
 
 		int[] newCurve = new int[curve.length];
@@ -265,8 +264,6 @@ public class TreeItemRenderer {
 		}
 
 		int xPosition = b.x + leftMargin;
-
-
 		int yPosition = b.y + topMargin;
 
 		var image = item.getImage();
@@ -413,9 +410,16 @@ public class TreeItemRenderer {
 		if (getParent().getColumnCount() > 0) {
 			width = getParent().getTotalColumnWidth();
 		} else {
-			Point textExtent = getParent().computeTextExtent(item.getText());
-			lineHeight = textExtent.y;
-			width += textExtent.x;
+			if (item.getText() != null && !item.getText().isBlank()) {
+				Point textExtent = getParent().computeTextExtent(item.getText());
+				lineHeight = textExtent.y;
+				width += textExtent.x;
+			} else {
+				// use dummy text for minimal size
+				Point textExtent = getParent().computeTextExtent("T");
+				lineHeight = textExtent.y;
+				width += 5;
+			}
 		}
 
 		this.computedSize = new Point(width, height);

@@ -440,6 +440,14 @@ public class Tree extends CustomComposite {
 		if (!this.isVisible())
 			return;
 
+		// TODO right click handling is a little bit more complex:
+		// -> if the item under the right click is selected, the complete selection
+		// stays the same
+		// -> if the item under the right click is not selected, the selection will be
+		// cleared and the element will be selected
+		if (e.button != 1)
+			return;
+
 		Point p = new Point(e.x, e.y);
 
 		if (columnsHandler.getColumnsBounds().contains(e.x, e.y)) {
