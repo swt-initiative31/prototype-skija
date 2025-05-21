@@ -1247,8 +1247,10 @@ public class Tree extends CustomComposite {
 	}
 
 	void destroyItem(TreeItem item) {
+		selectedTreeItems.remove(item);
 		if (!isVirtual()) {
 			itemsList.remove(item);
+			selectedTreeItems.remove(item);
 
 			synchronizeArrangements(true);
 
