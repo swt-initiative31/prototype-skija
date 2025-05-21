@@ -333,12 +333,14 @@ JNIEXPORT jlong JNICALL Cairo_NATIVE(cairo_1image_1surface_1create)
 #endif
 
 #ifndef NO_cairo_1image_1surface_1create_1for_1data
+#include <stdint.h>
 JNIEXPORT jlong JNICALL Cairo_NATIVE(cairo_1image_1surface_1create_1for_1data)
 	(JNIEnv *env, jclass that, jlong arg0, jint arg1, jint arg2, jint arg3, jint arg4)
 {
 	jlong rc = 0;
 	Cairo_NATIVE_ENTER(env, that, cairo_1image_1surface_1create_1for_1data_FUNC);
-	rc = (jlong)cairo_image_surface_create_for_data(arg0, arg1, arg2, arg3, arg4);
+	unsigned char *data = (unsigned char *) (intptr_t) arg0;
+	rc = (jlong) cairo_image_surface_create_for_data(data, arg1, arg2, arg3, arg4);	
 	Cairo_NATIVE_EXIT(env, that, cairo_1image_1surface_1create_1for_1data_FUNC);
 	return rc;
 }
@@ -1285,12 +1287,14 @@ fail:
 #endif
 
 #ifndef NO_cairo_1surface_1get_1reference_1count
+#include <stdint.h>
 JNIEXPORT jint JNICALL Cairo_NATIVE(cairo_1surface_1get_1reference_1count)
 	(JNIEnv *env, jclass that, jlong arg0)
 {
 	jint rc = 0;
 	Cairo_NATIVE_ENTER(env, that, cairo_1surface_1get_1reference_1count_FUNC);
-	rc = (jint)cairo_surface_get_reference_count(arg0);
+	cairo_surface_t *surface = (cairo_surface_t *) (intptr_t) arg0;
+	rc = (jint) cairo_surface_get_reference_count(surface);
 	Cairo_NATIVE_EXIT(env, that, cairo_1surface_1get_1reference_1count_FUNC);
 	return rc;
 }
