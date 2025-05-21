@@ -336,7 +336,7 @@ public class Tree extends CustomComposite {
 
 	private void onSelection(Event event) {
 		if (event.widget == verticalBar) {
-			setTopIndex(verticalBar.getSelection());
+			onScrollBar(event);
 		}
 
 		// TODO also the scrollbars will be handled here
@@ -389,20 +389,24 @@ public class Tree extends CustomComposite {
 		if (verticalBar != null && getItemCount() > 0) {
 			int thumb = ca.height / getItemHeight() - 1;
 			verticalBar.setThumb(thumb);
-			verticalBar.setMaximum(getItemCount());
+
+			int count = getOpenedItemCount();
+			System.out.println("OpenedItemCount: " + count);
+
+			verticalBar.setMaximum(count + 1);
 			verticalBar.setMinimum(0);
-			verticalBar.setVisible(getItemCount() > thumb);
+			verticalBar.setVisible(count > thumb);
 			verticalBar.setIncrement(1);
 			verticalBar.setPageIncrement(thumb);
-		}
 
-		ca = getClientArea();
+			ca = getClientArea();
 
-		if (horizontalBar != null) {
-			horizontalBar.setMaximum(getTotalColumnWidth() + 10);
-			horizontalBar.setMinimum(0);
-			horizontalBar.setThumb(ca.width);
-			horizontalBar.setVisible(TreeSize.x > ca.width);
+			if (horizontalBar != null) {
+				horizontalBar.setMaximum(getTotalColumnWidth() + 10);
+				horizontalBar.setMinimum(0);
+				horizontalBar.setThumb(ca.width);
+				horizontalBar.setVisible(TreeSize.x > ca.width);
+			}
 		}
 	}
 
@@ -636,7 +640,6 @@ public class Tree extends CustomComposite {
 		}
 		return true;
 	}
-
 
 	@Override
 	protected void checkSubclass() {
@@ -975,7 +978,6 @@ public class Tree extends CustomComposite {
 			// move all other elements one up until an element was not yet set
 			while (previous != null) {
 
-
 				virtualItemsList.remove(previousIndex);
 
 				var nextPrevious = virtualItemsList.get(previousIndex + 1);
@@ -1039,6 +1041,9 @@ public class Tree extends CustomComposite {
 				e.detail = 1;
 				notifyListeners(SWT.EmptinessChanged, e);
 			}
+
+			updateScrollBarWithTextSize();
+
 			if (redraw)
 				redraw();
 
@@ -1065,8 +1070,10 @@ public class Tree extends CustomComposite {
 			e.detail = 1;
 			notifyListeners(SWT.EmptinessChanged, e);
 		}
-		if (redraw)
+		if (redraw) {
+			updateScrollBarWithTextSize();
 			redraw();
+		}
 
 	}
 
@@ -1628,7 +1635,13 @@ public class Tree extends CustomComposite {
 		checkWidget();
 
 		if (!itemsList.isEmpty()) {
-			return itemsList.get(getTopIndex()).getBounds().height;
+
+			if (!treeItemsArrangement.isEmpty())
+				if (treeItemsArrangement.size() > getTopIndex()) {
+					return treeItemsArrangement.get(getTopIndex()).getBounds().height;
+				} else
+					return treeItemsArrangement.get(treeItemsArrangement.size() - 1).getBounds().height;
+
 		}
 
 		return TreeItemRenderer.guessItemHeight(this);
@@ -3045,7 +3058,7 @@ public class Tree extends CustomComposite {
 			return;
 		}
 
-		if (index > getItemCount()) {
+		if (index > getOpenedItemCount()) {
 			index = getItemCount() - 1;
 		}
 
@@ -3056,7 +3069,7 @@ public class Tree extends CustomComposite {
 		}
 
 		if (verticalBar != null) {
-			verticalBar.setSelection(topIndex);
+//			verticalBar.setSelection(topIndex);
 		}
 		redraw();
 	}
@@ -3323,6 +3336,36 @@ public class Tree extends CustomComposite {
 
 	public TreeItem _getArrangementItem(int i) {
 		return treeItemsArrangement.get(i);
+	}
+
+	public int getOpenedItemCount() {
+		int count = 0;
+		if (isVirtual()) {
+			count = getItemCount();
+
+			for (var e : virtualItemsList.entrySet()) {
+
+				if (e.getValue() != null) {
+					var v = e.getValue();
+					count += v.computeAllExpandedChildCount();
+				}
+			}
+		} else {
+			System.out.println("ItemCount: ");
+			count = getItemCount();
+			System.out.println(count);
+
+			for (var v : itemsList) {
+
+				if (v != null) {
+					count += v.computeAllExpandedChildCount();
+					System.out.println("Count Added: " + count);
+				}
+			}
+
+		}
+
+		return count;
 	}
 
 }

@@ -14,8 +14,6 @@ public class DefaultTreeRenderer extends TreeRenderer {
 		if (ca.width == 0 || ca.height == 0)
 			return;
 
-		tree.updateScrollBarWithTextSize();
-
 		tree.getColumnsHandler().paint(gc);
 		tree.getItemsHandler().paint(gc);
 	}

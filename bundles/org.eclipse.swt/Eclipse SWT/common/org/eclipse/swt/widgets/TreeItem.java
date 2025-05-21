@@ -1980,4 +1980,35 @@ public class TreeItem extends Item {
 		}
 	}
 
+	public int computeAllExpandedChildCount() {
+
+		if (!getExpanded())
+			return 0;
+
+		int count = 0;
+		if (isVirtual()) {
+			count = getItemCount();
+
+			for (var e : virtualItemsList.entrySet()) {
+
+				if (e.getValue() != null) {
+					var v = e.getValue();
+					count += v.computeAllExpandedChildCount();
+				}
+			}
+		} else {
+
+			for (var v : itemsList) {
+				if (v != null) {
+					count++;
+					count += v.computeAllExpandedChildCount();
+				}
+			}
+
+		}
+
+		return count;
+
+	}
+
 }

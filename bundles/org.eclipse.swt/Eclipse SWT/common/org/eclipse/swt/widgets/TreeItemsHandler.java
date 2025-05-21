@@ -17,7 +17,9 @@ class TreeItemsHandler {
 	}
 
 	public void calculateItemsBounds() {
-		this.itemsCountAtCalculation = tree.getItemCount();
+		System.out.println("CalcItemCount:");
+		this.itemsCountAtCalculation = tree.getOpenedItemCount();
+		System.out.println(this.itemsCountAtCalculation);
 
 		if (tree.isVirtual()) {
 			int gridLineSize = getGridSize(tree);
@@ -115,9 +117,9 @@ class TreeItemsHandler {
 //	}
 
 	public Point getSize() {
-		if (computedSize == null || this.itemsCountAtCalculation != tree.getItemCount()) {
+//		if (computedSize == null || this.itemsCountAtCalculation != tree.getItemCount()) {
 			calculateItemsBounds();
-		}
+//		}
 
 		return computedSize;
 	}
