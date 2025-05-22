@@ -384,10 +384,11 @@ public class Tree extends CustomComposite {
 		ca.y += colHeight;
 		ca.height -= colHeight;
 
-		var TreeSize = computeDefaultSize();
+		var treeSize = computeDefaultSize();
 
 		if (verticalBar != null && getItemCount() > 0) {
-			int thumb = ca.height / getItemHeight() - 1;
+
+			int thumb = calculateThumb(ca);
 			verticalBar.setThumb(thumb);
 
 			int count = getOpenedItemCount();
@@ -399,15 +400,18 @@ public class Tree extends CustomComposite {
 			verticalBar.setIncrement(1);
 			verticalBar.setPageIncrement(thumb);
 
-			ca = getClientArea();
 
 			if (horizontalBar != null) {
 				horizontalBar.setMaximum(getTotalColumnWidth() + 10);
 				horizontalBar.setMinimum(0);
 				horizontalBar.setThumb(ca.width);
-				horizontalBar.setVisible(TreeSize.x > ca.width);
+				horizontalBar.setVisible(treeSize.x > ca.width);
 			}
 		}
+	}
+
+	private int calculateThumb(Rectangle ca) {
+		return ca.height / getItemHeight() - 1;
 	}
 
 	int getColumnHeight() {
@@ -3078,9 +3082,6 @@ public class Tree extends CustomComposite {
 			mouseHoverElement = null;
 		}
 
-		if (verticalBar != null) {
-//			verticalBar.setSelection(topIndex);
-		}
 		redraw();
 	}
 
@@ -3322,10 +3323,17 @@ public class Tree extends CustomComposite {
 		if (item.isDisposed())
 			error(SWT.ERROR_INVALID_ARGUMENT);
 
-		this.topItem = item;
-		this.topIndex = treeItemsArrangement.indexOf(this.topItem);
+		int index = treeItemsArrangement.indexOf(item);
 
-		redraw();
+		if (index != -1) {
+			this.topItem = item;
+			setTopIndex(index);
+			return;
+		}
+
+		// what to do, if we can't find the element in treeItemsArrangement??
+		throw new bla..index.
+
 
 	}
 

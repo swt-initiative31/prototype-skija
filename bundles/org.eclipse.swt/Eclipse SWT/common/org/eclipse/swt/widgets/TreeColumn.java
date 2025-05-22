@@ -411,6 +411,11 @@ public class TreeColumn extends Item {
 	@Override
 	void releaseHandle() {
 		super.releaseHandle();
+		if (parent != null && !parent.isDisposed()) {
+			parent.getColumnsHandler().clearCache();
+			parent.getItemsHandler().clearCache();
+			parent.redraw();
+		}
 		parent = null;
 	}
 
@@ -597,10 +602,7 @@ public class TreeColumn extends Item {
 	@Override
 	public void setText(String string) {
 		checkWidget();
-
 		super.setText(string);
-
-		pack();
 	}
 
 	/**
@@ -673,6 +675,8 @@ public class TreeColumn extends Item {
 				parent.getColumn(i).clearCache();
 			}
 		}
+
+		getParent().getColumnsHandler().clearCache();
 
 		redraw();
 	}
