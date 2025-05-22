@@ -17,8 +17,11 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.graphics.Region;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
+
+import io.github.humbleui.skija.*;
 
 /**
  * Instances of this class represent the "windows"
@@ -178,6 +181,9 @@ public class Shell extends Decorations {
 		case SWT.Dispose:
 			onDispose(e);
 			break;
+		case SWT.MouseMove:
+			onMouseMove(e);
+			break;
 
 		}
 	};
@@ -211,6 +217,37 @@ public Shell () {
 	this ((Display) null);
 }
 
+
+private void onMouseMove(Event event) {
+
+	for (var c : getChildren()) {
+
+		var b = c.getBounds();
+
+		Event e = new Event();
+
+		e.type = SWT.MouseMove;
+		e.x = 0; // in control coordinates
+		e.y = 0;
+		e.width = b.width;
+		e.height = b.height;
+		e.widget = c;
+		// e.gc = new GC(c, parentGC);
+		e.gc = null;
+		if (c.isLightWeight())
+
+			if (c.getBounds().contains(event.x, event.y)) {
+				c.sendEvent(SWT.MouseEnter);
+			}
+	}
+
+}
+
+@Override
+public void redraw(int x, int y, int width, int height, boolean all) {
+	checkWidget();
+	redraw();
+}
 
 private void onDispose(Event e) {
 
@@ -477,6 +514,7 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
 
 	addListener(SWT.Resize, l);
 	addListener(SWT.Dispose, l);
+	addListener(SWT.MouseMove, l);
 
 }
 
@@ -515,8 +553,8 @@ protected void doPaint() {
 
 
 		// for vsync use DwmFlush in order to wait until the screen drawing is finished.
-		if (vsync)
-			OS.DwmFlush();
+//		if (vsync)
+//			OS.DwmFlush();
 		OS.BitBlt(hdc, 0, 0, size.x, size.y, memHdc, 0, 0, OS.SRCCOPY);
 	}
 
@@ -531,23 +569,45 @@ private void drawSurface() {
 
 	surface.getCanvas().clear(0xFFFFFFFF);
 
-	Point size = getSize();
+	SkijaGC sgc = new SkijaGC(this, surface);
 
-	long currentPosTime = System.currentTimeMillis() - startTime;
+	GC parentGC = new GC();
+	parentGC.innerGC = sgc;
 
-	currentPosTime = currentPosTime % 10000;
+	for (var c : getChildren()) {
 
-	double position = (double) currentPosTime / (double) 10000;
+		var b = c.getBounds();
 
-	int colorAsRGB = 0xFF42FFF4;
-	int colorRed = 0xFFFF0000;
-	int colorGreen = 0xFF00FF00;
-	int colorBlue = 0xFF0000FF;
+		Event e = new Event();
 
-	try (var paint = new Paint()) {
-		paint.setColor(colorBlue);
-		surface.getCanvas().drawCircle((int) (position * size.x), 100, 100, paint);
+		e.type = SWT.Paint;
+		e.x = 0;
+		e.y = 0;
+		e.width = b.width;
+		e.height = b.height;
+		e.widget = this;
+		// e.gc = new GC(c, parentGC);
+		e.gc = parentGC;
+		if (c.isLightWeight())
+			c.sendEvent(SWT.Paint, e);
+
 	}
+
+//	long currentPosTime = System.currentTimeMillis() - startTime;
+//
+//	currentPosTime = currentPosTime % 10000;
+//
+//	double position = (double) currentPosTime / (double) 10000;
+//
+//	int colorAsRGB = 0xFF42FFF4;
+//	int colorRed = 0xFFFF0000;
+//	int colorGreen = 0xFF00FF00;
+//	int colorBlue = 0xFF0000FF;
+//
+//	try (var paint = new Paint()) {
+//		paint.setColor(colorBlue);
+//		surface.getCanvas().drawCircle((int) (position * size.x), 100, 100, paint);
+//	}
 }
 
 /**
@@ -2635,13 +2695,9 @@ LRESULT WM_PAINT(long wParam, long lParam) {
 	if (isDisposed())
 		return null;
 
-
 	doPaint();
 
 	var r = OS.DefWindowProc(hwnd, (int) OS.WM_PAINT, wParam, lParam);
-
-	// if you want to handle the redraw for yourself, remove the redraw here!!
-	redraw();
 
 	LRESULT l = new LRESULT(r);
 	return l;

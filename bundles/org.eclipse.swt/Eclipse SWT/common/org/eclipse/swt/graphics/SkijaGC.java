@@ -47,8 +47,6 @@ public class SkijaGC extends GCHandle {
 
 	private final Surface surface;
 
-	private NativeGC innerGC;
-
 	private Font font;
 	private float baseSymbolHeight = 0; // Height of symbol with "usual" height, like "T", to be vertically centered
 	private int lineWidth;
@@ -57,18 +55,38 @@ public class SkijaGC extends GCHandle {
 
 	private final Point originalDrawingSize;
 
+	private Shell shell;
+
+	private Color background;
+
+	private Color foreground;
+
+	private org.eclipse.swt.graphics.Font swtFont;
+
+	private int lineStyle;
+
+	private NativeGC innerGC;
+
 	private static Map<ColorType, int[]> colorTypeMap = null;
 
 	private SkijaGC(NativeGC gc, Drawable drawable, boolean onlyForMeasuring) {
-		innerGC = gc;
 		device = gc.device;
 		originalDrawingSize = extractSize(drawable);
+		this.innerGC = gc;
 		if (onlyForMeasuring) {
 			surface = createMeasureSurface();
 		} else {
 			surface = createDrawingSurface();
 			initializeWithParentBackground();
 		}
+		initFont();
+	}
+
+	public SkijaGC(Shell shell, Surface surface) {
+		this.surface = surface;
+		this.device = shell.getDisplay();
+		this.originalDrawingSize = new Point(surface.getWidth(), surface.getHeight());
+		this.shell = shell;
 		initFont();
 	}
 
@@ -119,32 +137,33 @@ public class SkijaGC extends GCHandle {
 	}
 
 	private void initializeWithParentBackground() {
-		if (originalDrawingSize.x > 0 && originalDrawingSize.y > 0) {
-			Image image = new Image(innerGC.device, originalDrawingSize.x, originalDrawingSize.y);
-			innerGC.copyArea(image, 0, 0);
-			drawImage(image, 0, 0);
-			image.dispose();
-		}
+//		if (originalDrawingSize.x > 0 && originalDrawingSize.y > 0) {
+//			Image image = new Image(innerGC.device, originalDrawingSize.x, originalDrawingSize.y);
+//			innerGC.copyArea(image, 0, 0);
+//			drawImage(image, 0, 0);
+//			image.dispose();
+//		}
 	}
 
 	private void initFont() {
-		org.eclipse.swt.graphics.Font originalFont = innerGC.getFont();
-		if (originalFont == null || originalFont.isDisposed()) {
-			originalFont = innerGC.getDevice().getSystemFont();
+
+		if (shell != null) {
+			setFont(shell.getFont());
+			return;
 		}
-		setFont(originalFont);
+
+		setFont(Display.getDefault().getSystemFont());
+
 	}
 
 	@Override
 	public void dispose() {
-		surface.close();
-		innerGC = null;
 		font = null;
 	}
 
 	@Override
 	public Color getBackground() {
-		return innerGC.getBackground();
+		return shell.getBackground();
 	}
 
 	private void performDraw(Consumer<Paint> operations) {
@@ -209,29 +228,29 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void commit() {
-		if (isEmpty(originalDrawingSize)) {
-			return;
-		}
-		io.github.humbleui.skija.Image im = surface.makeImageSnapshot();
-		byte[] imageBytes = EncoderPNG.encode(im).getBytes();
-
-		Image transferImage = new Image(innerGC.getDevice(), new ByteArrayInputStream(imageBytes));
-
-		Point drawingSizeInPixels = DPIUtil.autoScaleUp(originalDrawingSize);
-		innerGC.drawImage(transferImage, 0, 0, drawingSizeInPixels.x, drawingSizeInPixels.y, //
-				0, 0, originalDrawingSize.x, originalDrawingSize.y);
-		transferImage.dispose();
+//		if (isEmpty(originalDrawingSize)) {
+//			return;
+//		}
+//		io.github.humbleui.skija.Image im = surface.makeImageSnapshot();
+//		byte[] imageBytes = EncoderPNG.encode(im).getBytes();
+//
+//		Image transferImage = new Image(innerGC.getDevice(), new ByteArrayInputStream(imageBytes));
+//
+//		Point drawingSizeInPixels = DPIUtil.autoScaleUp(originalDrawingSize);
+//		innerGC.drawImage(transferImage, 0, 0, drawingSizeInPixels.x, drawingSizeInPixels.y, //
+//				0, 0, originalDrawingSize.x, originalDrawingSize.y);
+//		transferImage.dispose();
 	}
 
 	public void debug() {
 		io.github.humbleui.skija.Image im = surface.makeImageSnapshot();
 		byte[] imageBytes = EncoderPNG.encode(im).getBytes();
-        try {
-            Files.write(Paths.get("debug.png"), imageBytes, StandardOpenOption.CREATE);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+		try {
+			Files.write(Paths.get("debug.png"), imageBytes, StandardOpenOption.CREATE);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	@Override
 	public Point textExtent(String string) {
@@ -240,12 +259,12 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void setBackground(Color color) {
-		innerGC.setBackground(color);
+		this.background = color;
 	}
 
 	@Override
 	public void setForeground(Color color) {
-		innerGC.setForeground(color);
+		this.foreground = color;
 	}
 
 	@Override
@@ -263,8 +282,7 @@ public class SkijaGC extends GCHandle {
 	public void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY,
 			int destWidth, int destHeight) {
 		Canvas canvas = surface.getCanvas();
-		canvas.drawImageRect(convertSWTImageToSkijaImage(image),
-				createScaledRectangle(srcX, srcY, srcWidth, srcHeight),
+		canvas.drawImageRect(convertSWTImageToSkijaImage(image), createScaledRectangle(srcX, srcY, srcWidth, srcHeight),
 				createScaledRectangle(destX, destY, destWidth, destHeight));
 	}
 
@@ -284,8 +302,7 @@ public class SkijaGC extends GCHandle {
 				return ColorType.UNKNOWN;
 			}
 
-			if (redMask == 0xFF000000 && greenMask == 0x00FF0000
-					&& blueMask == 0x0000FF00) {
+			if (redMask == 0xFF000000 && greenMask == 0x00FF0000 && blueMask == 0x0000FF00) {
 				return ColorType.RGBA_8888;
 			}
 
@@ -354,20 +371,18 @@ public class SkijaGC extends GCHandle {
 			bytes = convertToRGBA(imageData);
 			colType = ColorType.RGBA_8888;
 			ImageInfo imageInfo = new ImageInfo(width, height, colType, ColorAlphaType.UNPREMUL);
-			return io.github.humbleui.skija.Image.makeRasterFromBytes(imageInfo, bytes,
-				imageData.width * 4);
+			return io.github.humbleui.skija.Image.makeRasterFromBytes(imageInfo, bytes, imageData.width * 4);
 		} else {
 			ImageInfo imageInfo = new ImageInfo(width, height, colType, ColorAlphaType.UNPREMUL);
 
-			return io.github.humbleui.skija.Image.makeRasterFromBytes(imageInfo, imageData.data,
-				imageData.width * 4);
+			return io.github.humbleui.skija.Image.makeRasterFromBytes(imageInfo, imageData.data, imageData.width * 4);
 		}
 	}
 
 	public static byte[] convertToRGBA(ImageData imageData) {
 		ImageData transparencyData = imageData.getTransparencyMask();
 		byte[] convertedData = new byte[imageData.width * imageData.height * 4];
-		byte defaultAlpha = (byte)255;
+		byte defaultAlpha = (byte) 255;
 
 		var source = imageData.data;
 		int bytesPerPixel = source.length / (imageData.width * imageData.height);
@@ -388,7 +403,7 @@ public class SkijaGC extends GCHandle {
 				byte g = (byte) ((pixel & imageData.palette.greenMask) >>> -imageData.palette.greenShift);
 				byte b = (byte) ((pixel & imageData.palette.blueMask) >>> -imageData.palette.blueShift);
 
-				byte a = (byte)255;
+				byte a = (byte) 255;
 				if (transparencyData != null) {
 					if (transparencyData.getPixel(x, y) != 1) {
 						a = (byte) 0;
@@ -406,7 +421,7 @@ public class SkijaGC extends GCHandle {
 					convertedData[index + 3] = alphaData[arrayPos];
 				} else if (imageData.alpha != -1) {
 					convertedData[index + 3] = defaultAlpha;
-				} else if(!byteSourceContainsAlpha) {
+				} else if (!byteSourceContainsAlpha) {
 					convertedData[index + 3] = defaultAlpha;
 				}
 			}
@@ -416,7 +431,7 @@ public class SkijaGC extends GCHandle {
 	}
 
 	static ImageData convertToSkijaImageData(io.github.humbleui.skija.Image image) {
-		Bitmap bm = Bitmap.makeFromImage(  image);
+		Bitmap bm = Bitmap.makeFromImage(image);
 		var colType = bm.getColorType();
 		byte[] alphas = new byte[bm.getHeight() * bm.getWidth()];
 		var source = bm.readPixels();
@@ -448,8 +463,7 @@ public class SkijaGC extends GCHandle {
 			}
 		}
 
-		ImageData d = new ImageData(bm.getWidth(), bm.getHeight(), 24,
-				new PaletteData(0xFF0000, 0x00FF00, 0x0000FF));
+		ImageData d = new ImageData(bm.getWidth(), bm.getHeight(), 24, new PaletteData(0xFF0000, 0x00FF00, 0x0000FF));
 		d.data = convertedData;
 		d.alphaData = alphas;
 		d.bytesPerLine = d.width * 3;
@@ -537,7 +551,12 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public Color getForeground() {
-		return innerGC.getForeground();
+
+		if (this.foreground == null)
+			return shell.getForeground();
+
+		return this.foreground;
+
 	}
 
 	@Override
@@ -562,13 +581,12 @@ public class SkijaGC extends GCHandle {
 		if ((flags & (SWT.TRANSPARENT | SWT.DRAW_TRANSPARENT)) == 0) {
 			int textWidth = Math.round(textBlob.getBounds().getWidth());
 			int fontHeight = Math.round(font.getMetrics().getHeight());
-			performDrawFilled(
-					paint -> {
-						final int scaledX = autoScaleOffsetX(x);
-						final int scaledY = autoScaleOffsetY(y);
-						surface.getCanvas().drawRect(new Rect(scaledX, scaledY,
-								scaledX + textWidth, scaledY + fontHeight), paint);
-					});
+			performDrawFilled(paint -> {
+				final int scaledX = autoScaleOffsetX(x);
+				final int scaledY = autoScaleOffsetY(y);
+				surface.getCanvas().drawRect(new Rect(scaledX, scaledY, scaledX + textWidth, scaledY + fontHeight),
+						paint);
+			});
 		}
 		Point point = calculateSymbolCenterPoint(x, y);
 		performDrawText(paint -> surface.getCanvas().drawTextBlob(textBlob, point.x, point.y, paint));
@@ -614,9 +632,9 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-		performDrawLine(paint -> surface.getCanvas().drawArc((float) autoScaleOffsetX(x),
-				(float) autoScaleOffsetY(y), (float) autoScaleOffsetX(x + width),
-				(float) autoScaleOffsetY(y + height), -startAngle, (float) -arcAngle, false, paint));
+		performDrawLine(paint -> surface.getCanvas().drawArc((float) autoScaleOffsetX(x), (float) autoScaleOffsetY(y),
+				(float) autoScaleOffsetX(x + width), (float) autoScaleOffsetY(y + height), -startAngle,
+				(float) -arcAngle, false, paint));
 	}
 
 	@Override
@@ -649,9 +667,8 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void drawOval(int x, int y, int width, int height) {
-		performDrawLine(
-				paint -> surface.getCanvas().drawOval(offsetRectangle(createScaledRectangle(x, y, width, height)),
-						paint));
+		performDrawLine(paint -> surface.getCanvas()
+				.drawOval(offsetRectangle(createScaledRectangle(x, y, width, height)), paint));
 	}
 
 	@Override
@@ -684,9 +701,8 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void drawRectangle(int x, int y, int width, int height) {
-		performDrawLine(
-				paint -> surface.getCanvas()
-						.drawRect(offsetRectangle(createScaledRectangle(x, y, width, height)), paint));
+		performDrawLine(paint -> surface.getCanvas()
+				.drawRect(offsetRectangle(createScaledRectangle(x, y, width, height)), paint));
 	}
 
 	@Override
@@ -724,9 +740,9 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-		performDrawFilled(paint -> surface.getCanvas().drawArc((float) autoScaleOffsetX(x),
-				(float) autoScaleOffsetY(y), (float) autoScaleOffsetX(x + width),
-				(float) autoScaleOffsetY(y + height), (float) -startAngle, (float) -arcAngle, false, paint));
+		performDrawFilled(paint -> surface.getCanvas().drawArc((float) autoScaleOffsetX(x), (float) autoScaleOffsetY(y),
+				(float) autoScaleOffsetX(x + width), (float) autoScaleOffsetY(y + height), (float) -startAngle,
+				(float) -arcAngle, false, paint));
 	}
 
 	@Override
@@ -762,8 +778,8 @@ public class SkijaGC extends GCHandle {
 		performDrawGradientFilled(paint -> surface.getCanvas().drawRect(rect, paint), x, y, x2, y2, fromColor, toColor);
 	}
 
-	private void performDrawGradientFilled(Consumer<Paint> operations, int x, int y, int x2, int y2,
-			int fromColor, int toColor) {
+	private void performDrawGradientFilled(Consumer<Paint> operations, int x, int y, int x2, int y2, int fromColor,
+			int toColor) {
 		performDraw(paint -> {
 			try (Shader gradient = Shader.makeLinearGradient(autoScaleOffsetX(x), autoScaleOffsetY(y),
 					autoScaleOffsetX(x2), autoScaleOffsetY(y2), new int[] { fromColor, toColor }, null,
@@ -777,8 +793,7 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void fillOval(int x, int y, int width, int height) {
-		performDrawFilled(
-				paint -> surface.getCanvas().drawOval(createScaledRectangle(x, y, width, height), paint));
+		performDrawFilled(paint -> surface.getCanvas().drawOval(createScaledRectangle(x, y, width, height), paint));
 	}
 
 	@Override
@@ -802,8 +817,7 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void fillRectangle(int x, int y, int width, int height) {
-		performDrawFilled(
-				paint -> surface.getCanvas().drawRect(createScaledRectangle(x, y, width, height), paint));
+		performDrawFilled(paint -> surface.getCanvas().drawRect(createScaledRectangle(x, y, width, height), paint));
 	}
 
 	@Override
@@ -814,6 +828,7 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public Point textExtent(String string, int flags) {
+
 		float height = font.getMetrics().getHeight();
 		float width = font.measureTextWidth(replaceMnemonics(string));
 		return new Point(DPIUtil.autoScaleDownToInt(width), DPIUtil.autoScaleDownToInt(height));
@@ -821,13 +836,12 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void setFont(org.eclipse.swt.graphics.Font font) {
-		innerGC.setFont(font);
-
-		if (font == null)
-			font = innerGC.getFont();
 
 		this.font = convertToSkijaFont(font);
 		this.baseSymbolHeight = this.font.measureText("T").getHeight();
+
+		this.swtFont = font;
+
 	}
 
 	static Font convertToSkijaFont(org.eclipse.swt.graphics.Font font) {
@@ -863,7 +877,12 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public org.eclipse.swt.graphics.Font getFont() {
-		return innerGC.getFont();
+
+		if (swtFont == null)
+			return shell.getFont();
+
+		return swtFont;
+
 	}
 
 	@Override
@@ -904,17 +923,15 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public int getAntialias() {
-		return innerGC.getAntialias();
+		return 0;
 	}
 
 	@Override
 	public void setAntialias(int antialias) {
-		innerGC.setAntialias(antialias);
 	}
 
 	@Override
 	public void setAdvanced(boolean enable) {
-		innerGC.setAdvanced(enable);
 	}
 
 	private Rect offsetRectangle(Rect rect) {
@@ -970,18 +987,19 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void setLineStyle(int lineDot) {
-		innerGC.setLineStyle(lineDot);
+
+		this.lineStyle = lineDot;
 
 	}
 
 	@Override
 	public int getLineStyle() {
-		return innerGC.getLineStyle();
+		return this.lineStyle;
 	}
 
 	@Override
 	public int getLineWidth() {
-		return innerGC.getLineWidth();
+		return this.lineWidth;
 	}
 
 	@Override
@@ -1000,7 +1018,7 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public Rectangle getClipping() {
-		return innerGC.getClipping();
+		return new Rectangle(0, 0, surface.getWidth(), surface.getHeight());
 	}
 
 	@Override
@@ -1257,52 +1275,52 @@ public class SkijaGC extends GCHandle {
 
 		// TODO test all mappings here
 		switch (colorType) {
-			case ALPHA_8:
-				return new PaletteData(new RGB[] { new RGB(255, 255, 255), new RGB(0, 0, 0) });
-			case RGB_565:
-				return new PaletteData(0xF800, 0x07E0, 0x001F); // Mask for RGB565
-			case ARGB_4444:
-				return new PaletteData(0x0F00, 0x00F0, 0x000F); // Mask for ARGB4444
-			case RGBA_8888:
-				var p = new PaletteData(0xFF000000, 0x00FF0000, 0x0000FF00); // Standard RGBA masks
-				return p;
-			case BGRA_8888:
-				return new PaletteData(0x0000FF00, 0x00FF0000, 0xFF000000);
-			case RGBA_F16:
-				return new PaletteData(new RGB[] { new RGB(255, 0, 0), // Example red
+		case ALPHA_8:
+			return new PaletteData(new RGB[] { new RGB(255, 255, 255), new RGB(0, 0, 0) });
+		case RGB_565:
+			return new PaletteData(0xF800, 0x07E0, 0x001F); // Mask for RGB565
+		case ARGB_4444:
+			return new PaletteData(0x0F00, 0x00F0, 0x000F); // Mask for ARGB4444
+		case RGBA_8888:
+			var p = new PaletteData(0xFF000000, 0x00FF0000, 0x0000FF00); // Standard RGBA masks
+			return p;
+		case BGRA_8888:
+			return new PaletteData(0x0000FF00, 0x00FF0000, 0xFF000000);
+		case RGBA_F16:
+			return new PaletteData(new RGB[] { new RGB(255, 0, 0), // Example red
 					new RGB(0, 255, 0), // Example green
 					new RGB(0, 0, 255) }); // Example blue
-			case RGBA_F32:
-				return new PaletteData(new RGB[] { new RGB(255, 165, 0), // Example orange
+		case RGBA_F32:
+			return new PaletteData(new RGB[] { new RGB(255, 165, 0), // Example orange
 					new RGB(0, 255, 255), // Example cyan
 					new RGB(128, 0, 128) }); // Example purple
-			default:
-				throw new IllegalArgumentException("Unknown Skija ColorType: " + colorType);
+		default:
+			throw new IllegalArgumentException("Unknown Skija ColorType: " + colorType);
 		}
 	}
 
 	static int getImageDepth(ColorType colorType) {
 		// TODO test all mappings
 		switch (colorType) {
-			case ALPHA_8:
-				return 8;
-			case RGB_565:
-				return 16;
-			case ARGB_4444:
-				return 16;
-			case RGBA_8888:
-				return 32;
-			case BGRA_8888:
-				return 32;
-			case RGBA_F16:
-				// Typically could represent more colors, but SWT doesn't support floating-point
-				// depths.
-				return 64; // This is theoretical; SWT will usually not handle more than 32
-			case RGBA_F32:
-				// Same as RGBA_F16 with regards to SWT support
-				return 128; // Theoretical; actual handling requires custom treatment
-			default:
-				throw new IllegalArgumentException("Unknown Skija ColorType: " + colorType);
+		case ALPHA_8:
+			return 8;
+		case RGB_565:
+			return 16;
+		case ARGB_4444:
+			return 16;
+		case RGBA_8888:
+			return 32;
+		case BGRA_8888:
+			return 32;
+		case RGBA_F16:
+			// Typically could represent more colors, but SWT doesn't support floating-point
+			// depths.
+			return 64; // This is theoretical; SWT will usually not handle more than 32
+		case RGBA_F32:
+			// Same as RGBA_F16 with regards to SWT support
+			return 128; // Theoretical; actual handling requires custom treatment
+		default:
+			throw new IllegalArgumentException("Unknown Skija ColorType: " + colorType);
 		}
 	}
 
