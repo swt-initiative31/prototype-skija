@@ -142,7 +142,7 @@ public class Shell extends Decorations {
 	// with vsync use an FPS over 60 and then is is also smooth.
 	// vsync reduces the FPS to the monitor refresh rate.
 	static final int FPS = 500;
-	boolean vsync = true;
+	boolean vsync = false;
 
 	// Set true for frame pre second printing
 	boolean printFrameRate = false;
@@ -173,9 +173,7 @@ public class Shell extends Decorations {
 
 	Listener l = e -> {
 		switch (e.type) {
-		case SWT.Paint:
-			onPaint(e);
-			break;
+
 		case SWT.Resize:
 			onResize(e);
 			break;
@@ -229,6 +227,7 @@ private void onDispose(Event e) {
 private void onResize(Event e) {
 
 	System.out.println("Setup DC");
+	hwnd = handle;
 	closeDC();
 	setupMemoryDC();
 
@@ -476,11 +475,17 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
 	reskinWidget();
 	createWidget ();
 
-	addListener(SWT.Paint, l);
+	addListener(SWT.Resize, l);
+	addListener(SWT.Dispose, l);
 
 }
 
-protected void onPaint(Event e) {
+protected void doPaint() {
+
+	System.out.println("onPaint");
+
+	if (surface == null)
+		return;
 
 	Point size = getSize();
 
@@ -505,25 +510,8 @@ protected void onPaint(Event e) {
 			frames++;
 		}
 
-		surface.getCanvas().clear(0xFFFFFFFF);
+		drawSurface();
 
-		long currentPosTime = System.currentTimeMillis() - startTime;
-
-		currentPosTime = currentPosTime % 10000;
-
-		double position = (double) currentPosTime / (double) 10000;
-
-		int colorAsRGB = 0xFF42FFF4;
-		int colorRed = 0xFFFF0000;
-		int colorGreen = 0xFF00FF00;
-		int colorBlue = 0xFF0000FF;
-
-		try (var paint = new Paint()) {
-			paint.setColor(colorBlue);
-
-			surface.getCanvas().drawCircle((int) (position * size.x), 100, 100, paint);
-
-		}
 
 		// for vsync use DwmFlush in order to wait until the screen drawing is finished.
 		if (vsync)
@@ -533,19 +521,32 @@ protected void onPaint(Event e) {
 
 	OS.EndPaint(hwnd, ps);
 
-//	drawSurface(e);
-//	pushSurface(e);
 
-	e.doit = false;
 
 }
 
-private void pushSurface(Event e) {
 
-}
+private void drawSurface() {
 
-private void drawSurface(Event e) {
+	surface.getCanvas().clear(0xFFFFFFFF);
 
+	Point size = getSize();
+
+	long currentPosTime = System.currentTimeMillis() - startTime;
+
+	currentPosTime = currentPosTime % 10000;
+
+	double position = (double) currentPosTime / (double) 10000;
+
+	int colorAsRGB = 0xFF42FFF4;
+	int colorRed = 0xFFFF0000;
+	int colorGreen = 0xFF00FF00;
+	int colorBlue = 0xFF0000FF;
+
+	try (var paint = new Paint()) {
+		paint.setColor(colorBlue);
+		surface.getCanvas().drawCircle((int) (position * size.x), 100, 100, paint);
+	}
 }
 
 /**
@@ -2629,6 +2630,27 @@ LRESULT WM_ACTIVATE (long wParam, long lParam) {
 		}
 	}
 	return parent != null ? LRESULT.ZERO : result;
+}
+
+@Override
+LRESULT WM_PAINT(long wParam, long lParam) {
+	/* Process WM_PAINT */
+
+	// This is a complete override of the paint logic
+
+	if (isDisposed())
+		return null;
+
+
+	doPaint();
+
+	var r = OS.DefWindowProc(hwnd, (int) OS.WM_PAINT, wParam, lParam);
+
+	// if you want to handle the redraw for yourself, remove the redraw here!!
+	redraw();
+
+	LRESULT l = new LRESULT(r);
+	return l;
 }
 
 @Override
