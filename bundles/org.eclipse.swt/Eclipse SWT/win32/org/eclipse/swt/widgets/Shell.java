@@ -17,8 +17,11 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.graphics.Region;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
+
+import io.github.humbleui.skija.*;
 
 /**
  * Instances of this class represent the "windows"
@@ -134,6 +137,55 @@ public class Shell extends Decorations {
 	static /*final*/ long ToolTipProc;
 	static final long DialogProc;
 	static final TCHAR DialogClass = new TCHAR (0, "#32770", true);
+
+	// smooth at 120 FPS, before not really...
+	// with vsync use an FPS over 60 and then is is also smooth.
+	// vsync reduces the FPS to the monitor refresh rate.
+	static final int FPS = 500;
+	boolean vsync = true;
+
+	// Set true for frame pre second printing
+	boolean printFrameRate = false;
+	// vars for FPS printing --------------------
+	long lastFrame;
+	int frames;
+	// -------------------------------------------
+
+	boolean withSkija = true;
+	// small modifications in Display were necessary to move the callback back to
+	// this window class
+	private Display d;
+	// handle
+	long hwnd;
+
+	// for circle drawing. The positioning
+	private long startTime;
+
+	// DC memory position
+	private long memHdc;
+	private long hBitmap;
+	// surface pointing to memDC
+	private Surface surface;
+
+	// Dont use, was just for testing...
+	// Direct drawing without skija
+	boolean directColor = false;
+
+	Listener l = e -> {
+		switch (e.type) {
+		case SWT.Paint:
+			onPaint(e);
+			break;
+		case SWT.Resize:
+			onResize(e);
+			break;
+		case SWT.Dispose:
+			onDispose(e);
+			break;
+
+		}
+	};
+
 	final static int [] SYSTEM_COLORS = {
 		OS.COLOR_BTNFACE,
 		OS.COLOR_WINDOW,
@@ -161,6 +213,118 @@ public class Shell extends Decorations {
  */
 public Shell () {
 	this ((Display) null);
+}
+
+private void onDispose(Event e) {
+
+	System.out.println("destroy...");
+
+	closeDC();
+
+	// we have a single window, so we close the Display now in order to quit the
+	// app.
+
+}
+
+private void onResize(Event e) {
+
+	System.out.println("Setup DC");
+	closeDC();
+	setupMemoryDC();
+
+}
+
+private void closeDC() {
+
+	if (surface != null && !surface.isClosed())
+		surface.close();
+
+	if (memHdc != 0)
+		OS.DeleteDC(memHdc);
+	if (hBitmap != 0)
+		OS.DeleteObject(hBitmap);
+}
+
+private void setupMemoryDC() {
+
+	Point s = getSize();
+
+	int width = s.x;
+	int height = s.y;
+
+	if (withSkija) {
+
+		/* Create resources */
+		long hdc = OS.GetDC(hwnd);
+		memHdc = OS.CreateCompatibleDC(hdc);
+		BITMAPINFOHEADER bmiHeader = new BITMAPINFOHEADER();
+		bmiHeader.biSize = BITMAPINFOHEADER.sizeof;
+		bmiHeader.biWidth = width;
+		bmiHeader.biHeight = -height;
+		bmiHeader.biPlanes = 1;
+		bmiHeader.biBitCount = 32;
+		bmiHeader.biCompression = OS.BI_RGB;
+		var bmi = new byte[BITMAPINFOHEADER.sizeof];
+		OS.MoveMemory(bmi, bmiHeader, BITMAPINFOHEADER.sizeof);
+		long[] pBits = new long[1];
+		hBitmap = OS.CreateDIBSection(hdc, bmi, OS.DIB_RGB_COLORS, pBits, 0, 0);
+		if (hBitmap == 0)
+			SWT.error(SWT.ERROR_NO_HANDLES);
+
+		OS.SelectObject(memHdc, hBitmap);
+
+		surface = Surface.makeRasterDirect(ImageInfo.makeN32(width, height, ColorAlphaType.PREMUL), pBits[0],
+				4 * width);
+
+//      // Gib den HDC zurück
+		OS.ReleaseDC(hwnd, hdc);
+
+		return;
+	}
+
+	/* Create resources */
+	long hdc = OS.GetDC(hwnd);
+	memHdc = OS.CreateCompatibleDC(hdc);
+	BITMAPINFOHEADER bmiHeader = new BITMAPINFOHEADER();
+	bmiHeader.biSize = BITMAPINFOHEADER.sizeof;
+	bmiHeader.biWidth = width;
+	bmiHeader.biHeight = -height;
+	bmiHeader.biPlanes = 1;
+	bmiHeader.biBitCount = 32;
+	bmiHeader.biCompression = OS.BI_RGB;
+	byte[] bmi = new byte[BITMAPINFOHEADER.sizeof];
+	OS.MoveMemory(bmi, bmiHeader, BITMAPINFOHEADER.sizeof);
+	long[] pBits = new long[1];
+	long hBitmap = OS.CreateDIBSection(hdc, bmi, OS.DIB_RGB_COLORS, pBits, 0, 0);
+	if (hBitmap == 0)
+		SWT.error(SWT.ERROR_NO_HANDLES);
+
+	// Erstelle ein HDC für das Bitmap
+	OS.SelectObject(memHdc, hBitmap);
+
+	long hBrush = OS.CreateSolidBrush(convertRGBToInt(new RGB(255, 0, 0))); // Rot
+	RECT rect = new RECT(100, 100, 400, 300);
+	OS.FillRect(memHdc, rect, hBrush);
+	OS.DeleteObject(hBrush); // Brush freigeben
+
+//  // Gib den HDC zurück
+	OS.ReleaseDC(hwnd, hdc);
+//
+//  // Bild anzeigen (z.B. im Clientbereich des Fensters)
+	OS.InvalidateRect(hwnd, null, true);
+
+}
+
+public static int convertRGBToInt(RGB rgb) {
+	// extract RGB-components
+	int red = rgb.red;
+	int green = rgb.green;
+	int blue = rgb.blue;
+
+	// probably wrong currently...
+	int color = (red << 16) | (green << 8) | (blue);
+
+	return color;
 }
 
 /**
@@ -311,6 +475,77 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
 
 	reskinWidget();
 	createWidget ();
+
+	addListener(SWT.Paint, l);
+
+}
+
+protected void onPaint(Event e) {
+
+	Point size = getSize();
+
+	PAINTSTRUCT ps = new PAINTSTRUCT();
+	long hdc = OS.BeginPaint(hwnd, ps);
+
+	if (directColor) {
+		long hBrush = OS.CreateSolidBrush(convertRGBToInt(new RGB(255, 0, 0))); // Rot
+		RECT rect = new RECT(100, 100, 400, 300);
+		OS.FillRect(hdc, rect, hBrush);
+		OS.DeleteObject(hBrush); // Brush freigeben
+
+	} else {
+
+		if (printFrameRate) {
+
+			if (System.currentTimeMillis() - lastFrame > 1000) {
+				System.out.println("Frames: " + frames);
+				frames = 0;
+				lastFrame = System.currentTimeMillis();
+			}
+			frames++;
+		}
+
+		surface.getCanvas().clear(0xFFFFFFFF);
+
+		long currentPosTime = System.currentTimeMillis() - startTime;
+
+		currentPosTime = currentPosTime % 10000;
+
+		double position = (double) currentPosTime / (double) 10000;
+
+		int colorAsRGB = 0xFF42FFF4;
+		int colorRed = 0xFFFF0000;
+		int colorGreen = 0xFF00FF00;
+		int colorBlue = 0xFF0000FF;
+
+		try (var paint = new Paint()) {
+			paint.setColor(colorBlue);
+
+			surface.getCanvas().drawCircle((int) (position * size.x), 100, 100, paint);
+
+		}
+
+		// for vsync use DwmFlush in order to wait until the screen drawing is finished.
+		if (vsync)
+			OS.DwmFlush();
+		OS.BitBlt(hdc, 0, 0, size.x, size.y, memHdc, 0, 0, OS.SRCCOPY);
+	}
+
+	OS.EndPaint(hwnd, ps);
+
+//	drawSurface(e);
+//	pushSurface(e);
+
+	e.doit = false;
+
+}
+
+private void pushSurface(Event e) {
+
+}
+
+private void drawSurface(Event e) {
+
 }
 
 /**
