@@ -12,6 +12,7 @@ package org.eclipse.swt.graphics;
 
 import java.util.function.*;
 
+import io.github.humbleui.skija.Surface;
 import org.eclipse.swt.*;
 import org.eclipse.swt.widgets.*;
 
@@ -88,6 +89,19 @@ public final class Drawing {
 			if (usingTemporaryGC) {
 				originalGC.dispose();
 			}
+			recursivelyCalled = false;
+		}
+	}
+
+	public static void drawWithSurface(Control control, Surface surface, Consumer<GC> drawOperation) {
+		GC gc = new GC();
+		gc.innerGC = SkijaGC.createDefaultInstance(surface, control);
+
+		recursivelyCalled = true;
+		try {
+			drawOperation.accept(gc);
+		}
+		finally {
 			recursivelyCalled = false;
 		}
 	}

@@ -41,6 +41,10 @@ public class SkijaGC extends GCHandle {
 		return new SkijaGC(gc, control, false);
 	}
 
+	public static GCHandle createDefaultInstance(Surface surface, Control control) {
+		return new SkijaGC(surface, control);
+	}
+
 	public static SkijaGC createMeasureInstance(NativeGC gc, Control control) {
 		return new SkijaGC(gc, control, true);
 	}
@@ -48,7 +52,7 @@ public class SkijaGC extends GCHandle {
 	private final Surface surface;
 
 	private NativeGC innerGC;
-
+	private Rectangle clipping;
 	private Color background;
 	private Color foreground;
 	private org.eclipse.swt.graphics.Font swtFont;
@@ -75,6 +79,20 @@ public class SkijaGC extends GCHandle {
 			initializeWithParentBackground();
 		}
 		initFont();
+	}
+
+	private SkijaGC(Surface surface, Control control) {
+		if (surface == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		if (control == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		if (control.isDisposed()) SWT.error(SWT.ERROR_WIDGET_DISPOSED);
+		this.surface = surface;
+		device = control.getDisplay();
+		originalDrawingSize = new Point(0, 0);
+		final Point size = control.getSize();
+		clipping = new Rectangle(0, 0, size.x, size.y);
+		setFont(control.getFont());
+		setBackground(control.getBackground());
+		setForeground(control.getForeground());
 	}
 
 	private static Point extractSize(Drawable drawable) {
@@ -838,7 +856,9 @@ public class SkijaGC extends GCHandle {
 			font = innerGC.getFont();
 		}
 		this.swtFont = font;
-		innerGC.setFont(font);
+		if (innerGC != null) {
+			innerGC.setFont(font);
+		}
 
 		this.skiaFont = convertToSkijaFont(font);
 		this.baseSymbolHeight = this.skiaFont.measureText("T").getHeight();
@@ -1025,7 +1045,9 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public Rectangle getClipping() {
-		return innerGC.getClipping();
+		return innerGC != null
+				? innerGC.getClipping()
+				: new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
 	}
 
 	@Override
@@ -1383,5 +1405,4 @@ public class SkijaGC extends GCHandle {
 		Map<ColorType, int[]> colorTypeMap = createColorTypeMap();
 		return colorTypeMap.get(colorType);
 	}
-
 }
