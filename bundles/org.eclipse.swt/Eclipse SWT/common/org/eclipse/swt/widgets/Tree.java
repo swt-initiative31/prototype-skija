@@ -407,7 +407,7 @@ public class Tree extends CustomComposite {
 
 			verticalBar.setMaximum(count + 1);
 			verticalBar.setMinimum(0);
-			verticalBar.setVisible(count > thumb);
+			verticalBar.setVisible(true);
 			verticalBar.setIncrement(1);
 			verticalBar.setPageIncrement(thumb);
 
@@ -463,12 +463,9 @@ public class Tree extends CustomComposite {
 			if (e.button == 3) {
 				// Right click handling:
 				// -> if the item under the right click is selected, the
-				// complete
-				// selection
-				// stays the same
+				// complete selection stays the same
 				// -> if the item under the right click is not selected, the
-				// selection will be
-				// cleared and the element will be selected
+				// selection will be cleared and the element will be selected
 				for (var i : selectedTreeItems) {
 					if (i.getBounds().contains(p)) {
 						return;

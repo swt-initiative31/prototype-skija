@@ -883,9 +883,7 @@ public class TreeItem extends Item {
 			return new Rectangle(0, 0, 0, 0);
 		}
 
-		Tree.logNotImplemented();
-
-		return new Rectangle(0, 0, 0, 0);
+		return renderer.getImageBounds(index);
 	}
 
 	/**

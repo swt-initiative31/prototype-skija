@@ -28,6 +28,8 @@ public class TreeItemRenderer {
 
 	private final Map<Integer, Point> computedCellSizes = new HashMap<>();
 	private final Map<Integer, Rectangle> internalComputedCellTextBounds = new HashMap<>();
+	private Map<Integer, Rectangle> internalComputedCellImage = new HashMap<>();
+
 	private Point computedSize;
 	Rectangle arrowBounds;
 
@@ -39,36 +41,59 @@ public class TreeItemRenderer {
 		Rectangle b = item.getBounds();
 
 		Color bgBefore = gc.getBackground();
+		Tree parent = getParent();
+		final boolean paintItemEvent = parent.hooks(SWT.PaintItem);
 
-		System.out.println(getParent().selectedTreeItems);
-		if (getParent().selectedTreeItems.contains(item)) {
+		if (parent.selectedTreeItems.contains(item)) {
 			this.selected = true;
-			System.out.println("selected: " + item.getText());
 
-			gc.setBackground(Tree.SELECTION_COLOR);
+			gc.setBackground(Table.SELECTION_COLOR);
 			gc.fillRectangle(b);
 			gc.drawRectangle(new Rectangle(b.x, b.y, b.width - 1, b.height - 1));
 			gc.drawRectangle(b);
 		} else if (getParent().mouseHoverElement == item) {
 			this.hovered = true;
 			gc.setBackground(getParent().getDisplay().getSystemColor(SWT.COLOR_YELLOW));
+			System.out.println("hoveredElement: " + item.getText(1));
 			gc.fillRectangle(b);
 		} else {
 			this.selected = false;
 			this.hovered = false;
 		}
-
 		drawArrowArea(gc);
 		drawCheckbox(gc);
 
-		Tree parent = getParent();
 		if (parent.columnsExist()) {
-			final boolean paintItemEvent = parent.hooks(SWT.PaintItem);
 			for (int i = 0; i < parent.getColumnCount(); i++) {
-				drawItemCell(gc, i, paintItemEvent);
+
+				if (paintItemEvent) {
+					b = item.getBounds(i);
+					Event event = new Event();
+					event.item = item;
+					event.index = i;
+					event.gc = gc;
+					event.x = b.x;
+					event.y = b.y;
+					// TODO MeasureItem should happen in the bounds calculation
+					// logic...
+					parent.sendEvent(SWT.MeasureItem, event);
+					parent.sendEvent(SWT.EraseItem, event);
+
+					if (this.selected) {
+						gc.setBackground(Table.SELECTION_COLOR);
+						gc.fillRectangle(b);
+					} else if (this.hovered) {
+						gc.setBackground(getParent().getDisplay()
+								.getSystemColor(SWT.COLOR_YELLOW));
+						gc.fillRectangle(b);
+					}
+
+					parent.sendEvent(SWT.PaintItem, event);
+				} else
+					drawItemCell(gc, i, paintItemEvent);
 			}
 		} else {
-			drawItem(gc);
+			drawItem(gc, paintItemEvent);
 		}
 
 		gc.setBackground(bgBefore);
@@ -253,8 +278,26 @@ public class TreeItemRenderer {
 		return item.getBounds(columnIndex);
 	}
 
-	private void drawItem(GC gc) {
+	private void drawItem(GC gc, boolean paintItemEvent) {
 		var b = item.getBounds();
+		gc.setClipping(b);
+
+		try {
+
+			final Tree parent = getParent();
+			if (paintItemEvent) {
+				Event event = new Event();
+				event.item = item;
+				event.index = 0;
+				event.gc = gc;
+				event.x = b.x;
+				event.y = b.y;
+				parent.sendEvent(SWT.MeasureItem, event);
+				parent.sendEvent(SWT.EraseItem, event);
+				parent.sendEvent(SWT.PaintItem, event);
+				return;
+			}
+
 
 		var prevBG = gc.getBackground();
 		var bgCol = item.getBackground();
@@ -306,6 +349,9 @@ public class TreeItemRenderer {
 
 		gc.setForeground(prevFG);
 		gc.setBackground(prevBG);
+		}finally {
+			gc.setClipping((Rectangle) null);
+		}
 	}
 
 	public Point computeCellSize(int colIndex) {
@@ -321,6 +367,9 @@ public class TreeItemRenderer {
 
 		if (image != null) {
 			final Rectangle bounds = image.getBounds();
+			var rec = new Rectangle(width, topMargin, bounds.width,
+					bounds.height);
+			internalComputedCellImage.put(colIndex, rec);
 			height += bounds.height;
 			width += bounds.width;
 		}
@@ -329,13 +378,13 @@ public class TreeItemRenderer {
 		if (text != null) {
 			var size = getParent().computeTextExtent(text);
 
-			var rec = new Rectangle(width, height, size.x, size.y);
+			var rec = new Rectangle(width, topMargin, size.x, size.y);
 			internalComputedCellTextBounds.put(colIndex, rec);
 
 			width += size.x;
 			height += size.y;
 		} else {
-			internalComputedCellTextBounds.put(colIndex, new Rectangle(width, height, 0, 0));
+			internalComputedCellTextBounds.put(colIndex, new Rectangle(width, topMargin, 0, 0));
 		}
 
 		if (image != null && text != null) {
@@ -430,6 +479,7 @@ public class TreeItemRenderer {
 	public void clearCache() {
 		this.computedCellSizes.clear();
 		this.internalComputedCellTextBounds.clear();
+		this.internalComputedCellImage.clear();
 		computedSize = null;
 	}
 
@@ -450,4 +500,20 @@ public class TreeItemRenderer {
 		return new Rectangle(outer.x + internal.x, outer.y + internal.y, internal.width, internal.height);
 
 	}
+
+	public Rectangle getImageBounds(int index) {
+
+		if (item.getImage(index) == null)
+			return new Rectangle(0, 0, 0, 0);
+
+		if (internalComputedCellImage.get(index) == null)
+			computeCellSize(index);
+
+		var internal = internalComputedCellImage.get(index);
+
+		var outer = getBounds(index);
+
+		return new Rectangle(outer.x + internal.x, outer.y + internal.y, internal.width, internal.height);
+	}
+
 }

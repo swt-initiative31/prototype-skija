@@ -109,25 +109,11 @@ class TreeItemsHandler {
 		gc.setForeground(fgBef);
 	}
 
-//	private TreeItem paintItem(TreeItem item, GC gc) {
-//
-//		item.setLastIteration(lastIteration);
-//		item.doPaint(gc);
-//		lastIteration = item;
-//		var its = item.getItems();
-//		if (its != null && its.length > 0)
-//			for (var it : its) {
-//				it.setLastIteration(lastIteration);
-//				lastIteration = paintItem(it, gc, lastIteration);
-//			}
-//
-//		return lastIteration;
-//	}
-
 	public Point getSize() {
-//		if (computedSize == null || this.itemsCountAtCalculation != tree.getItemCount()) {
+		if (computedSize == null
+				|| this.itemsCountAtCalculation != tree.getItemCount()) {
 			calculateItemsBounds();
-//		}
+		}
 
 		return computedSize;
 	}
