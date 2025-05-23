@@ -14,8 +14,9 @@
 package org.eclipse.swt.widgets;
 
 
-import java.util.List;
-
+import io.github.humbleui.skija.ColorAlphaType;
+import io.github.humbleui.skija.ImageInfo;
+import io.github.humbleui.skija.Surface;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
@@ -1588,7 +1589,7 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 						drawBackground(ngc.handle, rect);
 					}
 				}
-				final Event event = new Event ();
+				Event event = new Event ();
 				event.gc = gc;
 				NativeGC ngc = (NativeGC) gc.innerGC;
 				RECT rect = null;
@@ -1609,16 +1610,18 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 						sendEvent (SWT.Paint, event);
 					}
 				} else {
-					event.setBounds(DPIUtil.scaleDown(new Rectangle(ps.left, ps.top, width, height), zoom));
-					Drawing.drawWithGC(this, event.gc,
-							actualGC -> {
-								event.gc = actualGC;
-								if ((style & (SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND | SWT.TRANSPARENT)) == 0) {
-									final Point size = getSize();
-									event.gc.fillRectangle(0, 0, size.x, size.y);
-								}
-								sendEvent (SWT.Paint, event);
-							});
+					if (isLightWeightChildHandling()) {
+						skiaPaint();
+					}
+					else {
+						if ((style & (SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND | SWT.TRANSPARENT)) == 0) {
+							if (rect == null) rect = new RECT();
+							OS.SetRect(rect, ps.left, ps.top, ps.right, ps.bottom);
+							drawBackground(ngc.handle, rect);
+						}
+						event.setBounds(DPIUtil.scaleDown(new Rectangle(ps.left, ps.top, width, height), zoom));
+						sendEvent(SWT.Paint, event);
+					}
 				}
 				// widget could be disposed at this point
 				event.gc = null;
@@ -1666,6 +1669,56 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 		}
 	}
 	return LRESULT.ZERO;
+}
+
+private void skiaPaint() {
+	final Point size = getSize();
+	final int zoom = getZoom();
+	final int width = DPIUtil.scaleUp(size.x, zoom);
+	final int height = DPIUtil.scaleUp(size.y, zoom);
+	final long hdc = OS.GetDC(handle);
+	try {
+		final long memHdc = OS.CreateCompatibleDC(hdc);
+		try {
+			BITMAPINFOHEADER bmiHeader = new BITMAPINFOHEADER();
+			bmiHeader.biSize = BITMAPINFOHEADER.sizeof;
+			bmiHeader.biWidth = width;
+			bmiHeader.biHeight = -height;
+			bmiHeader.biPlanes = 1;
+			bmiHeader.biBitCount = 32;
+			bmiHeader.biCompression = OS.BI_RGB;
+			var bmi = new byte[BITMAPINFOHEADER.sizeof];
+			OS.MoveMemory(bmi, bmiHeader, BITMAPINFOHEADER.sizeof);
+			long[] pBits = new long[1];
+			long hBitmap = OS.CreateDIBSection(hdc, bmi, OS.DIB_RGB_COLORS, pBits, 0, 0);
+			if (hBitmap == 0) {
+				SWT.error(SWT.ERROR_NO_HANDLES);
+			}
+
+			try {
+				ImageInfo imageInfo = ImageInfo.makeN32(width, height, ColorAlphaType.PREMUL);
+				try (Surface surface = Surface.wrapPixels(imageInfo, pBits[0], 4L * width, null)) {
+					Drawing.drawWithSurface(this, surface, gc -> {
+						final Event event = new Event();
+						event.gc = gc;
+						if ((style & (SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND | SWT.TRANSPARENT)) == 0) {
+							event.gc.fillRectangle(0, 0, width, height);
+						}
+						sendEvent(SWT.Paint, event);
+					});
+				}
+
+				OS.SelectObject(memHdc, hBitmap);
+				OS.BitBlt(hdc, 0, 0, width, height, memHdc, 0, 0, OS.SRCCOPY);
+			} finally {
+				OS.DeleteObject(hBitmap);
+			}
+		} finally {
+			OS.DeleteDC(memHdc);
+		}
+	} finally {
+		OS.ReleaseDC(handle, hdc);
+	}
 }
 
 @Override
