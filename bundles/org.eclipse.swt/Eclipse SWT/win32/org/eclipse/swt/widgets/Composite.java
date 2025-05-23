@@ -69,6 +69,11 @@ public class Composite extends CompositeCommon {
 Composite () {
 }
 
+@Override
+protected boolean requiresBeingNative() {
+	return false;
+}
+
 /**
  * Constructs a new instance of this class given its parent
  * and a style value describing its behavior and appearance.

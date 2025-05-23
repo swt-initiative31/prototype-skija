@@ -111,6 +111,11 @@ public Spinner (Composite parent, int style) {
 }
 
 @Override
+protected boolean requiresBeingNative() {
+	return true;
+}
+
+@Override
 long callWindowProc (long hwnd, int msg, long wParam, long lParam) {
 	if (handle == 0) return 0;
 	if (hwnd == hwndText) {

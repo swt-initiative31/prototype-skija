@@ -91,6 +91,11 @@ public ExpandBar (Composite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
+@Override
+protected boolean requiresBeingNative() {
+	return true;
+}
+
 /**
  * Adds the listener to the collection of listeners who will
  * be notified when an item in the receiver is expanded or collapsed
