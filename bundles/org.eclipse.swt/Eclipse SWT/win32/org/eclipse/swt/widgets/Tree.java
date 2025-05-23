@@ -172,6 +172,11 @@ public Tree (Composite parent, int style) {
 	super (parent, checkStyle (style));
 }
 
+@Override
+protected boolean requiresBeingNative() {
+	return true;
+}
+
 static int checkStyle (int style) {
 	/*
 	* Feature in Windows.  Even when WS_HSCROLL or
