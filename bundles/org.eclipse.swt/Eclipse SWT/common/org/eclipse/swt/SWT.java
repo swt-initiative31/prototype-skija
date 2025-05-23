@@ -51,6 +51,7 @@ import org.eclipse.swt.widgets.*;
  */
 public class SWT {
 	public static boolean USE_SKIJA = true;
+	public static final boolean USE_OPENGL = true;
 
 	/* Widget Event Constants */
 
@@ -4678,7 +4679,6 @@ public class SWT {
 	 * @since 3.8
 	 */
 	public static final int SCROLLBAR_OVERLAY = 1 << 1;
-
 
 /**
  * Returns a boolean indicating whether this SWT implementation can
