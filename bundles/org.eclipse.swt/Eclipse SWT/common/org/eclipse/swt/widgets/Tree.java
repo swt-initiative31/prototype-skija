@@ -88,23 +88,32 @@ import org.eclipse.swt.internal.*;
  */
 public class Tree extends CustomComposite {
 
-// ------------------------------------------------------------
+	// ------------------------------------------------------------
 
 	final static boolean USE_CACHES = true; // default true
 
-	final static boolean FILL_AREAS = false; // complete columns and items area: default false
-	final static boolean FILL_TEXT_AREAS = false; // fill areas where texts will be written: default false
-	final static boolean FILL_IMAGE_AREAS = false; // fill areas where images will be drawn: default false
+	final static boolean FILL_AREAS = false; // complete columns and items area:
+												// default false
+	final static boolean FILL_TEXT_AREAS = false; // fill areas where texts will
+													// be written: default false
+	final static boolean FILL_IMAGE_AREAS = false; // fill areas where images
+													// will be drawn: default
+													// false
 
-	final static boolean DRAW_IMAGES = true; // draw the images of Tree items: default true
-	static final boolean DRAW_TEXTS = true; // draw the texts of Tree items/colums: default true
+	final static boolean DRAW_IMAGES = true; // draw the images of Tree items:
+												// default true
+	static final boolean DRAW_TEXTS = true; // draw the texts of Tree
+											// items/colums: default true
 
-	final static boolean LOG_NOT_IMPLEMENTED = false; // write to console, if method calls are not implemented: default
+	final static boolean LOG_NOT_IMPLEMENTED = false; // write to console, if
+														// method calls are not
+														// implemented: default
 														// false
 
-// ------------------------------------------------------------
+	// ------------------------------------------------------------
 
-	private static int DRAW_FLAGS = SWT.DRAW_MNEMONIC | SWT.DRAW_TAB | SWT.DRAW_TRANSPARENT | SWT.DRAW_DELIMITER;
+	private static int DRAW_FLAGS = SWT.DRAW_MNEMONIC | SWT.DRAW_TAB
+			| SWT.DRAW_TRANSPARENT | SWT.DRAW_DELIMITER;
 
 	static final Color SELECTION_COLOR = new Color(224, 238, 254);
 
@@ -116,8 +125,8 @@ public class Tree extends CustomComposite {
 
 	private java.util.List<TreeItem> itemsList = new ArrayList<>();
 	private TreeMap<Integer, TreeItem> virtualItemsList = new TreeMap<>();
-	TreeSet<TreeItem> selectedTreeItems = new TreeSet<>(
-			(o1, o2) -> Integer.compare(arrangementIndexOf(o1), arrangementIndexOf(o2)));
+	TreeSet<TreeItem> selectedTreeItems = new TreeSet<>((o1, o2) -> Integer
+			.compare(arrangementIndexOf(o1), arrangementIndexOf(o2)));
 	// TODO implement focusHandling
 	private TreeItem focusItem;
 	Item mouseHoverElement;
@@ -133,14 +142,16 @@ public class Tree extends CustomComposite {
 	Rectangle focusRect;
 	boolean[] columnVisible;
 	long headerToolTipHandle, hwndHeader, itemToolTipHandle;
-	boolean ignoreCustomDraw, ignoreDrawForeground, ignoreDrawBackground, ignoreDrawFocus, ignoreDrawSelection,
-			ignoreDrawHot;
-	boolean customDraw, dragStarted, explorerTheme, firstColumnImage, fixScrollWidth, tipRequested, wasSelected,
-			wasResized, painted;
-	boolean ignoreActivate, ignoreSelect, ignoreShrink, ignoreResize, ignoreColumnMove, ignoreColumnResize,
-			fullRowSelect, settingItemHeight;
+	boolean ignoreCustomDraw, ignoreDrawForeground, ignoreDrawBackground,
+			ignoreDrawFocus, ignoreDrawSelection, ignoreDrawHot;
+	boolean customDraw, dragStarted, explorerTheme, firstColumnImage,
+			fixScrollWidth, tipRequested, wasSelected, wasResized, painted;
+	boolean ignoreActivate, ignoreSelect, ignoreShrink, ignoreResize,
+			ignoreColumnMove, ignoreColumnResize, fullRowSelect,
+			settingItemHeight;
 	boolean headerItemDragging;
-	int itemHeight, lastIndexOf, lastWidth, sortDirection, resizeCount, selectionForeground, hotIndex;
+	int itemHeight, lastIndexOf, lastWidth, sortDirection, resizeCount,
+			selectionForeground, hotIndex;
 	static /* final */ long HeaderProc;
 	static final int INSET = 4;
 	static final int GRID_WIDTH = 1;
@@ -180,34 +191,34 @@ public class Tree extends CustomComposite {
 	private TreeItem topItem;
 
 	/**
-	 * Constructs a new instance of this class given its parent and a style value
-	 * describing its behavior and appearance.
+	 * Constructs a new instance of this class given its parent and a style
+	 * value describing its behavior and appearance.
 	 * <p>
 	 * The style value is either one of the style constants defined in class
-	 * <code>SWT</code> which is applicable to instances of this class, or must be
-	 * built by <em>bitwise OR</em>'ing together (that is, using the
-	 * <code>int</code> "|" operator) two or more of those <code>SWT</code> style
-	 * constants. The class description lists the style constants that are
+	 * <code>SWT</code> which is applicable to instances of this class, or must
+	 * be built by <em>bitwise OR</em>'ing together (that is, using the
+	 * <code>int</code> "|" operator) two or more of those <code>SWT</code>
+	 * style constants. The class description lists the style constants that are
 	 * applicable to the class. Style bits are also inherited from superclasses.
 	 * </p>
 	 *
-	 * @param parent a composite control which will be the parent of the new
-	 *               instance (cannot be null)
-	 * @param style  the style of control to construct
+	 * @param parent
+	 *            a composite control which will be the parent of the new
+	 *            instance (cannot be null)
+	 * @param style
+	 *            the style of control to construct
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_NULL_ARGUMENT - if the parent
-	 *                                     is null</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     parent</li>
-	 *                                     <li>ERROR_INVALID_SUBCLASS - if this
-	 *                                     class is not an allowed subclass</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the parent</li>
+	 *                <li>ERROR_INVALID_SUBCLASS - if this class is not an
+	 *                allowed subclass</li>
+	 *                </ul>
 	 *
 	 * @see SWT#SINGLE
 	 * @see SWT#MULTI
@@ -230,24 +241,24 @@ public class Tree extends CustomComposite {
 	private void initialize() {
 		final Listener listener = event -> {
 			switch (event.type) {
-			case SWT.Dispose -> onDispose(event);
-			case SWT.MouseDown -> onMouseDown(event);
-			case SWT.MouseUp -> onMouseUp(event);
-			case SWT.Paint -> onPaint(event);
-			case SWT.Resize -> onResize();
-			case SWT.FocusIn -> onFocusIn();
-			case SWT.FocusOut -> onFocusOut();
-			case SWT.Traverse -> onTraverse(event);
-			case SWT.Selection -> onSelection(event);
-			case SWT.V_SCROLL -> onScrollBar(event);
-			case SWT.H_SCROLL -> onScrollBar(event);
-			case SWT.MouseWheel -> onScrollBar(event);
-			case SWT.KeyDown -> onKeyDown(event);
-			case SWT.KeyUp -> onKeyUp(event);
-			case SWT.MouseMove -> onMouseMove(event);
-			case SWT.MouseEnter -> onMouseEnter(event);
-			case SWT.MouseExit -> onMouseExit(event);
-			case SWT.MouseDoubleClick -> onDoubleClick(event);
+				case SWT.Dispose -> onDispose(event);
+				case SWT.MouseDown -> onMouseDown(event);
+				case SWT.MouseUp -> onMouseUp(event);
+				case SWT.Paint -> onPaint(event);
+				case SWT.Resize -> onResize();
+				case SWT.FocusIn -> onFocusIn();
+				case SWT.FocusOut -> onFocusOut();
+				case SWT.Traverse -> onTraverse(event);
+				case SWT.Selection -> onSelection(event);
+				case SWT.V_SCROLL -> onScrollBar(event);
+				case SWT.H_SCROLL -> onScrollBar(event);
+				case SWT.MouseWheel -> onScrollBar(event);
+				case SWT.KeyDown -> onKeyDown(event);
+				case SWT.KeyUp -> onKeyUp(event);
+				case SWT.MouseMove -> onMouseMove(event);
+				case SWT.MouseEnter -> onMouseEnter(event);
+				case SWT.MouseExit -> onMouseExit(event);
+				case SWT.MouseDoubleClick -> onDoubleClick(event);
 			}
 		};
 
@@ -400,7 +411,6 @@ public class Tree extends CustomComposite {
 			verticalBar.setIncrement(1);
 			verticalBar.setPageIncrement(thumb);
 
-
 			if (horizontalBar != null) {
 				horizontalBar.setMaximum(getTotalColumnWidth() + 10);
 				horizontalBar.setMinimum(0);
@@ -444,20 +454,30 @@ public class Tree extends CustomComposite {
 		if (!this.isVisible())
 			return;
 
-		// TODO right click handling is a little bit more complex:
-		// -> if the item under the right click is selected, the complete selection
-		// stays the same
-		// -> if the item under the right click is not selected, the selection will be
-		// cleared and the element will be selected
-		if (e.button != 1)
-			return;
-
 		Point p = new Point(e.x, e.y);
 
 		if (columnsHandler.getColumnsBounds().contains(e.x, e.y)) {
 			columnsHandler.handleMouseDown(e);
 		} else if (itemsHandler.getItemsClientArea().contains(e.x, e.y)) {
-			for (int i = getTopIndex(); i <= Math.min(treeItemsArrangement.size(),
+
+			if (e.button == 3) {
+				// Right click handling:
+				// -> if the item under the right click is selected, the
+				// complete
+				// selection
+				// stays the same
+				// -> if the item under the right click is not selected, the
+				// selection will be
+				// cleared and the element will be selected
+				for (var i : selectedTreeItems) {
+					if (i.getBounds().contains(p)) {
+						return;
+					}
+				}
+			}
+
+			for (int i = getTopIndex(); i <= Math.min(
+					treeItemsArrangement.size(),
 					itemsHandler.getLastVisibleElementIndex()); i++) {
 				var it = _getArrangementItem(i);
 
@@ -514,12 +534,12 @@ public class Tree extends CustomComposite {
 	void _addListener(int eventType, Listener listener) {
 		super._addListener(eventType, listener);
 		switch (eventType) {
-		case SWT.MeasureItem:
-		case SWT.EraseItem:
-		case SWT.PaintItem:
-			setCustomDraw(true);
-			setBackgroundTransparent(true);
-			break;
+			case SWT.MeasureItem :
+			case SWT.EraseItem :
+			case SWT.PaintItem :
+				setCustomDraw(true);
+				setBackgroundTransparent(true);
+				break;
 		}
 	}
 
@@ -564,34 +584,34 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Adds the listener to the collection of listeners who will be notified when
-	 * the user changes the receiver's selection, by sending it one of the messages
-	 * defined in the <code>SelectionListener</code> interface.
+	 * Adds the listener to the collection of listeners who will be notified
+	 * when the user changes the receiver's selection, by sending it one of the
+	 * messages defined in the <code>SelectionListener</code> interface.
 	 * <p>
 	 * When <code>widgetSelected</code> is called, the item field of the event
-	 * object is valid. If the receiver has the <code>SWT.CHECK</code> style and the
-	 * check selection changes, the event object detail field contains the value
-	 * <code>SWT.CHECK</code>. <code>widgetDefaultSelected</code> is typically
-	 * called when an item is double-clicked. The item field of the event object is
-	 * valid for default selection, but the detail field is not used.
+	 * object is valid. If the receiver has the <code>SWT.CHECK</code> style and
+	 * the check selection changes, the event object detail field contains the
+	 * value <code>SWT.CHECK</code>. <code>widgetDefaultSelected</code> is
+	 * typically called when an item is double-clicked. The item field of the
+	 * event object is valid for default selection, but the detail field is not
+	 * used.
 	 * </p>
 	 *
-	 * @param listener the listener which should be notified when the user changes
-	 *                 the receiver's selection
+	 * @param listener
+	 *            the listener which should be notified when the user changes
+	 *            the receiver's selection
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_NULL_ARGUMENT - if the listener
-	 *                                     is null</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @see SelectionListener
 	 * @see #removeSelectionListener
@@ -603,12 +623,12 @@ public class Tree extends CustomComposite {
 
 	static int checkStyle(int style) {
 		/*
-		 * Feature in Windows. Even when WS_HSCROLL or WS_VSCROLL is not specified,
-		 * Windows creates trees and Trees with scroll bars. The fix is to set H_SCROLL
-		 * and V_SCROLL.
+		 * Feature in Windows. Even when WS_HSCROLL or WS_VSCROLL is not
+		 * specified, Windows creates trees and Trees with scroll bars. The fix
+		 * is to set H_SCROLL and V_SCROLL.
 		 *
-		 * NOTE: This code appears on all platforms so that applications have consistent
-		 * scroll bar behavior.
+		 * NOTE: This code appears on all platforms so that applications have
+		 * consistent scroll bar behavior.
 		 */
 		if ((style & SWT.NO_SCROLL) == 0) {
 			style |= SWT.H_SCROLL | SWT.V_SCROLL;
@@ -627,7 +647,11 @@ public class Tree extends CustomComposite {
 			return true;
 		if (!item.cached) {
 			TreeItem parentItem = item.getParentItem();
-			return checkData(item, parentItem == null ? indexOf(item) : parentItem.indexOf(item), redraw);
+			return checkData(item,
+					parentItem == null
+							? indexOf(item)
+							: parentItem.indexOf(item),
+					redraw);
 		}
 		return true;
 	}
@@ -660,27 +684,27 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Clears the item at the given zero-relative index in the receiver. The text,
-	 * icon and other attributes of the item are set to the default value. If the
-	 * Tree was created with the <code>SWT.VIRTUAL</code> style, these attributes
-	 * are requested again as needed.
+	 * Clears the item at the given zero-relative index in the receiver. The
+	 * text, icon and other attributes of the item are set to the default value.
+	 * If the Tree was created with the <code>SWT.VIRTUAL</code> style, these
+	 * attributes are requested again as needed.
 	 *
-	 * @param index the index of the item to clear
+	 * @param index
+	 *            the index of the item to clear
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_INVALID_RANGE - if the index is
-	 *                                     not between 0 and the number of elements
-	 *                                     in the list minus 1 (inclusive)</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_INVALID_RANGE - if the index is not between 0
+	 *                and the number of elements in the list minus 1
+	 *                (inclusive)</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @see SWT#VIRTUAL
 	 * @see SWT#SetData
@@ -688,34 +712,34 @@ public class Tree extends CustomComposite {
 	 * @since 3.0
 	 */
 	public void clear(int index) {
-		clear(new int[] { index });
+		clear(new int[]{index});
 	}
 
 	/**
-	 * Removes the items from the receiver which are between the given zero-relative
-	 * start and end indices (inclusive). The text, icon and other attributes of the
-	 * items are set to their default values. If the Tree was created with the
-	 * <code>SWT.VIRTUAL</code> style, these attributes are requested again as
-	 * needed.
+	 * Removes the items from the receiver which are between the given
+	 * zero-relative start and end indices (inclusive). The text, icon and other
+	 * attributes of the items are set to their default values. If the Tree was
+	 * created with the <code>SWT.VIRTUAL</code> style, these attributes are
+	 * requested again as needed.
 	 *
-	 * @param start the start index of the item to clear
-	 * @param end   the end index of the item to clear
+	 * @param start
+	 *            the start index of the item to clear
+	 * @param end
+	 *            the end index of the item to clear
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_INVALID_RANGE - if either the
-	 *                                     start or end are not between 0 and the
-	 *                                     number of elements in the list minus 1
-	 *                                     (inclusive)</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_INVALID_RANGE - if either the start or end are
+	 *                not between 0 and the number of elements in the list minus
+	 *                1 (inclusive)</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @see SWT#VIRTUAL
 	 * @see SWT#SetData
@@ -744,28 +768,28 @@ public class Tree extends CustomComposite {
 
 	/**
 	 * Clears the items at the given zero-relative indices in the receiver. The
-	 * text, icon and other attributes of the items are set to their default values.
-	 * If the Tree was created with the <code>SWT.VIRTUAL</code> style, these
-	 * attributes are requested again as needed.
+	 * text, icon and other attributes of the items are set to their default
+	 * values. If the Tree was created with the <code>SWT.VIRTUAL</code> style,
+	 * these attributes are requested again as needed.
 	 *
-	 * @param indices the array of indices of the items
+	 * @param indices
+	 *            the array of indices of the items
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_INVALID_RANGE - if the index is
-	 *                                     not between 0 and the number of elements
-	 *                                     in the list minus 1 (inclusive)</li>
-	 *                                     <li>ERROR_NULL_ARGUMENT - if the indices
-	 *                                     array is null</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_INVALID_RANGE - if the index is not between 0
+	 *                and the number of elements in the list minus 1
+	 *                (inclusive)</li>
+	 *                <li>ERROR_NULL_ARGUMENT - if the indices array is
+	 *                null</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @see SWT#VIRTUAL
 	 * @see SWT#SetData
@@ -795,18 +819,18 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Clears all the items in the receiver. The text, icon and other attributes of
-	 * the items are set to their default values. If the Tree was created with the
-	 * <code>SWT.VIRTUAL</code> style, these attributes are requested again as
-	 * needed.
+	 * Clears all the items in the receiver. The text, icon and other attributes
+	 * of the items are set to their default values. If the Tree was created
+	 * with the <code>SWT.VIRTUAL</code> style, these attributes are requested
+	 * again as needed.
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @see SWT#VIRTUAL
 	 * @see SWT#SetData
@@ -835,14 +859,14 @@ public class Tree extends CustomComposite {
 	// TODO handle all true or false.
 
 	/**
-	 * public void clearAll(boolean all) Clears all the items in the receiver. The
-	 * text, icon and other attributes of the items are set to their default values.
-	 * If the tree was created with the SWT.VIRTUAL style, these attributes are
-	 * requested again as needed. Parameters: all - true if all child items should
-	 * be cleared recursively, and false otherwise Throws: SWTException -
-	 * ERROR_WIDGET_DISPOSED - if the receiver has been disposed
-	 * ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the
-	 * receiver Since: 3.2 See Also: SWT.VIRTUAL SWT.SetData
+	 * public void clearAll(boolean all) Clears all the items in the receiver.
+	 * The text, icon and other attributes of the items are set to their default
+	 * values. If the tree was created with the SWT.VIRTUAL style, these
+	 * attributes are requested again as needed. Parameters: all - true if all
+	 * child items should be cleared recursively, and false otherwise Throws:
+	 * SWTException - ERROR_WIDGET_DISPOSED - if the receiver has been disposed
+	 * ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created
+	 * the receiver Since: 3.2 See Also: SWT.VIRTUAL SWT.SetData
 	 *
 	 * @param all
 	 */
@@ -946,9 +970,11 @@ public class Tree extends CustomComposite {
 
 		if (this.columnOrder != null) {
 			var newOrder = new int[columnsList.size()];
-			System.arraycopy(this.columnOrder, 0, newOrder, 0, this.columnOrder.length);
+			System.arraycopy(this.columnOrder, 0, newOrder, 0,
+					this.columnOrder.length);
 
-			for (int i = this.columnOrder.length; i < this.columnsList.size(); i++) {
+			for (int i = this.columnOrder.length; i < this.columnsList
+					.size(); i++) {
 				newOrder[i] = i;
 			}
 
@@ -1021,7 +1047,8 @@ public class Tree extends CustomComposite {
 		if (!isVirtual()) {
 			updateScrollBarWithTextSize();
 		}
-		if ((index >= getTopIndex() && index <= itemsHandler.getLastVisibleElementIndex())) {
+		if ((index >= getTopIndex()
+				&& index <= itemsHandler.getLastVisibleElementIndex())) {
 			redraw();
 		}
 	}
@@ -1133,26 +1160,27 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Deselects the items at the given zero-relative indices in the receiver. If
-	 * the item at the given zero-relative index in the receiver is selected, it is
-	 * deselected. If the item at the index was not selected, it remains deselected.
-	 * Indices that are out of range and duplicate indices are ignored.
+	 * Deselects the items at the given zero-relative indices in the receiver.
+	 * If the item at the given zero-relative index in the receiver is selected,
+	 * it is deselected. If the item at the index was not selected, it remains
+	 * deselected. Indices that are out of range and duplicate indices are
+	 * ignored.
 	 *
-	 * @param indices the array of indices for the items to deselect
+	 * @param indices
+	 *            the array of indices for the items to deselect
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_NULL_ARGUMENT - if the set of
-	 *                                     indices is null</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_NULL_ARGUMENT - if the set of indices is
+	 *                null</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public void deselect(int[] indices) {
 		checkWidget();
@@ -1174,43 +1202,46 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Deselects the item at the given zero-relative index in the receiver. If the
-	 * item at the index was already deselected, it remains deselected. Indices that
-	 * are out of range are ignored.
+	 * Deselects the item at the given zero-relative index in the receiver. If
+	 * the item at the index was already deselected, it remains deselected.
+	 * Indices that are out of range are ignored.
 	 *
-	 * @param index the index of the item to deselect
+	 * @param index
+	 *            the index of the item to deselect
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public void deselect(int index) {
 		checkWidget();
 
-		deselect(new int[] { index });
+		deselect(new int[]{index});
 	}
 
 	/**
-	 * Deselects the items at the given zero-relative indices in the receiver. If
-	 * the item at the given zero-relative index in the receiver is selected, it is
-	 * deselected. If the item at the index was not selected, it remains deselected.
-	 * The range of the indices is inclusive. Indices that are out of range are
-	 * ignored.
+	 * Deselects the items at the given zero-relative indices in the receiver.
+	 * If the item at the given zero-relative index in the receiver is selected,
+	 * it is deselected. If the item at the index was not selected, it remains
+	 * deselected. The range of the indices is inclusive. Indices that are out
+	 * of range are ignored.
 	 *
-	 * @param start the start index of the items to deselect
-	 * @param end   the end index of the items to deselect
+	 * @param start
+	 *            the start index of the items to deselect
+	 * @param end
+	 *            the end index of the items to deselect
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public void deselect(int start, int end) {
 		checkWidget();
@@ -1237,12 +1268,12 @@ public class Tree extends CustomComposite {
 	 * Deselects all selected items in the receiver.
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public void deselectAll() {
 		checkWidget();
@@ -1265,31 +1296,31 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Returns the column at the given, zero-relative index in the receiver. Throws
-	 * an exception if the index is out of range. Columns are returned in the order
-	 * that they were created. If no <code>TreeColumn</code>s were created by the
-	 * programmer, this method will throw <code>ERROR_INVALID_RANGE</code> despite
-	 * the fact that a single column of data may be visible in the Tree. This occurs
-	 * when the programmer uses the Tree like a list, adding items but never
-	 * creating a column.
+	 * Returns the column at the given, zero-relative index in the receiver.
+	 * Throws an exception if the index is out of range. Columns are returned in
+	 * the order that they were created. If no <code>TreeColumn</code>s were
+	 * created by the programmer, this method will throw
+	 * <code>ERROR_INVALID_RANGE</code> despite the fact that a single column of
+	 * data may be visible in the Tree. This occurs when the programmer uses the
+	 * Tree like a list, adding items but never creating a column.
 	 *
-	 * @param index the index of the column to return
+	 * @param index
+	 *            the index of the column to return
 	 * @return the column at the given index
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_INVALID_RANGE - if the index is
-	 *                                     not between 0 and the number of elements
-	 *                                     in the list minus 1 (inclusive)</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_INVALID_RANGE - if the index is not between 0
+	 *                and the number of elements in the list minus 1
+	 *                (inclusive)</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @see Tree#getColumnOrder()
 	 * @see Tree#setColumnOrder(int[])
@@ -1306,20 +1337,20 @@ public class Tree extends CustomComposite {
 
 	/**
 	 * Returns the number of columns contained in the receiver. If no
-	 * <code>TreeColumn</code>s were created by the programmer, this value is zero,
-	 * despite the fact that visually, one column of items may be visible. This
-	 * occurs when the programmer uses the Tree like a list, adding items but never
-	 * creating a column.
+	 * <code>TreeColumn</code>s were created by the programmer, this value is
+	 * zero, despite the fact that visually, one column of items may be visible.
+	 * This occurs when the programmer uses the Tree like a list, adding items
+	 * but never creating a column.
 	 *
 	 * @return the number of columns
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public int getColumnCount() {
 		checkWidget();
@@ -1327,27 +1358,28 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Returns an array of zero-relative integers that map the creation order of the
-	 * receiver's items to the order in which they are currently being displayed.
+	 * Returns an array of zero-relative integers that map the creation order of
+	 * the receiver's items to the order in which they are currently being
+	 * displayed.
 	 * <p>
-	 * Specifically, the indices of the returned array represent the current visual
-	 * order of the items, and the contents of the array represent the creation
-	 * order of the items.
+	 * Specifically, the indices of the returned array represent the current
+	 * visual order of the items, and the contents of the array represent the
+	 * creation order of the items.
 	 * </p>
 	 * <p>
-	 * Note: This is not the actual structure used by the receiver to maintain its
-	 * list of items, so modifying the array will not affect the receiver.
+	 * Note: This is not the actual structure used by the receiver to maintain
+	 * its list of items, so modifying the array will not affect the receiver.
 	 * </p>
 	 *
 	 * @return the current visual order of the receiver's items
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @see Tree#setColumnOrder(int[])
 	 * @see TreeColumn#getMoveable()
@@ -1377,24 +1409,24 @@ public class Tree extends CustomComposite {
 	/**
 	 * Returns an array of <code>TreeColumn</code>s which are the columns in the
 	 * receiver. Columns are returned in the order that they were created. If no
-	 * <code>TreeColumn</code>s were created by the programmer, the array is empty,
-	 * despite the fact that visually, one column of items may be visible. This
-	 * occurs when the programmer uses the Tree like a list, adding items but never
-	 * creating a column.
+	 * <code>TreeColumn</code>s were created by the programmer, the array is
+	 * empty, despite the fact that visually, one column of items may be
+	 * visible. This occurs when the programmer uses the Tree like a list,
+	 * adding items but never creating a column.
 	 * <p>
-	 * Note: This is not the actual structure used by the receiver to maintain its
-	 * list of items, so modifying the array will not affect the receiver.
+	 * Note: This is not the actual structure used by the receiver to maintain
+	 * its list of items, so modifying the array will not affect the receiver.
 	 * </p>
 	 *
 	 * @return the items in the receiver
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @see Tree#getColumnOrder()
 	 * @see Tree#setColumnOrder(int[])
@@ -1421,12 +1453,12 @@ public class Tree extends CustomComposite {
 	 * @return the width of a grid line in points
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public int getGridLineWidth() {
 		checkWidget();
@@ -1443,12 +1475,12 @@ public class Tree extends CustomComposite {
 	 * @return the receiver's header background color.
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 * @since 3.106
 	 */
 	public Color getHeaderBackground() {
@@ -1467,12 +1499,12 @@ public class Tree extends CustomComposite {
 	 * @return the receiver's header foreground color.
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 * @since 3.106
 	 */
 	public Color getHeaderForeground() {
@@ -1491,12 +1523,12 @@ public class Tree extends CustomComposite {
 	 * @return the height of the header or zero if the header is not visible
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @since 2.0
 	 */
@@ -1518,12 +1550,12 @@ public class Tree extends CustomComposite {
 	 * @return the receiver's header's visibility state
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public boolean getHeaderVisible() {
 		checkWidget();
@@ -1532,26 +1564,26 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Returns the item at the given, zero-relative index in the receiver. Throws an
-	 * exception if the index is out of range.
+	 * Returns the item at the given, zero-relative index in the receiver.
+	 * Throws an exception if the index is out of range.
 	 *
-	 * @param index the index of the item to return
+	 * @param index
+	 *            the index of the item to return
 	 * @return the item at the given index
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_INVALID_RANGE - if the index is
-	 *                                     not between 0 and the number of elements
-	 *                                     in the list minus 1 (inclusive)</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_INVALID_RANGE - if the index is not between 0
+	 *                and the number of elements in the list minus 1
+	 *                (inclusive)</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public TreeItem getItem(int index) {
 		checkWidget();
@@ -1559,33 +1591,32 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Returns the item at the given point in the receiver or null if no such item
-	 * exists. The point is in the coordinate system of the receiver.
+	 * Returns the item at the given point in the receiver or null if no such
+	 * item exists. The point is in the coordinate system of the receiver.
 	 * <p>
-	 * The item that is returned represents an item that could be selected by the
-	 * user. For example, if selection only occurs in items in the first column,
-	 * then null is returned if the point is outside of the item. Note that the
-	 * SWT.FULL_SELECTION style hint, which specifies the selection policy,
-	 * determines the extent of the selection.
+	 * The item that is returned represents an item that could be selected by
+	 * the user. For example, if selection only occurs in items in the first
+	 * column, then null is returned if the point is outside of the item. Note
+	 * that the SWT.FULL_SELECTION style hint, which specifies the selection
+	 * policy, determines the extent of the selection.
 	 * </p>
 	 *
-	 * @param point the point used to locate the item
+	 * @param point
+	 *            the point used to locate the item
 	 * @return the item at the given point, or null if the point is not in a
 	 *         selecTree item
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_NULL_ARGUMENT - if the point is
-	 *                                     null</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_NULL_ARGUMENT - if the point is null</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public TreeItem getItem(Point point) {
 		checkWidget();
@@ -1611,12 +1642,12 @@ public class Tree extends CustomComposite {
 	 * @return the number of items
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public int getItemCount() {
 		checkWidget();
@@ -1633,18 +1664,18 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Returns the height of the area which would be used to display <em>one</em> of
-	 * the items in the receiver.
+	 * Returns the height of the area which would be used to display
+	 * <em>one</em> of the items in the receiver.
 	 *
 	 * @return the height of one item
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public int getItemHeight() {
 		checkWidget();
@@ -1653,9 +1684,12 @@ public class Tree extends CustomComposite {
 
 			if (!treeItemsArrangement.isEmpty())
 				if (treeItemsArrangement.size() > getTopIndex()) {
-					return treeItemsArrangement.get(getTopIndex()).getBounds().height;
+					return treeItemsArrangement.get(getTopIndex())
+							.getBounds().height;
 				} else
-					return treeItemsArrangement.get(treeItemsArrangement.size() - 1).getBounds().height;
+					return treeItemsArrangement
+							.get(treeItemsArrangement.size() - 1)
+							.getBounds().height;
 
 		}
 
@@ -1666,19 +1700,19 @@ public class Tree extends CustomComposite {
 	 * Returns a (possibly empty) array of <code>TreeItem</code>s which are the
 	 * items in the receiver.
 	 * <p>
-	 * Note: This is not the actual structure used by the receiver to maintain its
-	 * list of items, so modifying the array will not affect the receiver.
+	 * Note: This is not the actual structure used by the receiver to maintain
+	 * its list of items, so modifying the array will not affect the receiver.
 	 * </p>
 	 *
 	 * @return the items in the receiver
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public TreeItem[] getItems() {
 		checkWidget();
@@ -1696,8 +1730,8 @@ public class Tree extends CustomComposite {
 
 	/**
 	 * Returns <code>true</code> if the receiver's lines are visible, and
-	 * <code>false</code> otherwise. Note that some platforms draw grid lines while
-	 * others may draw alternating row colors.
+	 * <code>false</code> otherwise. Note that some platforms draw grid lines
+	 * while others may draw alternating row colors.
 	 * <p>
 	 * If one of the receiver's ancestors is not visible or some other condition
 	 * makes the receiver not visible, this method may still indicate that it is
@@ -1707,12 +1741,12 @@ public class Tree extends CustomComposite {
 	 * @return the visibility state of the lines
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public boolean getLinesVisible() {
 		checkWidget();
@@ -1720,23 +1754,23 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Returns an array of <code>TreeItem</code>s that are currently selected in the
-	 * receiver. The order of the items is unspecified. An empty array indicates
-	 * that no items are selected.
+	 * Returns an array of <code>TreeItem</code>s that are currently selected in
+	 * the receiver. The order of the items is unspecified. An empty array
+	 * indicates that no items are selected.
 	 * <p>
-	 * Note: This is not the actual structure used by the receiver to maintain its
-	 * selection, so modifying the array will not affect the receiver.
+	 * Note: This is not the actual structure used by the receiver to maintain
+	 * its selection, so modifying the array will not affect the receiver.
 	 * </p>
 	 *
 	 * @return an array representing the selection
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public TreeItem[] getSelection() {
 		checkWidget();
@@ -1749,12 +1783,12 @@ public class Tree extends CustomComposite {
 	 * @return the number of selected items
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public int getSelectionCount() {
 		checkWidget();
@@ -1762,18 +1796,18 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Returns the zero-relative index of the item which is currently selected in
-	 * the receiver, or -1 if no item is selected.
+	 * Returns the zero-relative index of the item which is currently selected
+	 * in the receiver, or -1 if no item is selected.
 	 *
 	 * @return the index of the selected item
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public int getSelectionIndex() {
 		checkWidget();
@@ -1798,23 +1832,23 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Returns the zero-relative indices of the items which are currently selected
-	 * in the receiver. The order of the indices is unspecified. The array is empty
-	 * if no items are selected.
+	 * Returns the zero-relative indices of the items which are currently
+	 * selected in the receiver. The order of the indices is unspecified. The
+	 * array is empty if no items are selected.
 	 * <p>
-	 * Note: This is not the actual structure used by the receiver to maintain its
-	 * selection, so modifying the array will not affect the receiver.
+	 * Note: This is not the actual structure used by the receiver to maintain
+	 * its selection, so modifying the array will not affect the receiver.
 	 * </p>
 	 *
 	 * @return the array of indices of the selected items
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public int[] getSelectionIndices() {
 		checkWidget();
@@ -1822,18 +1856,18 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Returns the column which shows the sort indicator for the receiver. The value
-	 * may be null if no column shows the sort indicator.
+	 * Returns the column which shows the sort indicator for the receiver. The
+	 * value may be null if no column shows the sort indicator.
 	 *
 	 * @return the sort indicator
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @see #setSortColumn(TreeColumn)
 	 *
@@ -1850,18 +1884,18 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Returns the direction of the sort indicator for the receiver. The value will
-	 * be one of <code>UP</code>, <code>DOWN</code> or <code>NONE</code>.
+	 * Returns the direction of the sort indicator for the receiver. The value
+	 * will be one of <code>UP</code>, <code>DOWN</code> or <code>NONE</code>.
 	 *
 	 * @return the sort direction
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @see #setSortDirection(int)
 	 *
@@ -1873,19 +1907,19 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Returns the zero-relative index of the item which is currently at the top of
-	 * the receiver. This index can change when items are scrolled or new items are
-	 * added or removed.
+	 * Returns the zero-relative index of the item which is currently at the top
+	 * of the receiver. This index can change when items are scrolled or new
+	 * items are added or removed.
 	 *
 	 * @return the index of the top item
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	int getTopIndex() {
 		checkWidget();
@@ -1907,26 +1941,25 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Searches the receiver's list starting at the first column (index 0) until a
-	 * column is found that is equal to the argument, and returns the index of that
-	 * column. If no column is found, returns -1.
+	 * Searches the receiver's list starting at the first column (index 0) until
+	 * a column is found that is equal to the argument, and returns the index of
+	 * that column. If no column is found, returns -1.
 	 *
-	 * @param column the search column
+	 * @param column
+	 *            the search column
 	 * @return the index of the column
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_NULL_ARGUMENT - if the column
-	 *                                     is null</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_NULL_ARGUMENT - if the column is null</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public int indexOf(TreeColumn column) {
 		checkWidget();
@@ -1936,26 +1969,25 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Searches the receiver's list starting at the first item (index 0) until an
-	 * item is found that is equal to the argument, and returns the index of that
-	 * item. If no item is found, returns -1.
+	 * Searches the receiver's list starting at the first item (index 0) until
+	 * an item is found that is equal to the argument, and returns the index of
+	 * that item. If no item is found, returns -1.
 	 *
-	 * @param item the search item
+	 * @param item
+	 *            the search item
 	 * @return the index of the item
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_NULL_ARGUMENT - if the item is
-	 *                                     null</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_NULL_ARGUMENT - if the item is null</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public int indexOf(TreeItem item) {
 		checkWidget();
@@ -1996,23 +2028,25 @@ public class Tree extends CustomComposite {
 	boolean isOptimizedRedraw() {
 		if ((style & SWT.H_SCROLL) == 0 || (style & SWT.V_SCROLL) == 0)
 			return false;
-		return !hasChildren() && !hooks(SWT.Paint) && !filters(SWT.Paint) && !customHeaderDrawing();
+		return !hasChildren() && !hooks(SWT.Paint) && !filters(SWT.Paint)
+				&& !customHeaderDrawing();
 	}
 
 	/**
 	 * Returns <code>true</code> if the item is selected, and <code>false</code>
 	 * otherwise. Indices out of range are ignored.
 	 *
-	 * @param index the index of the item
+	 * @param index
+	 *            the index of the item
 	 * @return the selection state of the item at the index
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public boolean isSelected(int index) {
 		for (var it : selectedTreeItems) {
@@ -2027,24 +2061,24 @@ public class Tree extends CustomComposite {
 	 * Removes the items from the receiver's list at the given zero-relative
 	 * indices.
 	 *
-	 * @param indices the array of indices of the items
+	 * @param indices
+	 *            the array of indices of the items
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_INVALID_RANGE - if the index is
-	 *                                     not between 0 and the number of elements
-	 *                                     in the list minus 1 (inclusive)</li>
-	 *                                     <li>ERROR_NULL_ARGUMENT - if the indices
-	 *                                     array is null</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_INVALID_RANGE - if the index is not between 0
+	 *                and the number of elements in the list minus 1
+	 *                (inclusive)</li>
+	 *                <li>ERROR_NULL_ARGUMENT - if the indices array is
+	 *                null</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public void remove(int[] indices) {
 		checkWidget();
@@ -2072,49 +2106,49 @@ public class Tree extends CustomComposite {
 	/**
 	 * Removes the item from the receiver at the given zero-relative index.
 	 *
-	 * @param index the index for the item
+	 * @param index
+	 *            the index for the item
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_INVALID_RANGE - if the index is
-	 *                                     not between 0 and the number of elements
-	 *                                     in the list minus 1 (inclusive)</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_INVALID_RANGE - if the index is not between 0
+	 *                and the number of elements in the list minus 1
+	 *                (inclusive)</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public void remove(int index) {
 		checkWidget();
 	}
 
 	/**
-	 * Removes the items from the receiver which are between the given zero-relative
-	 * start and end indices (inclusive).
+	 * Removes the items from the receiver which are between the given
+	 * zero-relative start and end indices (inclusive).
 	 *
-	 * @param start the start of the range
-	 * @param end   the end of the range
+	 * @param start
+	 *            the start of the range
+	 * @param end
+	 *            the end of the range
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_INVALID_RANGE - if either the
-	 *                                     start or end are not between 0 and the
-	 *                                     number of elements in the list minus 1
-	 *                                     (inclusive)</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_INVALID_RANGE - if either the start or end are
+	 *                not between 0 and the number of elements in the list minus
+	 *                1 (inclusive)</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public void remove(int start, int end) {
 		checkWidget();
@@ -2135,12 +2169,12 @@ public class Tree extends CustomComposite {
 	 * Removes all of the items from the receiver.
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public void removeAll() {
 		if (isVirtual()) {
@@ -2155,24 +2189,23 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Removes the listener from the collection of listeners who will be notified
-	 * when the user changes the receiver's selection.
+	 * Removes the listener from the collection of listeners who will be
+	 * notified when the user changes the receiver's selection.
 	 *
-	 * @param listener the listener which should no longer be notified
+	 * @param listener
+	 *            the listener which should no longer be notified
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_NULL_ARGUMENT - if the listener
-	 *                                     is null</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @see SelectionListener
 	 * @see #addSelectionListener(SelectionListener)
@@ -2191,27 +2224,28 @@ public class Tree extends CustomComposite {
 	 * Selects the items at the given zero-relative indices in the receiver. The
 	 * current selection is not cleared before the new items are selected.
 	 * <p>
-	 * If the item at a given index is not selected, it is selected. If the item at
-	 * a given index was already selected, it remains selected. Indices that are out
-	 * of range and duplicate indices are ignored. If the receiver is single-select
-	 * and multiple indices are specified, then all indices are ignored.
+	 * If the item at a given index is not selected, it is selected. If the item
+	 * at a given index was already selected, it remains selected. Indices that
+	 * are out of range and duplicate indices are ignored. If the receiver is
+	 * single-select and multiple indices are specified, then all indices are
+	 * ignored.
 	 * </p>
 	 *
-	 * @param indices the array of indices for the items to select
+	 * @param indices
+	 *            the array of indices for the items to select
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_NULL_ARGUMENT - if the array of
-	 *                                     indices is null</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_NULL_ARGUMENT - if the array of indices is
+	 *                null</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @see Tree#setSelection(int[])
 	 */
@@ -2284,18 +2318,19 @@ public class Tree extends CustomComposite {
 
 	/**
 	 * Selects the item at the given zero-relative index in the receiver. If the
-	 * item at the index was already selected, it remains selected. Indices that are
-	 * out of range are ignored.
+	 * item at the index was already selected, it remains selected. Indices that
+	 * are out of range are ignored.
 	 *
-	 * @param index the index of the item to select
+	 * @param index
+	 *            the index of the item to select
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public void select(int index) {
 		checkWidget();
@@ -2315,27 +2350,29 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Selects the items in the range specified by the given zero-relative indices
-	 * in the receiver. The range of indices is inclusive. The current selection is
-	 * not cleared before the new items are selected.
+	 * Selects the items in the range specified by the given zero-relative
+	 * indices in the receiver. The range of indices is inclusive. The current
+	 * selection is not cleared before the new items are selected.
 	 * <p>
-	 * If an item in the given range is not selected, it is selected. If an item in
-	 * the given range was already selected, it remains selected. Indices that are
-	 * out of range are ignored and no items will be selected if start is greater
-	 * than end. If the receiver is single-select and there is more than one item in
-	 * the given range, then all indices are ignored.
+	 * If an item in the given range is not selected, it is selected. If an item
+	 * in the given range was already selected, it remains selected. Indices
+	 * that are out of range are ignored and no items will be selected if start
+	 * is greater than end. If the receiver is single-select and there is more
+	 * than one item in the given range, then all indices are ignored.
 	 * </p>
 	 *
-	 * @param start the start of the range
-	 * @param end   the end of the range
+	 * @param start
+	 *            the start of the range
+	 * @param end
+	 *            the end of the range
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @see Tree#setSelection(int,int)
 	 */
@@ -2383,12 +2420,12 @@ public class Tree extends CustomComposite {
 	 * </p>
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public void selectAll() {
 		checkWidget();
@@ -2406,28 +2443,26 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Sets the order that the items in the receiver should be displayed in to the
-	 * given argument which is described in terms of the zero-relative ordering of
-	 * when the items were added.
+	 * Sets the order that the items in the receiver should be displayed in to
+	 * the given argument which is described in terms of the zero-relative
+	 * ordering of when the items were added.
 	 *
-	 * @param order the new order to display the items
+	 * @param order
+	 *            the new order to display the items
 	 *
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_NULL_ARGUMENT - if the item
-	 *                                     order is null</li>
-	 *                                     <li>ERROR_INVALID_ARGUMENT - if the item
-	 *                                     order is not the same length as the
-	 *                                     number of items</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_NULL_ARGUMENT - if the item order is null</li>
+	 *                <li>ERROR_INVALID_ARGUMENT - if the item order is not the
+	 *                same length as the number of items</li>
+	 *                </ul>
 	 *
 	 * @see Tree#getColumnOrder()
 	 * @see TreeColumn#getMoveable()
@@ -2441,10 +2476,10 @@ public class Tree extends CustomComposite {
 
 		if (order == null)
 			error(SWT.ERROR_NULL_ARGUMENT);
-//		if (order.length == 0) {
-//			this.columnOrder = null;
-//			return;
-//		}
+		// if (order.length == 0) {
+		// this.columnOrder = null;
+		// return;
+		// }
 		int columnCount = getColumnCount();
 		if (columnCount == 0) {
 			if (order.length != 0)
@@ -2453,7 +2488,8 @@ public class Tree extends CustomComposite {
 		}
 
 		if (order.length != columnCount) {
-			System.out.println("columnCount: " + columnCount + "  Input: " + Arrays.toString(order));
+			System.out.println("columnCount: " + columnCount + "  Input: "
+					+ Arrays.toString(order));
 			error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 
@@ -2497,30 +2533,30 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Sets the header background color to the color specified by the argument, or
-	 * to the default system color if the argument is null.
+	 * Sets the header background color to the color specified by the argument,
+	 * or to the default system color if the argument is null.
 	 * <p>
 	 * Note: This operation is a <em>HINT</em> and is not supported on all
-	 * platforms. If the native header has a 3D look and feel (e.g. Windows 7), this
-	 * method will cause the header to look FLAT irrespective of the state of the
-	 * Tree style.
+	 * platforms. If the native header has a 3D look and feel (e.g. Windows 7),
+	 * this method will cause the header to look FLAT irrespective of the state
+	 * of the Tree style.
 	 * </p>
 	 *
-	 * @param color the new color (or null)
+	 * @param color
+	 *            the new color (or null)
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_INVALID_ARGUMENT - if the
-	 *                                     argument has been disposed</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_INVALID_ARGUMENT - if the argument has been
+	 *                disposed</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 * @since 3.106
 	 */
 	public void setHeaderBackground(Color color) {
@@ -2535,30 +2571,30 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Sets the header foreground color to the color specified by the argument, or
-	 * to the default system color if the argument is null.
+	 * Sets the header foreground color to the color specified by the argument,
+	 * or to the default system color if the argument is null.
 	 * <p>
 	 * Note: This operation is a <em>HINT</em> and is not supported on all
-	 * platforms. If the native header has a 3D look and feel (e.g. Windows 7), this
-	 * method will cause the header to look FLAT irrespective of the state of the
-	 * Tree style.
+	 * platforms. If the native header has a 3D look and feel (e.g. Windows 7),
+	 * this method will cause the header to look FLAT irrespective of the state
+	 * of the Tree style.
 	 * </p>
 	 *
-	 * @param color the new color (or null)
+	 * @param color
+	 *            the new color (or null)
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_INVALID_ARGUMENT - if the
-	 *                                     argument has been disposed</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_INVALID_ARGUMENT - if the argument has been
+	 *                disposed</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 * @since 3.106
 	 */
 	public void setHeaderForeground(Color color) {
@@ -2573,23 +2609,24 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Marks the receiver's header as visible if the argument is <code>true</code>,
-	 * and marks it invisible otherwise.
+	 * Marks the receiver's header as visible if the argument is
+	 * <code>true</code>, and marks it invisible otherwise.
 	 * <p>
 	 * If one of the receiver's ancestors is not visible or some other condition
-	 * makes the receiver not visible, marking it visible may not actually cause it
-	 * to be displayed.
+	 * makes the receiver not visible, marking it visible may not actually cause
+	 * it to be displayed.
 	 * </p>
 	 *
-	 * @param show the new visibility state
+	 * @param show
+	 *            the new visibility state
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public void setHeaderVisible(boolean show) {
 		checkWidget();
@@ -2619,15 +2656,16 @@ public class Tree extends CustomComposite {
 	/**
 	 * Sets the number of items contained in the receiver.
 	 *
-	 * @param count the number of items
+	 * @param count
+	 *            the number of items
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @since 3.0
 	 */
@@ -2683,18 +2721,19 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Sets the height of the area which would be used to display <em>one</em> of
-	 * the items in the Tree.
+	 * Sets the height of the area which would be used to display <em>one</em>
+	 * of the items in the Tree.
 	 *
-	 * @param itemHeight the height of one item
+	 * @param itemHeight
+	 *            the height of one item
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @since 3.2
 	 */
@@ -2710,24 +2749,25 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Marks the receiver's lines as visible if the argument is <code>true</code>,
-	 * and marks it invisible otherwise. Note that some platforms draw grid lines
-	 * while others may draw alternating row colors.
+	 * Marks the receiver's lines as visible if the argument is
+	 * <code>true</code>, and marks it invisible otherwise. Note that some
+	 * platforms draw grid lines while others may draw alternating row colors.
 	 * <p>
 	 * If one of the receiver's ancestors is not visible or some other condition
-	 * makes the receiver not visible, marking it visible may not actually cause it
-	 * to be displayed.
+	 * makes the receiver not visible, marking it visible may not actually cause
+	 * it to be displayed.
 	 * </p>
 	 *
-	 * @param show the new visibility state
+	 * @param show
+	 *            the new visibility state
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public void setLinesVisible(boolean show) {
 		checkWidget();
@@ -2768,21 +2808,21 @@ public class Tree extends CustomComposite {
 	 * indices are ignored.
 	 * </p>
 	 *
-	 * @param indices the indices of the items to select
+	 * @param indices
+	 *            the indices of the items to select
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_NULL_ARGUMENT - if the array of
-	 *                                     indices is null</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_NULL_ARGUMENT - if the array of indices is
+	 *                null</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @see Tree#deselectAll()
 	 * @see Tree#select(int[])
@@ -2828,23 +2868,22 @@ public class Tree extends CustomComposite {
 	 * If the item is not in the receiver, then it is ignored.
 	 * </p>
 	 *
-	 * @param item the item to select
+	 * @param item
+	 *            the item to select
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_NULL_ARGUMENT - if the item is
-	 *                                     null</li>
-	 *                                     <li>ERROR_INVALID_ARGUMENT - if the item
-	 *                                     has been disposed</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_NULL_ARGUMENT - if the item is null</li>
+	 *                <li>ERROR_INVALID_ARGUMENT - if the item has been
+	 *                disposed</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @since 3.2
 	 */
@@ -2854,35 +2893,36 @@ public class Tree extends CustomComposite {
 		if (item == null)
 			error(SWT.ERROR_NULL_ARGUMENT);
 
-		setSelection(new TreeItem[] { item });
+		setSelection(new TreeItem[]{item});
 	}
 
 	/**
 	 * Sets the receiver's selection to be the given array of items. The current
-	 * selection is cleared before the new items are selected, and if necessary the
-	 * receiver is scrolled to make the new selection visible.
+	 * selection is cleared before the new items are selected, and if necessary
+	 * the receiver is scrolled to make the new selection visible.
 	 * <p>
 	 * Items that are not in the receiver are ignored. If the receiver is
-	 * single-select and multiple items are specified, then all items are ignored.
+	 * single-select and multiple items are specified, then all items are
+	 * ignored.
 	 * </p>
 	 *
-	 * @param items the array of items
+	 * @param items
+	 *            the array of items
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_NULL_ARGUMENT - if the array of
-	 *                                     items is null</li>
-	 *                                     <li>ERROR_INVALID_ARGUMENT - if one of
-	 *                                     the items has been disposed</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_NULL_ARGUMENT - if the array of items is
+	 *                null</li>
+	 *                <li>ERROR_INVALID_ARGUMENT - if one of the items has been
+	 *                disposed</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @see Tree#deselectAll()
 	 * @see Tree#select(int[])
@@ -2919,15 +2959,16 @@ public class Tree extends CustomComposite {
 	 * current selection is first cleared, then the new item is selected, and if
 	 * necessary the receiver is scrolled to make the new selection visible.
 	 *
-	 * @param index the index of the item to select
+	 * @param index
+	 *            the index of the item to select
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @see Tree#deselectAll()
 	 * @see Tree#select(int)
@@ -2943,26 +2984,28 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Selects the items in the range specified by the given zero-relative indices
-	 * in the receiver. The range of indices is inclusive. The current selection is
-	 * cleared before the new items are selected, and if necessary the receiver is
-	 * scrolled to make the new selection visible.
+	 * Selects the items in the range specified by the given zero-relative
+	 * indices in the receiver. The range of indices is inclusive. The current
+	 * selection is cleared before the new items are selected, and if necessary
+	 * the receiver is scrolled to make the new selection visible.
 	 * <p>
-	 * Indices that are out of range are ignored and no items will be selected if
-	 * start is greater than end. If the receiver is single-select and there is more
-	 * than one item in the given range, then all indices are ignored.
+	 * Indices that are out of range are ignored and no items will be selected
+	 * if start is greater than end. If the receiver is single-select and there
+	 * is more than one item in the given range, then all indices are ignored.
 	 * </p>
 	 *
-	 * @param start the start index of the items to select
-	 * @param end   the end index of the items to select
+	 * @param start
+	 *            the start index of the items to select
+	 * @param end
+	 *            the end index of the items to select
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @see Tree#deselectAll()
 	 * @see Tree#select(int,int)
@@ -2971,7 +3014,8 @@ public class Tree extends CustomComposite {
 		checkWidget();
 
 		deselectAll();
-		if (end < 0 || start > end || ((style & SWT.SINGLE) != 0 && start != end))
+		if (end < 0 || start > end
+				|| ((style & SWT.SINGLE) != 0 && start != end))
 			return;
 		int count = (int) getItemCount();
 		if (count == 0 || start >= count)
@@ -2985,24 +3029,24 @@ public class Tree extends CustomComposite {
 
 	/**
 	 * Sets the column used by the sort indicator for the receiver. A null value
-	 * will clear the sort indicator. The current sort column is cleared before the
-	 * new column is set.
+	 * will clear the sort indicator. The current sort column is cleared before
+	 * the new column is set.
 	 *
-	 * @param column the column used by the sort indicator or <code>null</code>
+	 * @param column
+	 *            the column used by the sort indicator or <code>null</code>
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_INVALID_ARGUMENT - if the
-	 *                                     column is disposed</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_INVALID_ARGUMENT - if the column is
+	 *                disposed</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @since 3.2
 	 */
@@ -3019,18 +3063,19 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Sets the direction of the sort indicator for the receiver. The value can be
-	 * one of <code>UP</code>, <code>DOWN</code> or <code>NONE</code>.
+	 * Sets the direction of the sort indicator for the receiver. The value can
+	 * be one of <code>UP</code>, <code>DOWN</code> or <code>NONE</code>.
 	 *
-	 * @param direction the direction of the sort indicator
+	 * @param direction
+	 *            the direction of the sort indicator
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @since 3.2
 	 */
@@ -3048,19 +3093,20 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Sets the zero-relative index of the item which is currently at the top of the
-	 * receiver. This index can change when items are scrolled or new items are
-	 * added and removed.
+	 * Sets the zero-relative index of the item which is currently at the top of
+	 * the receiver. This index can change when items are scrolled or new items
+	 * are added and removed.
 	 *
-	 * @param index the index of the top item
+	 * @param index
+	 *            the index of the top item
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 */
 	public void setTopIndex(int index) {
 		checkWidget();
@@ -3088,26 +3134,25 @@ public class Tree extends CustomComposite {
 
 	/**
 	 * Shows the column. If the column is already showing in the receiver, this
-	 * method simply returns. Otherwise, the columns are scrolled until the column
-	 * is visible.
+	 * method simply returns. Otherwise, the columns are scrolled until the
+	 * column is visible.
 	 *
-	 * @param column the column to be shown
+	 * @param column
+	 *            the column to be shown
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_NULL_ARGUMENT - if the column
-	 *                                     is null</li>
-	 *                                     <li>ERROR_INVALID_ARGUMENT - if the
-	 *                                     column has been disposed</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_NULL_ARGUMENT - if the column is null</li>
+	 *                <li>ERROR_INVALID_ARGUMENT - if the column has been
+	 *                disposed</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @since 3.0
 	 */
@@ -3136,13 +3181,15 @@ public class Tree extends CustomComposite {
 			return;
 
 		if (getHorizontalBar() != null) {
-			getHorizontalBar().setSelection(getHorizontalBar().getSelection() + horShift);
+			getHorizontalBar()
+					.setSelection(getHorizontalBar().getSelection() + horShift);
 			redraw();
 		}
 	}
 
 	void showItem(int index) {
-		if (index < getTopIndex() || index > itemsHandler.getLastVisibleElementIndex()) {
+		if (index < getTopIndex()
+				|| index > itemsHandler.getLastVisibleElementIndex()) {
 			setTopIndex(index);
 			redraw();
 		}
@@ -3153,26 +3200,26 @@ public class Tree extends CustomComposite {
 	}
 
 	/**
-	 * Shows the item. If the item is already showing in the receiver, this method
-	 * simply returns. Otherwise, the items are scrolled until the item is visible.
+	 * Shows the item. If the item is already showing in the receiver, this
+	 * method simply returns. Otherwise, the items are scrolled until the item
+	 * is visible.
 	 *
-	 * @param item the item to be shown
+	 * @param item
+	 *            the item to be shown
 	 *
 	 * @exception IllegalArgumentException
-	 *                                     <ul>
-	 *                                     <li>ERROR_NULL_ARGUMENT - if the item is
-	 *                                     null</li>
-	 *                                     <li>ERROR_INVALID_ARGUMENT - if the item
-	 *                                     has been disposed</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_NULL_ARGUMENT - if the item is null</li>
+	 *                <li>ERROR_INVALID_ARGUMENT - if the item has been
+	 *                disposed</li>
+	 *                </ul>
 	 * @exception SWTException
-	 *                                     <ul>
-	 *                                     <li>ERROR_WIDGET_DISPOSED - if the
-	 *                                     receiver has been disposed</li>
-	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-	 *                                     called from the thread that created the
-	 *                                     receiver</li>
-	 *                                     </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @see Tree#showSelection()
 	 */
@@ -3196,12 +3243,12 @@ public class Tree extends CustomComposite {
 	 * selection is visible.
 	 *
 	 * @exception SWTException
-	 *                         <ul>
-	 *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-	 *                         disposed</li>
-	 *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-	 *                         the thread that created the receiver</li>
-	 *                         </ul>
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been
+	 *                disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *                thread that created the receiver</li>
+	 *                </ul>
 	 *
 	 * @see Tree#showItem(TreeItem)
 	 */
@@ -3210,7 +3257,8 @@ public class Tree extends CustomComposite {
 
 		if (selectedTreeItems.isEmpty())
 			return;
-		// TODO: check whether it is always the first selected element, which should be
+		// TODO: check whether it is always the first selected element, which
+		// should be
 		// visible.
 
 		TreeItem first = selectedTreeItems.first();
@@ -3240,8 +3288,8 @@ public class Tree extends CustomComposite {
 	@Override
 	public void dispose() {
 		/*
-		 * Note: It is valid to attempt to dispose a widget more than once. If this
-		 * happens, fail silently.
+		 * Note: It is valid to attempt to dispose a widget more than once. If
+		 * this happens, fail silently.
 		 */
 
 		if (isDisposed())
@@ -3274,7 +3322,8 @@ public class Tree extends CustomComposite {
 
 	static void logNotImplemented() {
 		if (LOG_NOT_IMPLEMENTED) {
-			System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[1]);
+			System.out.println("WARN: Not implemented yet: "
+					+ new Throwable().getStackTrace()[1]);
 		}
 	}
 
@@ -3333,7 +3382,6 @@ public class Tree extends CustomComposite {
 		}
 
 		throw new IllegalStateException("Invalid range for item: " + item);
-
 
 	}
 
