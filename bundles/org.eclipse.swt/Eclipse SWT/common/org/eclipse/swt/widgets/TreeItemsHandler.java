@@ -82,7 +82,15 @@ class TreeItemsHandler {
 			var item = list.get(i);
 
 			if (tree.isVirtual()) {
-				tree.checkData(item, i, false);
+
+				int itemIndex = 0;
+				if (item.getParentItem() != null) {
+					itemIndex = item.getParentItem().indexOf(item);
+				} else {
+					itemIndex = item.getParent().indexOf(item);
+				}
+
+				tree.checkData(item, itemIndex, false);
 			}
 
 			item.doPaint(gc);

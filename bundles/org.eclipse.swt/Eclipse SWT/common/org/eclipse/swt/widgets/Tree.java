@@ -1033,6 +1033,7 @@ public class Tree extends CustomComposite {
 			var ca = getClientArea();
 			var itemHeight = TreeItemRenderer.guessItemHeight(this);
 			int visibleElements = ca.height / itemHeight + 2;
+			visibleElements += getTopIndex();
 
 			boolean treeEmpty = treeItemsArrangement.isEmpty();
 
@@ -3331,8 +3332,7 @@ public class Tree extends CustomComposite {
 			return;
 		}
 
-		// what to do, if we can't find the element in treeItemsArrangement??
-		throw new bla..index.
+		throw new IllegalStateException("Invalid range for item: " + item);
 
 
 	}
