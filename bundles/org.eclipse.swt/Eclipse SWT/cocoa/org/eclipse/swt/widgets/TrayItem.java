@@ -475,7 +475,7 @@ public void setVisible (boolean visible) {
 
 void showMenu (Menu menu) {
 	display.trayItemMenu = menu;
-	item.popUpStatusItemMenu(menu.nsMenu);
+//	item.popUpStatusItemMenu(menu.nsMenu);
 }
 
 void showMenu () {
