@@ -1616,7 +1616,7 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 					}
 				} else {
 					if (isLightWeightChildHandling()) {
-						skiaPaint();
+						skiaPaint(new Rectangle(ps.left, ps.top, width, height));
 					}
 					else {
 						if ((style & (SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND | SWT.TRANSPARENT)) == 0) {
@@ -1676,11 +1676,9 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 	return LRESULT.ZERO;
 }
 
-private void skiaPaint() {
-	final Point size = getSize();
-	final int zoom = getZoom();
-	final int width = DPIUtil.scaleUp(size.x, zoom);
-	final int height = DPIUtil.scaleUp(size.y, zoom);
+private void skiaPaint(Rectangle clipping) {
+	final int width = clipping.width;
+	final int height = clipping.height;
 	final long hdc = OS.GetDC(handle);
 	try {
 		final long memHdc = OS.CreateCompatibleDC(hdc);
@@ -1703,18 +1701,21 @@ private void skiaPaint() {
 			try {
 				ImageInfo imageInfo = ImageInfo.makeN32(width, height, ColorAlphaType.PREMUL);
 				try (Surface surface = Surface.wrapPixels(imageInfo, pBits[0], 4L * width, null)) {
-					Drawing.drawWithSurface(this, surface, gc -> {
+					final Rectangle virtualClipping = DPIUtil.autoScaleDown(this, clipping);
+					virtualClipping.width = incIfRoundedDown(virtualClipping.width, clipping.width);
+					virtualClipping.height = incIfRoundedDown(virtualClipping.height, clipping.height);
+
+					Drawing.drawWithSurface(this, surface, virtualClipping, gc -> {
+						gc.translate(-virtualClipping.x, -virtualClipping.y);
+
 						final Event event = new Event();
 						event.gc = gc;
-						if ((style & (SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND | SWT.TRANSPARENT)) == 0) {
-							event.gc.fillRectangle(0, 0, width, height);
-						}
 						sendEvent(SWT.Paint, event);
 					});
 				}
 
 				OS.SelectObject(memHdc, hBitmap);
-				OS.BitBlt(hdc, 0, 0, width, height, memHdc, 0, 0, OS.SRCCOPY);
+				OS.BitBlt(hdc, clipping.x, clipping.y, clipping.width, clipping.height, memHdc, 0, 0, OS.SRCCOPY);
 			} finally {
 				OS.DeleteObject(hBitmap);
 			}
@@ -1724,6 +1725,13 @@ private void skiaPaint() {
 	} finally {
 		OS.ReleaseDC(handle, hdc);
 	}
+}
+
+private int incIfRoundedDown(int scaled, int original) {
+	if (scaled < original && scaled * 2 < original) {
+		scaled++;
+	}
+	return scaled;
 }
 
 @Override

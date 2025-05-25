@@ -47,6 +47,8 @@ final class CompositeLightWeightChildHandling {
 	}
 
 	private void onPaint(Event e) {
+		final int x = e.x;
+		final int y = e.y;
 		final int width = e.width;
 		final int height = e.height;
 		final Rectangle clipping = e.gc.getClipping();
@@ -60,6 +62,8 @@ final class CompositeLightWeightChildHandling {
 			}
 		});
 		e.widget = composite;
+		e.x = x;
+		e.y = y;
 		e.width = width;
 		e.height = height;
 	}
@@ -167,14 +171,16 @@ final class CompositeLightWeightChildHandling {
 				e.gc.setForeground(child.getForeground());
 				e.gc.setBackground(child.getBackground());
 				e.widget = child;
-				e.width = b.width;
-				e.height = b.height;
+				final Rectangle subClipping = b.intersection(clipping);
+				subClipping.x -= b.x;
+				subClipping.y -= b.y;
+				e.x = subClipping.x;
+				e.y = subClipping.y;
+				e.width = subClipping.width;
+				e.height = subClipping.height;
 				child.sendEvent(e);
 
 				if (child instanceof Composite childComposite) {
-					final Rectangle subClipping = b.intersection(clipping);
-					subClipping.x -= b.x;
-					subClipping.y -= b.y;
 					drawChildren(childComposite, subClipping, e);
 				}
 			}

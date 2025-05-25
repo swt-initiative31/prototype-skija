@@ -93,9 +93,9 @@ public final class Drawing {
 		}
 	}
 
-	public static void drawWithSurface(Control control, Surface surface, Consumer<GC> drawOperation) {
+	public static void drawWithSurface(Control control, Surface surface, Rectangle clipping, Consumer<GC> drawOperation) {
 		GC gc = new GC();
-		gc.innerGC = SkijaGC.createDefaultInstance(surface, control);
+		gc.innerGC = SkijaGC.createDefaultInstance(surface, clipping, control);
 
 		recursivelyCalled = true;
 		try {

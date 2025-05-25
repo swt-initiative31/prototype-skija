@@ -41,8 +41,8 @@ public class SkijaGC extends GCHandle {
 		return new SkijaGC(gc, control, false);
 	}
 
-	public static GCHandle createDefaultInstance(Surface surface, Control control) {
-		return new SkijaGC(surface, control);
+	public static GCHandle createDefaultInstance(Surface surface, Rectangle clipping, Control control) {
+		return new SkijaGC(surface, clipping.x, clipping.y, clipping.width, clipping.height, control);
 	}
 
 	public static SkijaGC createMeasureInstance(NativeGC gc, Control control) {
@@ -81,15 +81,14 @@ public class SkijaGC extends GCHandle {
 		initFont();
 	}
 
-	private SkijaGC(Surface surface, Control control) {
+	private SkijaGC(Surface surface, int x, int y, int width, int height, Control control) {
 		if (surface == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		if (control == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		if (control.isDisposed()) SWT.error(SWT.ERROR_WIDGET_DISPOSED);
 		this.surface = surface;
 		device = control.getDisplay();
 		originalDrawingSize = new Point(0, 0);
-		final Point size = control.getSize();
-		clipping = new Rectangle(0, 0, size.x, size.y);
+		clipping = new Rectangle(x, y, width, height);
 		setFont(control.getFont());
 		setBackground(control.getBackground());
 		setForeground(control.getForeground());
