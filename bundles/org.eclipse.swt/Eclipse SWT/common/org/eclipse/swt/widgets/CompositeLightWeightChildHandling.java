@@ -147,7 +147,10 @@ final class CompositeLightWeightChildHandling {
 	}
 
 	private static void drawChildren(Composite composite, Rectangle clipping, Event e) {
-		for (Control child : composite.getChildren()) {
+		final Control[] children = composite.getChildren();
+		// reverse iteration
+		for (int i = children.length; i-- > 0;) {
+			Control child = children[i];
 			if (!child.isLightWeight()) {
 				continue;
 			}
