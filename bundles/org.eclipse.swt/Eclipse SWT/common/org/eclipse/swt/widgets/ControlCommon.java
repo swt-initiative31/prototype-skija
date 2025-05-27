@@ -13,6 +13,8 @@ protected abstract boolean isLightWeight();
 
 protected abstract int getBorderWidth();
 
+protected abstract void hideNativeControl();
+
 public static Control getNativeParentOf(Control control) {
 	for (; control != null; control = control.parent) {
 		if (!control.isLightWeight()) {
@@ -182,6 +184,7 @@ public boolean isVisible() {
 
 public void setVisible(boolean visible) {
 	checkWidget();
+	assertIsLightWeight();
 	if (visible == this.visible) return;
 
 	boolean fixFocus = false;
@@ -198,6 +201,9 @@ public void setVisible(boolean visible) {
 	this.visible = visible;
 
 	if (!visible) {
+		if (parent.isVisible()) {
+			hideNativeChilds();
+		}
 		sendEvent(SWT.Hide);
 		if (isDisposed()) return;
 	}
@@ -205,6 +211,9 @@ public void setVisible(boolean visible) {
 	if (fixFocus) {
 		focusNearestParent();
 	}
+}
+
+protected void hideNativeChilds() {
 }
 
 private boolean isFocusControlOrParentOfFocusControl() {

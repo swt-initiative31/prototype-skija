@@ -158,4 +158,21 @@ protected void getCurrentTabStopControls(List<Control> controls) {
 		child.getCurrentTabStopControls(controls);
 	}
 }
+
+protected void hideNativeChilds() {
+	for (Control child : this_children()) {
+		if (!child.getVisible()) {
+			continue;
+		}
+
+		if (!child.isLightWeight()) {
+			child.hideNativeControl();
+			continue;
+		}
+
+		if (child instanceof CompositeCommon composite) {
+			composite.hideNativeChilds();
+		}
+	}
+}
 }

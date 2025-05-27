@@ -4111,6 +4111,13 @@ public void setVisible (boolean visible) {
 	if (fixFocus) fixFocus (control);
 }
 
+@Override
+protected void hideNativeControl() {
+	assertIsNative();
+	final boolean visible = getVisible() && parent.isVisible();
+	showWidget(visible);
+}
+
 void sort (int [] items) {
 	/* Shell Sort from K&R, pg 108 */
 	int length = items.length;
