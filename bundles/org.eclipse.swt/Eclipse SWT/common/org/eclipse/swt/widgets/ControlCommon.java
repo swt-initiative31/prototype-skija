@@ -184,11 +184,15 @@ public void setVisible(boolean visible) {
 	checkWidget();
 	if (visible == this.visible) return;
 
+	boolean fixFocus = false;
 	if (visible) {
 		sendEvent(SWT.Show);
 		if (isDisposed()) return;
 	} else {
-		//TODO focus
+		fixFocus = isFocusControlOrParentOfFocusControl();
+		if (fixFocus) {
+			display.setFocusControl(null);
+		}
 	}
 
 	this.visible = visible;
@@ -196,6 +200,39 @@ public void setVisible(boolean visible) {
 	if (!visible) {
 		sendEvent(SWT.Hide);
 		if (isDisposed()) return;
+	}
+
+	if (fixFocus) {
+		focusNearestParent();
+	}
+}
+
+private boolean isFocusControlOrParentOfFocusControl() {
+	Control control = display.getFocusControl();
+	while (true) {
+		if (control == null) {
+			return false;
+		}
+
+		if (control == this) {
+			return true;
+		}
+
+		if (control instanceof Shell) {
+			return false;
+		}
+
+		control = control.parent;
+	}
+}
+
+private void focusNearestParent() {
+	Composite c = parent;
+	while (true) {
+		if (c == null || c.setFocus() || c instanceof Shell) {
+			return;
+		}
+		c = c.parent;
 	}
 }
 
