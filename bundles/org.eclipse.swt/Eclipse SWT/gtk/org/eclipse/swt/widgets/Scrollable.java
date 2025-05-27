@@ -245,6 +245,11 @@ int getBorderWidthInPixels () {
  * @see #computeTrim
  */
 public Rectangle getClientArea () {
+	if (isLightWeight()) {
+		// TODO
+		final Point size = getSize();
+		return new Rectangle(0, 0, size.x, size.y);
+	}
 	checkWidget ();
 	return DPIUtil.autoScaleDown(getClientAreaInPixels());
 }

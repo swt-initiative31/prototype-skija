@@ -171,5 +171,4 @@ abstract class NativeBasedCustomControl extends Control {
 			}
 		}
 	}
-
 }

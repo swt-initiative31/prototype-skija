@@ -351,10 +351,12 @@ void drawBackgroundInPixels(GC gc, int x, int y, int width, int height, int offs
 	if (gc.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
 	RECT rect = new RECT ();
 	OS.SetRect (rect, x, y, x + width, y + height);
-	NativeGC ngc = (NativeGC) gc.innerGC;
-	long hDC = ngc.handle;
-	int pixel = background == -1 ? gc.getBackground ().handle : -1;
-	drawBackground (hDC, rect, pixel, offsetX, offsetY);
+	final GCHandle innerGC = gc.innerGC;
+	if (innerGC instanceof NativeGC ngc) {
+		long hDC = ngc.handle;
+		int pixel = background == -1 ? gc.getBackground ().handle : -1;
+		drawBackground (hDC, rect, pixel, offsetX, offsetY);
+	}
 }
 
 Composite findDeferredControl () {

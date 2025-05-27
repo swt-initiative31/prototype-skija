@@ -42,6 +42,8 @@ public final class Drawing {
 		return gc;
 	}
 
+	private static boolean recursivelyCalled;
+
 	/**
 	 * Executes the given drawing operation of the given control on a GC. If the
 	 * given GC is not null, it is used as the target GC for the rendering result,
@@ -53,17 +55,35 @@ public final class Drawing {
 	 * @param drawOperation the operation that draws the control
 	 */
 	public static void drawWithGC(Control control, GC originalGC, Consumer<GC> drawOperation) {
-		Rectangle bounds = control.getBounds();
+		if (recursivelyCalled) {
+			drawOperation.accept(originalGC);
+			return;
+		}
+		final int width;
+		final int height;
+		if (control instanceof Composite composite) {
+			final Rectangle clientArea = composite.getClientArea();
+			width = clientArea.width;
+			height = clientArea.height;
+		}
+		else {
+			final Point size = control.getSize();
+			width = size.x;
+			height = size.y;
+		}
+
+		final Rectangle clipping;
+		boolean usingTemporaryGC = false;
 		if (originalGC != null && originalGC.innerGC instanceof NativeGC nativeGC
 				&& nativeGC.drawable instanceof Control gcControl) {
 			if (gcControl != control) {
 				throw new IllegalStateException("given GC was not created for given control");
 			}
-		}
 
-		boolean usingTemporaryGC = false;
-		if (originalGC == null) {
+			clipping = originalGC.getClipping();
+		} else {
 			originalGC = new GC(control);
+			clipping = new Rectangle(0, 0, width, height);
 			usingTemporaryGC = true;
 		}
 
@@ -71,17 +91,22 @@ public final class Drawing {
 		gc.setFont(control.getFont());
 		gc.setForeground(control.getForeground());
 		gc.setBackground(control.getBackground());
-		gc.setClipping(new Rectangle(0, 0, bounds.width, bounds.height));
+		gc.setClipping(clipping);
 		gc.setAntialias(SWT.ON);
 
+		recursivelyCalled = true;
 		try {
+			gc.fillRectangle(clipping);
+
 			drawOperation.accept(gc);
+
 			gc.commit();
 		} finally {
 			gc.dispose();
 			if (usingTemporaryGC) {
 				originalGC.dispose();
 			}
+			recursivelyCalled = false;
 		}
 	}
 
