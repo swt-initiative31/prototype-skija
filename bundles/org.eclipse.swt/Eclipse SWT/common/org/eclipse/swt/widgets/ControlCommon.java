@@ -33,6 +33,16 @@ abstract class ControlCommon extends Widget {
 		return null;
 	}
 
+	public static Control getNativeControlAndOffset(Control control, Point offset) {
+		while (control != null && control.isLightWeight()) {
+			final Point location = control.getLocation();
+			offset.x += location.x;
+			offset.y += location.y;
+			control = control.getParent();
+		}
+		return control;
+	}
+
 	public static String toDebugName(Control control) {
 		return control != null ? control.toDebugName() : "null";
 	}
@@ -298,15 +308,9 @@ abstract class ControlCommon extends Widget {
 			return;
 		}
 
-		final Point location = getLocation();
-		bounds.x += location.x;
-		bounds.y += location.y;
-		if (parent.isLightWeight()) {
-			parent.redraw(bounds.x, bounds.y, bounds.width, bounds.height);
-		}
-		else {
-			parent.redraw(bounds.x, bounds.y, bounds.width, bounds.height, false);
-		}
+		final Point offset = new Point(0, 0);
+		final Composite parent = (Composite) getNativeControlAndOffset((Control) this, offset);
+		parent.redraw(bounds.x + offset.x, bounds.y + offset.y, bounds.width, bounds.height, false);
 	}
 
 	protected final ColorProvider getColorProvider() {
