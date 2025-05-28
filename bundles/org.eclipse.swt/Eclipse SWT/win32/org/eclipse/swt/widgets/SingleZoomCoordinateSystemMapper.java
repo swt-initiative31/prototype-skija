@@ -47,17 +47,38 @@ class SingleZoomCoordinateSystemMapper implements CoordinateSystemMapper {
 
 	@Override
 	public Rectangle map(Control from, Control to, Rectangle rectangle) {
+		final Point fromOffset = new Point(0, 0);
+		from = ControlCommon.getNativeControlAndOffset(from, fromOffset);
+		rectangle = new Rectangle(rectangle.x + fromOffset.x, rectangle.y + fromOffset.y, rectangle.width, rectangle.height);
+
+		final Point toOffset = new Point(0, 0);
+		to = ControlCommon.getNativeControlAndOffset(to, toOffset);
+
 		int zoom = getZoomLevelForMapping(from, to);
 		rectangle = DPIUtil.scaleUp(rectangle, zoom);
-		return DPIUtil.scaleDown(display.mapInPixels(from, to, rectangle), zoom);
+		final Rectangle result = DPIUtil.scaleDown(display.mapInPixels(from, to, rectangle), zoom);
+		result.x += toOffset.x;
+		result.y += toOffset.y;
+		return result;
 	}
 
 	@Override
 	public Point map(Control from, Control to, int x, int y) {
+		final Point fromOffset = new Point(0, 0);
+		from = ControlCommon.getNativeControlAndOffset(from, fromOffset);
+		x += fromOffset.x;
+		y += fromOffset.y;
+
+		final Point toOffset = new Point(0, 0);
+		to = ControlCommon.getNativeControlAndOffset(to, toOffset);
+
 		int zoom = getZoomLevelForMapping(from, to);
 		x = DPIUtil.scaleUp(x, zoom);
 		y = DPIUtil.scaleUp(y, zoom);
-		return DPIUtil.scaleDown(display.mapInPixels(from, to, x, y), zoom);
+		final Point result = DPIUtil.scaleDown(display.mapInPixels(from, to, x, y), zoom);
+		result.x -= toOffset.x;
+		result.y -= toOffset.y;
+		return result;
 	}
 
 	@Override

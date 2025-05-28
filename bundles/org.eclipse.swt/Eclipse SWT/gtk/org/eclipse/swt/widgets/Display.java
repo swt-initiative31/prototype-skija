@@ -4011,20 +4011,32 @@ public Point map (Control from, Control to, int x, int y) {
 	checkDevice ();
 	if (from != null && from.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (to != null && to.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
+
+	final Point fromOffset = new Point(0, 0);
+	from = ControlCommon.getNativeControlAndOffset(from, fromOffset);
+	x += fromOffset.x;
+	y += fromOffset.y;
+
+	final Point toOffset = new Point(0, 0);
+	to = ControlCommon.getNativeControlAndOffset(to, toOffset);
+
 	Point point = new Point (x, y);
-	if (from == to) return point;
-	if (from != null) {
-		Point origin = DPIUtil.autoScaleDown (GTK.GTK4 ? from.getSurfaceOrigin() : from.getWindowOrigin ());
-		if ((from.style & SWT.MIRRORED) != 0) point.x = DPIUtil.autoScaleDown (from.getClientWidth ()) - point.x;
-		point.x += origin.x;
-		point.y += origin.y;
+	if (from != to) {
+		if (from != null) {
+			Point origin = DPIUtil.autoScaleDown (GTK.GTK4 ? from.getSurfaceOrigin() : from.getWindowOrigin ());
+			if ((from.style & SWT.MIRRORED) != 0) point.x = DPIUtil.autoScaleDown (from.getClientWidth ()) - point.x;
+			point.x += origin.x;
+			point.y += origin.y;
+		}
+		if (to != null) {
+			Point origin = DPIUtil.autoScaleDown (GTK.GTK4 ? to.getSurfaceOrigin() : to.getWindowOrigin ());
+			point.x -= origin.x;
+			point.y -= origin.y;
+			if ((to.style & SWT.MIRRORED) != 0) point.x = DPIUtil.autoScaleDown (to.getClientWidth ()) - point.x;
+		}
 	}
-	if (to != null) {
-		Point origin = DPIUtil.autoScaleDown (GTK.GTK4 ? to.getSurfaceOrigin() : to.getWindowOrigin ());
-		point.x -= origin.x;
-		point.y -= origin.y;
-		if ((to.style & SWT.MIRRORED) != 0) point.x = DPIUtil.autoScaleDown (to.getClientWidth ()) - point.x;
-	}
+	point.x -= toOffset.x;
+	point.y -= toOffset.y;
 	return point;
 }
 
@@ -4139,23 +4151,36 @@ public Rectangle map (Control from, Control to, int x, int y, int width, int hei
 	checkDevice();
 	if (from != null && from.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (to != null && to.isDisposed()) error (SWT.ERROR_INVALID_ARGUMENT);
-	Rectangle rect = new Rectangle (x, y, width, height);
-	if (from == to) return rect;
-	boolean fromRTL = false, toRTL = false;
-	if (from != null) {
-		Point origin = DPIUtil.autoScaleDown (GTK.GTK4 ? from.getSurfaceOrigin () : from.getWindowOrigin ());
-		if (fromRTL = (from.style & SWT.MIRRORED) != 0) rect.x = DPIUtil.autoScaleDown (from.getClientWidth ()) - rect.x;
-		rect.x += origin.x;
-		rect.y += origin.y;
-	}
-	if (to != null) {
-		Point origin = DPIUtil.autoScaleDown (GTK.GTK4 ? to.getSurfaceOrigin() : to.getWindowOrigin ());
-		rect.x -= origin.x;
-		rect.y -= origin.y;
-		if (toRTL = (to.style & SWT.MIRRORED) != 0) rect.x = DPIUtil.autoScaleDown (to.getClientWidth ()) - rect.x;
-	}
 
-	if (fromRTL != toRTL) rect.x -= rect.width;
+	final Point fromOffset = new Point(0, 0);
+	from = ControlCommon.getNativeControlAndOffset(from, fromOffset);
+	x += fromOffset.x;
+	y += fromOffset.y;
+
+	final Point toOffset = new Point(0, 0);
+	to = ControlCommon.getNativeControlAndOffset(to, toOffset);
+
+	Rectangle rect = new Rectangle (x, y, width, height);
+	if (from != to) {
+		boolean fromRTL = false, toRTL = false;
+		if (from != null) {
+			Point origin = DPIUtil.autoScaleDown(GTK.GTK4 ? from.getSurfaceOrigin() : from.getWindowOrigin());
+			if (fromRTL = (from.style & SWT.MIRRORED) != 0)
+				rect.x = DPIUtil.autoScaleDown(from.getClientWidth()) - rect.x;
+			rect.x += origin.x;
+			rect.y += origin.y;
+		}
+		if (to != null) {
+			Point origin = DPIUtil.autoScaleDown(GTK.GTK4 ? to.getSurfaceOrigin() : to.getWindowOrigin());
+			rect.x -= origin.x;
+			rect.y -= origin.y;
+			if (toRTL = (to.style & SWT.MIRRORED) != 0) rect.x = DPIUtil.autoScaleDown(to.getClientWidth()) - rect.x;
+		}
+
+		if (fromRTL != toRTL) rect.x -= rect.width;
+	}
+	rect.x -= toOffset.x;
+	rect.y -= toOffset.y;
 	return rect;
 }
 
