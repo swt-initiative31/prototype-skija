@@ -230,7 +230,6 @@ public class Table extends CustomComposite {
 			case SWT.Dispose -> onDispose(event);
 			case SWT.MouseDown -> onMouseDown(event);
 			case SWT.MouseUp -> onMouseUp(event);
-			case SWT.Paint -> onPaint(event);
 			case SWT.Resize -> onResize();
 			case SWT.FocusIn -> onFocusIn();
 			case SWT.FocusOut -> onFocusOut();
@@ -254,7 +253,6 @@ public class Table extends CustomComposite {
 		addListener(SWT.Dispose, listener);
 		addListener(SWT.MouseDown, listener);
 		addListener(SWT.MouseUp, listener);
-		addListener(SWT.Paint, listener);
 		addListener(SWT.Resize, listener);
 		addListener(SWT.KeyDown, listener);
 		addListener(SWT.FocusIn, listener);
@@ -488,14 +486,6 @@ public class Table extends CustomComposite {
 			setBackgroundTransparent(true);
 			break;
 		}
-	}
-
-	private void onPaint(Event event) {
-		if (!isVisible()) {
-			return;
-		}
-
-		Drawing.drawWithGC(this, event.gc, renderer::paint);
 	}
 
 	public boolean columnsExist() {

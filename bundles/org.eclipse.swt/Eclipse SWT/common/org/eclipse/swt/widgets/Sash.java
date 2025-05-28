@@ -474,7 +474,7 @@ public class Sash extends CustomControl {
 	private void onPaint(Event event) {
 		Rectangle sashBounds = getBounds();
 		sashRenderer.setSashBounds(sashBounds.x, sashBounds.y, sashBounds.width, sashBounds.height);
-		Drawing.drawWithGC(this, event.gc, sashRenderer::paint);
+		sashRenderer.paint(event.gc);
 	}
 
 	/**

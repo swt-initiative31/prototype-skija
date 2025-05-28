@@ -1484,7 +1484,7 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 
 	/* Paint the control and the background */
 	PAINTSTRUCT ps = new PAINTSTRUCT ();
-	if (hooks (SWT.Paint) || filters (SWT.Paint)) {
+	if (true/*hooks (SWT.Paint) || filters (SWT.Paint)*/) {
 
 		/* Use the buffered paint when possible */
 		boolean bufferedPaint = false;
@@ -1615,18 +1615,7 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 						sendEvent (SWT.Paint, event);
 					}
 				} else {
-					if (isLightWeightChildHandling()) {
-						skiaPaint(new Rectangle(ps.left, ps.top, width, height));
-					}
-					else {
-						if ((style & (SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND | SWT.TRANSPARENT)) == 0) {
-							if (rect == null) rect = new RECT();
-							OS.SetRect(rect, ps.left, ps.top, ps.right, ps.bottom);
-							drawBackground(ngc.handle, rect);
-						}
-						event.setBounds(DPIUtil.scaleDown(new Rectangle(ps.left, ps.top, width, height), zoom));
-						sendEvent(SWT.Paint, event);
-					}
+					skiaPaint(new Rectangle(ps.left, ps.top, width, height));
 				}
 				// widget could be disposed at this point
 				event.gc = null;
@@ -1710,7 +1699,8 @@ private void skiaPaint(Rectangle clipping) {
 
 						final Event event = new Event();
 						event.gc = gc;
-						sendEvent(SWT.Paint, event);
+						event.setBounds(virtualClipping);
+						paintAndSendEvent(event);
 					});
 				}
 

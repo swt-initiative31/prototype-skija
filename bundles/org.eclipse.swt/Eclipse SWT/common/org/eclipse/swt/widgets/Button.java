@@ -131,7 +131,6 @@ public class Button extends CustomControl {
 			case SWT.Dispose -> onDispose(event);
 			case SWT.MouseDown -> onMouseDown(event);
 			case SWT.MouseUp -> onMouseUp(event);
-			case SWT.Paint -> onPaint(event);
 			case SWT.Resize -> onResize();
 			case SWT.FocusIn -> onFocusIn();
 			case SWT.FocusOut -> onFocusOut();
@@ -144,7 +143,6 @@ public class Button extends CustomControl {
 		addListener(SWT.Dispose, listener);
 		addListener(SWT.MouseDown, listener);
 		addListener(SWT.MouseUp, listener);
-		addListener(SWT.Paint, listener);
 		addListener(SWT.Resize, listener);
 		addListener(SWT.KeyUp, listener);
 		addListener(SWT.KeyDown, listener);
@@ -318,10 +316,6 @@ public class Button extends CustomControl {
 
 	private void onResize() {
 		redraw();
-	}
-
-	private void onPaint(Event event) {
-		renderer.paint(event.gc);
 	}
 
 	private void onDispose(Event event) {

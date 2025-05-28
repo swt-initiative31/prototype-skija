@@ -126,6 +126,7 @@ protected void resized() {
 	}
 }
 
+@Override
 protected void _updateLayout(boolean all) {
 	Composite parent = findDeferredControl();
 	if (parent != null) {
@@ -146,6 +147,7 @@ protected void _updateLayout(boolean all) {
 	}
 }
 
+@Override
 protected void getCurrentTabStopControls(List<Control> controls) {
 	super.getCurrentTabStopControls(controls);
 
@@ -159,6 +161,7 @@ protected void getCurrentTabStopControls(List<Control> controls) {
 	}
 }
 
+@Override
 protected void hideNativeChilds() {
 	for (Control child : this_children()) {
 		if (!child.getVisible()) {
@@ -172,6 +175,71 @@ protected void hideNativeChilds() {
 
 		if (child instanceof CompositeCommon composite) {
 			composite.hideNativeChilds();
+		}
+	}
+}
+
+@Override
+protected void paintAndSendEvent(Event paintEvent) {
+	final Rectangle clipping = new Rectangle(paintEvent.x, paintEvent.y, paintEvent.width, paintEvent.height);
+
+	super.paintAndSendEvent(paintEvent);
+
+	if (!isLightWeight() && !isLightWeightChildHandling()) {
+		return;
+	}
+
+	paintEvent.gc.setPreventDispose(true);
+	try {
+		drawChildren(clipping, paintEvent);
+	} finally {
+		paintEvent.gc.setPreventDispose(false);
+	}
+}
+
+@Override
+protected void paintControl(Event event) {
+	if ((style & (SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND | SWT.TRANSPARENT)) == 0) {
+		event.gc.setBackground(getBackground());
+		event.gc.fillRectangle(event.x, event.y, event.width, event.height);
+	}
+}
+
+private void drawChildren(Rectangle clipping, Event e) {
+	final List<Control> children = new ArrayList<>(this_children());
+	Collections.reverse(children);
+	for (Control child : children) {
+		if (!child.isLightWeight()) {
+			continue;
+		}
+
+		if (!child.getVisible()) {
+			continue;
+		}
+
+		final Rectangle b = child.getBounds();
+		if (b.width < 1 || b.height < 1) {
+			continue;
+		}
+
+		if (!clipping.intersects(b)) {
+			continue;
+		}
+
+		e.gc.setForeground(child.getForeground());
+		e.gc.setBackground(child.getBackground());
+		e.widget = child;
+		e.gc.translate(b.x, b.y);
+		try {
+			final Rectangle subClipping = b.intersection(clipping);
+			subClipping.x -= b.x;
+			subClipping.y -= b.y;
+			e.setBounds(subClipping);
+			e.gc.setClipping(subClipping);
+			child.paintAndSendEvent(e);
+		}
+		finally {
+			e.gc.translate(-b.x, -b.y);
 		}
 	}
 }

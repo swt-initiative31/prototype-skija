@@ -1044,9 +1044,9 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public Rectangle getClipping() {
-		return innerGC != null
-				? innerGC.getClipping()
-				: new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
+		return clipping != null
+				? new Rectangle(clipping.x - offsetX, clipping.y -offsetY, clipping.width, clipping.height)
+				: innerGC.getClipping();
 	}
 
 	@Override
@@ -1212,8 +1212,14 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void setClipping(Rectangle rect) {
+		if (clipping != null && rect != null) {
+			clipping.x = rect.x + offsetX;
+			clipping.y = rect.y + offsetY;
+			clipping.width = rect.width;
+			clipping.height = rect.height;
+		}
 
-		/**
+		/*
 		 * this is a minimal implementation for set clipping with skija.
 		 */
 
@@ -1226,7 +1232,6 @@ public class SkijaGC extends GCHandle {
 
 		surface.getCanvas().save();
 		surface.getCanvas().clipRect(createScaledRectangle(rect));
-
 	}
 
 	@Override

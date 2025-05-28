@@ -291,6 +291,14 @@ protected void redraw(int x, int y, int width, int height) {
 	parent.redraw(bounds.x + offset.x, bounds.y + offset.y, bounds.width, bounds.height, false);
 }
 
+protected void paintAndSendEvent(Event paintEvent) {
+	paintControl(paintEvent);
+	sendEvent(SWT.Paint, paintEvent);
+}
+
+protected void paintControl(Event event) {
+}
+
 public boolean isFocusControl () {
 	checkWidget ();
 	return display.getLightWeightFocusControl() == this;

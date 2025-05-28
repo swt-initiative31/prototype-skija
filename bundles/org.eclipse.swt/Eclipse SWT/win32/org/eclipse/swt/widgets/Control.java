@@ -1203,6 +1203,7 @@ int getBackgroundPixel () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getBorderWidth () {
 	if (isLightWeight()) {
 		return 0;

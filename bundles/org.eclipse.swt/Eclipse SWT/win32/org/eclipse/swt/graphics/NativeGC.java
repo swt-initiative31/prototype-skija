@@ -3767,7 +3767,10 @@ public int getCharWidth(char ch) {
  */
 @Override
 public Rectangle getClipping() {
-	return DPIUtil.scaleDown(drawable, getClippingInPixels(), getZoom());
+	final Rectangle rectangle = DPIUtil.scaleDown(drawable, getClippingInPixels(), getZoom());
+	rectangle.x -= offsetX;
+	rectangle.y -= offsetY;
+	return rectangle;
 }
 
 Rectangle getClippingInPixels() {

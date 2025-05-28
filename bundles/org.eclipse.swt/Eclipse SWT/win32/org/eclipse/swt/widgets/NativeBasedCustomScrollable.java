@@ -58,4 +58,9 @@ abstract class NativeBasedCustomScrollable extends Scrollable {
 	boolean isTabGroup() {
 		return true;
 	}
+
+	@Override
+	protected void paintControl(Event event) {
+		getRenderer().paint(event.gc);
+	}
 }

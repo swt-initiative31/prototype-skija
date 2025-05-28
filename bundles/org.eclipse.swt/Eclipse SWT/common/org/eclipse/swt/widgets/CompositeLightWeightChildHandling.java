@@ -30,7 +30,6 @@ final class CompositeLightWeightChildHandling {
 
 		final Listener listener = e -> {
 			switch (e.type) {
-			case SWT.Paint -> onPaint(e);
 			case SWT.MouseMove -> onMouseMove(e);
 			case SWT.MouseEnter -> onMouseEnter(e);
 			case SWT.MouseExit -> onMouseExit(e);
@@ -38,34 +37,11 @@ final class CompositeLightWeightChildHandling {
 			     SWT.MouseUp -> onMouseDownOrUp(e);
 			}
 		};
-		composite.addListener(SWT.Paint, listener);
 		composite.addListener(SWT.MouseMove, listener);
 		composite.addListener(SWT.MouseEnter, listener);
 		composite.addListener(SWT.MouseExit, listener);
 		composite.addListener(SWT.MouseDown, listener);
 		composite.addListener(SWT.MouseUp, listener);
-	}
-
-	private void onPaint(Event e) {
-		final int x = e.x;
-		final int y = e.y;
-		final int width = e.width;
-		final int height = e.height;
-		final Rectangle clipping = e.gc.getClipping();
-		Drawing.drawWithGC(composite, e.gc, gc -> {
-			e.gc = gc;
-			gc.setPreventDispose(true);
-			try {
-				drawChildren(composite, clipping, e);
-			} finally {
-				gc.setPreventDispose(false);
-			}
-		});
-		e.widget = composite;
-		e.x = x;
-		e.y = y;
-		e.width = width;
-		e.height = height;
 	}
 
 	private void onMouseMove(Event e) {
@@ -144,53 +120,6 @@ final class CompositeLightWeightChildHandling {
 			}
 		}
 		return null;
-	}
-
-	private static void drawChildren(Composite composite, Rectangle clipping, Event e) {
-		final Control[] children = composite.getChildren();
-		// reverse iteration
-		for (int i = children.length; i-- > 0;) {
-			Control child = children[i];
-			if (!child.isLightWeight()) {
-				continue;
-			}
-
-			if (!child.getVisible()) {
-				continue;
-			}
-
-			final Rectangle b = child.getBounds();
-			if (b.width < 1 || b.height < 1) {
-				continue;
-			}
-
-			if (!clipping.intersects(b)) {
-				continue;
-			}
-
-//				gc.setClipping(b);
-			e.gc.translate(b.x, b.y);
-			try {
-				e.gc.setForeground(child.getForeground());
-				e.gc.setBackground(child.getBackground());
-				e.widget = child;
-				final Rectangle subClipping = b.intersection(clipping);
-				subClipping.x -= b.x;
-				subClipping.y -= b.y;
-				e.x = subClipping.x;
-				e.y = subClipping.y;
-				e.width = subClipping.width;
-				e.height = subClipping.height;
-				child.sendEvent(e);
-
-				if (child instanceof Composite childComposite) {
-					drawChildren(childComposite, subClipping, e);
-				}
-			}
-			finally {
-				e.gc.translate(-b.x, -b.y);
-			}
-		}
 	}
 
 	private static void sendMouseEvent(int type, Point location, Control control, Event original) {
