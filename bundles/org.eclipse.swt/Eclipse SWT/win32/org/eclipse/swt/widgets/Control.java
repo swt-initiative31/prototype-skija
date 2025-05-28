@@ -4180,10 +4180,7 @@ void subclass () {
  */
 public Point toControl (int x, int y) {
 	checkWidget ();
-	int zoom = getZoom();
-	Point displayPointInPixels = getDisplay().translateToDisplayCoordinates(new Point(x, y), zoom);
-	final Point controlPointInPixels = toControlInPixels(displayPointInPixels.x, displayPointInPixels.y);
-	return DPIUtil.scaleDown(controlPointInPixels, zoom);
+	return display.map(null, this, x, y);
 }
 
 Point toControlInPixels (int x, int y) {
