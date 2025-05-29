@@ -1285,7 +1285,7 @@ boolean sendMouseEvent (int type, int button, int count, int detail, boolean sen
 }
 
 class MouseWheelData {
-	MouseWheelData (boolean isVertical, ScrollBar scrollBar, long wParam, Point remainder) {
+	MouseWheelData(boolean isVertical, ScrollBar_old scrollBar, long wParam, Point remainder) {
 		/* WHEEL_DELTA is expressed in precision units, see OS.WHEEL_DELTA */
 		int delta = OS.GET_WHEEL_DELTA_WPARAM (wParam);
 

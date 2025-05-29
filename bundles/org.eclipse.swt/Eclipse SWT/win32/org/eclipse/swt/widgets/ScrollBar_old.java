@@ -87,8 +87,8 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class ScrollBar extends Widget {
-	Scrollable parent;
+public class ScrollBar_old extends Widget {
+	Scrollable_old parent;
 	int increment, pageIncrement;
 
 /**
@@ -120,7 +120,7 @@ public class ScrollBar extends Widget {
  * @see Widget#checkSubclass
  * @see Widget#getStyle
  */
-ScrollBar (Scrollable parent, int style) {
+ScrollBar_old(Scrollable_old parent, int style) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
 	createWidget ();
@@ -314,7 +314,7 @@ public int getPageIncrement () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-public Scrollable getParent () {
+public Scrollable_old getParent() {
 	checkWidget();
 	return parent;
 }
@@ -743,7 +743,7 @@ boolean SetScrollInfo (long hwnd, int flags, SCROLLINFO info, boolean fRedraw) {
 	boolean barVisible = false;
 	boolean visible = getVisible ();
 
-	ScrollBar bar = null;
+	ScrollBar_old bar = null;
 	switch (flags) {
 		case OS.SB_HORZ:
 			bar = parent.getVerticalBar ();
