@@ -183,7 +183,6 @@ public class Display extends DisplayCommon implements Executor {
 
 	/* Focus */
 	int focusEvent;
-	Control focusControl;
 	Shell activeShell;
 	boolean activePending;
 	boolean ignoreActivate, ignoreFocus;
@@ -2485,7 +2484,8 @@ public int getDoubleClickTime () {
  */
 public Control getFocusControl () {
 	checkDevice ();
-	if (focusControl != null && !focusControl.isDisposed ()) {
+	final Control focusControl = super.getFocusControl();
+	if (focusControl != null) {
 		return focusControl;
 	}
 	if (activeShell == null) return null;

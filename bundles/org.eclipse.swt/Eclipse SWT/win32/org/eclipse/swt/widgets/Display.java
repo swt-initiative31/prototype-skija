@@ -289,7 +289,6 @@ public class Display extends DisplayCommon implements Executor {
 
 	/* Focus */
 	int focusEvent;
-	Control focusControl;
 
 	/* Menus */
 	Menu [] bars, popups;
@@ -1886,7 +1885,8 @@ public int getDoubleClickTime () {
  */
 public Control getFocusControl () {
 	checkDevice ();
-	if (focusControl != null && !focusControl.isDisposed ()) {
+	final Control focusControl = super.getFocusControl();
+	if (focusControl != null) {
 		return focusControl;
 	}
 	return _getFocusControl ();
