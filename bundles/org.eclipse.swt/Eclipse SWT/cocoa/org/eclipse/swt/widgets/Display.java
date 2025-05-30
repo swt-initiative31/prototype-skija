@@ -104,7 +104,7 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Display extends Device implements Executor {
+public class Display extends DisplayCommon implements Executor {
 
 	static byte[] types = {'*','\0'};
 	static int size = C.PTR_SIZEOF, align = C.PTR_SIZEOF == 4 ? 2 : 3;
@@ -340,8 +340,6 @@ public class Display extends Device implements Executor {
 	static Display [] Displays = new Display [1];
 
 	/* Skinning support */
-	private ColorProvider colorProvider;
-	private RendererFactory rendererFactory;
 	static final int GROW_SIZE = 1024;
 	Widget [] skinList = new Widget [GROW_SIZE];
 	int skinCount;
@@ -800,9 +798,6 @@ public Display () {
  */
 public Display (DeviceData data) {
 	super (data);
-
-	colorProvider = DefaultColorProvider.createLightInstance();
-	rendererFactory = new DefaultRendererFactory();
 }
 
 static void checkDisplay (Thread thread, boolean multiple) {
@@ -6872,34 +6867,5 @@ public boolean isRescalingAtRuntime() {
 public boolean setRescalingAtRuntime(boolean activate) {
 	// not implemented for Cocoa
 	return false;
-}
-
-public RendererFactory getRendererFactory() {
-	return rendererFactory;
-}
-
-public void setRendererFactory(RendererFactory rendererFactory) {
-	if (rendererFactory == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	this.rendererFactory = rendererFactory;
-}
-
-/**
- * Return the color provider used for custom-drawn controls.
- * @return a non-null instance of the color provider
- * @noreference this is still experimental API and might be removed
- */
-public final ColorProvider getColorProvider() {
-	return colorProvider;
-}
-
-/**
- * Set the color provider used for custom-drawn controls.
- * @param colorProvider a non-null color provider
- * @noreference this is still experimental API and might be removed
- */
-public final void setColorProvider(ColorProvider colorProvider) {
-	if (colorProvider == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	this.colorProvider = colorProvider;
-	// todo: redraw all (custom-drawn) widgets
 }
 }
