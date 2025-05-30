@@ -1,10 +1,13 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.Device;
 import org.eclipse.swt.graphics.DeviceData;
 
 public abstract class DisplayCommon extends Device {
+
+Control focusControl;
 
 private ColorProvider colorProvider;
 private RendererFactory rendererFactory;
@@ -14,6 +17,13 @@ public DisplayCommon(DeviceData data) {
 
 	colorProvider = DefaultColorProvider.createLightInstance();
 	rendererFactory = new DefaultRendererFactory();
+}
+
+protected Control getFocusControl () {
+	if (focusControl != null && focusControl.isDisposed()) {
+		focusControl = null;
+	}
+	return focusControl;
 }
 
 /**
