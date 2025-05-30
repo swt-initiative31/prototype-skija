@@ -105,7 +105,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Display extends Device implements Executor {
+public class Display extends DisplayCommon implements Executor {
 
 	/**
 	 * the handle to the OS message queue
@@ -532,8 +532,6 @@ public class Display extends Device implements Executor {
 	static int SWT_OPENDOC;
 
 	/* Skinning support */
-	private ColorProvider colorProvider;
-	private RendererFactory rendererFactory;
 	Widget [] skinList = new Widget [GROW_SIZE];
 	int skinCount;
 
@@ -596,9 +594,6 @@ public Display () {
  */
 public Display (DeviceData data) {
 	super (data);
-
-	colorProvider = DefaultColorProvider.createLightInstance();
-	rendererFactory = new DefaultRendererFactory();
 }
 
 Control _getFocusControl () {
@@ -5398,34 +5393,5 @@ private void runWithProperDPIAwareness(Runnable operation) {
 	} else {
 		operation.run();
 	}
-}
-
-public RendererFactory getRendererFactory() {
-	return rendererFactory;
-}
-
-public void setRendererFactory(RendererFactory rendererFactory) {
-	if (rendererFactory == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	this.rendererFactory = rendererFactory;
-}
-
-/**
- * Return the color provider used for custom-drawn controls.
- * @return a non-null instance of the color provider
- * @noreference this is still experimental API and might be removed
- */
-public final ColorProvider getColorProvider() {
-	return colorProvider;
-}
-
-/**
- * Set the color provider used for custom-drawn controls.
- * @param colorProvider a non-null color provider
- * @noreference this is still experimental API and might be removed
- */
-public final void setColorProvider(ColorProvider colorProvider) {
-	if (colorProvider == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	this.colorProvider = colorProvider;
-	// todo: redraw all (custom-drawn) widgets
 }
 }
