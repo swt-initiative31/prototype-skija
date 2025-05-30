@@ -2004,6 +2004,9 @@ boolean isTabGroup () {
 			if (element == this) return true;
 		}
 	}
+	if (isLightWeight()) {
+		return false;
+	}
 	int bits = OS.GetWindowLong (handle, OS.GWL_STYLE);
 	return (bits & OS.WS_TABSTOP) != 0;
 }
@@ -4659,10 +4662,6 @@ boolean traverseEscape () {
 }
 
 boolean traverseGroup (boolean next) {
-	if (isLightWeight()) {
-		return super.traverseGroup(next);
-	}
-
 	Control root = computeTabRoot ();
 	Widget group = computeTabGroup ();
 	Widget [] list = root.computeTabList ();

@@ -148,6 +148,16 @@ protected void _updateLayout(boolean all) {
 }
 
 @Override
+boolean isTabGroup() {
+	return true;
+}
+
+@Override
+boolean isTabItem() {
+	return false;
+}
+
+@Override
 protected void getCurrentTabStopControls(List<Control> controls) {
 	super.getCurrentTabStopControls(controls);
 
