@@ -187,7 +187,7 @@ public class Display extends DisplayCommon implements Executor {
 	int systemUIMode, systemUIOptions;
 
 	/* Focus */
-	Control focusControl, currentFocusControl;
+	Control currentFocusControl;
 	int focusEvent;
 
 	NSWindow screenWindow, keyWindow;
@@ -1662,8 +1662,10 @@ public int getDoubleClickTime () {
  *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public Control getFocusControl () {
 	checkDevice ();
+	final Control focusControl = super.getFocusControl();
 	if (focusControl != null && !focusControl.isDisposed ()) {
 		return focusControl;
 	}

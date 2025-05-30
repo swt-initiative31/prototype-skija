@@ -19,6 +19,8 @@ import org.eclipse.swt.graphics.DeviceData;
 
 public abstract class DisplayCommon extends Device {
 
+	Control focusControl;
+
 	private ColorProvider colorProvider;
 	private RendererFactory rendererFactory;
 
@@ -27,6 +29,13 @@ public abstract class DisplayCommon extends Device {
 
 		colorProvider = DefaultColorProvider.createLightInstance();
 		rendererFactory = new DefaultRendererFactory();
+	}
+
+	protected Control getFocusControl() {
+		if (focusControl != null && focusControl.isDisposed()) {
+			focusControl = null;
+		}
+		return focusControl;
 	}
 
 	/**
