@@ -1729,6 +1729,7 @@ public boolean getTouchEnabled () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+/*
 @Override
 public boolean getVisible () {
 	if (isLightWeight()) {
@@ -1740,6 +1741,7 @@ public boolean getVisible () {
 	int bits = OS.GetWindowLong (handle, OS.GWL_STYLE);
 	return (bits & OS.WS_VISIBLE) != 0;
 }
+*/
 
 boolean hasCursor () {
 	RECT rect = new RECT ();
@@ -4088,8 +4090,8 @@ public void setTouchEnabled(boolean enabled) {
  */
 @Override
 public void setVisible (boolean visible) {
+	super.setVisible(visible);
 	if (isLightWeight()) {
-		super.setVisible(visible);
 		return;
 	}
 
@@ -4131,6 +4133,16 @@ public void setVisible (boolean visible) {
 		if (isDisposed ()) return;
 	}
 	if (fixFocus) fixFocus (control);
+}
+
+@Override
+protected void updateNativeVisibility() {
+	if (isLightWeight()) {
+		return;
+	}
+
+	final boolean visible = getVisible() && parent.isVisible();
+	showWidget(visible);
 }
 
 void sort (int [] items) {
