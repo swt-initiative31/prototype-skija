@@ -172,20 +172,18 @@ protected void getCurrentTabStopControls(List<Control> controls) {
 }
 
 @Override
-protected void hideNativeChilds() {
+protected void updateNativeVisibility() {
+	if (!isLightWeight()) {
+		super.updateNativeVisibility();
+		return;
+	}
+
 	for (Control child : this_children()) {
 		if (!child.getVisible()) {
 			continue;
 		}
 
-		if (!child.isLightWeight()) {
-			child.hideNativeControl();
-			continue;
-		}
-
-		if (child instanceof CompositeCommon composite) {
-			composite.hideNativeChilds();
-		}
+		child.updateNativeVisibility();
 	}
 }
 
