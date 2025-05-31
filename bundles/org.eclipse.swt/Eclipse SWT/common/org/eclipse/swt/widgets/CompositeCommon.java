@@ -177,6 +177,22 @@ abstract class CompositeCommon extends Scrollable {
 		}
 	}
 
+	@Override
+	protected void updateNativeVisibility() {
+		if (!isLightWeight()) {
+			super.updateNativeVisibility();
+			return;
+		}
+
+		for (Control child : this_children()) {
+			if (!child.getVisible()) {
+				continue;
+			}
+
+			child.updateNativeVisibility();
+		}
+	}
+
 	private void onPaint(Event e) {
 		final int x = e.x;
 		final int y = e.y;
