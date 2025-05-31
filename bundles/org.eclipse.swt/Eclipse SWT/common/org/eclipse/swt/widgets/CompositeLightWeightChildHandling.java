@@ -35,6 +35,7 @@ final class CompositeLightWeightChildHandling {
 			case SWT.MouseExit -> onMouseExit(e);
 			case SWT.MouseDown,
 			     SWT.MouseUp -> onMouseDownOrUp(e);
+			case SWT.MenuDetect -> onMenuDetect(e);
 			}
 		};
 		composite.addListener(SWT.MouseMove, listener);
@@ -42,6 +43,7 @@ final class CompositeLightWeightChildHandling {
 		composite.addListener(SWT.MouseExit, listener);
 		composite.addListener(SWT.MouseDown, listener);
 		composite.addListener(SWT.MouseUp, listener);
+		composite.addListener(SWT.MenuDetect, listener);
 	}
 
 	private void onMouseMove(Event e) {
@@ -92,6 +94,37 @@ final class CompositeLightWeightChildHandling {
 		}
 	}
 
+	private void onMenuDetect(Event e) {
+		if (e.detail == SWT.MENU_MOUSE) {
+			final int screenX = e.x;
+			final int screenY = e.y;
+			final Point location = composite.toControl(screenX, screenY);
+			final Control mouseControl = getChildAt(location);
+			if (mouseControl != mouseOverControl) {
+				e.x = location.x;
+				e.y = location.y;
+				if (mouseOverControl != null) {
+					sendMouseEvent(SWT.MouseExit, location, mouseOverControl, e);
+				}
+				mouseOverControl = mouseControl;
+				if (mouseControl != null) {
+					sendMouseEvent(SWT.MouseEnter, location, mouseControl, e);
+				}
+			}
+			if (mouseControl != null) {
+				sendMouseEvent(e.type, new Point(screenX, screenY), mouseControl, e);
+			}
+		} else {
+			final Control focusControl = e.display.getFocusControl();
+			if (focusControl != null && focusControl.isLightWeight()) {
+				final Control nativeParent = ControlCommon.getNativeParentOf(focusControl);
+				if (nativeParent == composite) {
+					sendMouseEvent(e.type, null, focusControl, e);
+				}
+			}
+		}
+	}
+
 	private Control getChildAt(Point location) {
 		return getChildAt(location, composite);
 	}
@@ -127,8 +160,8 @@ final class CompositeLightWeightChildHandling {
 		event.display = original.display;
 		event.widget = control;
 		event.type = type;
-		event.x = location.x;
-		event.y = location.y;
+		event.x = location != null ? location.x : original.x;
+		event.y = location != null ? location.y : original.y;
 		event.button = original.button;
 		event.count = original.count;
 		event.doit = original.doit;
