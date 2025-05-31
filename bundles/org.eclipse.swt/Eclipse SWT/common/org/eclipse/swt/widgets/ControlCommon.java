@@ -269,12 +269,18 @@ abstract class ControlCommon extends Widget {
 
 		this.visible = visible;
 
-		if (parentVisible && isLightWeight() && visible) {
-			redraw();
+		if (parentVisible) {
+			updateNativeVisibility();
+			if (isLightWeight() && visible) {
+				redraw();
+			}
 		}
 		if (!visible) {
 			sendEvent(SWT.Hide);
 		}
+	}
+
+	protected void updateNativeVisibility() {
 	}
 
 	boolean isShowing() {

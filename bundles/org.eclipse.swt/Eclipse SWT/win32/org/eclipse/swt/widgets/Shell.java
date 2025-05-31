@@ -2696,4 +2696,12 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 	}
 	shell.layout (null, SWT.DEFER | SWT.ALL | SWT.CHANGED);
 }
+
+@Override
+public boolean getVisible () {
+	checkWidget ();
+	if (!getDrawing()) return (state & HIDDEN) == 0;
+	int bits = OS.GetWindowLong (handle, OS.GWL_STYLE);
+	return (bits & OS.WS_VISIBLE) != 0;
+}
 }
