@@ -804,6 +804,9 @@ Control findBackgroundControl () {
 
 @Override
 Cursor findCursor () {
+	if (cursorFromLightWeightChild != null) {
+		return cursorFromLightWeightChild;
+	}
 	return cursor;
 }
 

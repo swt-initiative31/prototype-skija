@@ -289,6 +289,7 @@ abstract class CompositeCommon extends Scrollable {
 			type = SWT.MouseEnter;
 		}
 		if (mouseControl != null) {
+			mouseControl.updateCursor();
 			sendMouseEvent(type, location, mouseControl, e);
 		}
 	}
