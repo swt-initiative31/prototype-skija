@@ -63,7 +63,6 @@ public abstract class Control extends ControlCommon implements Drawable {
 	long redrawWindow, enableWindow, provider;
 	int drawCount, backgroundAlpha = 255;
 	long dragGesture, zoomGesture, rotateGesture, panGesture;
-	Cursor cursor;
 	Menu menu;
 	Image backgroundImage;
 	Font font;
@@ -3095,27 +3094,6 @@ int getClientWidth () {
 }
 
 /**
- * Returns the receiver's cursor, or null if it has not been set.
- * <p>
- * When the mouse pointer passes over a control its appearance
- * is changed to match the control's cursor.
- * </p>
- *
- * @return the receiver's cursor or <code>null</code>
- *
- * @exception SWTException <ul>
- *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
- *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
- * </ul>
- *
- * @since 3.3
- */
-public Cursor getCursor () {
-	checkWidget ();
-	return cursor;
-}
-
-/**
  * Returns <code>true</code> if the receiver is detecting
  * drag gestures, and  <code>false</code> otherwise.
  *
@@ -5476,6 +5454,17 @@ void setCursor (long cursor) {
 			update(false, true);
 		}
 	}
+}
+
+@Override
+protected boolean setCursorFromChild(Cursor cursor) {
+	assertIsNative();
+	boolean result = super.setCursorFromChild(cursor);
+	if (result) {
+		cursor = findCursor();
+		setCursor(cursor != null ? cursor.handle : 0);
+	}
+	return result;
 }
 
 /**

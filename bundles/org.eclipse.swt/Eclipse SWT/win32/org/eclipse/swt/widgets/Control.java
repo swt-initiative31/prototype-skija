@@ -71,7 +71,6 @@ public abstract class Control extends ControlCommon implements Drawable {
 	 * @noreference This field is not intended to be referenced by clients.
 	 */
 	public long handle;
-	Cursor cursor;
 	Menu menu, activeMenu;
 	String toolTipText;
 	Object layoutData;
@@ -1002,11 +1001,6 @@ long findBrush (long value, int lbStyle) {
 	return parent.findBrush (value, lbStyle);
 }
 
-Cursor findCursor () {
-	if (cursor != null) return cursor;
-	return parent.findCursor ();
-}
-
 Control findImageControl () {
 	Control control = findBackgroundControl ();
 	return control != null && control.backgroundImage != null ? control : null;
@@ -1291,27 +1285,6 @@ String getClipboardText () {
 		OS.CloseClipboard ();
 	}
 	return string;
-}
-
-/**
- * Returns the receiver's cursor, or null if it has not been set.
- * <p>
- * When the mouse pointer passes over a control its appearance
- * is changed to match the control's cursor.
- * </p>
- *
- * @return the receiver's cursor or <code>null</code>
- *
- * @exception SWTException <ul>
- *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
- *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
- * </ul>
- *
- * @since 3.3
- */
-public Cursor getCursor () {
-	checkWidget ();
-	return cursor;
 }
 
 /**
@@ -3440,35 +3413,21 @@ void setCursor () {
 	OS.SendMessage (handle, OS.WM_SETCURSOR, handle, lParam);
 }
 
-/**
- * Sets the receiver's cursor to the cursor specified by the
- * argument, or to the default cursor for that kind of control
- * if the argument is null.
- * <p>
- * When the mouse pointer passes over a control its appearance
- * is changed to match the control's cursor.
- * </p>
- *
- * @param cursor the new cursor (or null)
- *
- * @exception IllegalArgumentException <ul>
- *    <li>ERROR_INVALID_ARGUMENT - if the argument has been disposed</li>
- * </ul>
- * @exception SWTException <ul>
- *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
- *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
- * </ul>
- */
+@Override
 public void setCursor (Cursor cursor) {
-	checkWidget ();
-	if (cursor != null && cursor.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
-	this.cursor = cursor;
+	super.setCursor(cursor);
+
+	final Control nativeControl = getNativeControl(this);
+	if (nativeControl == null) {
+		return;
+	}
+
 	long hwndCursor = OS.GetCapture ();
 	if (hwndCursor == 0) {
 		POINT pt = new POINT ();
 		if (!OS.GetCursorPos (pt)) return;
 		long hwnd = hwndCursor = OS.WindowFromPoint (pt);
-		while (hwnd != 0 && hwnd != handle) {
+		while (hwnd != 0 && hwnd != nativeControl.handle) {
 			hwnd = OS.GetParent (hwnd);
 		}
 		if (hwnd == 0) return;
@@ -3476,6 +3435,16 @@ public void setCursor (Cursor cursor) {
 	Control control = display.getControl (hwndCursor);
 	if (control == null) control = this;
 	control.setCursor ();
+}
+
+@Override
+protected boolean setCursorFromChild(Cursor cursor) {
+	assertIsNative();
+	boolean result = super.setCursorFromChild(cursor);
+	if (result) {
+		setCursor();
+	}
+	return result;
 }
 
 void setDefaultFont () {
