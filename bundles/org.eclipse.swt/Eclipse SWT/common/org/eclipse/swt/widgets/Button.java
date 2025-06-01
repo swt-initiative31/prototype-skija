@@ -609,59 +609,12 @@ public class Button extends CustomControl {
 	}
 
 	@Override
-	boolean isTabGroup() {
-		if (isPushButton() || isCheckButton()) {
-			return true;
+	protected boolean isTabStop() {
+		if (!super.isTabStop()) {
+			return false;
 		}
-		boolean b = super.isTabGroup();
-		return b;
-	}
 
-//	@Override
-//	boolean setTabItemFocus() {
-//
-//		if (isRadioButton()) {
-//
-//			for (Button b : getRadioGroup()) {
-//				// we only tab on this element, if there is no other radio
-//				// button which is selected.
-//				// in case of another selected radio button, this other radio
-//				// button should be tabbed.
-//				// But if the other checked radio button has focus, then the
-//				// tabbing should not be blocked.
-//				if (!b.hasFocus() && b.isChecked() && b != this) {
-//					return false;
-//				}
-//
-//			}
-//
-//		}
-//
-//		boolean b = super.setTabItemFocus();
-//		return b;
-//	}
-	//
-	@Override
-	boolean isTabItem() {
-		boolean b = super.isTabItem();
-		return b;
-	}
-
-	@Override
-	boolean traverseItem(boolean next) {
-		boolean b = super.traverseItem(next);
-		// if the next item is selected, a radio button loses the check.
-		if (b && isRadioButton()) {
-			setSelection(false);
-		}
-		redraw();
-		return b;
-	}
-
-	@Override
-	boolean traverseGroup(boolean next) {
-		boolean b = super.traverseGroup(next);
-		return b;
+		return !isRadioButton() || getSelection();
 	}
 
 	// menmonicHis(char ch) does not exist on mac. It seems on mac there is no

@@ -1682,6 +1682,15 @@ long gtk_map (long widget) {
 long gtk_move_focus (long widget, long directionType) {
 	Control control = display.getFocusControl ();
 	if (control != null) {
+		if (getNativeControl(control) == this) {
+			System.out.println("focusControl = " + control.toDebugName());
+			Event event = new Event();
+			event.detail = directionType == 0 ? SWT.TRAVERSE_TAB_NEXT : SWT.TRAVERSE_TAB_PREVIOUS;
+			event.widget = control;
+			event.doit = true;
+			control.traverse(event);
+			return 1;
+		}
 		long focusHandle = control.focusHandle ();
 		GTK.gtk_widget_child_focus (focusHandle, (int)directionType);
 	}
@@ -3480,4 +3489,8 @@ Point getSurfaceOrigin () {
 	return super.getSurfaceOrigin( );
 }
 
+@Override
+protected Composite getTabRoot() {
+	return this;
+}
 }
