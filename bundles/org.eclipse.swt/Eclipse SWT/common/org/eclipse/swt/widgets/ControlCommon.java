@@ -16,6 +16,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
@@ -60,6 +61,8 @@ abstract class ControlCommon extends Widget {
 	}
 
 	Composite parent;
+	protected Cursor cursor;
+	protected Cursor cursorFromLightWeightChild;
 
 	// custom control properties
 	private int x;
@@ -302,6 +305,85 @@ abstract class ControlCommon extends Widget {
 	}
 
 	protected void updateNativeVisibility() {
+	}
+
+	/**
+	 * Returns the receiver's cursor, or null if it has not been set.
+	 * <p>
+	 * When the mouse pointer passes over a control its appearance
+	 * is changed to match the control's cursor.
+	 * </p>
+	 *
+	 * @return the receiver's cursor or <code>null</code>
+	 *
+	 * @exception SWTException <ul>
+	 *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+	 *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+	 * </ul>
+	 *
+	 * @since 3.3
+	 */
+	public Cursor getCursor() {
+		checkWidget();
+		return cursor;
+	}
+
+	/**
+	 * Sets the receiver's cursor to the cursor specified by the
+	 * argument, or to the default cursor for that kind of control
+	 * if the argument is null.
+	 * <p>
+	 * When the mouse pointer passes over a control its appearance
+	 * is changed to match the control's cursor.
+	 * </p>
+	 *
+	 * @param cursor the new cursor (or null)
+	 *
+	 * @exception IllegalArgumentException <ul>
+	 *    <li>ERROR_INVALID_ARGUMENT - if the argument has been disposed</li>
+	 * </ul>
+	 * @exception SWTException <ul>
+	 *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+	 *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+	 * </ul>
+	 */
+	public void setCursor(Cursor cursor) {
+		checkWidget();
+		if (cursor != null && cursor.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
+		this.cursor = cursor;
+	}
+
+	Cursor findCursor() {
+		if (cursorFromLightWeightChild != null) return cursorFromLightWeightChild;
+		if (cursor != null) return cursor;
+		if (parent == null) return null;
+		return parent.findCursor();
+	}
+
+	void updateCursor() {
+		Cursor cursor = null;
+		ControlCommon c = this;
+		while (c != null) {
+			if (c.isLightWeight()) {
+				if (cursor == null) {
+					cursor = c.cursor;
+				}
+				c = c.parent;
+				continue;
+			}
+
+			c.setCursorFromChild(cursor);
+			break;
+		}
+	}
+
+	protected boolean setCursorFromChild(Cursor cursor) {
+		if (this.cursorFromLightWeightChild == cursor) {
+			return false;
+		}
+
+		this.cursorFromLightWeightChild = cursor;
+		return true;
 	}
 
 	private boolean isFocusControlOrParentOfFocusControl() {
