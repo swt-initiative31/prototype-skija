@@ -2611,7 +2611,6 @@ public void setMenuBar (Menu menu) {
 
 		if (!GTK.GTK4) {
 			createAccelGroup();
-			menuBar.addAccelerators(accelGroup);
 		}
 	}
 

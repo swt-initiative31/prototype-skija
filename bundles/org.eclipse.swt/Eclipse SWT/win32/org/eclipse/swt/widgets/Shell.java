@@ -131,6 +131,7 @@ public class Shell extends Decorations {
 	long toolIcon, balloonIcon;
 	long windowProc;
 	Control lastActive;
+	private int outerStyle;
 	static /*final*/ long ToolTipProc;
 	static final long DialogProc;
 	static final TCHAR DialogClass = new TCHAR (0, "#32770", true);
@@ -282,6 +283,22 @@ public Shell (Display display, int style) {
 
 Shell (Display display, Shell parent, int style, long handle, boolean embedded) {
 	super ();
+
+	outerStyle = style;
+	if (!SWT.NATIVE_DECORATIONS) {
+		style = SWT.NO_MOVE | SWT.NO_TRIM;
+
+		if ((outerStyle & SWT.V_SCROLL) != 0)
+			style |= SWT.V_SCROLL;
+
+		if ((outerStyle & SWT.H_SCROLL) != 0)
+			style |= SWT.H_SCROLL;
+
+		if (this instanceof MenuWindow)
+			style |= SWT.DOUBLE_BUFFERED;
+
+	}
+
 	checkSubclass ();
 	if (display == null) display = Display.getCurrent ();
 	if (display == null) display = Display.getDefault ();
@@ -311,6 +328,15 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
 
 	reskinWidget();
 	createWidget ();
+	if (!SWT.NATIVE_DECORATIONS) {
+		decoListener = new DecorationsHandler(this);
+	}
+}
+
+@Override
+public int getStyle() {
+	checkWidget();
+	return outerStyle;
 }
 
 /**
@@ -1334,6 +1360,18 @@ public void open () {
 			setFocus ();
 		}
 	}
+
+	if (!SWT.NATIVE_DECORATIONS) {
+		forceActive();
+		forceFocus();
+
+		sendEvent(SWT.Activate);
+		var children = getChildren();
+		if (children != null && children.length > 0)
+			getChildren()[0].setFocus();
+
+	}
+
 }
 
 @Override
@@ -1490,6 +1528,9 @@ public void setActive () {
 	if (!isVisible ()) return;
 	bringToTop ();
 	// widget could be disposed at this point
+
+	if (!SWT.NATIVE_DECORATIONS)
+		sendEvent(SWT.Activate);
 }
 
 void setActiveControl (Control control) {
@@ -1961,7 +2002,16 @@ void setParent () {
 @Override
 public void setRegion (Region region) {
 	checkWidget ();
-	if ((style & SWT.NO_TRIM) == 0) return;
+
+	if (!SWT.NATIVE_DECORATIONS) {
+		if ((outerStyle & SWT.NO_TRIM) == 0)
+			return;
+	}
+
+	if ((style & SWT.NO_TRIM) == 0) {
+		return;
+	}
+
 	if (region != null) {
 		Rectangle bounds = region.getBounds ();
 		setSize (bounds.x + bounds.width, bounds.y + bounds.height);
@@ -2691,4 +2741,27 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 	}
 	shell.layout (null, SWT.DEFER | SWT.ALL | SWT.CHANGED);
 }
+
+@Override
+public void dispose() {
+	if (isDisposed())
+		return;
+
+	var sh = getDisplay().getShells();
+
+	super.dispose();
+
+	if (!SWT.NATIVE_DECORATIONS) {
+
+		if (sh != null && sh.length > 0) {
+			for (var s : sh) {
+				if (s != this && !s.isDisposed())
+				s.setActive();
+			}
+		}
+
+	}
+
+}
+
 }

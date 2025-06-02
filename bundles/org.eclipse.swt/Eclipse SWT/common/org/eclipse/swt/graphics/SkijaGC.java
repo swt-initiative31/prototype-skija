@@ -219,6 +219,7 @@ public class SkijaGC extends GCHandle {
 		innerGC.drawImage(transferImage, 0, 0, drawingSizeInPixels.x, drawingSizeInPixels.y, //
 				0, 0, originalDrawingSize.x, originalDrawingSize.y);
 		transferImage.dispose();
+		innerGC.dispose();
 	}
 
 	@Override

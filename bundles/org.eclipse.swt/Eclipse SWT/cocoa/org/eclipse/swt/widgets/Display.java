@@ -2216,7 +2216,7 @@ public Image getSystemImage (int id) {
 public Menu getMenuBar () {
 	checkDevice ();
 	if (appMenuBar != null) return appMenuBar;
-	appMenuBar = new Menu (this);
+	appMenuBar = new Menu(this.getSystemMenu());
 	// the menubar will be updated when the Shell or the application activates.
 	return appMenuBar;
 }
@@ -2236,18 +2236,18 @@ public Menu getMenuBar () {
  */
 public Menu getSystemMenu () {
 	checkDevice();
-	if (appMenu == null) {
-		NSMenu mainMenu = NSApplication.sharedApplication().mainMenu();
-		NSMenu nsAppMenu = mainMenu.itemAtIndex(0).submenu();
-		appMenu = new Menu(this, nsAppMenu);
-
-		// Create menu items that correspond to the NSMenuItems.
-		long nsCount = nsAppMenu.numberOfItems();
-		for (int j = 0; j < nsCount; j++) {
-			NSMenuItem currMenuItem = nsAppMenu.itemAtIndex(j);
-			new MenuItem(appMenu, currMenuItem);
-		}
-	}
+//	if (appMenu == null) {
+//		NSMenu mainMenu = NSApplication.sharedApplication().mainMenu();
+//		NSMenu nsAppMenu = mainMenu.itemAtIndex(0).submenu();
+//		appMenu = new Menu(this, nsAppMenu);
+//
+//		// Create menu items that correspond to the NSMenuItems.
+//		long nsCount = nsAppMenu.numberOfItems();
+//		for (int j = 0; j < nsCount; j++) {
+//			NSMenuItem currMenuItem = nsAppMenu.itemAtIndex(j);
+//			new MenuItem(appMenu, currMenuItem);
+//		}
+//	}
 	return appMenu;
 }
 
@@ -4506,7 +4506,8 @@ boolean runPopups () {
 		System.arraycopy (popups, 1, popups, 0, --length);
 		popups [length] = null;
 		runDeferredEvents ();
-		if (!menu.isDisposed ()) menu._setVisible (true);
+		if (!menu.isDisposed())
+			menu.setVisible(true);
 		result = true;
 	}
 	popups = null;
@@ -5016,7 +5017,7 @@ void setMenuBar (Menu menu) {
 	if (menu == menuBar) return;
 	menuBar = menu;
 	//remove all existing menu items except the application menu
-	NSMenu menubar = application.mainMenu();
+//	NSMenu menubar = application.mainMenu();
 	/*
 	* For some reason, NSMenu.cancelTracking() does not dismisses
 	* the menu right away when the menu bar is set in a stacked
@@ -5024,42 +5025,42 @@ void setMenuBar (Menu menu) {
 	*/
 //	menubar.cancelTracking();
 	cancelRootMenuTracking ();
-	long count = menubar.numberOfItems();
-	while (count > 1) {
-		menubar.removeItemAtIndex(count - 1);
-		count--;
-	}
-	//set parent of each item to NULL and add them to menubar
-	if (menu != null) {
-		MenuItem[] items = menu.getItems();
-		for (int i = 0; i < items.length; i++) {
-			MenuItem item = items[i];
-			NSMenuItem nsItem = item.nsItem;
-
-			/*
-			* Bug in cocoa.  Cocoa does not seem to detect the help
-			* menu for languages other than english.  The fix is to detect
-			* it ourselves.
-			*/
-			NSMenu submenu = nsItem.submenu();
-			if (submenu != null && submenu.title().getString().equals(SWT.getMessage("SWT_Help"))) {
-				application.setHelpMenu(submenu);
-			}
-
-			nsItem.setMenu(null);
-			menubar.addItem(nsItem);
-
-			/*
-			* Bug in Cocoa: Calling NSMenuItem.setEnabled() for menu item of a menu bar only
-			* works when the menu bar is the current menu bar.  The underline OS menu does get
-			* enabled/disable when that menu is set later on.  The fix is to toggle the
-			* item enabled state to force the underline menu to be updated.
-			*/
-			boolean enabled = menu.getEnabled () && item.getEnabled ();
-			nsItem.setEnabled(!enabled);
-			nsItem.setEnabled(enabled);
-		}
-	}
+//	long count = menubar.numberOfItems();
+//	while (count > 1) {
+//		menubar.removeItemAtIndex(count - 1);
+//		count--;
+//	}
+//	//set parent of each item to NULL and add them to menubar
+//	if (menu != null) {
+//		MenuItem[] items = menu.getItems();
+//		for (int i = 0; i < items.length; i++) {
+//			MenuItem item = items[i];
+////			NSMenuItem nsItem = item.nsItem;
+////
+////			/*
+////			* Bug in cocoa.  Cocoa does not seem to detect the help
+////			* menu for languages other than english.  The fix is to detect
+////			* it ourselves.
+////			*/
+////			NSMenu submenu = nsItem.submenu();
+////			if (submenu != null && submenu.title().getString().equals(SWT.getMessage("SWT_Help"))) {
+////				application.setHelpMenu(submenu);
+////			}
+////
+////			nsItem.setMenu(null);
+////			menubar.addItem(nsItem);
+//
+//			/*
+//			* Bug in Cocoa: Calling NSMenuItem.setEnabled() for menu item of a menu bar only
+//			* works when the menu bar is the current menu bar.  The underline OS menu does get
+//			* enabled/disable when that menu is set later on.  The fix is to toggle the
+//			* item enabled state to force the underline menu to be updated.
+//			*/
+//			boolean enabled = menu.getEnabled () && item.getEnabled ();
+//			nsItem.setEnabled(!enabled);
+//			nsItem.setEnabled(enabled);
+//		}
+//	}
 }
 
 void setModalDialog (Dialog modalDialog) {
@@ -5899,12 +5900,12 @@ static long applicationProc(long id, long sel, long arg0) {
 			TaskBar taskbar = display.taskBar;
 			if (taskbar != null && taskbar.itemCount != 0) {
 				TaskItem item = taskbar.getItem(null);
-				if (item != null) {
-					Menu menu = item.getMenu();
-					if (menu != null && !menu.isDisposed()) {
-						return menu.nsMenu.id;
-					}
-				}
+//				if (item != null) {
+//					Menu menu = item.getMenu();
+//					if (menu != null && !menu.isDisposed()) {
+//						return menu.nsMenu.id;
+//					}
+//				}
 			}
 			return 0;
 		}

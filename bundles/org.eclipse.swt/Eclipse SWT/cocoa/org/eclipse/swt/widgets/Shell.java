@@ -2464,12 +2464,13 @@ void windowSendEvent (long id, long sel, long event) {
 				}
 				if (escMenuItem != null) {
 					Menu parentMenu = escMenuItem.getParent();
-					if (parentMenu != null) {
-						NSMenu escNSMenu = parentMenu.nsMenu;
-						if (escNSMenu != null) {
-							escNSMenu.performKeyEquivalent(nsEvent);
-						}
-					}
+//					parentMenu.accessibilityPerformAction(id, sel, type);
+//					if (parentMenu != null) {
+//						NSMenu escNSMenu = parentMenu.nsMenu;
+//						if (escNSMenu != null) {
+//							escNSMenu.performKeyEquivalent(nsEvent);
+//						}
+//					}
 				}
 			}
 			/**
