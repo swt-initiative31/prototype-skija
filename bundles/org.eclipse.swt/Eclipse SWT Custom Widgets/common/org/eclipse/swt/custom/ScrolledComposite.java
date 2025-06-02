@@ -472,7 +472,6 @@ public void setAlwaysShowScrollBars(boolean show) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
-@Override
 public void setContent(Control content) {
 	checkWidget();
 	if (this.content != null && !this.content.isDisposed()) {
@@ -501,7 +500,7 @@ public void setContent(Control content) {
 		if (hBar != null) hBar.setVisible(alwaysShowScroll);
 		if (vBar != null) vBar.setVisible(alwaysShowScroll);
 	}
-	super.setContent(this.content);
+	setContentControl(this.content);
 }
 /**
  * Configure the ScrolledComposite to resize the content object to be as wide as the

@@ -595,7 +595,7 @@ public abstract class Scrollable extends Control {
 	 *                         the thread that created the receiver</li>
 	 *                         </ul>
 	 */
-	public void setContent(Control content) {
+	public void setContentControl(Control content) {
 		this.content = content;
 		if (content instanceof Composite composite) {
 			System.out.println("layout set to true for composite");
@@ -603,5 +603,16 @@ public abstract class Scrollable extends Control {
 		}
 		layoutScrollbars();
 		layoutContent();
+	}
+
+	void destroyScrollBar(int type) {
+	}
+
+	LRESULT wmScroll(ScrollBar horizontalBar, boolean b, long hwndParent, int wmHscroll, long wParam, long lParam) {
+		return LRESULT.ZERO;
+	}
+
+	LRESULT wmScrollWheel(boolean b, long wParam, long lParam, boolean b1) {
+		return LRESULT.ZERO;
 	}
 }
