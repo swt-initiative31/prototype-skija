@@ -41,6 +41,10 @@ public class SkijaGC extends GCHandle {
 		return new SkijaGC(gc, control, false);
 	}
 
+	public static GCHandle createDefaultInstance(Surface surface, Rectangle clipping, Control control) {
+		return new SkijaGC(surface, clipping.x, clipping.y, clipping.width, clipping.height, control);
+	}
+
 	public static SkijaGC createMeasureInstance(NativeGC gc, Control control) {
 		return new SkijaGC(gc, control, true);
 	}
@@ -48,7 +52,7 @@ public class SkijaGC extends GCHandle {
 	private final Surface surface;
 
 	private NativeGC innerGC;
-
+	private Rectangle clipping;
 	private Color background;
 	private Color foreground;
 	private org.eclipse.swt.graphics.Font swtFont;
@@ -75,6 +79,19 @@ public class SkijaGC extends GCHandle {
 			initializeWithParentBackground();
 		}
 		initFont();
+	}
+
+	private SkijaGC(Surface surface, int x, int y, int width, int height, Control control) {
+		if (surface == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		if (control == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		if (control.isDisposed()) SWT.error(SWT.ERROR_WIDGET_DISPOSED);
+		this.surface = surface;
+		device = control.getDisplay();
+		originalDrawingSize = new Point(0, 0);
+		clipping = new Rectangle(x, y, width, height);
+		setFont(control.getFont());
+		setBackground(control.getBackground());
+		setForeground(control.getForeground());
 	}
 
 	private static Point extractSize(Drawable drawable) {
@@ -840,7 +857,9 @@ public class SkijaGC extends GCHandle {
 			font = innerGC.getFont();
 		}
 		this.swtFont = font;
-		innerGC.setFont(font);
+		if (innerGC != null) {
+			innerGC.setFont(font);
+		}
 
 		this.skiaFont = convertToSkijaFont(font);
 		this.baseSymbolHeight = this.skiaFont.measureText("T").getHeight();
@@ -1027,7 +1046,9 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public Rectangle getClipping() {
-		return innerGC.getClipping();
+		return clipping != null
+				? new Rectangle(clipping.x - offsetX, clipping.y -offsetY, clipping.width, clipping.height)
+				: innerGC.getClipping();
 	}
 
 	@Override
@@ -1193,8 +1214,14 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void setClipping(Rectangle rect) {
+		if (clipping != null && rect != null) {
+			clipping.x = rect.x + offsetX;
+			clipping.y = rect.y + offsetY;
+			clipping.width = rect.width;
+			clipping.height = rect.height;
+		}
 
-		/**
+		/*
 		 * this is a minimal implementation for set clipping with skija.
 		 */
 
@@ -1207,7 +1234,6 @@ public class SkijaGC extends GCHandle {
 
 		surface.getCanvas().save();
 		surface.getCanvas().clipRect(createScaledRectangle(rect));
-
 	}
 
 	@Override
@@ -1385,5 +1411,4 @@ public class SkijaGC extends GCHandle {
 		Map<ColorType, int[]> colorTypeMap = createColorTypeMap();
 		return colorTypeMap.get(colorType);
 	}
-
 }
