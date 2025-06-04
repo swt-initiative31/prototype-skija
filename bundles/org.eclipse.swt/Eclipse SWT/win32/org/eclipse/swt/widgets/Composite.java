@@ -14,6 +14,9 @@
 package org.eclipse.swt.widgets;
 
 
+import io.github.humbleui.skija.ColorAlphaType;
+import io.github.humbleui.skija.ImageInfo;
+import io.github.humbleui.skija.Surface;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
@@ -1613,7 +1616,7 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 						sendEvent (SWT.Paint, event);
 					}
 				} else {
-					skiaPaint(gc, new Rectangle(ps.left, ps.top, width, height));
+					skiaPaint(new Rectangle(ps.left, ps.top, width, height));
 				}
 				// widget could be disposed at this point
 				event.gc = null;
@@ -1663,16 +1666,56 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 	return LRESULT.ZERO;
 }
 
-private void skiaPaint(GC nativeGc, Rectangle clipping) {
-	final Rectangle virtualClipping = DPIUtil.autoScaleDown(this, clipping);
-	virtualClipping.width = incIfRoundedDown(virtualClipping.width, clipping.width);
-	virtualClipping.height = incIfRoundedDown(virtualClipping.height, clipping.height);
-	Drawing.drawWithGC(this, nativeGc, gc -> {
-		final Event event = new Event();
-		event.gc = gc;
-		event.setBounds(virtualClipping);
-		paintAndSendEvent(event);
-	});
+private void skiaPaint(Rectangle clipping) {
+	final int width = clipping.width;
+	final int height = clipping.height;
+	final long hdc = OS.GetDC(handle);
+	try {
+		final long memHdc = OS.CreateCompatibleDC(hdc);
+		try {
+			BITMAPINFOHEADER bmiHeader = new BITMAPINFOHEADER();
+			bmiHeader.biSize = BITMAPINFOHEADER.sizeof;
+			bmiHeader.biWidth = width;
+			bmiHeader.biHeight = -height;
+			bmiHeader.biPlanes = 1;
+			bmiHeader.biBitCount = 32;
+			bmiHeader.biCompression = OS.BI_RGB;
+			var bmi = new byte[BITMAPINFOHEADER.sizeof];
+			OS.MoveMemory(bmi, bmiHeader, BITMAPINFOHEADER.sizeof);
+			long[] pBits = new long[1];
+			long hBitmap = OS.CreateDIBSection(hdc, bmi, OS.DIB_RGB_COLORS, pBits, 0, 0);
+			if (hBitmap == 0) {
+				SWT.error(SWT.ERROR_NO_HANDLES);
+			}
+
+			try {
+				ImageInfo imageInfo = ImageInfo.makeN32(width, height, ColorAlphaType.PREMUL);
+				try (Surface surface = Surface.wrapPixels(imageInfo, pBits[0], 4L * width, null)) {
+					final Rectangle virtualClipping = DPIUtil.autoScaleDown(this, clipping);
+					virtualClipping.width = incIfRoundedDown(virtualClipping.width, clipping.width);
+					virtualClipping.height = incIfRoundedDown(virtualClipping.height, clipping.height);
+
+					Drawing.drawWithSurface(this, surface, virtualClipping, gc -> {
+						gc.translate(-virtualClipping.x, -virtualClipping.y);
+
+						final Event event = new Event();
+						event.gc = gc;
+						event.setBounds(virtualClipping);
+						paintAndSendEvent(event);
+					});
+				}
+
+				OS.SelectObject(memHdc, hBitmap);
+				OS.BitBlt(hdc, clipping.x, clipping.y, clipping.width, clipping.height, memHdc, 0, 0, OS.SRCCOPY);
+			} finally {
+				OS.DeleteObject(hBitmap);
+			}
+		} finally {
+			OS.DeleteDC(memHdc);
+		}
+	} finally {
+		OS.ReleaseDC(handle, hdc);
+	}
 }
 
 private int incIfRoundedDown(int scaled, int original) {
