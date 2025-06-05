@@ -120,13 +120,11 @@ public class Link extends CustomControl {
 
 		final Listener listener = event -> {
 			switch (event.type) {
-				case SWT.Paint -> onPaint(event);
 				case SWT.MouseMove -> onMouseMove(event);
 				case SWT.MouseUp -> onMouseUp(event);
 				case SWT.Dispose -> onDispose(event);
 			}
 		};
-		addListener(SWT.Paint, listener);
 		addListener(SWT.MouseMove, listener);
 		addListener(SWT.MouseUp, listener);
 		addListener(SWT.Dispose, listener);
@@ -324,12 +322,9 @@ public class Link extends CustomControl {
 		}
 	}
 
-	private void onPaint(Event event) {
-		final Point size = getSize();
-		if (size.x == 0 || size.y == 0) {
-			return;
-		}
-		Drawing.drawWithGC(this, event.gc, gc -> renderer.paint(gc, size.x, size.y));
+	@Override
+	protected void paintControl(Event event) {
+		super.paintControl(event);
 		links = renderer.getLinks();
 	}
 

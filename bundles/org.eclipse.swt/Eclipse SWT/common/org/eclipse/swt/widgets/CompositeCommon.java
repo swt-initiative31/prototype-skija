@@ -51,7 +51,6 @@ abstract class CompositeCommon extends Scrollable {
 		if (!isLightWeight() && control.isLightWeight() && lightWeightChildHandlingListener == null) {
 			lightWeightChildHandlingListener = e -> {
 				switch (e.type) {
-					case SWT.Paint -> onPaint(e);
 					case SWT.MouseMove -> onMouseMove(e);
 					case SWT.MouseEnter -> onMouseEnter(e);
 					case SWT.MouseExit -> onMouseExit(e);
@@ -61,7 +60,6 @@ abstract class CompositeCommon extends Scrollable {
 					case SWT.MenuDetect -> onMenuDetect(e);
 				}
 			};
-			addListener(SWT.Paint, lightWeightChildHandlingListener);
 			addListener(SWT.MouseMove, lightWeightChildHandlingListener);
 			addListener(SWT.MouseEnter, lightWeightChildHandlingListener);
 			addListener(SWT.MouseExit, lightWeightChildHandlingListener);
@@ -193,26 +191,29 @@ abstract class CompositeCommon extends Scrollable {
 		}
 	}
 
-	private void onPaint(Event e) {
-		final int x = e.x;
-		final int y = e.y;
-		final int width = e.width;
-		final int height = e.height;
-		final Rectangle clipping = e.gc.getClipping();
-		Drawing.drawWithGC(this, e.gc, gc -> {
-			e.gc = gc;
-			gc.setPreventDispose(true);
-			try {
-				drawChildren(clipping, e);
-			} finally {
-				gc.setPreventDispose(false);
-			}
-		});
-		e.widget = this;
-		e.x = x;
-		e.y = y;
-		e.width = width;
-		e.height = height;
+	@Override
+	protected void paintAndSendEvent(Event paintEvent) {
+		final Rectangle clipping = new Rectangle(paintEvent.x, paintEvent.y, paintEvent.width, paintEvent.height);
+
+		super.paintAndSendEvent(paintEvent);
+
+		if (!isLightWeight() && !isLightWeightChildHandling()) {
+			return;
+		}
+
+		paintEvent.gc.setPreventDispose(true);
+		try {
+			drawChildren(clipping, paintEvent);
+		} finally {
+			paintEvent.gc.setPreventDispose(false);
+		}
+	}
+
+	@Override
+	protected void paintControl(Event event) {
+		if ((style & (SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND | SWT.TRANSPARENT)) == 0) {
+			event.gc.fillRectangle(event.x, event.y, event.width, event.height);
+		}
 	}
 
 	private void drawChildren(Rectangle clipping, Event e) {
@@ -236,24 +237,15 @@ abstract class CompositeCommon extends Scrollable {
 				continue;
 			}
 
-//				gc.setClipping(b);
+			e.widget = child;
 			e.gc.translate(b.x, b.y);
 			try {
-				e.gc.setForeground(child.getForeground());
-				e.gc.setBackground(child.getBackground());
-				e.widget = child;
 				final Rectangle subClipping = b.intersection(clipping);
 				subClipping.x -= b.x;
 				subClipping.y -= b.y;
-				e.x = subClipping.x;
-				e.y = subClipping.y;
-				e.width = subClipping.width;
-				e.height = subClipping.height;
-				child.sendEvent(e);
-
-				if (child instanceof CompositeCommon childComposite) {
-					childComposite.drawChildren(subClipping, e);
-				}
+				e.setBounds(subClipping);
+				e.gc.setClipping(subClipping);
+				child.paintAndSendEvent(e);
 			}
 			finally {
 				e.gc.translate(-b.x, -b.y);

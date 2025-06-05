@@ -1612,11 +1612,6 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 						sendEvent (SWT.Paint, event);
 					}
 				} else {
-					if ((style & (SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND | SWT.TRANSPARENT)) == 0) {
-						if (rect == null) rect = new RECT();
-						OS.SetRect(rect, ps.left, ps.top, ps.right, ps.bottom);
-						drawBackground(ngc.handle, rect);
-					}
 					skiaPaint(gc, new Rectangle(ps.left, ps.top, width, height));
 				}
 				// widget could be disposed at this point
@@ -1675,7 +1670,7 @@ private void skiaPaint(GC nativeGc, Rectangle clipping) {
 		final Event event = new Event();
 		event.gc = gc;
 		event.setBounds(virtualClipping);
-		sendEvent(SWT.Paint, event);
+		paintAndSendEvent(event);
 	});
 }
 

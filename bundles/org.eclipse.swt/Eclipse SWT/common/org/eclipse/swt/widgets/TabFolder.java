@@ -335,7 +335,6 @@ void init(int style) {
 			case SWT.MouseHover:	   onMouse(event); break;
 			case SWT.MouseMove:        onMouse(event); break;
 			case SWT.MouseUp:          onMouse(event); break;
-			case SWT.Paint:            onPaint(event);	break;
 			case SWT.Resize:           onResize(event);	break;
 			case SWT.Traverse:         onTraverse(event); break;
 			case SWT.Selection:        onSelection(event); break;
@@ -359,7 +358,6 @@ void init(int style) {
 		SWT.MouseHover,
 		SWT.MouseMove,
 		SWT.MouseUp,
-		SWT.Paint,
 		SWT.Resize,
 		SWT.Traverse,
 		SWT.Activate,
@@ -2087,11 +2085,11 @@ void onPageTraversal(Event event) {
 	setSelection(index, true);
 }
 
-void onPaint(Event event) {
+@Override
+protected void paintControl(Event event) {
 	if (inDispose) return;
 
-	Point size = getSize();
-	Drawing.drawWithGC(this, event.gc, gc -> renderer.paint(gc, size.x, size.y));
+	super.paintControl(event);
 	// Select 0th tab after paint.
 	if (selectedIndex == -1) {
 		setSelection(0);

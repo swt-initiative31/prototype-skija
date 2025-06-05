@@ -116,7 +116,6 @@ public class Label extends CustomControl {
 
 		final Listener listener = event -> {
 			switch (event.type) {
-			case SWT.Paint -> onPaint(event);
 			case SWT.Traverse -> {
 				if (event.detail == SWT.TRAVERSE_MNEMONIC) {
 					onMnemonic(event);
@@ -125,7 +124,6 @@ public class Label extends CustomControl {
 			case SWT.Dispose -> onDispose(event);
 			}
 		};
-		addListener(SWT.Paint, listener);
 		addListener(SWT.Traverse, listener);
 		addListener(SWT.Dispose, listener);
 
@@ -423,11 +421,6 @@ public class Label extends CustomControl {
 			control = control.getParent();
 		}
 	}
-
-	private void onPaint(Event event) {
-		renderer.paint(event.gc);
-	}
-
 
 	/**
 	 * Set the horizontal alignment of the Label. Use the values LEFT, CENTER
