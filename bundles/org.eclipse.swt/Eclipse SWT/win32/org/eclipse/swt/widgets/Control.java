@@ -52,7 +52,7 @@ import org.eclipse.swt.ole.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class Control extends Widget implements Drawable {
+public abstract class Control extends ControlCommon implements Drawable {
 
 	static {
 		DPIZoomChangeRegistry.registerHandler(Control::handleDPIChange, Control.class);
@@ -5901,10 +5901,6 @@ private static void resizeFont(Control control, int newZoom) {
 	} else {
 		control.setFont(Font.win32_new(font, newZoom));
 	}
-}
-
-protected final ColorProvider getColorProvider() {
-	return display.getColorProvider();
 }
 }
 
