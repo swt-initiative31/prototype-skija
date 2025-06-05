@@ -90,14 +90,7 @@ public class Group extends CustomComposite {
 	 */
 	public Group(Composite parent, int style) {
 		super(parent, checkStyle(style));
-		Listener listener = event -> {
-			switch (event.type) {
-			case SWT.Paint -> onPaint(event);
-			case SWT.Resize -> redraw();
-			}
-		};
-		addListener(SWT.Paint, listener);
-		addListener(SWT.Resize, listener);
+		addListener(SWT.Resize, event -> redraw());
 
 		renderer = new DefaultGroupRenderer(this);
 	}
@@ -105,10 +98,6 @@ public class Group extends CustomComposite {
 	@Override
 	protected ControlRenderer getRenderer() {
 		return renderer;
-	}
-
-	private void onPaint(Event event) {
-		renderer.paint(event.gc);
 	}
 
 	static int checkStyle(int style) {

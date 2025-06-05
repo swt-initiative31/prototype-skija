@@ -15,12 +15,21 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 
 abstract class ControlCommon extends Widget {
 
 	protected abstract boolean isLightWeight();
+
+	protected abstract Font getFont();
+
+	protected abstract Color getBackground();
+
+	protected abstract Color getForeground();
 
 	protected abstract int getBorderWidth();
 
@@ -317,6 +326,25 @@ abstract class ControlCommon extends Widget {
 		final Point offset = new Point(0, 0);
 		final Composite parent = (Composite) getNativeControlAndOffset((Control) this, offset);
 		parent.redraw(bounds.x + offset.x, bounds.y + offset.y, bounds.width, bounds.height, false);
+	}
+
+	protected void paintAndSendEvent(Event paintEvent) {
+		initializeGC(paintEvent.gc);
+		paintControl(paintEvent);
+
+		if (hooks(SWT.Paint)) {
+			initializeGC(paintEvent.gc);
+			sendEvent(SWT.Paint, paintEvent);
+		}
+	}
+
+	protected void paintControl(Event event) {
+	}
+
+	private void initializeGC(GC gc) {
+		gc.setFont(getFont());
+		gc.setBackground(getBackground());
+		gc.setForeground(getForeground());
 	}
 
 	protected final ColorProvider getColorProvider() {
