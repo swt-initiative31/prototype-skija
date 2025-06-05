@@ -185,7 +185,6 @@ public class Text extends NativeBasedCustomScrollable {
 	private void addListeners() {
 		final Listener listener = event -> {
 			switch (event.type) {
-			case SWT.Paint -> Text.this.paintControl(event);
 			case SWT.MouseMove -> Text.this.onMouseMove(event);
 			case SWT.MouseDown -> Text.this.onMouseDown(event);
 			case SWT.MouseUp -> Text.this.onMouseUp(event);
@@ -198,7 +197,6 @@ public class Text extends NativeBasedCustomScrollable {
 			case SWT.Dispose -> Text.this.widgetDisposed(event);
 			}
 		};
-		addListener(SWT.Paint, listener);
 		addListener(SWT.MouseMove, listener);
 		addListener(SWT.MouseDown, listener);
 		addListener(SWT.MouseUp, listener);
@@ -502,10 +500,6 @@ public class Text extends NativeBasedCustomScrollable {
 
 	protected void widgetDisposed(Event e) {
 		caret.dispose();
-	}
-
-	private void paintControl(Event e) {
-		renderer.paint(e.gc);
 	}
 
 	@Override

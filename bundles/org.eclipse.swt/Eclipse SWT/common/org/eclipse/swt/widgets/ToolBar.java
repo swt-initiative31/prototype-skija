@@ -129,7 +129,6 @@ public class ToolBar extends CustomComposite {
 			case SWT.MouseExit -> onMouseExit(event);
 			case SWT.MouseMove -> onMouseMove(event);
 			case SWT.MouseUp -> onMouseUp(event);
-			case SWT.Paint -> onPaint(event);
 			case SWT.Resize -> redraw();
 			}
 		};
@@ -138,7 +137,6 @@ public class ToolBar extends CustomComposite {
 		addListener(SWT.MouseExit, listener);
 		addListener(SWT.MouseMove, listener);
 		addListener(SWT.MouseUp, listener);
-		addListener(SWT.Paint, listener);
 		addListener(SWT.Resize, listener);
 
 		// cache flags for later use
@@ -269,19 +267,6 @@ public class ToolBar extends CustomComposite {
 		} else {
 			return isLeftToRight() ? p : new Point(getBounds().width - p.x, p.y);
 		}
-	}
-
-	private void onPaint(Event event) {
-		if (!isVisible()) {
-			return;
-		}
-
-		final Point size = getSize();
-		if (size.x == 0 || size.y == 0) {
-			return;
-		}
-
-		Drawing.drawWithGC(this, event.gc, gc -> renderer.paint(gc, size.x, size.y));
 	}
 
 	/**

@@ -74,4 +74,9 @@ public abstract class CustomControl extends NativeBasedCustomControl {
 		int height = hHint == SWT.DEFAULT ? defaultSize.y : hHint;
 		return new Point(width, height);
 	}
+
+	@Override
+	protected void paintControl(Event event) {
+		getRenderer().paint(event.gc);
+	}
 }

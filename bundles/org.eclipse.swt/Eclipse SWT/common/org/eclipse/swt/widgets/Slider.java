@@ -141,7 +141,6 @@ public class Slider extends CustomControl {
 
 		Listener listener = event -> {
 			switch (event.type) {
-			case SWT.Paint -> onPaint(event);
 			case SWT.KeyDown -> onKeyDown(event);
 			case SWT.MouseDown -> onMouseDown(event);
 			case SWT.MouseMove -> onMouseMove(event);
@@ -160,7 +159,6 @@ public class Slider extends CustomControl {
 		addListener(SWT.MouseUp, listener);
 		addListener(SWT.MouseHorizontalWheel, listener);
 		addListener(SWT.MouseVerticalWheel, listener);
-		addListener(SWT.Paint, listener);
 		addListener(SWT.Resize, listener);
 		addListener(SWT.MouseEnter, listener);
 		addListener(SWT.MouseExit, listener);
@@ -254,15 +252,12 @@ public class Slider extends CustomControl {
 		redraw();
 	}
 
-	private void onPaint(Event event) {
-		if (!isVisible()) {
-			return;
-		}
-
-		Rectangle drawingArea = getBounds();
-		Drawing.drawWithGC(this, event.gc, renderer::paint);
-		this.drawWidth = drawingArea.width;
-		this.drawHeight = drawingArea.height;
+	@Override
+	protected void paintControl(Event event) {
+		super.paintControl(event);
+		Point size = getSize();
+		this.drawWidth = size.x;
+		this.drawHeight = size.y;
 		this.thumbRectangle = renderer.getThumbRectangle();
 		this.trackRectangle = renderer.getTrackRectangle();
 	}
