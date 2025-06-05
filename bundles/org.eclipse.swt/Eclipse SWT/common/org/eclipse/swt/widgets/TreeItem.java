@@ -1824,10 +1824,10 @@ public class TreeItem extends Item {
 	}
 
 	public void setExpanded(boolean expandItem) {
-		setExpanded(expandItem, true);
+		setExpanded(expandItem, false);
 	}
 
-	private void setExpanded(boolean expandItem, boolean synchronizeTree) {
+	private void setExpanded(boolean expanded, boolean sendEvent) {
 		if (!isVirtual() || virtualItemCount <= 0) {
 			if (itemsList.isEmpty()) {
 				this.expanded = false;
@@ -1835,20 +1835,19 @@ public class TreeItem extends Item {
 			}
 		}
 
-		if (this.expanded == expandItem) {
+		if (this.expanded == expanded) {
 			return;
 		}
 
-		this.expanded = expandItem;
+		this.expanded = expanded;
 
-		Event event = new Event();
-		event.item = this;
-
-		getParent().notifyListeners(this.expanded ? SWT.Expand : SWT.Collapse, event);
-
-		if (synchronizeTree) {
-			getParent().synchronizeArrangements(true);
+		if (sendEvent) {
+			Event event = new Event();
+			event.item = this;
+			getParent().notifyListeners(this.expanded ? SWT.Expand : SWT.Collapse, event);
+			return;
 		}
+		getParent().synchronizeArrangements(true);
 	}
 
 	public void removeAll() {
@@ -1908,7 +1907,7 @@ public class TreeItem extends Item {
 			return false;
 		}
 
-		setExpanded(!getExpanded(), false);
+		setExpanded(!expanded, true);
 		return true;
 	}
 
