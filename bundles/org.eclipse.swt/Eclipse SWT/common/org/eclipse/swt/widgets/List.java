@@ -36,7 +36,6 @@ public class List extends NativeBasedCustomScrollable {
 	private void addListeners() {
 		final Listener listener = event -> {
 			switch (event.type) {
-			case SWT.Paint -> paintControl(event);
 			case SWT.MouseDown -> onMouseDown(event);
 			case SWT.MouseUp -> onMouseUp(event);
 			case SWT.MouseWheel -> onMouseWheel(event);
@@ -47,7 +46,6 @@ public class List extends NativeBasedCustomScrollable {
 			case SWT.MouseMove -> onMouseMove(event);
 			}
 		};
-		addListener(SWT.Paint, listener);
 		addListener(SWT.MouseDown, listener);
 		addListener(SWT.MouseUp, listener);
 		addListener(SWT.MouseWheel, listener);
@@ -97,14 +95,6 @@ public class List extends NativeBasedCustomScrollable {
 	private int getVisibleLineCount() {
 		Rectangle clientArea = getClientArea();
 		return (getLineHeight() > 0) ? clientArea.height / getLineHeight() : 0;
-	}
-
-	private void paintControl(Event event) {
-		if (!isVisible()) {
-			return;
-		}
-
-		Drawing.drawWithGC(this, event.gc, gc -> renderer.paint(gc));
 	}
 
 	private void onKeyReleased(Event event) {

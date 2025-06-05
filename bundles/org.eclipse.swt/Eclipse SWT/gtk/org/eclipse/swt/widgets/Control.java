@@ -3923,7 +3923,7 @@ long gtk_draw (long widget, long cairo) {
 	if (drawRegion) {
 		cairoClipRegion(cairo);
 	}
-	if (!hooksPaint ()) return 0;
+
 	Event event = new Event ();
 	event.count = 1;
 	Rectangle eventBounds = DPIUtil.autoScaleDown (new Rectangle (rect.x, rect.y, rect.width, rect.height));
@@ -3937,12 +3937,13 @@ long gtk_draw (long widget, long cairo) {
 	if (drawRegion) data.regionSet = eventRegion;
 //	data.damageRgn = gdkEvent.region;
 	data.cairo = cairo;
-	GC gc = event.gc = GC.gtk_new (this, data);
+	GC gc = GC.gtk_new(this, data);
+	event.gc = gc;
 	// Note: use GC#setClipping(x,y,width,height) because GC#setClipping(Rectangle) got broken by bug 446075
 	gc.setClipping (eventBounds.x, eventBounds.y, eventBounds.width, eventBounds.height);
 	Drawing.drawWithGC(this, gc, actualGc -> {
 		event.gc = actualGc;
-		sendEvent (SWT.Paint, event);
+		paintAndSendEvent(event);
 	});
 	gc.dispose ();
 	event.gc = null;
@@ -5256,6 +5257,9 @@ void setBackground () {
  */
 public void setBackground (Color color) {
 	checkWidget ();
+	if (isLightWeight()) {
+		return;
+	}
 	_setBackground (color);
 	if (color != null) {
 		this.updateBackgroundMode ();

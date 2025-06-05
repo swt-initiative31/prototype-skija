@@ -110,7 +110,6 @@ public CoolBar (Composite parent, int style) {
 			case SWT.MouseMove:    		onMouseMove(event); 		break;
 			case SWT.MouseUp:      		onMouseUp(event);   		break;
 			case SWT.MouseDoubleClick:	onMouseDoubleClick(event); 	break;
-			case SWT.Paint:        		onPaint(event);     		break;
 			case SWT.Resize:          	onResize();     			break;
 		}
 	};
@@ -121,7 +120,6 @@ public CoolBar (Composite parent, int style) {
 	addListener(SWT.MouseMove, listener);
 	addListener(SWT.MouseUp, listener);
 	addListener(SWT.MouseDoubleClick, listener);
-	addListener(SWT.Paint, listener);
 	addListener(SWT.Resize, listener);
 
 	final RendererFactory rendererFactory = parent.getDisplay().getRendererFactory();
@@ -701,9 +699,7 @@ void onMouseDoubleClick(Event event) {
 	}
 	fixEvent(event);
 }
-void onPaint(Event event) {
-	Drawing.drawWithGC(this, event.gc, renderer::paint);
-}
+
 void onResize () {
 	layoutItems ();
 }

@@ -20,6 +20,12 @@ public abstract class CustomComposite extends Composite {
 	}
 
 	@Override
+	protected void paintControl(Event event) {
+		super.paintControl(event);
+		getRenderer().paint(event.gc);
+	}
+
+	@Override
 	public final Color getBackground() {
 		return background != null ? background : getRenderer().getDefaultBackground();
 	}

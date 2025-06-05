@@ -1145,6 +1145,7 @@ public Accessible getAccessible () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Color getBackground () {
 	checkWidget ();
 	if (backgroundAlpha == 0) {
@@ -1357,6 +1358,7 @@ public boolean getEnabled () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Font getFont () {
 	checkWidget ();
 	if (font != null) return font;
@@ -1375,6 +1377,7 @@ public Font getFont () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Color getForeground () {
 	checkWidget ();
 	return Color.win32_new (display, getForegroundPixel ());

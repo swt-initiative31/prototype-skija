@@ -107,7 +107,6 @@ public class Scale extends CustomControl {
 				case SWT.MouseUp -> onMouseUp(event);
 				case SWT.MouseHorizontalWheel -> onMouseHorizontalWheel(event);
 				case SWT.MouseVerticalWheel -> onMouseVerticalWheel(event);
-				case SWT.Paint -> onPaint(event);
 				case SWT.Resize -> redraw();
 			}
 		};
@@ -117,7 +116,6 @@ public class Scale extends CustomControl {
 		addListener(SWT.MouseUp, listener);
 		addListener(SWT.MouseHorizontalWheel, listener);
 		addListener(SWT.MouseVerticalWheel, listener);
-		addListener(SWT.Paint, listener);
 		addListener(SWT.Resize, listener);
 
 		horizontal = (style & SWT.VERTICAL) == 0;
@@ -295,19 +293,6 @@ public class Scale extends CustomControl {
 			handleState = newHandleState;
 			redraw();
 		}
-	}
-
-	private void onPaint(Event event) {
-		if (!isVisible()) {
-			return;
-		}
-
-		final Point size = getSize();
-		if (size.x == 0 && size.y == 0) {
-			return;
-		}
-
-		Drawing.drawWithGC(this, event.gc, renderer::paint);
 	}
 
 	@Override

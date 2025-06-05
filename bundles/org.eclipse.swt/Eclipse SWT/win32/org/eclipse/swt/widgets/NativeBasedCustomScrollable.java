@@ -53,4 +53,9 @@ abstract class NativeBasedCustomScrollable extends Scrollable {
 		foregroundColor = color;
 		super.setForeground(color);
 	}
+
+	@Override
+	protected void paintControl(Event event) {
+		getRenderer().paint(event.gc);
+	}
 }
