@@ -86,7 +86,9 @@ public class GC extends Resource {
 	static final float[] LINE_DASHDOT_ZERO = new float[]{9, 6, 3, 6};
 	static final float[] LINE_DASHDOTDOT_ZERO = new float[]{9, 3, 3, 3, 3, 3};
 
-	/**
+	private int preventDispose;
+
+/**
 	 * Prevents uninitialized instances from being created outside the package.
 	 */
 GC() {
@@ -170,6 +172,7 @@ void checkGC(int mask) {
 
 @Override
 public void dispose() {
+	if (preventDispose > 0) SWT.error(SWT.ERROR_UNSPECIFIED);
 	innerGC.dispose();
 }
 
@@ -2195,4 +2198,12 @@ public void commit() {
 	innerGC.commit();
 }
 
+public void setPreventDispose(boolean preventDispose) {
+	if (preventDispose) {
+		this.preventDispose++;
+	}
+	else {
+		this.preventDispose--;
+	}
+}
 }
