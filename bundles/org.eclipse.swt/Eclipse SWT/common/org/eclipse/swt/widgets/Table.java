@@ -1370,12 +1370,9 @@ public class Table extends CustomComposite {
 	public TableItem getItem(Point point) {
 		checkWidget();
 		if (point == null) error(SWT.ERROR_NULL_ARGUMENT);
-		return getItemInPixels(DPIUtil.scaleUp(point, 100));
-	}
-
-	TableItem getItemInPixels(Point point) {
-		for (int i = getTopIndex(); i <= itemsHandler.getLastVisibleElementIndex(); i++) {
-			var it = getItem(i);
+		final int max = Math.min(getItemCount(), itemsHandler.getLastVisibleElementIndex());
+		for (int i = getTopIndex(); i <= max; i++) {
+			TableItem it = getItem(i);
 			if (it != null && it.getBounds().contains(point)) {
 				return it;
 			}
