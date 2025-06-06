@@ -61,6 +61,9 @@ class DefaultSliderRenderer extends SliderRenderer {
 			int thumbWidth = trackWidth;
 
 			int adjustedRange = range - thumb;
+			if (adjustedRange == 0) {
+				adjustedRange = 1;
+			}
 			int thumbY = trackY + ((height - thumbHeight - 4) * (value - min)) / adjustedRange;
 			if (!isDragging) {
 				thumbRectangle = new Rectangle(trackX, thumbY, thumbWidth, thumbHeight);
