@@ -43,6 +43,9 @@ class DefaultSliderRenderer extends SliderRenderer {
 		int max = slider.getMaximum();
 		int thumb = slider.getThumb();
 		int range = max - min;
+		if (range == 0) {
+			range = 1;
+		}
 
 		// Fill background
 		gc.setBackground(slider.getBackground());
@@ -61,6 +64,9 @@ class DefaultSliderRenderer extends SliderRenderer {
 			int thumbWidth = trackWidth;
 
 			int adjustedRange = range - thumb;
+			if (adjustedRange == 0) {
+				adjustedRange = 1;
+			}
 			int thumbY = trackY + ((height - thumbHeight - 4) * (value - min)) / adjustedRange;
 			if (!isDragging) {
 				thumbRectangle = new Rectangle(trackX, thumbY, thumbWidth, thumbHeight);
@@ -77,6 +83,9 @@ class DefaultSliderRenderer extends SliderRenderer {
 			int thumbHeight = trackHeight;
 
 			int adjustedRange = range - thumb;
+			if (adjustedRange == 0) {
+				adjustedRange = 1;
+			}
 			int thumbX = trackX + ((width - thumbWidth - 4) * (value - min)) / adjustedRange;
 			if (!isDragging) {
 				thumbRectangle = new Rectangle(thumbX, trackY, thumbWidth, thumbHeight);
