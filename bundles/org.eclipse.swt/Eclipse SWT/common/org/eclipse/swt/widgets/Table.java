@@ -837,10 +837,6 @@ public class Table extends CustomComposite {
 	}
 
 	void createItem(TableColumn column, int index) {
-		if (columnsList.isEmpty()) {
-			headerVisible = true;
-		}
-
 		columnsList.add(index, column);
 
 		moveTextsItemsToRight(index);
