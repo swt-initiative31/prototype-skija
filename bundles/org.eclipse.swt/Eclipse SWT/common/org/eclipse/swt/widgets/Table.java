@@ -227,7 +227,6 @@ public class Table extends CustomComposite {
 	private void initialize() {
 		final Listener listener = event -> {
 			switch (event.type) {
-			case SWT.Dispose -> onDispose(event);
 			case SWT.MouseDown -> onMouseDown(event);
 			case SWT.MouseUp -> onMouseUp(event);
 			case SWT.Paint -> onPaint(event);
@@ -251,7 +250,6 @@ public class Table extends CustomComposite {
 		addListener(SWT.KeyDown, listener);
 		addListener(SWT.KeyUp, listener);
 		addListener(SWT.MouseMove, listener);
-		addListener(SWT.Dispose, listener);
 		addListener(SWT.MouseDown, listener);
 		addListener(SWT.MouseUp, listener);
 		addListener(SWT.Paint, listener);
@@ -406,7 +404,10 @@ public class Table extends CustomComposite {
 		return columnsHandler.getSize().y;
 	}
 
-	private void onDispose(Event event) {
+	@Override
+	void releaseChildren(boolean destroy) {
+		super.releaseChildren(destroy);
+
 		var columnsSet = new HashSet<TableColumn>();
 		var itemsSet = new HashSet<TableItem>();
 
