@@ -420,10 +420,6 @@ public class Tree extends CustomComposite {
 	}
 
 	private void onMouseDown(Event e) {
-		if (!isVisible()) {
-			return;
-		}
-
 		Point p = new Point(e.x, e.y);
 
 		if (columnsHandler.getColumnsBounds().contains(e.x, e.y)) {
@@ -507,10 +503,6 @@ public class Tree extends CustomComposite {
 	}
 
 	private void onPaint(Event event) {
-		if (!isVisible()) {
-			return;
-		}
-
 		Drawing.drawWithGC(this, event.gc, renderer::paint);
 	}
 
