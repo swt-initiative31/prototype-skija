@@ -26,7 +26,7 @@ abstract class CompositeCommon extends Scrollable {
 
 	abstract Composite findDeferredControl();
 
-	private final List<Control> children = new ArrayList<>();
+	private List<Control> children;
 
 	Layout layout;
 	private Listener lightWeightChildHandlingListener;
@@ -40,6 +40,9 @@ abstract class CompositeCommon extends Scrollable {
 	}
 
 	protected final List<Control> this_children() {
+		if (children == null) {
+			return List.of();
+		}
 		return Collections.unmodifiableList(children);
 	}
 
@@ -68,17 +71,24 @@ abstract class CompositeCommon extends Scrollable {
 			addListener(SWT.MouseWheel, lightWeightChildHandlingListener);
 			addListener(SWT.MenuDetect, lightWeightChildHandlingListener);
 		}
+		if (children == null) {
+			children = new ArrayList<>();
+		}
 		children.add(control);
 	}
 
 	void removeChild(Control control) {
-		if (!(control instanceof Shell) && !children.remove(control)) {
-			error(SWT.ERROR_UNSPECIFIED);
+		if (control instanceof Shell) {
+			return;
 		}
+
+		if (children == null) error(SWT.ERROR_INVALID_ARGUMENT);
+		if (!children.remove(control)) error(SWT.ERROR_INVALID_ARGUMENT);
 	}
 
 	void moveChildAbove(Control child1, Control child2) {
 		if (child1 == null) error(SWT.ERROR_NULL_ARGUMENT);
+		if (children == null) error(SWT.ERROR_UNSPECIFIED);
 
 		final int index1 = children.indexOf(child1);
 		if (index1 < 0) error(SWT.ERROR_UNSPECIFIED);

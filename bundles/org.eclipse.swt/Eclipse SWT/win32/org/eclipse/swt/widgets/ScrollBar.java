@@ -91,6 +91,8 @@ public class ScrollBar extends Widget {
 	Scrollable parent;
 	int increment, pageIncrement;
 
+	private Slider slider;
+
 /**
  * Constructs a new instance of this class given its parent
  * and a style value describing its behavior and appearance.
@@ -179,6 +181,9 @@ void createWidget () {
 	* override the initial values provided by the
 	* list widget.
 	*/
+	if (parent.isLightWeight()) {
+		slider = new Slider((Composite)parent, style);
+	}
 }
 
 @Override
@@ -674,6 +679,11 @@ public void setIncrement (int value) {
 public void setMaximum (int value) {
 	checkWidget();
 	if (value < 0) return;
+	if (slider != null) {
+		slider.setMaximum(value);
+		return;
+	}
+
 	SCROLLINFO info = new SCROLLINFO ();
 	info.cbSize = SCROLLINFO.sizeof;
 	long hwnd = hwndScrollBar ();
@@ -841,6 +851,12 @@ public void setSelection (int selection) {
 public void setThumb (int value) {
 	checkWidget();
 	if (value < 1) return;
+
+	if (slider != null) {
+		slider.setThumb(value);
+		return;
+	}
+
 	SCROLLINFO info = new SCROLLINFO ();
 	info.cbSize = SCROLLINFO.sizeof;
 	long hwnd = hwndScrollBar ();

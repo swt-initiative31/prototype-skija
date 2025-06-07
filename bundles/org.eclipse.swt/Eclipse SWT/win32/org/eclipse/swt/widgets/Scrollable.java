@@ -157,6 +157,17 @@ ScrollBar createScrollBar (int type) {
 }
 
 @Override
+void createCustomWidget() {
+	super.createCustomWidget();
+	if ((style & SWT.H_SCROLL) != 0) {
+		horizontalBar = createScrollBar(SWT.H_SCROLL);
+	}
+	if ((style & SWT.V_SCROLL) != 0) {
+		verticalBar = createScrollBar(SWT.V_SCROLL);
+	}
+}
+
+@Override
 void createWidget () {
 	super.createWidget ();
 	if ((style & SWT.H_SCROLL) != 0) horizontalBar = createScrollBar (SWT.H_SCROLL);
