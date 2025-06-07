@@ -246,7 +246,6 @@ public class Tree extends CustomComposite {
 		addListener(SWT.FocusIn, listener);
 		addListener(SWT.FocusOut, listener);
 		addListener(SWT.Traverse, listener);
-		addListener(SWT.Selection, listener);
 		addListener(SWT.V_SCROLL, listener);
 		addListener(SWT.H_SCROLL, listener);
 		addListener(SWT.SCROLL_LINE, listener);
