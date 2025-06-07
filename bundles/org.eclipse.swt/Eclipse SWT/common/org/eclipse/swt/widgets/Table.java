@@ -2968,39 +2968,6 @@ public class Table extends CustomComposite {
 		return renderer;
 	}
 
-	@Override
-	public void dispose() {
-		/*
-		 * Note: It is valid to attempt to dispose a widget more than once. If this
-		 * happens, fail silently.
-		 */
-
-		if (isDisposed()) return;
-		if (!isValidThread()) error(SWT.ERROR_THREAD_INVALID_ACCESS);
-
-		var columnsSet = new HashSet<TableColumn>();
-		var itemsSet = new HashSet<TableItem>();
-
-		columnsSet.addAll(columnsList);
-		itemsSet.addAll(itemsList);
-		itemsSet.addAll(virtualItemsList.values());
-
-		itemsList.clear();
-		columnsList.clear();
-		virtualItemsList.clear();
-		virtualItemCount = 0;
-
-		for (var c : columnsSet) {
-			c.dispose();
-		}
-
-		for (var i : itemsSet) {
-			i.dispose();
-		}
-
-		super.dispose();
-	}
-
 	static void logNotImplemented() {
 		if (LOG_NOT_IMPLEMENTED) {
 			System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[1]);
