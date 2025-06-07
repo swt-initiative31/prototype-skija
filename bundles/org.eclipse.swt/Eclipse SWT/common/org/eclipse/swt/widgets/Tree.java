@@ -442,32 +442,34 @@ public class Tree extends CustomComposite {
 				}
 			}
 
-			for (int i = getTopIndex(); i <= Math.min(
-					treeItemsArrangement.size(),
-					itemsHandler.getLastVisibleElementIndex()); i++) {
+			final int max = Math.min(treeItemsArrangement.size(),
+					itemsHandler.getLastVisibleElementIndex());
+			for (int i = getTopIndex(); i <= max; i++) {
 				TreeItem it = _getArrangementItem(i);
 
 				Rectangle b = it.getBounds();
+				if (it.isInArrowArea(p) && it.toggleExpand()) {
+					synchronizeArrangements(true);
+					break;
+				}
+
+				if (it.isInCheckArea(p)) {
+					it.toggleCheck();
+					break;
+				}
+
 				if (b.contains(p)) {
 					if ((style & SWT.MULTI) == 0 || !ctrlPressed) {
-						selectedTreeItems.clear();
-						selectedTreeItems.add(it);
+						if (selectedTreeItems.size() != 1 || selectedTreeItems.iterator().next() != it) {
+							selectedTreeItems.clear();
+							selectedTreeItems.add(it);
+						}
 					} else {
 						if (selectedTreeItems.contains(it)) {
 							selectedTreeItems.remove(it);
 						} else {
 							selectedTreeItems.add(it);
 						}
-					}
-				} else {
-					if (it.isInArrowArea(p) && it.toggleExpand()) {
-						synchronizeArrangements(true);
-						break;
-					}
-
-					if (it.isInCheckArea(p)) {
-						it.toggleCheck();
-						break;
 					}
 				}
 			}
