@@ -440,6 +440,7 @@ public class Tree extends CustomComposite {
 
 			final int max = Math.min(treeItemsArrangement.size(),
 					itemsHandler.getLastVisibleElementIndex());
+			boolean selectionChanged = false;
 			for (int i = getTopIndex(); i <= max; i++) {
 				TreeItem it = _getArrangementItem(i);
 
@@ -454,11 +455,12 @@ public class Tree extends CustomComposite {
 					break;
 				}
 
-				if (b.contains(p)) {
+				if (containsY(p, b)) {
 					if ((style & SWT.MULTI) == 0 || !ctrlPressed) {
 						if (selectedTreeItems.size() != 1 || selectedTreeItems.iterator().next() != it) {
 							selectedTreeItems.clear();
 							selectedTreeItems.add(it);
+							selectionChanged = true;
 						}
 					} else {
 						if (selectedTreeItems.contains(it)) {
@@ -466,11 +468,21 @@ public class Tree extends CustomComposite {
 						} else {
 							selectedTreeItems.add(it);
 						}
+						selectionChanged = true;
 					}
+					break;
 				}
 			}
-			redraw();
+			if (selectionChanged) {
+				sendEvent(SWT.Selection, new Event());
+				redraw();
+			}
 		}
+	}
+
+	private boolean containsY(Point point, Rectangle rect) {
+		final int y = point.y;
+		return y >= rect.y && y < rect.y + rect.height;
 	}
 
 	private void handleSelection() {
@@ -1565,14 +1577,15 @@ public class Tree extends CustomComposite {
 	public TreeItem getItem(Point point) {
 		checkWidget();
 		if (point == null) error(SWT.ERROR_NULL_ARGUMENT);
-		return getItemInPixels(DPIUtil.scaleUp(point, 100));
-	}
-
-	TreeItem getItemInPixels(Point point) {
-		for (int i = getTopIndex(); i < Math.min(treeItemsArrangement.size(),
-				itemsHandler.getLastVisibleElementIndex() + 5); i++) {
+		final int max = Math.min(treeItemsArrangement.size(),
+		                         itemsHandler.getLastVisibleElementIndex() + 5);
+		for (int i = getTopIndex(); i < max; i++) {
 			TreeItem it = _getArrangementItem(i);
-			if (it != null && it.getBounds().contains(point)) {
+			if (it == null) {
+				continue;
+			}
+			final Rectangle bounds = it.getBounds();
+			if (containsY(point, bounds)) {
 				return it;
 			}
 		}
