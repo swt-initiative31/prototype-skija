@@ -35,4 +35,6 @@ public interface RendererFactory {
 	CoolBarRenderer createCoolBarRenderer(CoolBar coolBar);
 
 	SashRenderer createSashRenderer(Sash sash);
+
+	ExpandBarRenderer createExpandBarRenderer(ExpandBar expandBar);
 }
