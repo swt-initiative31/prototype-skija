@@ -11,6 +11,8 @@
  *******************************************************************************/
 package org.eclipse.swt.widgets;
 
+import java.util.*;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.events.ModifyListener;
@@ -412,6 +414,7 @@ public class Text extends NativeBasedCustomScrollable {
 	}
 
 	private void keyPressed(Event e) {
+		if (!getEditable()) return;
 		final boolean mod1Pressed = (e.stateMask & SWT.MOD1) != 0;
 		final boolean shiftPressed = (e.stateMask & SWT.SHIFT) != 0;
 		if (mod1Pressed) {
@@ -911,5 +914,40 @@ public class Text extends NativeBasedCustomScrollable {
 			caret.setFocus();
 		}
 		return focused;
+	}
+
+	private boolean isPasswordMode() {
+		return (style & SWT.PASSWORD) != 0;
+	}
+
+	private char getEffectiveEchoChar() {
+		char echo = getEchoChar();
+		return echo != 0 ? echo : '*';
+	}
+
+	private String maskText(int length, char echoChar) {
+		char[] masked = new char[length];
+		Arrays.fill(masked, echoChar);
+		return new String(masked);
+	}
+
+	String getDisplayText() {
+		if (isPasswordMode()) {
+			return maskText(model.getCharCount(), getEffectiveEchoChar());
+		}
+		return model.getText();
+	}
+
+	String[] getDisplayLines() {
+		if (isPasswordMode()) {
+			char echo = getEffectiveEchoChar();
+			String[] lines = model.getLines();
+			String[] masked = new String[lines.length];
+			for (int i = 0; i < lines.length; i++) {
+				masked[i] = maskText(lines[i].length(), echo);
+			}
+			return masked;
+		}
+		return model.getLines();
 	}
 }
