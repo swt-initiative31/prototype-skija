@@ -46,7 +46,12 @@ class DefaultRendererFactory implements RendererFactory {
 
 	@Override
 	public SliderRenderer createSliderRenderer(Slider slider) {
-		return new DefaultSliderRenderer(slider);
+		return new DefaultSliderRenderer(slider, createScrollBarRenderer(slider.scrollBar));
+	}
+
+	@Override
+	public ScrollBarRenderer createScrollBarRenderer(CustomScrollBar scrollBar) {
+		return new DefaultScrollBarRenderer(scrollBar);
 	}
 
 	@Override
