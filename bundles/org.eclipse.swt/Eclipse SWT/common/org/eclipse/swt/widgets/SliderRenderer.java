@@ -24,23 +24,5 @@ public abstract class SliderRenderer extends ControlRenderer {
 		this.slider = slider;
 	}
 
-	public static int minMax(int min, int value, int max) {
-		return Math.min(Math.max(min, value), max);
-	}
-
 	public abstract Point computeDefaultSize();
-
-	public abstract void setDrawTrack(boolean drawTrack);
-
-	public abstract void setDragging(boolean isDragging);
-
-	public abstract void setThumbHovered(boolean isHovered);
-
-	public abstract boolean getDragging();
-
-	public abstract boolean getHovered();
-
-	public abstract Rectangle getThumbRectangle();
-
-	public abstract Rectangle getTrackRectangle();
 }

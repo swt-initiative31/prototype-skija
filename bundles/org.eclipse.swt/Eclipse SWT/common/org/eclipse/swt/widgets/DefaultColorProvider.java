@@ -94,11 +94,11 @@ public final class DefaultColorProvider implements ColorProvider {
 		p.put(DefaultScaleRenderer.COLOR_HANDLE_OUTLINE, gray160);
 		p.put(DefaultScaleRenderer.COLOR_NOTCH, gray160);
 
-		p.put(DefaultSliderRenderer.COLOR_TRACK_BACKGROUND, gray240);
-		p.put(DefaultSliderRenderer.COLOR_TRACK_BORDER, gray204);
-		p.put(DefaultSliderRenderer.COLOR_THUMB_BACKGROUND, gray204);
-		p.put(DefaultSliderRenderer.COLOR_THUMB_BORDER, gray128);
-		p.put(DefaultSliderRenderer.COLOR_THUMB_HOVER, hsb(baseHue, 0.3f, 1));
+		p.put(DefaultScrollBarRenderer.COLOR_TRACK_BACKGROUND, gray240);
+		p.put(DefaultScrollBarRenderer.COLOR_TRACK_BORDER, gray204);
+		p.put(DefaultScrollBarRenderer.COLOR_THUMB_BACKGROUND, gray204);
+		p.put(DefaultScrollBarRenderer.COLOR_THUMB_BORDER, gray128);
+		p.put(DefaultScrollBarRenderer.COLOR_THUMB_HOVER, hsb(baseHue, 0.3f, 1));
 
 		p.put(DefaultToolBarRenderer.COLOR_SEPARATOR, gray160);
 		p.put(DefaultToolBarRenderer.COLOR_SHADOW_OUT, gray160);
@@ -180,11 +180,11 @@ public final class DefaultColorProvider implements ColorProvider {
 		p.put(DefaultScaleRenderer.COLOR_HANDLE_OUTLINE, gray128);
 		p.put(DefaultScaleRenderer.COLOR_NOTCH, gray128);
 
-		p.put(DefaultSliderRenderer.COLOR_TRACK_BACKGROUND, gray30);
-		p.put(DefaultSliderRenderer.COLOR_TRACK_BORDER, gray64);
-		p.put(DefaultSliderRenderer.COLOR_THUMB_BACKGROUND, gray64);
-		p.put(DefaultSliderRenderer.COLOR_THUMB_BORDER, gray128);
-		p.put(DefaultSliderRenderer.COLOR_THUMB_HOVER, selection);
+		p.put(DefaultScrollBarRenderer.COLOR_TRACK_BACKGROUND, gray30);
+		p.put(DefaultScrollBarRenderer.COLOR_TRACK_BORDER, gray64);
+		p.put(DefaultScrollBarRenderer.COLOR_THUMB_BACKGROUND, gray64);
+		p.put(DefaultScrollBarRenderer.COLOR_THUMB_BORDER, gray128);
+		p.put(DefaultScrollBarRenderer.COLOR_THUMB_HOVER, selection);
 
 		p.put(DefaultToolBarRenderer.COLOR_SEPARATOR, gray160);
 		p.put(DefaultToolBarRenderer.COLOR_SHADOW_OUT, gray160);

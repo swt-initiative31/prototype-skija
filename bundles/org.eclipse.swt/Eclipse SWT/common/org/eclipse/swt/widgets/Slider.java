@@ -76,26 +76,8 @@ import org.eclipse.swt.graphics.*;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class Slider extends CustomControl {
-	private final boolean horizontal;
-
-	private int selection;
-	private int minimum = 0;
-	private int maximum = 100;
-	private int thumb = 10;
-	private int increment;
-	private int pageIncrement;
-
-	private int dragOffset;
-	private int drawWidth;
-	private int drawHeight;
-	private int thumbPosition;
-
-	private Rectangle trackRectangle;
-	private Rectangle thumbRectangle;
-
+	final CustomScrollBar scrollBar;
 	private final SliderRenderer renderer;
-
-	private boolean autoRepeating;
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style value
@@ -136,42 +118,32 @@ public class Slider extends CustomControl {
 		super(parent, checkStyle(style));
 		this.style |= SWT.DOUBLE_BUFFERED;
 
-		final RendererFactory rendererFactory = parent.getDisplay().getRendererFactory();
-		renderer = rendererFactory.createSliderRenderer(this);
+		scrollBar = new CustomScrollBar(this, style);
+		scrollBar.setEnabled(isEnabled());
 
-		Listener listener = event -> {
-			switch (event.type) {
-			case SWT.Paint -> onPaint(event);
-			case SWT.KeyDown -> onKeyDown(event);
-			case SWT.MouseDown -> onMouseDown(event);
-			case SWT.MouseMove -> onMouseMove(event);
-			case SWT.MouseUp -> onMouseUp(event);
-			case SWT.MouseHorizontalWheel -> onMouseHorizontalWheel(event);
-			case SWT.MouseVerticalWheel -> onMouseVerticalWheel(event);
-			case SWT.Resize -> redraw();
-			case SWT.MouseEnter -> onMouseEnter();
-			case SWT.MouseExit -> onMouseExit();
-			}
-		};
+		super.style |= scrollBar.isHorizontal() ? SWT.HORIZONTAL : SWT.VERTICAL;
 
-		addListener(SWT.KeyDown, listener);
-		addListener(SWT.MouseDown, listener);
-		addListener(SWT.MouseMove, listener);
-		addListener(SWT.MouseUp, listener);
-		addListener(SWT.MouseHorizontalWheel, listener);
-		addListener(SWT.MouseVerticalWheel, listener);
-		addListener(SWT.Paint, listener);
-		addListener(SWT.Resize, listener);
-		addListener(SWT.MouseEnter, listener);
-		addListener(SWT.MouseExit, listener);
+		addListener(SWT.Resize, event -> {
+				final Point size = getSize();
+				scrollBar.setBounds(0, 0, size.x, size.y);
+				redraw();
+		});
 
-		horizontal = (style & SWT.VERTICAL) == 0;
-		super.style |= horizontal ? SWT.HORIZONTAL : SWT.VERTICAL;
+		renderer = getDisplay().getRendererFactory().createSliderRenderer(this);
 	}
 
 	@Override
 	protected ControlRenderer getRenderer() {
 		return renderer;
+	}
+
+	@Override
+	public void setEnabled(boolean enabled) {
+		if (scrollBar.getEnabled() == enabled) {
+			return;
+		}
+		scrollBar.setEnabled(enabled);
+		super.setEnabled(enabled);
 	}
 
 	private static int checkStyle(int style) {
@@ -192,243 +164,16 @@ public class Slider extends CustomControl {
 	}
 
 	public boolean isHorizontal() {
-		return horizontal;
+		return scrollBar.isHorizontal();
 	}
 
 	public boolean isVertical() {
-		return !horizontal;
-	}
-
-	private void onMouseEnter() {
-		renderer.setDrawTrack(true);
-		redraw();
-	}
-
-	private void onMouseExit() {
-		renderer.setDrawTrack(false);
-		renderer.setThumbHovered(false);
-		redraw();
-	}
-
-	private void onMouseVerticalWheel(Event event) {
-		if (event.count > 0) {
-			increment(1);
-		} else if (event.count < 0) {
-			increment(-1);
-		}
-	}
-
-	private void onMouseHorizontalWheel(Event event) {
-		if (event.count < 0) {
-			increment(1);
-		} else if (event.count > 0) {
-			increment(-1);
-		}
-	}
-
-	private void increment(int count) {
-		int delta = getIncrement() * count;
-		int newValue = SliderRenderer.minMax(getMinimum(), getSelection() + delta, getMaximum());
-		setSelection(newValue);
-		redraw();
-	}
-
-	private void onKeyDown(Event event) {
-		autoRepeating = false;
-
-		KeyEvent keyEvent = new KeyEvent(event);
-		switch (keyEvent.keyCode) {
-		case SWT.ARROW_DOWN, SWT.ARROW_LEFT -> increment(-1);
-		case SWT.ARROW_RIGHT, SWT.ARROW_UP -> increment(1);
-		case SWT.PAGE_DOWN -> pageIncrement(-1);
-		case SWT.PAGE_UP -> pageIncrement(1);
-		case SWT.HOME -> setSelection(getMinimum());
-		case SWT.END -> setSelection(getMaximum());
-		}
-	}
-
-	private void pageIncrement(int count) {
-		int delta = getPageIncrement() * count;
-		int newValue = SliderRenderer.minMax(getMinimum(), getSelection() + delta, getMaximum());
-		setSelection(newValue);
-		redraw();
-	}
-
-	private void onPaint(Event event) {
-		if (!isVisible()) {
-			return;
-		}
-
-		Rectangle drawingArea = getBounds();
-		Drawing.drawWithGC(this, event.gc, renderer::paint);
-		this.drawWidth = drawingArea.width;
-		this.drawHeight = drawingArea.height;
-		this.thumbRectangle = renderer.getThumbRectangle();
-		this.trackRectangle = renderer.getTrackRectangle();
-	}
-
-	private void onMouseDown(Event event) {
-		if (event.button != 1) {
-			return;
-		}
-
-		setCapture(true);
-
-		// Drag of the thumb.
-		if (thumbRectangle != null && thumbRectangle.contains(event.x, event.y)) {
-			renderer.setDragging(true);
-			dragOffset = isHorizontal() ? event.x - thumbRectangle.x : event.y - thumbRectangle.y;
-			return;
-		}
-
-		// Click on the track. i.e page increment/decrement
-		if (trackRectangle == null || !trackRectangle.contains(event.x, event.y)) {
-			return;
-		}
-
-		handleTrackClick(event.x, event.y, 500, new Runnable() {
-			@Override
-			public void run() {
-				if (!autoRepeating) {
-					return;
-				}
-
-				autoRepeating = false;
-				if (Slider.this.isDisposed()) {
-					return;
-				}
-
-				final Point cursorPos = Slider.this.toControl(display.getCursorLocation());
-				if (thumbRectangle != null && thumbRectangle.contains(cursorPos.x, cursorPos.y)) {
-					return;
-				}
-
-				if (trackRectangle == null || !trackRectangle.contains(cursorPos.x, cursorPos.y)) {
-					return;
-				}
-
-				handleTrackClick(cursorPos.x, cursorPos.y, 150, this);
-			}
-		});
-	}
-
-	private void handleTrackClick(int x, int y, int milliseconds, Runnable runnable) {
-		int pageIncrement = getPageIncrement();
-		int oldSelection = getSelection();
-
-		int newSelection;
-		if (isHorizontal()) {
-			if (x < thumbRectangle.x) {
-				newSelection = Math.max(getMinimum(), oldSelection - pageIncrement);
-			} else {
-				newSelection = Math.min(getMaximum() - getThumb(), oldSelection + pageIncrement);
-			}
-		} else {
-			if (y < thumbRectangle.y) {
-				newSelection = Math.max(getMinimum(), oldSelection - pageIncrement);
-			} else {
-				newSelection = Math.min(getMaximum() - getThumb(), oldSelection + pageIncrement);
-			}
-		}
-
-		setSelection(newSelection);
-
-		autoRepeating = true;
-		display.timerExec(milliseconds, runnable);
-	}
-
-	private void onMouseUp(Event event) {
-		if (event.button != 1) {
-			return;
-		}
-
-		autoRepeating = false;
-		setCapture(false);
-		if (renderer.getDragging()) {
-			renderer.setDragging(false);
-			updateValueFromThumbPosition();
-			redraw();
-		}
-	}
-
-	private void updateValueFromThumbPosition() {
-		int min = getMinimum();
-		int max = getMaximum();
-		int thumb = getThumb();
-		int range = max - min;
-
-		int newValue;
-		if (isHorizontal()) {
-			int trackWidth = this.drawWidth - 4 - thumbRectangle.width;
-			int relativeX = Math.min(trackWidth, Math.max(0, thumbPosition - 2));
-			newValue = min + (relativeX * (range - thumb)) / trackWidth;
-		} else {
-			int trackHeight = this.drawHeight - 4 - thumbRectangle.height;
-			int relativeY = Math.min(trackHeight, Math.max(0, thumbPosition - 2));
-			newValue = min + (relativeY * (range - thumb)) / trackHeight;
-		}
-		setSelection(newValue);
-	}
-
-	private void onMouseMove(Event event) {
-		if (thumbRectangle == null) {
-			return;
-		}
-
-		boolean isThumbHovered = thumbRectangle.contains(event.x, event.y);
-		if (isThumbHovered != renderer.getHovered()) {
-			renderer.setThumbHovered(isThumbHovered);
-			redraw();
-		}
-
-		if (renderer.getDragging()) {
-			int newPos;
-			int min = getMinimum();
-			int max = getMaximum();
-			int thumb = getThumb();
-			int range = max - min;
-			int newValue;
-
-			if (isHorizontal()) {
-				newPos = event.x - dragOffset;
-
-				int minX = 2;
-				int maxX = drawWidth - thumbRectangle.width - 2;
-				newPos = Math.max(minX, Math.min(newPos, maxX));
-
-				thumbRectangle.x = newPos;
-				thumbPosition = newPos;
-
-				int trackWidth = drawWidth - 4 - thumbRectangle.width;
-				int relativeX = thumbPosition - 2;
-				newValue = min + Math.round((relativeX * (float) (range - thumb)) / trackWidth);
-			} else {
-				newPos = event.y - dragOffset;
-
-				int minY = 2;
-				int maxY = drawHeight - thumbRectangle.height - 2;
-				newPos = Math.max(minY, Math.min(newPos, maxY));
-
-				thumbRectangle.y = newPos;
-				thumbPosition = newPos;
-
-				int trackHeight = drawHeight - 4 - thumbRectangle.height;
-				int relativeY = thumbPosition - 2;
-				newValue = min + Math.round((relativeY * (float) (range - thumb)) / trackHeight);
-			}
-
-			newValue = Math.max(min, Math.min(newValue, max - thumb));
-
-			if (newValue != getSelection()) {
-				setSelection(newValue);
-			}
-			redraw();
-		}
+		return !scrollBar.isHorizontal();
 	}
 
 	@Override
 	protected Point computeDefaultSize() {
-		return renderer.computeDefaultSize();
+		return scrollBar.computeDefaultSize();
 	}
 
 	/**
@@ -509,7 +254,7 @@ public class Slider extends CustomControl {
 	 *                         </ul>
 	 */
 	public int getIncrement() {
-		return increment;
+		return scrollBar.getIncrement();
 	}
 
 	/**
@@ -526,7 +271,7 @@ public class Slider extends CustomControl {
 	 *                         </ul>
 	 */
 	public int getMaximum() {
-		return maximum;
+		return scrollBar.getMaximum();
 	}
 
 	/**
@@ -543,7 +288,7 @@ public class Slider extends CustomControl {
 	 *                         </ul>
 	 */
 	public int getMinimum() {
-		return minimum;
+		return scrollBar.getMinimum();
 	}
 
 	/**
@@ -561,7 +306,7 @@ public class Slider extends CustomControl {
 	 *                         </ul>
 	 */
 	public int getPageIncrement() {
-		return pageIncrement;
+		return scrollBar.getPageIncrement();
 	}
 
 	/**
@@ -578,7 +323,7 @@ public class Slider extends CustomControl {
 	 *                         </ul>
 	 */
 	public int getSelection() {
-		return selection;
+		return scrollBar.getSelection();
 	}
 
 	/**
@@ -595,7 +340,7 @@ public class Slider extends CustomControl {
 	 *                         </ul>
 	 */
 	public int getThumb() {
-		return thumb;
+		return scrollBar.getThumb();
 	}
 
 	/**
@@ -614,9 +359,7 @@ public class Slider extends CustomControl {
 	 *                         </ul>
 	 */
 	public void setIncrement(int increment) {
-		checkWidget();
-		this.increment = Math.max(1, increment);
-		redraw();
+		scrollBar.setIncrement(increment);
 	}
 
 	/**
@@ -635,24 +378,7 @@ public class Slider extends CustomControl {
 	 *                         </ul>
 	 */
 	public void setMaximum(int max) {
-		checkWidget();
-		setMaximum(max, true);
-	}
-
-	private void setMaximum(int max, boolean redraw) {
-		if (max <= minimum) {
-			return;
-		}
-
-		this.maximum = max;
-
-		this.thumb = Math.min(this.thumb, this.maximum - minimum);
-
-		this.selection = Math.min(this.selection, this.maximum - this.thumb);
-		this.selection = Math.max(this.selection, minimum);
-		if (redraw) {
-			redraw();
-		}
+		scrollBar.setMaximum(max);
 	}
 
 	/**
@@ -671,44 +397,7 @@ public class Slider extends CustomControl {
 	 *                         </ul>
 	 */
 	public void setMinimum(int minimum) {
-		checkWidget();
-		setMinimum(minimum, true);
-	}
-
-	private void setMinimum(int minimum, boolean redraw) {
-		if (internalSetMinimum(minimum) && redraw) {
-			redraw();
-		}
-	}
-
-	private boolean internalSetMinimum(int minimum) {
-		if (minimum < 0) {
-			return false;
-		}
-
-		if (minimum <= this.maximum && minimum <= this.selection) {
-			this.minimum = minimum;
-			return true;
-		}
-
-		if (minimum <= this.maximum - this.thumb && minimum >= this.selection) {
-			this.minimum = minimum;
-			this.selection = minimum;
-			return true;
-		}
-
-		if (minimum >= maximum) {
-			this.minimum = this.thumb;
-			return true;
-		}
-
-		if (minimum > this.maximum - this.thumb && minimum >= this.selection) {
-			this.minimum = minimum;
-			this.selection = minimum;
-			this.thumb = this.maximum - this.minimum;
-			return true;
-		}
-		return false;
+		scrollBar.setMinimum(minimum);
 	}
 
 	/**
@@ -727,9 +416,7 @@ public class Slider extends CustomControl {
 	 *                         </ul>
 	 */
 	public void setPageIncrement(int pageIncrement) {
-		checkWidget();
-		this.pageIncrement = Math.max(1, pageIncrement);
-		redraw();
+		scrollBar.setPageIncrement(pageIncrement);
 	}
 
 	/**
@@ -747,25 +434,7 @@ public class Slider extends CustomControl {
 	 *                         </ul>
 	 */
 	public void setSelection(int selection) {
-		checkWidget();
-		setSelection(selection, true);
-	}
-
-	private void setSelection(int selection, boolean redraw) {
-		int min = getMinimum();
-		int max = getMaximum();
-		int thumb = getThumb();
-
-		// Ensure selection does not exceed max - thumb
-		int newValue = Math.max(min, Math.min(selection, max - thumb));
-
-		if (newValue != this.selection) {
-			this.selection = newValue;
-			if (redraw) {
-				redraw();
-				sendEvent(SWT.Selection, new Event());
-			}
-		}
+		scrollBar.setSelection(selection);
 	}
 
 	/**
@@ -789,35 +458,7 @@ public class Slider extends CustomControl {
 	 *                         </ul>
 	 */
 	public void setThumb(int thumb) {
-		checkWidget();
-		setThumb(thumb, true);
-	}
-
-	private void setThumb(int thumb, boolean redraw) {
-		if (thumb <= 0 || this.thumb == thumb) {
-			return;
-		}
-
-		if (thumb <= this.maximum && thumb <= this.selection) {
-			this.thumb = thumb;
-			if (redraw) {
-				redraw();
-			}
-			return;
-		}
-
-		if (thumb <= (this.maximum - this.minimum) && thumb > this.selection) {
-			this.selection = this.maximum - thumb;
-			this.thumb = thumb;
-		}
-
-		if (thumb > (this.maximum - this.minimum) && thumb > this.selection) {
-			this.thumb = this.maximum - this.minimum;
-			this.selection = this.minimum;
-		}
-		if (redraw) {
-			redraw();
-		}
+		scrollBar.setThumb(thumb);
 	}
 
 	/**
@@ -845,13 +486,6 @@ public class Slider extends CustomControl {
 	 *                         </ul>
 	 */
 	public void setValues(int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement) {
-		checkWidget();
-		setSelection(selection, false);
-		setMinimum(minimum, false);
-		setMaximum(maximum, false);
-		setThumb(thumb, false);
-		this.increment = Math.max(1, increment);
-		this.pageIncrement = Math.max(1, pageIncrement);
-		redraw();
+		scrollBar.setValues(selection, minimum, maximum, thumb, increment, pageIncrement);
 	}
 }

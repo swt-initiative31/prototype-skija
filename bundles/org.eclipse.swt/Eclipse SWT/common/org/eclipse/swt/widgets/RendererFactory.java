@@ -28,6 +28,8 @@ public interface RendererFactory {
 
 	SliderRenderer createSliderRenderer(Slider slider);
 
+	ScrollBarRenderer createScrollBarRenderer(CustomScrollBar scrollBar);
+
 	LinkRenderer createLinkRenderer(Link link);
 
 	TabFolderRenderer createTabFolderRenderer(TabFolder tabFolder);
