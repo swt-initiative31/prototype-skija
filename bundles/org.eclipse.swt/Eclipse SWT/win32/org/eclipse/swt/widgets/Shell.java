@@ -292,7 +292,7 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
 		error (SWT.ERROR_INVALID_ARGUMENT);
 	}
 	this.center = parent != null && (style & SWT.SHEET) != 0;
-	this.style = checkStyle (parent, style);
+	this.style = checkStyle (parent, style | SWT.NO_BACKGROUND);
 	this.parent = parent;
 	this.display = display;
 	this.handle = handle;
