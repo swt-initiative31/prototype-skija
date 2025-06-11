@@ -254,10 +254,18 @@ public class CustomScrollBar {
 		int newValue;
 		if (isHorizontal()) {
 			int trackWidth = bounds.width - 4 - thumbRectangle.width;
+			// TODO
+			if (trackWidth == 0) {
+				trackWidth = 1;
+			}
 			int relativeX = Math.min(trackWidth, Math.max(0, thumbPosition - 2));
 			newValue = min + (relativeX * (range - thumb)) / trackWidth;
 		} else {
 			int trackHeight = bounds.height - 4 - thumbRectangle.height;
+			// TODO
+			if (trackHeight == 0) {
+				trackHeight = 1;
+			}
 			int relativeY = Math.min(trackHeight, Math.max(0, thumbPosition - 2));
 			newValue = min + (relativeY * (range - thumb)) / trackHeight;
 		}
@@ -507,5 +515,19 @@ public class CustomScrollBar {
 
 	private static int minMax(int min, int value, int max) {
 		return Math.min(Math.max(min, value), max);
+	}
+
+	public Point getSize() {
+		return new Point(bounds.width, bounds.height);
+	}
+
+	public Rectangle getThumbBounds() {
+		// TODO
+		return new Rectangle(0, 0, 0, 0);
+	}
+
+	public Rectangle getThumbTrackBounds() {
+		// TODO
+		return new Rectangle(0, 0, 0, 0);
 	}
 }

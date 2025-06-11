@@ -89,9 +89,10 @@ import org.eclipse.swt.internal.win32.*;
  */
 public class ScrollBar extends Widget {
 	Scrollable parent;
+	private final CustomScrollBar customScrollBar;
 	int increment, pageIncrement;
 
-/**
+	/**
  * Constructs a new instance of this class given its parent
  * and a style value describing its behavior and appearance.
  * <p>
@@ -123,6 +124,7 @@ public class ScrollBar extends Widget {
 ScrollBar (Scrollable parent, int style) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
+	customScrollBar = parent instanceof CustomComposite || parent instanceof NativeBasedCustomScrollable ? new CustomScrollBar(parent, style) : null;
 	createWidget ();
 }
 
@@ -183,6 +185,9 @@ void createWidget () {
 
 @Override
 void destroyWidget () {
+	if (customScrollBar != null) {
+		return;
+	}
 	long hwnd = hwndScrollBar ();
 	int type = scrollBarType ();
 	OS.ShowScrollBar (hwnd, type, false);
@@ -224,6 +229,9 @@ Rectangle getBounds () {
  * @see #isEnabled
  */
 public boolean getEnabled () {
+	if (customScrollBar != null) {
+		return customScrollBar.getEnabled();
+	}
 	checkWidget();
 	return (state & DISABLED) == 0;
 }
@@ -241,6 +249,9 @@ public boolean getEnabled () {
  * </ul>
  */
 public int getIncrement () {
+	if (customScrollBar != null) {
+		return customScrollBar.getIncrement();
+	}
 	checkWidget();
 	return increment;
 }
@@ -256,6 +267,9 @@ public int getIncrement () {
  * </ul>
  */
 public int getMaximum () {
+	if (customScrollBar != null) {
+		return customScrollBar.getMaximum();
+	}
 	checkWidget();
 	SCROLLINFO info = new SCROLLINFO ();
 	info.cbSize = SCROLLINFO.sizeof;
@@ -277,6 +291,9 @@ public int getMaximum () {
  * </ul>
  */
 public int getMinimum () {
+	if (customScrollBar != null) {
+		return customScrollBar.getMinimum();
+	}
 	checkWidget();
 	SCROLLINFO info = new SCROLLINFO ();
 	info.cbSize = SCROLLINFO.sizeof;
@@ -300,6 +317,9 @@ public int getMinimum () {
  * </ul>
  */
 public int getPageIncrement () {
+	if (customScrollBar != null) {
+		return customScrollBar.getPageIncrement();
+	}
 	checkWidget();
 	return pageIncrement;
 }
@@ -330,6 +350,9 @@ public Scrollable getParent () {
  * </ul>
  */
 public int getSelection () {
+	if (customScrollBar != null) {
+		return customScrollBar.getSelection();
+	}
 	checkWidget();
 	SCROLLINFO info = new SCROLLINFO ();
 	info.cbSize = SCROLLINFO.sizeof;
@@ -354,11 +377,17 @@ public int getSelection () {
  * </ul>
  */
 public Point getSize () {
+	if (customScrollBar != null) {
+		return customScrollBar.getSize();
+	}
 	checkWidget();
 	return DPIUtil.scaleDown(getSizeInPixels(), getZoom());
 }
 
 Point getSizeInPixels () {
+	if (customScrollBar != null) {
+		throw new UnsupportedOperationException();
+	}
 	parent.forceResize ();
 	RECT rect = new RECT ();
 	OS.GetClientRect (parent.scrolledHandle (), rect);
@@ -386,6 +415,9 @@ Point getSizeInPixels () {
  * @see ScrollBar
  */
 public int getThumb () {
+	if (customScrollBar != null) {
+		return customScrollBar.getThumb();
+	}
 	checkWidget();
 	SCROLLINFO info = new SCROLLINFO ();
 	info.cbSize = SCROLLINFO.sizeof;
@@ -411,11 +443,17 @@ public int getThumb () {
  * @since 3.6
  */
 public Rectangle getThumbBounds () {
+	if (customScrollBar != null) {
+		return customScrollBar.getThumbBounds();
+	}
 	checkWidget();
 	return DPIUtil.scaleDown(getThumbBoundsInPixels(), getZoom());
 }
 
 Rectangle getThumbBoundsInPixels () {
+	if (customScrollBar != null) {
+		throw new UnsupportedOperationException();
+	}
 	parent.forceResize ();
 	SCROLLBARINFO info = new SCROLLBARINFO();
 	info.cbSize = SCROLLBARINFO.sizeof;
@@ -457,11 +495,17 @@ Rectangle getThumbBoundsInPixels () {
  * @since 3.6
  */
 public Rectangle getThumbTrackBounds () {
+	if (customScrollBar != null) {
+		return customScrollBar.getThumbTrackBounds();
+	}
 	checkWidget();
 	return DPIUtil.scaleDown(getThumbTrackBoundsInPixels(), getZoom());
 }
 
 Rectangle getThumbTrackBoundsInPixels () {
+	if (customScrollBar != null) {
+		throw new UnsupportedOperationException();
+	}
 	parent.forceResize ();
 	SCROLLBARINFO info = new SCROLLBARINFO();
 	info.cbSize = SCROLLBARINFO.sizeof;
@@ -520,6 +564,9 @@ Rectangle getThumbTrackBoundsInPixels () {
  * </ul>
  */
 public boolean getVisible () {
+	if (customScrollBar != null) {
+		return (state & HIDDEN) == 0;
+	}
 	checkWidget();
 	SCROLLBARINFO psbi = new SCROLLBARINFO ();
 	psbi.cbSize = SCROLLBARINFO.sizeof;
@@ -627,11 +674,15 @@ int scrollBarType () {
  * </ul>
  */
 public void setEnabled (boolean enabled) {
-	checkWidget();
-	long hwnd = hwndScrollBar ();
-	int type = scrollBarType ();
-	int flags = enabled ? OS.ESB_ENABLE_BOTH : OS.ESB_DISABLE_BOTH;
-	OS.EnableScrollBar (hwnd, type, flags);
+	if (customScrollBar != null) {
+		customScrollBar.setEnabled(enabled);
+	} else {
+		checkWidget();
+		long hwnd = hwndScrollBar ();
+		int type = scrollBarType ();
+		int flags = enabled ? OS.ESB_ENABLE_BOTH : OS.ESB_DISABLE_BOTH;
+		OS.EnableScrollBar (hwnd, type, flags);
+	}
 	if (enabled) {
 		state &= ~DISABLED;
 	} else {
@@ -653,6 +704,10 @@ public void setEnabled (boolean enabled) {
  * </ul>
  */
 public void setIncrement (int value) {
+	if (customScrollBar != null) {
+		customScrollBar.setIncrement(value);
+		return;
+	}
 	checkWidget();
 	if (value < 1) return;
 	increment = value;
@@ -672,6 +727,10 @@ public void setIncrement (int value) {
  * </ul>
  */
 public void setMaximum (int value) {
+	if (customScrollBar != null) {
+		customScrollBar.setMaximum(value);
+		return;
+	}
 	checkWidget();
 	if (value < 0) return;
 	SCROLLINFO info = new SCROLLINFO ();
@@ -699,6 +758,10 @@ public void setMaximum (int value) {
  * </ul>
  */
 public void setMinimum (int value) {
+	if (customScrollBar != null) {
+		customScrollBar.setMinimum(value);
+		return;
+	}
 	checkWidget();
 	if (value < 0) return;
 	SCROLLINFO info = new SCROLLINFO ();
@@ -726,12 +789,19 @@ public void setMinimum (int value) {
  * </ul>
  */
 public void setPageIncrement (int value) {
+	if (customScrollBar != null) {
+		customScrollBar.setPageIncrement(value);
+		return;
+	}
 	checkWidget();
 	if (value < 1) return;
 	pageIncrement = value;
 }
 
 boolean SetScrollInfo (long hwnd, int flags, SCROLLINFO info, boolean fRedraw) {
+	if (customScrollBar != null) {
+		throw new UnsupportedOperationException();
+	}
 	/*
 	* Bug in Windows.  For some reason, when SetScrollInfo()
 	* is used with SIF_POS and the scroll bar is hidden,
@@ -811,6 +881,10 @@ boolean SetScrollInfo (long hwnd, int flags, SCROLLINFO info, boolean fRedraw) {
  * </ul>
  */
 public void setSelection (int selection) {
+	if (customScrollBar != null) {
+		customScrollBar.setSelection(selection);
+		return;
+	}
 	checkWidget();
 	SCROLLINFO info = new SCROLLINFO ();
 	info.cbSize = SCROLLINFO.sizeof;
@@ -839,6 +913,10 @@ public void setSelection (int selection) {
  * </ul>
  */
 public void setThumb (int value) {
+	if (customScrollBar != null) {
+		customScrollBar.setThumb(value);
+		return;
+	}
 	checkWidget();
 	if (value < 1) return;
 	SCROLLINFO info = new SCROLLINFO ();
@@ -874,6 +952,10 @@ public void setThumb (int value) {
  * </ul>
  */
 public void setValues (int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement) {
+	if (customScrollBar != null) {
+		customScrollBar.setValues(selection, minimum, maximum, thumb, increment, pageIncrement);
+		return;
+	}
 	checkWidget();
 	if (minimum < 0) return;
 	if (maximum < 0) return;
@@ -923,6 +1005,9 @@ public void setVisible (boolean visible) {
 	* of the scroll bar will get the correct value.
 	*/
 	state = visible ? state & ~HIDDEN : state | HIDDEN;
+	if (customScrollBar != null) {
+		return;
+	}
 	long hwnd = hwndScrollBar ();
 	int type = scrollBarType ();
 	/*
@@ -972,6 +1057,9 @@ public void setVisible (boolean visible) {
 }
 
 LRESULT wmScrollChild (long wParam, long lParam) {
+	if (customScrollBar != null) {
+		return LRESULT.ZERO;
+	}
 
 	/* Do nothing when scrolling is ending */
 	int code = OS.LOWORD (wParam);
@@ -999,4 +1087,18 @@ LRESULT wmScrollChild (long wParam, long lParam) {
 	return null;
 }
 
+int getPreferredSize() {
+	if (customScrollBar == null) {
+		return 0;
+	}
+
+	final Point preferredSize = customScrollBar.computeDefaultSize();
+	return (style & SWT.VERTICAL) != 0 ? preferredSize.x : preferredSize.y;
+}
+
+void setBounds(int x, int y, int width, int height) {
+	if (customScrollBar != null) {
+		customScrollBar.setBounds(x, y, width, height);
+	}
+}
 }

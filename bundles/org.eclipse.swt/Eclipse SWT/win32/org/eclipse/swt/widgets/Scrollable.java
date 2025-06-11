@@ -38,6 +38,8 @@ import org.eclipse.swt.internal.win32.*;
  */
 public abstract class Scrollable extends Control {
 	ScrollBar horizontalBar, verticalBar;
+	private int clientWidth;
+	private int clientHeight;
 
 	/**
 	 * The regular expression used to determine the string which should be deleted
@@ -83,6 +85,32 @@ Scrollable () {
  */
 public Scrollable (Composite parent, int style) {
 	super (parent, style);
+
+	addListener(SWT.Resize, event -> {
+		int horizontalBarHeight = 0;
+		int verticalBarWidth = 0;
+		if (horizontalBar != null && horizontalBar.getVisible()) {
+			horizontalBarHeight = horizontalBar.getPreferredSize();
+		}
+		if (verticalBar != null && verticalBar.getVisible()) {
+			verticalBarWidth = verticalBar.getPreferredSize();
+		}
+		final Point size = getSize();
+		if (horizontalBarHeight > size.y) {
+			horizontalBarHeight = 0;
+		}
+		if (verticalBarWidth > size.x) {
+			verticalBarWidth = 0;
+		}
+		clientWidth = size.x - verticalBarWidth;
+		clientHeight = size.y - horizontalBarHeight;
+		if (horizontalBar != null) {
+			horizontalBar.setBounds(0, size.y - horizontalBarHeight, clientWidth, horizontalBarHeight);
+		}
+		if (verticalBar != null) {
+			verticalBar.setBounds(size.x - verticalBarWidth, 0, verticalBarWidth, clientHeight);
+		}
+	});
 }
 
 @Override
@@ -144,7 +172,7 @@ void createHandle () {
 	maybeEnableDarkSystemTheme();
 }
 
-ScrollBar createScrollBar (int type) {
+private ScrollBar createScrollBar (int type) {
 	ScrollBar bar = new ScrollBar (this, type);
 	if ((state & CANVAS) != 0) {
 		bar.setMaximum (100);
@@ -342,8 +370,8 @@ long scrolledHandle () {
 @Override
 int widgetStyle () {
 	int bits = super.widgetStyle () | OS.WS_TABSTOP;
-	if ((style & SWT.H_SCROLL) != 0) bits |= OS.WS_HSCROLL;
-	if ((style & SWT.V_SCROLL) != 0) bits |= OS.WS_VSCROLL;
+//	if ((style & SWT.H_SCROLL) != 0) bits |= OS.WS_HSCROLL;
+//	if ((style & SWT.V_SCROLL) != 0) bits |= OS.WS_VSCROLL;
 	return bits;
 }
 

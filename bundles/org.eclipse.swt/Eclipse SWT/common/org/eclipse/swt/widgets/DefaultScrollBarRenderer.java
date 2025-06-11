@@ -52,8 +52,8 @@ class DefaultScrollBarRenderer extends ScrollBarRenderer {
 		gc.setForeground(scrollBar.getColor(scrollBar.getEnabled() ? ControlRenderer.COLOR_FOREGROUND : ControlRenderer.COLOR_DISABLED));
 
 		if (scrollBar.isHorizontal()) {
-			int trackX = 2;
-			int trackY = (height - 7) / 2;
+			int trackX = 2 + x;
+			int trackY = (height - 7) / 2 + y;
 			int trackWidth = width - 4;
 			int trackHeight = 7;
 			trackRectangle = new Rectangle(trackX, trackY, trackWidth, trackHeight);
@@ -62,14 +62,18 @@ class DefaultScrollBarRenderer extends ScrollBarRenderer {
 			int thumbHeight = trackHeight;
 
 			int adjustedRange = range - thumb;
+			// TODO
+			if (adjustedRange == 0) {
+				adjustedRange = 1;
+			}
 			int thumbX = trackX + ((width - thumbWidth - 4) * (value - min)) / adjustedRange;
 			if (!isDragging) {
 				thumbRectangle = new Rectangle(thumbX, trackY, thumbWidth, thumbHeight);
 			}
-			gc.drawLine(0, 0, width, 0);
+			gc.drawLine(x, y,  x + width, y);
 		} else {
-			int trackX = (width - 7) / 2;
-			int trackY = 2;
+			int trackX = (width - 7) / 2 + x;
+			int trackY = 2 + y;
 			int trackWidth = 7;
 			int trackHeight = height - 4;
 			trackRectangle = new Rectangle(trackX, trackY, trackWidth, trackHeight);
@@ -78,11 +82,15 @@ class DefaultScrollBarRenderer extends ScrollBarRenderer {
 			int thumbWidth = trackWidth;
 
 			int adjustedRange = range - thumb;
+			// TODO
+			if (adjustedRange == 0) {
+				adjustedRange = 1;
+			}
 			int thumbY = trackY + ((height - thumbHeight - 4) * (value - min)) / adjustedRange;
 			if (!isDragging) {
 				thumbRectangle = new Rectangle(trackX, thumbY, thumbWidth, thumbHeight);
 			}
-			gc.drawLine(0, 0, 0, height);
+			gc.drawLine(x, y, x, y + height);
 		}
 
 		gc.setForeground(scrollBar.getColor(COLOR_TRACK_BORDER));
