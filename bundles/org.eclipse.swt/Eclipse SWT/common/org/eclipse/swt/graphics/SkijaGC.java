@@ -252,6 +252,10 @@ public class SkijaGC extends GCHandle {
 	@Override
 	public void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY,
 			int destWidth, int destHeight) {
+		if (image == null) {
+			System.out.println("SkijaGC.drawImage(..): Error draw image that is null!!");
+			return;
+		}
 		Canvas canvas = surface.getCanvas();
 		canvas.drawImageRect(convertSWTImageToSkijaImage(image),
 				createScaledRectangle(srcX, srcY, srcWidth, srcHeight),
