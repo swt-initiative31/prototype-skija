@@ -412,20 +412,30 @@ public class Text extends NativeBasedCustomScrollable {
 	}
 
 	private void keyPressed(Event e) {
+		if (!e.doit) {
+			return;
+		}
+
+		e.doit = false;
 		final boolean mod1Pressed = (e.stateMask & SWT.MOD1) != 0;
 		final boolean shiftPressed = (e.stateMask & SWT.SHIFT) != 0;
 		if (mod1Pressed) {
 			switch (e.keyCode) {
 			case SWT.HOME -> model.moveCaretToTextStart(shiftPressed);
 			case SWT.END -> model.moveCaretToTextEnd(shiftPressed);
-			}
-			if (!shiftPressed) {
-				switch (e.keyCode) {
-				case 'a' -> model.selectAll();
-				case 'c' -> copy();
-				case 'x' -> cut();
-				case 'v' -> paste();
+			default -> {
+				if (shiftPressed) {
+					e.doit = true;
+				} else {
+					switch (e.keyCode) {
+					case 'a' -> model.selectAll();
+					case 'c' -> copy();
+					case 'x' -> cut();
+					case 'v' -> paste();
+					default -> e.doit = true;
+					}
 				}
+			}
 			}
 			return;
 		}
