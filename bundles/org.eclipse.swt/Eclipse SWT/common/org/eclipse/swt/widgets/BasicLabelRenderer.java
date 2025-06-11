@@ -22,8 +22,7 @@ class BasicLabelRenderer extends LabelRenderer {
 	private static final int DRAW_FLAGS = SWT.DRAW_MNEMONIC | SWT.DRAW_TAB
 										  | SWT.DRAW_TRANSPARENT | SWT.DRAW_DELIMITER;
 
-	/** Gap between icon and text */
-	private static final int GAP = 5;
+	private static final int IMAGE_TEXT_GAP = 5;
 
 	public BasicLabelRenderer(Label label) {
 		super(label);
@@ -34,73 +33,68 @@ class BasicLabelRenderer extends LabelRenderer {
 		final String text = label.getText();
 		final Image image = label.getImage();
 
-		int lineWidth = 0;
-		int lineHeight = 0;
+		final int leftMargin = getLeftMargin();
+		final int topMargin = getTopMargin();
+		final int rightMargin = getRightMargin();
+		final int bottomMargin = getBottomMargin();
 
-		int leftMargin = getLeftMargin();
-		int imageWidth = 0;
-		int imageHeight = 0;
-		int gap = 0;
-		int topMargin = getTopMargin();
+		int width = 0;
+		int height = 0;
 
-		if (text != null && !text.isEmpty()) {
+		if (!text.isEmpty()) {
 			Point textExtent = getTextExtent(text, DRAW_FLAGS);
-			lineWidth = textExtent.x;
-			lineHeight = textExtent.y;
-			if (image != null) {
-				gap = GAP;
-			}
+			width = textExtent.x;
+			height = textExtent.y;
 		}
 		if (image != null) {
+			if (width > 0) {
+				width += IMAGE_TEXT_GAP;
+			}
 			Rectangle imgB = image.getBounds();
-			imageWidth = imgB.width;
-			imageHeight = imgB.height;
+			width += imgB.width;
+			height = Math.max(height, imgB.height);
 		}
 
-		int width = leftMargin + imageWidth + gap + lineWidth
-					+ getRightMargin();
-		int height = topMargin + Math.max(lineHeight, imageHeight)
-					 + getBottomMargin();
-
-		return new Point(width, height);
+		return new Point(leftMargin + width + rightMargin,
+				topMargin + height + bottomMargin);
 	}
 
 	@Override
 	protected void paint(GC gc, int width, int height) {
-		String text = label.getText();
+		final String text = label.getText();
 		Image image = label.getImage();
-		if ((text == null || text.isEmpty()) && image == null) {
+		if (text.isEmpty() && image == null) {
 			return;
 		}
 
+		final int leftMargin = getLeftMargin();
+		final int topMargin = getTopMargin();
+		final int rightMargin = getRightMargin();
+		final int bottomMargin = getBottomMargin();
+
+		int availableWidth = Math.max(0, width - leftMargin - rightMargin);
+		String[] lines = text.isEmpty() ? null : splitString(text);
+		Point extent = getTotalSize(gc, image, text);
 		boolean shortenText = false;
-		String t = text;
-		Image img = image;
-		int availableWidth = Math.max(0,
-				width - (getLeftMargin() + getRightMargin()));
-		Point extent = getTotalSize(gc, img, t);
-		if (extent.x > availableWidth) {
-			img = null;
-			extent = getTotalSize(gc, img, t);
+		if (lines != null && extent.x > availableWidth) {
+			if (image != null) {
+				image = null;
+				extent = getTotalSize(gc, null, text);
+			}
 			if (extent.x > availableWidth) {
 				shortenText = true;
 			}
 		}
 
-		String[] lines = text == null ? null : splitString(text);
-
-		// shorten the text
 		if (shortenText) {
 			extent.x = 0;
 			for (int i = 0; i < lines.length; i++) {
-				Point e = gc.textExtent(lines[i], DRAW_FLAGS);
-				if (e.x > availableWidth) {
+				int lineWidth = gc.textExtent(lines[i], DRAW_FLAGS).x;
+				if (lineWidth > availableWidth) {
 					lines[i] = shortenText(gc, lines[i], availableWidth, DRAW_FLAGS);
-					extent.x = Math.max(extent.x,
-							getTotalSize(gc, null, lines[i]).x);
-				} else {
-					extent.x = Math.max(extent.x, e.x);
+					lineWidth = getTotalSize(gc, null, lines[i]).x;
 				}
+				extent.x = Math.max(extent.x, lineWidth);
 			}
 			if (getToolTipText() == null) {
 				setDisplayedToolTip(text);
@@ -110,97 +104,17 @@ class BasicLabelRenderer extends LabelRenderer {
 		}
 
 		// determine horizontal position
-		int x = getLeftMargin();
+		int x = leftMargin;
 		final int align = getAlign();
 		if (align == SWT.CENTER) {
 			x = (width - extent.x) / 2;
 		}
 		else if (align == SWT.RIGHT) {
-			x = width - getRightMargin() - extent.x;
+			x = width - rightMargin - extent.x;
 		}
 
 		int style = label.getStyle();
-		// draw a background image behind the text
-		try {
-			final Image backgroundImage = getBackgroundImage();
-			final Color[] gradientColors = getGradientColors();
-			final int[] gradientPercents = getGradientPercents();
-			if (backgroundImage != null) {
-				// draw a background image behind the text
-				Rectangle imageRect = backgroundImage.getBounds();
-				// tile image to fill space
-				gc.setBackground(getBackground());
-				gc.fillRectangle(0, 0, width, height);
-				int xPos = 0;
-				while (xPos < width) {
-					int yPos = 0;
-					while (yPos < height) {
-						gc.drawImage(backgroundImage, xPos, yPos);
-						yPos += imageRect.height;
-					}
-					xPos += imageRect.width;
-				}
-			} else if (gradientColors != null) {
-				// draw a gradient behind the text
-				final Color oldBackground = gc.getBackground();
-				if (gradientColors.length == 1) {
-					if (gradientColors[0] != null) {
-						gc.setBackground(gradientColors[0]);
-					}
-					gc.fillRectangle(0, 0, width, height);
-				} else {
-					final boolean gradientVertical = isGradientVertical();
-					final Color oldForeground = gc.getForeground();
-					Color lastColor = gradientColors[0];
-					if (lastColor == null) {
-						lastColor = oldBackground;
-					}
-					int pos = 0;
-					for (int i = 0; i < gradientPercents.length; ++i) {
-						gc.setForeground(lastColor);
-						lastColor = gradientColors[i + 1];
-						if (lastColor == null) {
-							lastColor = oldBackground;
-						}
-						gc.setBackground(lastColor);
-						if (gradientVertical) {
-							final int gradientHeight = (gradientPercents[i]
-														* height / 100) - pos;
-							gc.fillGradientRectangle(0, pos, width,
-									gradientHeight, true);
-							pos += gradientHeight;
-						} else {
-							final int gradientWidth = (gradientPercents[i]
-													   * width / 100) - pos;
-							gc.fillGradientRectangle(pos, 0, gradientWidth,
-									height, false);
-							pos += gradientWidth;
-						}
-					}
-					if (gradientVertical && pos < height) {
-						gc.setBackground(getBackground());
-						gc.fillRectangle(0, pos, width, height - pos);
-					}
-					if (!gradientVertical && pos < width) {
-						gc.setBackground(getBackground());
-						gc.fillRectangle(pos, 0, width - pos, height);
-					}
-					gc.setForeground(oldForeground);
-				}
-				gc.setBackground(oldBackground);
-			} else {
-				final Color background = getBackground();
-				if (background != null && background.getAlpha() > 0) {
-					gc.setBackground(getBackground());
-					gc.fillRectangle(0, 0, width, height);
-				}
-			}
-		} catch (SWTException e) {
-			if ((style & SWT.DOUBLE_BUFFERED) == 0) {
-				gc.setBackground(getBackground());
-				gc.fillRectangle(0, 0, width, height);
-			}
-		}
+		drawBackground(gc, width, height, style);
 
 		// draw border
 		if ((style & SWT.SHADOW_IN) != 0 || (style & SWT.SHADOW_OUT) != 0) {
@@ -213,10 +127,12 @@ class BasicLabelRenderer extends LabelRenderer {
 		 * starting from top margin.
 		 */
 		Rectangle imageRect = null;
-		int lineHeight = 0, textHeight = 0, imageHeight = 0;
+		int lineHeight = 0;
+		int textHeight = 0;
+		int imageHeight = 0;
 
-		if (img != null) {
-			imageRect = img.getBounds();
+		if (image != null) {
+			imageRect = image.getBounds();
 			imageHeight = imageRect.height;
 		}
 		if (lines != null) {
@@ -224,42 +140,37 @@ class BasicLabelRenderer extends LabelRenderer {
 			textHeight = lines.length * lineHeight;
 		}
 
-		int imageY, midPoint;
-		if (imageHeight > textHeight) {
-			if (getTopMargin() == DEFAULT_MARGIN && getBottomMargin() == DEFAULT_MARGIN) {
-				imageY = 0;
-			} else {
-				imageY = getTopMargin();
-			}
-			midPoint = imageY + imageHeight / 2;
-		} else {
-			int lineY;
-			if (getTopMargin() == DEFAULT_MARGIN && getBottomMargin() == DEFAULT_MARGIN) {
-				lineY = (textHeight - imageHeight) / 2;
-			} else {
-				lineY = getTopMargin();
-			}
-			midPoint = lineY + textHeight / 2;
-			imageY = midPoint - imageHeight / 2;
-		}
-
 		// draw the image
-		if (img != null) {
-			gc.drawImage(img, 0, 0, imageRect.width, imageHeight, x, imageY,
+		if (image != null) {
+			int imageY;
+			if (imageHeight > textHeight) {
+				imageY = (height - topMargin - bottomMargin - imageHeight) / 2 + topMargin;
+			} else {
+				int lineY;
+				if (topMargin == DEFAULT_MARGIN && bottomMargin == DEFAULT_MARGIN) {
+					lineY = (textHeight - imageHeight) / 2;
+				} else {
+					lineY = topMargin;
+				}
+				int midPoint = lineY + textHeight / 2;
+				imageY = midPoint - imageHeight / 2;
+			}
+
+			gc.drawImage(image, 0, 0, imageRect.width, imageHeight, x, imageY,
 					imageRect.width, imageHeight);
-			x += imageRect.width + GAP;
-			extent.x -= imageRect.width + GAP;
+			x += imageRect.width + IMAGE_TEXT_GAP;
+			extent.x -= imageRect.width + IMAGE_TEXT_GAP;
 		}
 
 		// draw the text
-		// we draw the label at the top.
-		int lineY = getTopMargin();
-
-		if (textHeight < imageHeight) {
-			lineY = (imageHeight - textHeight) / 2;
-		}
-
 		if (lines != null) {
+			// we draw the label at the top.
+			int lineY = topMargin;
+
+			if (textHeight < imageHeight) {
+				lineY = (imageHeight - textHeight) / 2;
+			}
+
 			gc.setForeground(label.isEnabled() ? label.getForeground() : getColor(COLOR_DISABLED));
 			for (String line : lines) {
 				int lineX = x;
@@ -270,13 +181,105 @@ class BasicLabelRenderer extends LabelRenderer {
 					}
 					if (align == SWT.RIGHT) {
 						int lineWidth = gc.textExtent(line, DRAW_FLAGS).x;
-						lineX = Math.max(x,
-								width - getRightMargin() - lineWidth);
+						lineX = Math.max(x, width - rightMargin - lineWidth);
 					}
 				}
 				gc.drawText(line, lineX, lineY, DRAW_FLAGS);
 				lineY += lineHeight;
 			}
+		}
+	}
+
+	private void drawBackground(GC gc, int width, int height, int style) {
+		final Color background = label.getBackground();
+		final Image backgroundImage = getBackgroundImage();
+		final Color[] gradientColors = getGradientColors();
+		final int[] gradientPercents = getGradientPercents();
+		// draw a background image behind the text
+		try {
+			if (backgroundImage != null) {
+				drawBackgroundImage(gc, width, height, backgroundImage, background);
+			} else if (gradientColors != null) {
+				drawBackgroundGradient(gc, width, height, gradientColors, gradientPercents, background);
+			} else {
+				fillBackground(gc, width, height, background);
+			}
+		} catch (SWTException e) {
+			if ((style & SWT.DOUBLE_BUFFERED) == 0) {
+				fillBackground(gc, width, height, background);
+			}
+		}
+	}
+
+	private void drawBackgroundImage(GC gc, int width, int height, Image backgroundImage, Color background) {
+		// draw a background image behind the text
+		Rectangle imageRect = backgroundImage.getBounds();
+		// tile image to fill space
+		gc.setBackground(background);
+		gc.fillRectangle(0, 0, width, height);
+		int xPos = 0;
+		while (xPos < width) {
+			int yPos = 0;
+			while (yPos < height) {
+				gc.drawImage(backgroundImage, xPos, yPos);
+				yPos += imageRect.height;
+			}
+			xPos += imageRect.width;
+		}
+	}
+
+	private void drawBackgroundGradient(GC gc, int width, int height, Color[] gradientColors, int[] gradientPercents, Color background) {
+		final Color oldBackground = gc.getBackground();
+		if (gradientColors.length == 1) {
+			if (gradientColors[0] != null) {
+				gc.setBackground(gradientColors[0]);
+			}
+			gc.fillRectangle(0, 0, width, height);
+		} else {
+			final boolean gradientVertical = isGradientVertical();
+			final Color oldForeground = gc.getForeground();
+			Color lastColor = gradientColors[0];
+			if (lastColor == null) {
+				lastColor = oldBackground;
+			}
+			int pos = 0;
+			for (int i = 0; i < gradientPercents.length; ++i) {
+				gc.setForeground(lastColor);
+				lastColor = gradientColors[i + 1];
+				if (lastColor == null) {
+					lastColor = oldBackground;
+				}
+				gc.setBackground(lastColor);
+				if (gradientVertical) {
+					final int gradientHeight = (gradientPercents[i]
+					                            * height / 100) - pos;
+					gc.fillGradientRectangle(0, pos, width,
+					                         gradientHeight, true);
+					pos += gradientHeight;
+				} else {
+					final int gradientWidth = (gradientPercents[i]
+					                           * width / 100) - pos;
+					gc.fillGradientRectangle(pos, 0, gradientWidth,
+					                         height, false);
+					pos += gradientWidth;
+				}
+			}
+			if (gradientVertical && pos < height) {
+				gc.setBackground(background);
+				gc.fillRectangle(0, pos, width, height - pos);
+			}
+			if (!gradientVertical && pos < width) {
+				gc.setBackground(background);
+				gc.fillRectangle(pos, 0, width - pos, height);
+			}
+			gc.setForeground(oldForeground);
+		}
+	}
+
+	private void fillBackground(GC gc, int width, int height, Color background) {
+		if (background.getAlpha() > 0) {
+			gc.setBackground(background);
+			gc.fillRectangle(0, 0, width, height);
 		}
 	}
 
@@ -320,7 +323,7 @@ class BasicLabelRenderer extends LabelRenderer {
 			size.x += e.x;
 			size.y = Math.max(size.y, e.y);
 			if (image != null) {
-				size.x += GAP;
+				size.x += IMAGE_TEXT_GAP;
 			}
 		} else {
 			size.y = Math.max(size.y, gc.getFontMetrics().getHeight());
