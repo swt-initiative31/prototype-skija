@@ -6,6 +6,12 @@ import org.eclipse.swt.graphics.Rectangle;
 
 public abstract class TextRenderer extends ControlRenderer {
 
+	protected abstract Point computeDefaultSize();
+
+	protected abstract Point computeTextSize();
+
+	protected abstract int getBorderWidth();
+
 	protected abstract Rectangle getVisibleArea();
 
 	protected abstract Point getLocationByTextLocation(TextLocation textLocation, GC gc);
@@ -16,7 +22,7 @@ public abstract class TextRenderer extends ControlRenderer {
 
 	protected final TextModel model;
 
-	public TextRenderer(Text text, TextModel model) {
+	protected TextRenderer(Text text, TextModel model) {
 		super(text);
 		this.text = text;
 		this.model = model;

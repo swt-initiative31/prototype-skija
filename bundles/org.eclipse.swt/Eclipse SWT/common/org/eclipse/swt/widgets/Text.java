@@ -269,58 +269,24 @@ public class Text extends NativeBasedCustomScrollable {
 	}
 
 	private void updateScrollBarWithTextSize() {
-		Point size = computeTextSize();
-		Rectangle bounds = getBounds();
+		Point textSize = renderer.computeTextSize();
+		Point size = getSize();
 		if (verticalBar != null) {
-			verticalBar.setMaximum(size.y);
-			verticalBar.setThumb(bounds.height);
-			verticalBar.setPageIncrement(bounds.height);
+			verticalBar.setMaximum(textSize.y);
+			verticalBar.setThumb(size.y);
+			verticalBar.setPageIncrement(size.y);
 		}
 		if (horizontalBar != null) {
-			horizontalBar.setMaximum(size.y);
-			horizontalBar.setThumb(bounds.width);
-			horizontalBar.setPageIncrement(bounds.height);
+			horizontalBar.setMaximum(textSize.y);
+			horizontalBar.setThumb(size.x);
+			horizontalBar.setPageIncrement(size.x);
 		}
 	}
 
 	@Override
 	public Point computeSize(int wHint, int hHint, boolean changed) {
 		checkWidget();
-		Point size = computeTextSize();
-		if ((style & SWT.BORDER) != 0) {
-			size.x += 2 * getBorderWidth();
-			size.y += 2 * getBorderWidth();
-		}
-		return size;
-	}
-
-	private Point computeTextSize() {
-		return Drawing.measure(this, gc -> {
-			gc.setFont(getFont());
-			int width = 0, height = 0;
-			if ((style & SWT.SINGLE) != 0) {
-				String str = model.getLines()[0];
-				Point size = gc.textExtent(str);
-				if (str.length() > 0) {
-					width = (int)Math.ceil(size.x);
-				}
-				height = (int)Math.ceil(size.y);
-			} else {
-				Point size = null;
-				for (String line : model.getLines()) {
-					size = gc.textExtent(line);
-					width = Math.max(width, size.x);
-				}
-				height = size.y * model.getLineCount();
-				if (horizontalBar != null) {
-					height += horizontalBar.getSize().y;
-				}
-				if (verticalBar != null) {
-					width += verticalBar.getSize().x;
-				}
-			}
-			return new Point(width, height);
-		});
+		return renderer.computeDefaultSize();
 	}
 
 	private void selectionChanged() {
@@ -737,10 +703,7 @@ public class Text extends NativeBasedCustomScrollable {
 
 	@Override
 	public int getBorderWidth() {
-		if ((style & SWT.BORDER) != 0) {
-			return 2;
-		}
-		return super.getBorderWidth();
+		return renderer.getBorderWidth();
 	}
 
 	public int getLineHeight() {

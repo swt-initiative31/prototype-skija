@@ -1,10 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.*;
 
 public class DefaultTextRenderer extends TextRenderer {
 
@@ -15,8 +12,62 @@ public class DefaultTextRenderer extends TextRenderer {
 	static final String COLOR_SELECTION_BACKGROUND = "text.selection.background"; //$NON-NLS-1$
 	static final String COLOR_SELECTION_FOREGROUND = "text.selection.foreground"; //$NON-NLS-1$
 
+	private static final int HORIZONTAL_MARGIN = 2;
+
 	public DefaultTextRenderer(Text text, TextModel model) {
 		super(text, model);
+	}
+
+	@Override
+	protected Point computeDefaultSize() {
+		Point size = computeTextSize();
+		final int borderSize = text.getBorderWidth();
+		size.x += 2 * (borderSize + HORIZONTAL_MARGIN);
+		size.y += 2 * borderSize;
+		return size;
+	}
+
+	@Override
+	protected Point computeTextSize() {
+		return Drawing.measure(text, gc -> {
+			gc.setFont(text.getFont());
+			int style = text.getStyle();
+			int width = 0;
+			int height;
+			if ((style & SWT.SINGLE) != 0) {
+				String str = model.getLines()[0];
+				Point size = gc.textExtent(str);
+				if (str.length() > 0) {
+					width = (int)Math.ceil(size.x);
+				}
+				height = (int)Math.ceil(size.y);
+			} else {
+				Point size = null;
+				for (String line : model.getLines()) {
+					size = gc.textExtent(line);
+					width = Math.max(width, size.x);
+				}
+				height = size.y * model.getLineCount();
+				final ScrollBar horizontalBar = text.getHorizontalBar();
+				if (horizontalBar != null) {
+					height += horizontalBar.getSize().y;
+				}
+				final ScrollBar verticalBar = text.getVerticalBar();
+				if (verticalBar != null) {
+					width += verticalBar.getSize().x;
+				}
+			}
+			return new Point(width, height);
+		});
+	}
+
+	@Override
+	protected int getBorderWidth() {
+		int style = text.getStyle();
+		if ((style & SWT.BORDER) != 0) {
+			return 2;
+		}
+		return 0;
 	}
 
 	@Override
@@ -80,11 +131,11 @@ public class DefaultTextRenderer extends TextRenderer {
 		Rectangle clientArea = text.getClientArea();
 		final int style = text.getStyle();
 		if ((style & SWT.CENTER) != 0) {
-			x = (clientArea.width - completeTextExtent.x) / 2;
+			x = (clientArea.width - completeTextExtent.x) / 2 - 1 - HORIZONTAL_MARGIN;
 		} else if ((style & SWT.RIGHT) != 0) {
 			x = clientArea.width - completeTextExtent.x;
 		} else { // ((style & SWT.LEFT) != 0)
-			x = 0;
+			x = HORIZONTAL_MARGIN;
 		}
 		x += textExtent.x;
 		int y = textLocation.line * textExtent.y;
@@ -128,20 +179,20 @@ public class DefaultTextRenderer extends TextRenderer {
 	private void drawTextLine(String text, int lineNumber, Rectangle visibleArea,
 							  Rectangle clientArea, int style, GC gc) {
 		Point completeTextExtent = gc.textExtent(text);
-		int _x = 0;
+		int x = HORIZONTAL_MARGIN;
 		if ((style & SWT.CENTER) != 0) {
-			_x = (clientArea.width - completeTextExtent.x) / 2;
+			x = (clientArea.width - completeTextExtent.x) / 2;
 		} else if ((style & SWT.RIGHT) != 0) {
-			_x = clientArea.width - completeTextExtent.x;
+			x = clientArea.width - completeTextExtent.x - 1 - HORIZONTAL_MARGIN;
 		}
-		_x -= visibleArea.x;
-		int _y = lineNumber * completeTextExtent.y - visibleArea.y;
+		x -= visibleArea.x;
+		int y = lineNumber * completeTextExtent.y - visibleArea.y;
 		if ((style & SWT.BORDER) != 0) {
 			final int borderWidth = this.text.getBorderWidth();
-			_x += borderWidth;
-			_y += borderWidth;
+			x += borderWidth;
+			y += borderWidth;
 		}
-		gc.drawText(text, _x, _y, true);
+		gc.drawText(text, x, y, true);
 	}
 
 	private void drawSelection(GC gc, Rectangle visibleArea) {
