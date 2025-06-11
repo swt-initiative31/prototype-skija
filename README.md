@@ -16,11 +16,11 @@ Note that the current development does not target all platforms (Windows, MacOS,
 
 ### Setup
 
-The prototype is currently based on the Eclipse release 2024-12.
+The prototype is currently based on the Eclipse release 2025-03.
 
-1. Set up a Eclipse IDE for Committers 2024-12, e.g.:
-   - [Eclipse IDE for Committers 2024-12](https://www.eclipse.org/downloads/packages/release/2024-12/r/eclipse-ide-eclipse-committers)
-   - [Eclipse SDK Development Environment](https://github.com/eclipse-platform/eclipse.platform?tab=readme-ov-file#how-to-contribute) using product version "4.34 - 2024-12" in the installer
+1. Set up a Eclipse IDE for Committers 2025-03, e.g.:
+   - [Eclipse IDE for Committers 2025-03](https://www.eclipse.org/downloads/packages/release/2025-03/r/eclipse-ide-eclipse-committers)
+   - [Eclipse SDK Development Environment](https://github.com/eclipse-platform/eclipse.platform?tab=readme-ov-file#how-to-contribute) using product version "4.34 - 2025-03" in the installer
 2. Clone this repository
 3. Start the downloaded IDE and import the following projects:
    - The SWT bundle `org.eclipse.swt`
