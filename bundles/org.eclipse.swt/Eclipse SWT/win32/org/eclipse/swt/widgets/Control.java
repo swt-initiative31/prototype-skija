@@ -130,7 +130,7 @@ protected boolean requiresBeingNative() {
 }
 
 @Override
-protected final boolean isLightWeight() {
+public final boolean isLightWeight() {
 	return handle == 0;
 }
 
@@ -4887,11 +4887,9 @@ public boolean setParent (Composite parent) {
 	if (parent == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (parent.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
 	if (this.parent == parent) return true;
-	if (this.parent.isLightWeight() && parent.isLightWeight()) {
+	if (this.parent.isLightWeight() || parent.isLightWeight()) {
 		return super.setParent(parent);
 	}
-
-	if (this.parent.isLightWeight() || parent.isLightWeight()) error(SWT.ERROR_UNSPECIFIED);
 
 	if (!isReparentable ()) return false;
 	releaseParent ();

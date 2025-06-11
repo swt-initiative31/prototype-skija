@@ -144,8 +144,16 @@ public DropTarget(Control control, int style) {
 
 	if (COM.CoLockObjectExternal(iDropTarget.getAddress(), true, true) != COM.S_OK)
 		DND.error(DND.ERROR_CANNOT_INIT_DROP);
-	if (COM.RegisterDragDrop( control.handle, iDropTarget.getAddress()) != COM.S_OK)
-		DND.error(DND.ERROR_CANNOT_INIT_DROP);
+
+	if (control.isLightWeight()) {
+//		var c = Control.getNativeControl(control);
+//		if (COM.RegisterDragDrop(c.handle, iDropTarget.getAddress()) != COM.S_OK) {
+////			DND.error(DND.ERROR_CANNOT_INIT_DROP);
+//		}
+	} else {
+		if (COM.RegisterDragDrop(control.handle, iDropTarget.getAddress()) != COM.S_OK)
+			DND.error(DND.ERROR_CANNOT_INIT_DROP);
+	}
 
 	controlListener = event -> {
 		if (!DropTarget.this.isDisposed()){
