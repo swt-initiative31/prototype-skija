@@ -51,7 +51,7 @@ public final class DefaultColorProvider implements ColorProvider {
 		p.put(ControlRenderer.COLOR_DISABLED, gray160);
 
 		p.put(DefaultTextRenderer.COLOR_BACKGROUND, backgroundInput);
-		p.put(DefaultTextRenderer.COLOR_BACKGROUND_READONLY, gray192);
+		p.put(DefaultTextRenderer.COLOR_BACKGROUND_READONLY, gray240);
 		p.put(DefaultTextRenderer.COLOR_FOREGROUND, foreground);
 		p.put(DefaultTextRenderer.COLOR_SELECTION_BACKGROUND, selectionBackground);
 		p.put(DefaultTextRenderer.COLOR_SELECTION_FOREGROUND, selectionForeground);
