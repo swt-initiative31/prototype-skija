@@ -297,7 +297,7 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
 		error (SWT.ERROR_INVALID_ARGUMENT);
 	}
 	this.center = parent != null && (style & SWT.SHEET) != 0;
-	this.style = checkStyle (parent, style);
+	this.style = checkStyle (parent, style | SWT.NO_BACKGROUND);
 	this.parent = parent;
 	this.display = display;
 	this.handle = handle;
@@ -2711,5 +2711,10 @@ public boolean getVisible () {
 	if (!getDrawing()) return (state & HIDDEN) == 0;
 	int bits = OS.GetWindowLong (handle, OS.GWL_STYLE);
 	return (bits & OS.WS_VISIBLE) != 0;
+}
+
+@Override
+protected void paintControl(Event event) {
+	event.gc.fillRectangle(event.x, event.y, event.width, event.height);
 }
 }
