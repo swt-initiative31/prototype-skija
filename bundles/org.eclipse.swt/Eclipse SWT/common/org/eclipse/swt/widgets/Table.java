@@ -272,7 +272,7 @@ public class Table extends CustomComposite {
 			horizontalBar.addListener(SWT.Selection, listener);
 		}
 
-		initializeAccessible();
+//		initializeAccessible();
 	}
 
 	private void onDoubleClick(Event event) {

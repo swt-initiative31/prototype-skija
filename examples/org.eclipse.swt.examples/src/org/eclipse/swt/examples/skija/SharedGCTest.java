@@ -11,7 +11,18 @@ public class SharedGCTest {
 		final Display display = new Display();
 
 		final Shell shell = new Shell(display);
-		createLeafControls(shell);
+		shell.setLayout(new GridLayout(2, true));
+
+		final Composite composite = new Composite(shell, SWT.NONE);
+		composite.setBackground(new Color(255, 240, 200));
+		composite.setBackgroundMode(SWT.INHERIT_FORCE);
+		composite.setLayoutData(new GridData(GridData.FILL, GridData.FILL, true, true));
+		createLeafControls(composite);
+
+		final Group group = new Group(shell, SWT.NONE);
+		group.setLayoutData(new GridData(GridData.FILL, GridData.FILL, true, true));
+		group.setText("Group");
+		createLeafControls(group);
 
 		final Point size = shell.computeSize(SWT.DEFAULT, SWT.DEFAULT);
 		size.x = Math.max(size.x, 500);
@@ -51,6 +62,10 @@ public class SharedGCTest {
 
 		createRadioButton(parent, "Radio 1");
 		createRadioButton(parent, "Radio 2");
+
+		final ProgressBar progressBar = new ProgressBar(parent, SWT.HORIZONTAL);
+		progressBar.setSelection(50);
+		progressBar.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 	}
 
 	private static void createButton(Composite parent, String text) {

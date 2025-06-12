@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
+import org.eclipse.swt.widgets.Control;
 
 /**
  * Class <code>GC</code> is where all of the drawing capabilities that are
@@ -177,6 +178,9 @@ public NativeGC(Drawable drawable) {
  * @since 2.1.2
  */
 public NativeGC(Drawable drawable, int style) {
+	if (drawable instanceof Control control) {
+		drawable = Control.getNativeControl(control);
+	}
 	if (drawable == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	GCData data = new GCData();
 	data.style = checkStyle(style);

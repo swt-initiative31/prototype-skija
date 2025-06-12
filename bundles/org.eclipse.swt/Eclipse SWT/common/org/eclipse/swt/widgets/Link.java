@@ -131,7 +131,7 @@ public class Link extends CustomControl {
 		addListener(SWT.MouseUp, listener);
 		addListener(SWT.Dispose, listener);
 
-		initAccessible();
+//		initAccessible();
 	}
 
 	@Override

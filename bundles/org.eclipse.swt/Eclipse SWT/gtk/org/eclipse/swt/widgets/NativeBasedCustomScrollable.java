@@ -210,4 +210,9 @@ abstract class NativeBasedCustomScrollable extends Scrollable {
 		}
 		return new Rectangle(0, 0, Math.max(1, size.x), Math.max(1, size.y));
 	}
+
+	@Override
+	protected final boolean requiresBeingNative() {
+		return false;
+	}
 }

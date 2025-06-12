@@ -119,7 +119,15 @@ Control () {
  */
 public Control (Composite parent, int style) {
 	super (parent, style);
-	createWidget ();
+	if (requiresBeingNative()) {
+		createWidget();
+	} else {
+		createCustomWidget();
+	}
+}
+
+protected boolean requiresBeingNative() {
+	return true;
 }
 
 @Override
@@ -618,7 +626,12 @@ public Point computeSize (int wHint, int hHint) {
  * @see #pack(boolean)
  * @see "computeTrim, getClientArea for controls that implement them"
  */
+@Override
 public Point computeSize (int wHint, int hHint, boolean changed){
+	if (isLightWeight()) {
+		return super.computeSize(wHint, hHint, changed);
+	}
+
 	checkWidget ();
 	int zoom = getZoom();
 	wHint = (wHint != SWT.DEFAULT ? DPIUtil.scaleUp(wHint, zoom) : wHint);
@@ -686,6 +699,8 @@ void createHandle () {
 }
 
 void checkGesture () {
+	assertIsNative();
+
 	int value =getSystemMetrics (OS.SM_DIGITIZER);
 	if ((value & (OS.NID_READY | OS.NID_MULTI_INPUT)) != 0) {
 		/*
@@ -698,6 +713,14 @@ void checkGesture () {
 		config.dwBlock = 0;
 		OS.SetGestureConfig (handle, 0, 1, config, GESTURECONFIG.sizeof);
 	}
+}
+
+void createCustomWidget() {
+	foreground = -1;
+	background = -1;
+	checkOrientation (parent);
+	checkBackground ();
+	parent.addChild(this);
 }
 
 void createWidget () {
@@ -939,6 +962,8 @@ void enableDrag (boolean enabled) {
 }
 
 void maybeEnableDarkSystemTheme() {
+	assertIsNative();
+
 	maybeEnableDarkSystemTheme(handle);
 }
 
@@ -1166,7 +1191,11 @@ int getBackgroundPixel () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getBorderWidth () {
+	if (isLightWeight()) {
+		return 0;
+	}
 	checkWidget ();
 	return DPIUtil.scaleDown(getBorderWidthInPixels (), getZoom());
 }
@@ -1385,12 +1414,12 @@ public Object getLayoutData () {
  */
 @Override
 public Point getLocation () {
-	if (isLightWeight()) {
-		return super.getLocation();
+	if (this instanceof Shell) {
+		checkWidget ();
+		return DPIUtil.scaleDown(getLocationInPixels(), getZoom());
 	}
 
-	checkWidget ();
-	return DPIUtil.scaleDown(getLocationInPixels(), getZoom());
+	return super.getLocation();
 }
 
 Point getLocationInPixels () {
@@ -1923,7 +1952,11 @@ public boolean isReparentable () {
 	return true;
 }
 
+@Override
 boolean isShowing () {
+	if (isLightWeight()) {
+		return super.isShowing();
+	}
 	/*
 	* This is not complete.  Need to check if the
 	* widget is obscured by a parent or sibling.
@@ -2434,6 +2467,11 @@ public void requestLayout () {
  */
 @Override
 public void redraw () {
+	if (isLightWeight()) {
+		super.redraw();
+		return;
+	}
+
 	checkWidget ();
 	redrawInPixels (null,false);
 }
@@ -2520,6 +2558,8 @@ boolean redrawChildren () {
 }
 
 void register () {
+	assertIsNative();
+
 	display.addControl (handle, this);
 }
 
@@ -3171,13 +3211,17 @@ public void setBackgroundImage (Image image) {
 }
 
 void setBackgroundImage (long hBitmap) {
-	int flags = OS.RDW_ERASE | OS.RDW_FRAME | OS.RDW_INVALIDATE;
-	OS.RedrawWindow (handle, null, 0, flags);
+	if (!isLightWeight()) {
+		int flags = OS.RDW_ERASE | OS.RDW_FRAME | OS.RDW_INVALIDATE;
+		OS.RedrawWindow (handle, null, 0, flags);
+	}
 }
 
 void setBackgroundPixel (int pixel) {
-	int flags = OS.RDW_ERASE | OS.RDW_FRAME | OS.RDW_INVALIDATE;
-	OS.RedrawWindow (handle, null, 0, flags);
+	if (!isLightWeight()) {
+		int flags = OS.RDW_ERASE | OS.RDW_FRAME | OS.RDW_INVALIDATE;
+		OS.RedrawWindow(handle, null, 0, flags);
+	}
 }
 
 /**
@@ -3263,6 +3307,16 @@ void setBoundsInPixels (int x, int y, int width, int height, int flags, boolean 
 			return;
 		}
 	}
+	if (parent != null && parent.isLightWeight()) {
+		Composite p = parent;
+		do {
+			final Point location = p.getLocation();
+			x += DPIUtil.scaleUp(location.x, getZoom());
+			y += DPIUtil.scaleUp(location.y, getZoom());
+			if (p.parent == null) error(SWT.ERROR_UNSPECIFIED);
+			p = p.parent;
+		} while (p.isLightWeight());
+	}
 	OS.SetWindowPos (topHandle, 0, x, y, width, height, flags);
 }
 
@@ -3319,6 +3373,12 @@ void setBoundsInPixels (Rectangle rect) {
  * </ul>
  */
 public void setCapture (boolean capture) {
+	if (isLightWeight()) {
+		checkWidget();
+		// TODO
+		return;
+	}
+
 	checkWidget ();
 	if (capture) {
 		OS.SetCapture (handle);
@@ -3373,6 +3433,8 @@ public void setCursor (Cursor cursor) {
 }
 
 void setDefaultFont () {
+	assertIsNative();
+
 	long hFont = display.getSystemFont (getShell().nativeZoom).handle;
 	OS.SendMessage (handle, OS.WM_SETFONT, hFont, 0);
 }
@@ -4066,6 +4128,8 @@ void sort (int [] items) {
 }
 
 void subclass () {
+	assertIsNative();
+
 	long oldProc = windowProc ();
 	long newProc = display.windowProc;
 	if (oldProc == newProc) return;
@@ -4153,8 +4217,13 @@ public Point toControl (Point point) {
  *
  * @since 2.1
  */
+@Override
 public Point toDisplay (int x, int y) {
 	checkWidget ();
+	if (isLightWeight()) {
+		return super.toDisplay(x, y);
+	}
+
 	int zoom = getZoom();
 	Point displayPointInPixels = toDisplayInPixels(DPIUtil.scaleUp(x, zoom), DPIUtil.scaleUp(y, zoom));
 	return getDisplay().translateFromDisplayCoordinates(displayPointInPixels, zoom);
@@ -4165,32 +4234,6 @@ Point toDisplayInPixels (int x, int y) {
 	pt.x = x;  pt.y = y;
 	OS.ClientToScreen (handle, pt);
 	return new Point (pt.x, pt.y);
-}
-
-/**
- * Returns a point which is the result of converting the
- * argument, which is specified in coordinates relative to
- * the receiver, to display relative coordinates.
- * <p>
- * NOTE: To properly map a rectangle or a corner of a rectangle on a right-to-left platform, use
- * {@link Display#map(Control, Control, Rectangle)}.
- * </p>
- *
- * @param point the point to be translated (must not be null)
- * @return the translated coordinates
- *
- * @exception IllegalArgumentException <ul>
- *    <li>ERROR_NULL_ARGUMENT - if the point is null</li>
- * </ul>
- * @exception SWTException <ul>
- *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
- *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
- * </ul>
- */
-public Point toDisplay (Point point) {
-	checkWidget ();
-	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
-	return toDisplay(point.x, point.y);
 }
 
 long topHandle () {
@@ -4778,7 +4821,8 @@ int widgetExtStyle () {
 }
 
 long widgetParent () {
-	return parent.handle;
+	final Control nativeParent = getNativeControl(this);
+	return nativeParent.handle;
 }
 
 int widgetStyle () {
@@ -4808,11 +4852,18 @@ int widgetStyle () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  *	</ul>
  */
+@Override
 public boolean setParent (Composite parent) {
 	checkWidget ();
 	if (parent == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (parent.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
 	if (this.parent == parent) return true;
+	if (this.parent.isLightWeight() && parent.isLightWeight()) {
+		return super.setParent(parent);
+	}
+
+	if (this.parent.isLightWeight() || parent.isLightWeight()) error(SWT.ERROR_UNSPECIFIED);
+
 	if (!isReparentable ()) return false;
 	releaseParent ();
 	Shell newShell = parent.getShell (), oldShell = getShell ();

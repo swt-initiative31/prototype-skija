@@ -50,7 +50,6 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
 public class Composite extends CompositeCommon {
-	Layout layout;
 	WINDOWPOS [] lpwp;
 	Control [] tabList;
 	int layoutCount, backgroundMode;
@@ -65,6 +64,11 @@ public class Composite extends CompositeCommon {
  * Prevents uninitialized instances from being created outside the package.
  */
 Composite () {
+}
+
+@Override
+protected boolean requiresBeingNative() {
+	return false;
 }
 
 /**
@@ -348,10 +352,12 @@ void drawBackgroundInPixels(GC gc, int x, int y, int width, int height, int offs
 	if (gc.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
 	RECT rect = new RECT ();
 	OS.SetRect (rect, x, y, x + width, y + height);
-	NativeGC ngc = (NativeGC) gc.innerGC;
-	long hDC = ngc.handle;
-	int pixel = background == -1 ? gc.getBackground ().handle : -1;
-	drawBackground (hDC, rect, pixel, offsetX, offsetY);
+	final GCHandle innerGC = gc.innerGC;
+	if (innerGC instanceof NativeGC ngc) {
+		long hDC = ngc.handle;
+		int pixel = background == -1 ? gc.getBackground ().handle : -1;
+		drawBackground (hDC, rect, pixel, offsetX, offsetY);
+	}
 }
 
 Composite findDeferredControl () {
@@ -846,6 +852,10 @@ void markLayout (boolean changed, boolean all) {
 }
 
 Point minimumSize (int wHint, int hHint, boolean changed) {
+	if (isLightWeight()) {
+		return super.minimumSize(wHint, hHint, changed);
+	}
+
 	/*
 	 * Since getClientArea can be overridden by subclasses, we cannot
 	 * call getClientAreaInPixels directly.
@@ -1471,7 +1481,7 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 
 	/* Paint the control and the background */
 	PAINTSTRUCT ps = new PAINTSTRUCT ();
-	if (hooks (SWT.Paint) || filters (SWT.Paint)) {
+	if (true/*hooks (SWT.Paint) || filters (SWT.Paint)*/) {
 
 		/* Use the buffered paint when possible */
 		boolean bufferedPaint = false;
@@ -1603,12 +1613,11 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 					}
 				} else {
 					if ((style & (SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND | SWT.TRANSPARENT)) == 0) {
-						if (rect == null) rect = new RECT ();
-						OS.SetRect (rect, ps.left, ps.top, ps.right, ps.bottom);
+						if (rect == null) rect = new RECT();
+						OS.SetRect(rect, ps.left, ps.top, ps.right, ps.bottom);
 						drawBackground(ngc.handle, rect);
 					}
-					event.setBounds(DPIUtil.scaleDown(new Rectangle(ps.left, ps.top, width, height), zoom));
-					sendEvent (SWT.Paint, event);
+					skiaPaint(gc, new Rectangle(ps.left, ps.top, width, height));
 				}
 				// widget could be disposed at this point
 				event.gc = null;
@@ -1656,6 +1665,25 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 		}
 	}
 	return LRESULT.ZERO;
+}
+
+private void skiaPaint(GC nativeGc, Rectangle clipping) {
+	final Rectangle virtualClipping = DPIUtil.autoScaleDown(this, clipping);
+	virtualClipping.width = incIfRoundedDown(virtualClipping.width, clipping.width);
+	virtualClipping.height = incIfRoundedDown(virtualClipping.height, clipping.height);
+	Drawing.drawWithGC(this, nativeGc, gc -> {
+		final Event event = new Event();
+		event.gc = gc;
+		event.setBounds(virtualClipping);
+		sendEvent(SWT.Paint, event);
+	});
+}
+
+private int incIfRoundedDown(int scaled, int original) {
+	if (scaled < original && scaled * 2 < original) {
+		scaled++;
+	}
+	return scaled;
 }
 
 @Override
