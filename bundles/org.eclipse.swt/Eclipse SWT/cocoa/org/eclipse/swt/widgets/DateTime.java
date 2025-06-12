@@ -543,7 +543,7 @@ public void removeSelectionListener (SelectionListener listener) {
 }
 
 @Override
-void resized () {
+protected void resized() {
 	super.resized ();
 	if (buttonView == null) return;
 	NSSize buttonSize = buttonView.cell ().cellSize ();

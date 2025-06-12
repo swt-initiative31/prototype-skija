@@ -227,7 +227,7 @@ void releaseHandle () {
 }
 
 @Override
-void resized() {
+protected void resized() {
 	if (!ignoreResize) super.resized();
 }
 

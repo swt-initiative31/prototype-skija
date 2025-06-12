@@ -1008,7 +1008,7 @@ void reskinChildren (int flags) {
 }
 
 @Override
-void resized () {
+protected void resized() {
 	super.resized ();
 	if (layout != null) {
 		markLayout (false, false);
