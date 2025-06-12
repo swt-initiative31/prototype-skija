@@ -97,7 +97,7 @@ public class NativeGC extends GCHandle {
  * </ul>
  * @see #dispose()
  */
-	public NativeGC(Drawable drawable) {
+public NativeGC(Drawable drawable) {
 	this(drawable, SWT.NONE);
 }
 
@@ -5892,4 +5892,8 @@ private int getZoom() {
 	return DPIUtil.getZoomForAutoscaleProperty(data.nativeZoom);
 }
 
+@Override
+protected void translate(int x, int y) {
+	throw new UnsupportedOperationException();
+}
 }

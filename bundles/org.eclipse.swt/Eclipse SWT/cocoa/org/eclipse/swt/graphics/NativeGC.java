@@ -4265,4 +4265,8 @@ void uncheckGC(NSAutoreleasePool pool) {
 	if (pool != null) pool.release();
 }
 
+@Override
+protected void translate(int x, int y) {
+	throw new UnsupportedOperationException();
+}
 }
