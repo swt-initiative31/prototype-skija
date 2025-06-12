@@ -2147,6 +2147,10 @@ public String toString () {
 	return "GC {" + innerGC.toString() + "}";
 }
 
+public void translate(int x, int y) {
+	innerGC.translate(x, y);
+}
+
 public void commit() {
 	innerGC.commit();
 }

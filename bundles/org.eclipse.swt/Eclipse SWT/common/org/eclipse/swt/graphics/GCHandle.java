@@ -78,5 +78,7 @@ public abstract class GCHandle extends Resource implements IGraphicsContext {
 	protected abstract void setXORMode(boolean xor);
 
 	protected abstract void setTextAntialias(int antialias);
+
+	protected abstract void translate(int x, int y);
 }
 
