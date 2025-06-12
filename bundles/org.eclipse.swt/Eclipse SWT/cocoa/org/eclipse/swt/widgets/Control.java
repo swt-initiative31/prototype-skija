@@ -60,7 +60,6 @@ public abstract class Control extends ControlCommon implements Drawable {
 	 * @noreference This field is not intended to be referenced by clients.
 	 */
 	public NSView view;
-	Composite parent;
 	String toolTipText;
 	Object layoutData;
 	int drawCount, backgroundAlpha = 255;
@@ -122,8 +121,12 @@ Control () {
  */
 public Control (Composite parent, int style) {
 	super (parent, style);
-	this.parent = parent;
 	createWidget ();
+}
+
+@Override
+protected boolean isLightWeight() {
+	return view == null;
 }
 
 @Override
@@ -1612,7 +1615,11 @@ public int getBorderWidth () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Rectangle getBounds () {
+	if (isLightWeight()) {
+		return super.getBounds();
+	}
 	checkWidget();
 	NSRect rect = topView().frame();
 	return new Rectangle((int)rect.x, (int)rect.y, (int)rect.width, (int)rect.height);
@@ -1677,7 +1684,12 @@ public Cursor getCursor () {
  *
  * @see #isEnabled
  */
+@Override
 public boolean getEnabled () {
+	if (isLightWeight()) {
+		return super.getEnabled();
+	}
+
 	checkWidget();
 	return (state & DISABLED) == 0;
 }
@@ -1744,7 +1756,12 @@ public Object getLayoutData () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Point getLocation () {
+	if (isLightWeight()) {
+		return super.getLocation();
+	}
+
 	checkWidget();
 	NSRect rect = topView().frame();
 	return new Point((int)rect.x, (int)rect.y);
@@ -1936,7 +1953,11 @@ public Shell getShell () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public Point getSize () {
+	if (isLightWeight()) {
+		return super.getSize();
+	}
 	checkWidget();
 	NSRect rect = topView().frame();
 	return new Point((int)rect.width, (int)rect.height);
@@ -2023,7 +2044,12 @@ public boolean getTouchEnabled() {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public boolean getVisible () {
+	if (isLightWeight()) {
+		return super.getVisible();
+	}
+
 	checkWidget();
 	return (state & HIDDEN) == 0;
 }
@@ -2407,7 +2433,11 @@ boolean isTrim (NSView view) {
  *
  * @see #getVisible
  */
+@Override
 public boolean isVisible () {
+	if (isLightWeight()) {
+		return super.isVisible();
+	}
 	checkWidget();
 	return getVisible () && parent.isVisible ();
 }
@@ -2648,10 +2678,6 @@ void otherMouseDragged(long id, long sel, long theEvent) {
 	super.otherMouseDragged(id, sel, theEvent);
 }
 
-void moved () {
-	sendEvent (SWT.Move);
-}
-
 /**
  * Moves the receiver above the specified control in the
  * drawing order. If the argument is null, then the receiver
@@ -2844,6 +2870,7 @@ public void requestLayout () {
  * @see SWT#NO_MERGE_PAINTS
  * @see SWT#DOUBLE_BUFFERED
  */
+@Override
 public void redraw () {
 	checkWidget();
 	view.setNeedsDisplay(true);
@@ -3378,10 +3405,6 @@ void resetVisibleRegion () {
 	}
 }
 
-void resized () {
-	sendEvent (SWT.Resize);
-}
-
 @Override
 void rotateWithEvent(long id, long sel, long event) {
 	if (!gestureEvent(id, event, SWT.GESTURE_ROTATE)) return;
@@ -3646,7 +3669,13 @@ void setBackgroundColor (NSColor nsColor) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setBounds (int x, int y, int width, int height) {
+	super.setBounds(x, y, width, height);
+	if (isLightWeight()) {
+		return;
+	}
+
 	checkWidget();
 	setBounds (x, y, Math.max (0, width), Math.max (0, height), true, true);
 }
@@ -3704,7 +3733,13 @@ void setBounds (int x, int y, int width, int height, boolean move, boolean resiz
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setBounds (Rectangle rect) {
+	if (isLightWeight()) {
+		super.setBounds(rect);
+		return;
+	}
+
 	checkWidget ();
 	if (rect == null) error (SWT.ERROR_NULL_ARGUMENT);
 	setBounds (rect.x, rect.y, Math.max (0, rect.width), Math.max (0, rect.height), true, true);
@@ -3814,7 +3849,13 @@ public void setDragDetect (boolean dragDetect) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setEnabled (boolean enabled) {
+	if (isLightWeight()) {
+		super.setEnabled(enabled);
+		return;
+	}
+
 	checkWidget();
 	if (((state & DISABLED) == 0) == enabled) return;
 	Control control = null;
@@ -3995,7 +4036,12 @@ public void setLayoutData (Object layoutData) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setLocation (int x, int y) {
+	super.setLocation(x, y);
+	if (isLightWeight()) {
+		return;
+	}
 	checkWidget();
 	setBounds (x, y, 0, 0, true, false);
 }
@@ -4014,7 +4060,13 @@ public void setLocation (int x, int y) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setLocation (Point location) {
+	if (isLightWeight()) {
+		super.setLocation(location);
+		return;
+	}
+
 	checkWidget();
 	if (location == null) error (SWT.ERROR_NULL_ARGUMENT);
 	setBounds (location.x, location.y, 0, 0, true, false);
@@ -4222,7 +4274,13 @@ boolean setRadioSelection (boolean value){
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setSize (int width, int height) {
+	super.setSize(width, height);
+	if (isLightWeight()) {
+		return;
+	}
+
 	checkWidget();
 	setBounds (0, 0, Math.max (0, width), Math.max (0, height), false, true);
 }
@@ -4250,7 +4308,13 @@ public void setSize (int width, int height) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public void setSize (Point size) {
+	if (isLightWeight()) {
+		super.setSize(size);
+		return;
+	}
+	
 	checkWidget ();
 	if (size == null) error (SWT.ERROR_NULL_ARGUMENT);
 	setBounds (0, 0, Math.max (0, size.x), Math.max (0, size.y), false, true);
