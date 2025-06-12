@@ -4028,4 +4028,8 @@ public String toString () {
 	return "GC {" + handle + "}";
 }
 
+@Override
+protected void translate(int x, int y) {
+	throw new UnsupportedOperationException();
+}
 }

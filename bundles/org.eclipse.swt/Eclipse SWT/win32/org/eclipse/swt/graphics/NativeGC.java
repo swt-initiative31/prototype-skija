@@ -5246,4 +5246,8 @@ private int getZoom() {
 	return DPIUtil.getZoomForAutoscaleProperty(data.nativeZoom);
 }
 
+@Override
+protected void translate(int x, int y) {
+	throw new UnsupportedOperationException();
+}
 }
