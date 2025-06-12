@@ -2761,6 +2761,11 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 }
 
 @Override
+protected Composite getTabRoot() {
+	return this;
+}
+
+@Override
 public boolean getVisible () {
 	checkWidget ();
 	if (!getDrawing()) return (state & HIDDEN) == 0;

@@ -1848,4 +1848,46 @@ public String toString() {
 	return super.toString() + " [layout=" + layout + "]";
 }
 
+@Override
+void sendFocusEvent(int type) {
+	Shell shell = getShell();
+
+	/*
+	 * Feature in Windows.  During the processing of WM_KILLFOCUS,
+	 * when the focus window is queried using GetFocus(), it has
+	 * already been assigned to the new window.  The fix is to
+	 * remember the control that is losing or gaining focus and
+	 * answer it during WM_KILLFOCUS.  If a WM_SETFOCUS occurs
+	 * during WM_KILLFOCUS, the focus control needs to be updated
+	 * to the current control.  At any other time, the focus
+	 * control matches Windows.
+	 */
+	Display display = this.display;
+//	display.focusEvent = type;
+	if (type == SWT.FocusIn) {
+		final Control pendingCustomFocusControl = display.getPendingLightWeightFocusControlAndClear();
+		final Control newCustomFocusControl = getNativeControl(pendingCustomFocusControl) == this
+				? pendingCustomFocusControl
+				: null;
+		final Control newFocusControl = newCustomFocusControl != null ? newCustomFocusControl : this;
+		display.setFocusControl(newFocusControl);
+	} else {
+		display.setFocusControl(null);
+	}
+//	display.focusEvent = SWT.None;
+
+	if (!shell.isDisposed ()) {
+		switch (type) {
+			case SWT.FocusIn:
+				final Control focusControl = display.getFocusControl();
+				shell.setActiveControl (focusControl);
+				break;
+			case SWT.FocusOut:
+				if (shell != display.getActiveShell ()) {
+					shell.setActiveControl (null);
+				}
+				break;
+		}
+	}
+}
 }

@@ -6332,4 +6332,15 @@ public boolean setRescalingAtRuntime(boolean activate) {
 	return false;
 }
 
+private Control pendingLightWeightFocusControl;
+
+public Control getPendingLightWeightFocusControlAndClear() {
+	Control control = pendingLightWeightFocusControl;
+	pendingLightWeightFocusControl = null;
+	return control;
+}
+
+public void setPendingLightWeightFocusControl(Control control) {
+	this.pendingLightWeightFocusControl = control;
+}
 }

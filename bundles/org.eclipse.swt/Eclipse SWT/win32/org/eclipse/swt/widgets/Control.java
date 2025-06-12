@@ -1085,7 +1085,20 @@ public boolean forceFocus () {
 	* this time.
 	*/
 //	if (OS.GetFocus () != OS.SetFocus (handle)) return false;
-	OS.SetFocus (handle);
+	if (isLightWeight()) {
+		final Control nativeParent = getNativeControl(this);
+		if (nativeParent == null) return false;
+		if (OS.GetFocus() == nativeParent.handle) {
+			display.setFocusControl(this);
+		}
+		else {
+			display.setPendingLightWeightFocusControl(this);
+			OS.SetFocus(nativeParent.handle);
+			display.setPendingLightWeightFocusControl(null);
+		}
+	} else {
+		OS.SetFocus(handle);
+	}
 	if (isDisposed ()) return false;
 	shell.setSavedFocus (this);
 	return isFocusControl ();
@@ -1763,6 +1776,10 @@ boolean hasCustomForeground() {
 }
 
 boolean hasFocus () {
+	if (isLightWeight()) {
+		return isFocusControl();
+	}
+
 	/*
 	* If a non-SWT child of the control has focus,
 	* then this control is considered to have focus
@@ -1934,7 +1951,12 @@ public boolean isEnabled () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public boolean isFocusControl () {
+	if (isLightWeight()) {
+		return super.isFocusControl();
+	}
+
 	checkWidget ();
 	Control focusControl = display.focusControl;
 	if (focusControl != null && !focusControl.isDisposed ()) {
@@ -2002,6 +2024,9 @@ boolean isTabGroup () {
 		for (Control element : tabList) {
 			if (element == this) return true;
 		}
+	}
+	if (isLightWeight()) {
+		return false;
 	}
 	int bits = OS.GetWindowLong (handle, OS.GWL_STYLE);
 	return (bits & OS.WS_TABSTOP) != 0;
@@ -4655,6 +4680,7 @@ boolean traverseEscape () {
 	return false;
 }
 
+@Override
 boolean traverseGroup (boolean next) {
 	Control root = computeTabRoot ();
 	Widget group = computeTabGroup ();
@@ -5380,7 +5406,10 @@ LRESULT WM_KILLFOCUS (long wParam, long lParam) {
 	 * to NULL before they open. As a result, Shell is unable to save
 	 * focus control in WM_ACTIVATE. The fix is to save focus here.
 	 */
-	if (wParam == 0) menuShell().setSavedFocus(this);
+	if (wParam == 0) {
+		final Control focusControl = display.getFocusControl();
+		menuShell().setSavedFocus(focusControl);
+	}
 	return wmKillFocus (handle, wParam, lParam);
 }
 

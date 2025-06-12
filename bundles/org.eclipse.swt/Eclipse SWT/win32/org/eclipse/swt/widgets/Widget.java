@@ -2005,7 +2005,8 @@ LRESULT wmKeyUp (long hwnd, long wParam, long lParam) {
 	* If the key up is not hooked, reset last key
 	* and last ascii in case the key down is hooked.
 	*/
-	if (!hooks (SWT.KeyUp) && !display.filters (SWT.KeyUp)) {
+	final Control focusControl = display.getFocusControl();
+	if (focusControl != null && !focusControl.hooks (SWT.KeyUp) && !display.filters (SWT.KeyUp)) {
 		display.lastKey = display.lastAscii = 0;
 		display.lastVirtual = display.lastDead = false;
 		return null;

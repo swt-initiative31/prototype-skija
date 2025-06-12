@@ -1438,9 +1438,19 @@ public boolean forceFocus () {
 	if (display.getActiveShell() != shell && !Display.isActivateShellOnForceFocus()) return false;
 	if (isFocusControl ()) return true;
 	shell.setSavedFocus (null);
-	NSView focusView = focusView ();
-	if (!focusView.canBecomeKeyView()) return false;
-	boolean result = forceFocus(focusView);
+	boolean result;
+	if (isLightWeight()) {
+		final Control nativeControl = getNativeControl(this);
+		if (nativeControl == null) return false;
+		NSView focusView = nativeControl.focusView();
+		if (!focusView.canBecomeKeyView()) return false;
+		result = nativeControl.forceFocus(focusView);
+	}
+	else {
+		NSView focusView = focusView();
+		if (!focusView.canBecomeKeyView()) return false;
+		result = forceFocus(focusView);
+	}
 	if (isDisposed ()) return false;
 	shell.setSavedFocus (this);
 	/*
@@ -2348,6 +2358,10 @@ boolean isFocusAncestor (Control control) {
  * </ul>
  */
 public boolean isFocusControl () {
+	if (isLightWeight()) {
+		checkWidget();
+		return display.getLightWeightFocusControl() == this;
+	}
 	checkWidget();
 	Control focusControl = display.focusControl;
 	if (focusControl != null && !focusControl.isDisposed ()) {

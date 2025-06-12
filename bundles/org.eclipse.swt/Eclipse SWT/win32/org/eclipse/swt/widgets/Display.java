@@ -1890,6 +1890,7 @@ public int getDoubleClickTime () {
  *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public Control getFocusControl () {
 	checkDevice ();
 	final Control focusControl = super.getFocusControl();
@@ -5407,5 +5408,17 @@ private void runWithProperDPIAwareness(Runnable operation) {
 	} else {
 		operation.run();
 	}
+}
+
+private Control pendingLightWeightFocusControl;
+
+Control getPendingLightWeightFocusControlAndClear() {
+	Control control = pendingLightWeightFocusControl;
+	pendingLightWeightFocusControl = null;
+	return control;
+}
+
+void setPendingLightWeightFocusControl(Control control) {
+	this.pendingLightWeightFocusControl = control;
 }
 }

@@ -176,6 +176,30 @@ abstract class CompositeCommon extends Scrollable {
 	}
 
 	@Override
+	boolean isTabGroup() {
+		return true;
+	}
+
+	@Override
+	boolean isTabItem() {
+		return false;
+	}
+
+	@Override
+	protected void getCurrentTabStopControls(List<Control> controls) {
+		super.getCurrentTabStopControls(controls);
+
+		final List<Control> children = this_children();
+		for (Control child : children) {
+			if (!child.getVisible() || !child.getEnabled()) {
+				continue;
+			}
+
+			child.getCurrentTabStopControls(controls);
+		}
+	}
+
+	@Override
 	protected void updateNativeVisibility() {
 		if (!isLightWeight()) {
 			super.updateNativeVisibility();
