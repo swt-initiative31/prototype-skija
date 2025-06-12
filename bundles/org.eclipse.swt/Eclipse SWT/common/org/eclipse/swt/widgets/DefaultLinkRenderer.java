@@ -35,9 +35,6 @@ class DefaultLinkRenderer extends LinkRenderer {
 			return;
 		}
 
-		// Fill background
-		gc.fillRectangle(0, 0, width, height);
-
 		drawBackground(gc, width, height);
 
 		final Color linkColor = link.getLinkForeground();
@@ -104,16 +101,19 @@ class DefaultLinkRenderer extends LinkRenderer {
 					xPos += imageRect.width;
 				}
 			} else {
-				if (background != null && background.getAlpha() > 0) {
-					gc.setBackground(background);
-					gc.fillRectangle(0, 0, width, height);
-				}
+				drawBackground(gc, width, height, background);
 			}
 		} catch (SWTException e) {
 			if ((link.getStyle() & SWT.DOUBLE_BUFFERED) == 0) {
-				gc.setBackground(background);
-				gc.fillRectangle(0, 0, width, height);
+				drawBackground(gc, width, height, background);
 			}
+		}
+	}
+
+	private void drawBackground(GC gc, int width, int height, Color background) {
+		if (link.isBackgroundSet() && background.getAlpha() > 0) {
+			gc.setBackground(background);
+			gc.fillRectangle(0, 0, width, height);
 		}
 	}
 

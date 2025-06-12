@@ -69,7 +69,6 @@ public class Composite extends CompositeCommon {
 	 */
 	public long  embeddedHandle;
 	long imHandle, socketHandle;
-	Layout layout;
 	Control[] tabList;
 	int layoutCount, backgroundMode;
 	/**
@@ -159,6 +158,11 @@ static int checkStyle (int style) {
 	style &= ~SWT.NO_BACKGROUND;
 	style &= ~SWT.TRANSPARENT;
 	return style;
+}
+
+@Override
+protected boolean requiresBeingNative() {
+	return false;
 }
 
 Control[] _getChildren () {

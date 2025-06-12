@@ -121,7 +121,15 @@ Control () {
  */
 public Control (Composite parent, int style) {
 	super (parent, style);
-	createWidget ();
+	if (requiresBeingNative()) {
+		createWidget();
+	} else {
+		createCustomWidget();
+	}
+}
+
+protected boolean requiresBeingNative() {
+	return true;
 }
 
 @Override
@@ -985,6 +993,12 @@ NSAttributedString createString (String string, Font font, double [] foreground,
 	return attribStr;
 }
 
+void createCustomWidget() {
+	checkOrientation(parent);
+	checkBackground();
+	parent.addChild(this);
+}
+
 @Override
 void createWidget () {
 	state |= DRAG_DETECT;
@@ -1758,13 +1772,13 @@ public Object getLayoutData () {
  */
 @Override
 public Point getLocation () {
-	if (isLightWeight()) {
-		return super.getLocation();
+	if (this instanceof Shell) {
+		checkWidget();
+		NSRect rect = topView().frame();
+		return new Point((int) rect.x, (int) rect.y);
 	}
 
-	checkWidget();
-	NSRect rect = topView().frame();
-	return new Point((int)rect.x, (int)rect.y);
+	return super.getLocation();
 }
 
 /**
@@ -2370,7 +2384,12 @@ boolean isResizing () {
 	return (state & RESIZING) != 0 || parent.isResizing();
 }
 
+@Override
 boolean isShowing () {
+	if (isLightWeight()) {
+		return super.isShowing();
+	}
+
 	/*
 	* This is not complete.  Need to check if the
 	* widget is obscurred by a parent or sibling.
@@ -2872,6 +2891,11 @@ public void requestLayout () {
  */
 @Override
 public void redraw () {
+	if (isLightWeight()) {
+		super.redraw();
+		return;
+	}
+
 	checkWidget();
 	view.setNeedsDisplay(true);
 }
@@ -3600,7 +3624,11 @@ private void _setBackground (Color color) {
 	this.background = background;
 	this.backgroundAlpha = alpha;
 	updateBackgroundColor ();
-	redrawWidget(view, true);
+	if (isLightWeight()) {
+		redraw();
+	} else {
+		redrawWidget(view, true);
+	}
 }
 
 /**
@@ -4144,11 +4172,18 @@ public void setOrientation (int orientation) {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  *	</ul>
  */
+@Override
 public boolean setParent (Composite parent) {
 	checkWidget();
 	if (parent == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (parent.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
 	if (this.parent == parent) return true;
+	if (this.parent.isLightWeight() && parent.isLightWeight()) {
+		return super.setParent(parent);
+	}
+
+	if (this.parent.isLightWeight() || parent.isLightWeight()) error(SWT.ERROR_UNSPECIFIED);
+	
 	if (!isReparentable ()) return false;
 	releaseParent ();
 	Shell newShell = parent.getShell (), oldShell = getShell ();
@@ -4674,35 +4709,13 @@ public Point toControl (Point point) {
  *
  * @since 2.1
  */
+@Override
 public Point toDisplay (int x, int y) {
 	checkWidget();
+	if (isLightWeight()) {
+		return super.toDisplay(x, y);
+	}
 	return display.map (this, null, x, y);
-}
-
-/**
- * Returns a point which is the result of converting the
- * argument, which is specified in coordinates relative to
- * the receiver, to display relative coordinates.
- * <p>
- * NOTE: To properly map a rectangle or a corner of a rectangle on a right-to-left platform, use
- * {@link Display#map(Control, Control, Rectangle)}.
- * </p>
- *
- * @param point the point to be translated (must not be null)
- * @return the translated coordinates
- *
- * @exception IllegalArgumentException <ul>
- *    <li>ERROR_NULL_ARGUMENT - if the point is null</li>
- * </ul>
- * @exception SWTException <ul>
- *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
- *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
- * </ul>
- */
-public Point toDisplay (Point point) {
-	checkWidget();
-	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
-	return toDisplay (point.x, point.y);
 }
 
 NSView topView () {
@@ -5245,6 +5258,9 @@ boolean update (boolean all) {
 void updateBackgroundColor () {
 	Control control = findBackgroundControl ();
 	if (control == null) control = this;
+	if (isLightWeight()) {
+		return;
+	}
 	double [] color = control.background != null ? control.background : control.defaultBackground().handle;
 	NSColor nsColor = NSColor.colorWithDeviceRed(color[0], color[1], color[2], color[3]);
 	setBackgroundColor (nsColor);

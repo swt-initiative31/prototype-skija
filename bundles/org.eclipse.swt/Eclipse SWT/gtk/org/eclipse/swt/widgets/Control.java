@@ -163,7 +163,15 @@ Control () {
  */
 public Control (Composite parent, int style) {
 	super (parent, style);
-	createWidget (0);
+	if (requiresBeingNative()) {
+		createWidget(0);
+	} else {
+		createCustomWidget();
+	}
+}
+
+protected boolean requiresBeingNative() {
+	return true;
 }
 
 @Override
@@ -783,6 +791,12 @@ boolean containedInRegion (int x, int y) {
 	return false;
 }
 
+void createCustomWidget() {
+	checkOrientation(parent);
+	checkBackground();
+	parent.addChild(this);
+}
+
 @Override
 void createWidget(int index) {
 	state |= DRAG_DETECT;
@@ -1052,7 +1066,21 @@ void markLayout (boolean changed, boolean all) {
 
 void moveHandle (int x, int y) {
 	long topHandle = topHandle ();
-	long parentHandle = parent.parentingHandle ();
+	long parentHandle;
+	if (parent.isLightWeight()) {
+		Composite p = parent;
+		do {
+			final Point location = p.getLocation();
+			x += location.x;
+			y += location.y;
+			if (p.parent == null) error(SWT.ERROR_UNSPECIFIED);
+			p = p.parent;
+		} while (p.isLightWeight());
+		parentHandle = p.parentingHandle ();
+	}
+	else {
+		parentHandle = parent.parentingHandle ();
+	}
 	OS.swt_fixed_move (parentHandle, topHandle, x, y);
 }
 
@@ -1250,12 +1278,12 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
  * </ul>
  */
 public Point getLocation () {
-	if (isLightWeight()) {
-		return super.getLocation();
+	if (this instanceof Shell) {
+		checkWidget ();
+		return DPIUtil.autoScaleDown(getLocationInPixels());
 	}
 
-	checkWidget();
-	return DPIUtil.autoScaleDown(getLocationInPixels());
+	return super.getLocation();
 }
 
 Point getLocationInPixels () {
@@ -1761,6 +1789,10 @@ public Point toControl (Point point) {
  */
 public Point toDisplay(int x, int y) {
 	checkWidget();
+	if (isLightWeight()) {
+		return super.toDisplay(x, y);
+	}
+
 	int[] origin_x = new int[1], origin_y = new int[1];
 	if (GTK.GTK4) {
 		Point origin = getControlOrigin();
@@ -1796,32 +1828,6 @@ Point toDisplayInPixels(int x, int y) {
 	y += origin_y[0];
 
 	return new Point(x, y);
-}
-
-/**
- * Returns a point which is the result of converting the
- * argument, which is specified in coordinates relative to
- * the receiver, to display relative coordinates.
- * <p>
- * NOTE: To properly map a rectangle or a corner of a rectangle on a right-to-left platform, use
- * {@link Display#map(Control, Control, Rectangle)}.
- * </p>
- *
- * @param point the point to be translated (must not be null)
- * @return the translated coordinates
- *
- * @exception IllegalArgumentException <ul>
- *    <li>ERROR_NULL_ARGUMENT - if the point is null</li>
- * </ul>
- * @exception SWTException <ul>
- *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
- *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
- * </ul>
- */
-public Point toDisplay (Point point) {
-	checkWidget();
-	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
-	return toDisplay (point.x, point.y);
 }
 
 Point toDisplayInPixels (Point point) {
@@ -3056,7 +3062,11 @@ GdkRGBA getBaseGdkRGBA () {
  *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
  * </ul>
  */
+@Override
 public int getBorderWidth () {
+	if (isLightWeight()) {
+		return 0;
+	}
 	return DPIUtil.autoScaleDown(getBorderWidthInPixels());
 }
 
@@ -3930,8 +3940,10 @@ long gtk_draw (long widget, long cairo) {
 	GC gc = event.gc = GC.gtk_new (this, data);
 	// Note: use GC#setClipping(x,y,width,height) because GC#setClipping(Rectangle) got broken by bug 446075
 	gc.setClipping (eventBounds.x, eventBounds.y, eventBounds.width, eventBounds.height);
-	drawWidget (gc);
-	sendEvent (SWT.Paint, event);
+	Drawing.drawWithGC(this, gc, actualGc -> {
+		event.gc = actualGc;
+		sendEvent (SWT.Paint, event);
+	});
 	gc.dispose ();
 	event.gc = null;
 	return 0;
@@ -4519,6 +4531,9 @@ public boolean isReparentable () {
 	return true;
 }
 boolean isShowing () {
+	if (isLightWeight()) {
+		return super.isShowing();
+	}
 	/*
 	* This is not complete.  Need to check if the
 	* widget is obscurred by a parent or sibling.
@@ -4693,6 +4708,11 @@ public void requestLayout () {
  * @see SWT#DOUBLE_BUFFERED
  */
 public void redraw () {
+	if (isLightWeight()) {
+		super.redraw();
+		return;
+	}
+
 	checkWidget();
 	redraw (false);
 }
@@ -5407,6 +5427,9 @@ public void setCursor (Cursor cursor) {
 	checkWidget();
 	if (cursor != null && cursor.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
 	this.cursor = cursor;
+	if (isLightWeight()) {
+		return;
+	}
 	setCursor (cursor != null ? cursor.handle : 0);
 }
 
@@ -6290,15 +6313,16 @@ void setZOrder (Control sibling, boolean above, boolean fixRelations, boolean fi
 			}
 		}
 	}
+	Composite nativeParent = (Composite) getNativeControl(parent);
 	if (fixChildren) {
 		if (above) {
-			parent.moveAbove (topHandle, siblingHandle);
+			nativeParent.moveAbove (topHandle, siblingHandle);
 		} else {
-			parent.moveBelow (topHandle, siblingHandle);
+			nativeParent.moveBelow (topHandle, siblingHandle);
 		}
 	}
 	/*  Make sure that the parent internal windows are on the bottom of the stack	*/
-	if (!above && fixChildren) 	parent.fixZOrder ();
+	if (!above && fixChildren) 	nativeParent.fixZOrder ();
 
 	if (fixRelations) {
 		/* determine the receiver's new index in the parent */
@@ -6387,7 +6411,8 @@ void showWidget () {
 	// Comment this line to disable zero-sized widgets
 	state |= ZERO_WIDTH | ZERO_HEIGHT;
 	long topHandle = topHandle ();
-	long parentHandle = parent.parentingHandle ();
+	Composite nativeParent = (Composite) getNativeControl(parent);
+	long parentHandle = nativeParent.parentingHandle ();
 	parent.setParentGdkResource (this);
 	if (GTK.GTK4) {
 		OS.swt_fixed_add(parentHandle, topHandle);
@@ -6946,6 +6971,9 @@ Point getSurfaceOrigin () {
 protected void doRelease(boolean destroy) {
 	if (parent != null) {
 		parent.removeChild(this);
+	}
+	if (isLightWeight()) {
+		return;
 	}
 	super.doRelease(destroy);
 }
