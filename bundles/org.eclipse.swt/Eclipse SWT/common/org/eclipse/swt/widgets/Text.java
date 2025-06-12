@@ -467,39 +467,37 @@ public class Text extends NativeBasedCustomScrollable {
 		int x = Math.max(selectedX + visibleArea.x, 0);
 		int y = Math.max(selectedY + visibleArea.y, 0);
 
-		GC gc = new GC(this);
-		String[] textLines = model.getLines();
-		int clickedLine = Math.min(y / renderer.getLineHeight(gc), textLines.length - 1);
-		int selectedLine = Math.min(clickedLine, textLines.length - 1);
-		String text = textLines[selectedLine];
-		if (clickedLine == selectedLine && text.length() > 0) {
-			int before = 0;
-			int after = text.length();
-			while (true) {
-				int middle = (before + after) / 2;
-				final int middleX = renderer.getLocationByTextLocation(new TextLocation(selectedLine, middle), gc).x;
-				if (middleX > x) {
-					after = middle;
-					continue;
-				}
+		return Drawing.measure(this, gc -> {
+			String[] textLines = model.getLines();
+			int clickedLine = Math.min(y / renderer.getLineHeight(gc), textLines.length - 1);
+			int selectedLine = Math.min(clickedLine, textLines.length - 1);
+			String text = textLines[selectedLine];
+			if (clickedLine == selectedLine && text.length() > 0) {
+				int before = 0;
+				int after = text.length();
+				while (true) {
+					int middle = (before + after) / 2;
+					final int middleX = renderer.getLocationByTextLocation(new TextLocation(selectedLine, middle), gc).x;
+					if (middleX > x) {
+						if (after > before + 1) {
+							after = middle;
+							continue;
+						}
+						return new TextLocation(clickedLine, 0);
+					}
 
-				if (after - middle == 1) {
-					final int afterX = renderer.getLocationByTextLocation(new TextLocation(selectedLine, after), gc).x;
-					if (afterX - x < x - middleX) {
-						text = text.substring(0, after);
+					if (after - middle <= 1) {
+						final int afterX = renderer.getLocationByTextLocation(new TextLocation(selectedLine, after), gc).x;
+						if (afterX - x < x - middleX) {
+							return new TextLocation(clickedLine, after);
+						}
+						return new TextLocation(clickedLine, middle);
 					}
-					else {
-						text = text.substring(0, middle);
-					}
-					break;
+					before = middle;
 				}
-				before = middle;
 			}
-		}
-		gc.dispose();
-
-		TextLocation location = new TextLocation(clickedLine, text.length());
-		return location;
+			return new TextLocation(clickedLine, text.length());
+		});
 	}
 
 	protected void widgetDisposed(Event e) {
