@@ -996,6 +996,9 @@ void createWidget () {
 		setBackground ();
 	}
 	display.clearPool ();
+	if (parent != null && !(this instanceof Shell)) {
+		parent.addChild(this);
+	}
 }
 
 Color defaultBackground () {
@@ -1023,6 +1026,9 @@ void deregister () {
 
 @Override
 void destroyWidget () {
+	if (parent != null) {
+		parent.removeChild(this);
+	}
 	NSView view = topView ();
 	view.removeFromSuperview ();
 	releaseHandle ();

@@ -50,7 +50,7 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/snippets/#composite">Composite snippets</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public class Composite extends Scrollable {
+public class Composite extends CompositeCommon {
 	Layout layout;
 	Control[] tabList;
 	int layoutCount, backgroundMode;
@@ -97,23 +97,7 @@ public Composite (Composite parent, int style) {
 }
 
 Control [] _getChildren () {
-	NSView nsClipView = contentView();
-	if (nsClipView == null) return new Control [0];
-	NSArray views = nsClipView.subviews();
-	int count = (int)views.count();
-	Control [] children = new Control [count];
-	if (count == 0) return children;
-	int j = 0;
-	for (int i=0; i<count; i++){
-		Widget widget = display.getWidget (views.objectAtIndex (count - i - 1).id);
-		if (widget != null && widget != this && widget instanceof Control) {
-			children [j++] = (Control) widget;
-		}
-	}
-	if (j == count) return children;
-	Control [] newChildren = new Control [j];
-	System.arraycopy (children, 0, newChildren, 0, j);
-	return newChildren;
+	return this_children().toArray(new Control[0]);
 }
 
 Control [] _getTabList () {
