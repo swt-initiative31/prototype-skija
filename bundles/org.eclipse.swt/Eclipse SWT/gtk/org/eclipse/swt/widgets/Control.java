@@ -794,6 +794,9 @@ void createWidget(int index) {
 	if (!GTK.GTK4) setRelations();
 	checkMirrored();
 	checkBorder();
+	if (parent != null && !(this instanceof Shell)) {
+		parent.addChild(this);
+	}
 }
 
 /**
@@ -6870,5 +6873,13 @@ Point getSurfaceOrigin () {
 	boolean success = GTK4.gtk_widget_translate_coordinates(fixedHandle, getShell().shellHandle, 0, 0, originX, originY);
 
 	return success ? new Point((int)originX[0], (int)originY[0]) : new Point(0, 0);
+}
+
+@Override
+protected void doRelease(boolean destroy) {
+	if (parent != null) {
+		parent.removeChild(this);
+	}
+	super.doRelease(destroy);
 }
 }

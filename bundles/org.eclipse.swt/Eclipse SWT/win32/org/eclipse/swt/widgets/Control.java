@@ -714,6 +714,9 @@ void createWidget () {
 	if ((state & PARENT_BACKGROUND) != 0) {
 		setBackground ();
 	}
+	if (parent != null && !(this instanceof Shell)) {
+		parent.addChild(this);
+	}
 }
 
 int defaultBackground () {
@@ -734,6 +737,9 @@ void deregister () {
 
 @Override
 void destroyWidget () {
+	if (parent != null) {
+		parent.removeChild(this);
+	}
 	long hwnd = topHandle ();
 	releaseHandle ();
 	if (hwnd != 0) {
@@ -2023,6 +2029,9 @@ boolean mnemonicMatch (char key) {
  */
 public void moveAbove (Control control) {
 	checkWidget ();
+	if (parent != null) {
+		parent.moveChildAbove(this, control);
+	}
 	long topHandle = topHandle (), hwndAbove = OS.HWND_TOP;
 	if (control != null) {
 		if (control.isDisposed ()) error(SWT.ERROR_INVALID_ARGUMENT);

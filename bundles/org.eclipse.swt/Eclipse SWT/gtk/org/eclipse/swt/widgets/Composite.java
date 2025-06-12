@@ -54,7 +54,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/snippets/#composite">Composite snippets</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public class Composite extends Scrollable {
+public class Composite extends CompositeCommon {
 	/**
 	 * the handle to the OS resource
 	 * (Warning: This field is platform dependent)
@@ -162,43 +162,7 @@ static int checkStyle (int style) {
 }
 
 Control[] _getChildren () {
-	long parentHandle = parentingHandle();
-
-	if (GTK.GTK4) {
-		ArrayList<Control> childrenList = new ArrayList<>();
-		for (long child = GTK4.gtk_widget_get_first_child(parentHandle); child != 0; child = GTK4.gtk_widget_get_next_sibling(child)) {
-			Widget childWidget = display.getWidget(child);
-			if (childWidget != null && childWidget instanceof Control && childWidget != this) {
-				childrenList.add((Control)childWidget);
-			}
-		}
-
-		return childrenList.toArray(new Control[childrenList.size()]);
-	} else {
-		long list = GTK3.gtk_container_get_children (parentHandle);
-		if (list == 0) return new Control [0];
-		int count = OS.g_list_length (list);
-		Control [] children = new Control [count];
-		int i = 0;
-		long temp = list;
-		while (temp != 0) {
-			long handle = OS.g_list_data (temp);
-			if (handle != 0) {
-				Widget widget = display.getWidget (handle);
-				if (widget != null && widget != this) {
-					if (widget instanceof Control) {
-						children [i++] = (Control) widget;
-					}
-				}
-			}
-			temp = OS.g_list_next (temp);
-		}
-		OS.g_list_free (list);
-		if (i == count) return children;
-		Control [] newChildren = new Control [i];
-		System.arraycopy (children, 0, newChildren, 0, i);
-		return newChildren;
-	}
+	return this_children().toArray(new Control[0]);
 }
 
 Control [] _getTabList () {
@@ -775,25 +739,7 @@ public Control [] getChildren () {
 }
 
 int getChildrenCount () {
-	int count = 0;
-
-	if (GTK.GTK4) {
-		for (long child = GTK4.gtk_widget_get_first_child(handle); child != 0; child = GTK4.gtk_widget_get_next_sibling(child)) {
-			count++;
-		}
-	} else {
-		/*
-		* NOTE: The current implementation will count
-		* non-registered children.
-		*/
-		long list = GTK3.gtk_container_get_children(handle);
-		if (list != 0) {
-			count = OS.g_list_length(list);
-			OS.g_list_free(list);
-		}
-	}
-
-	return count;
+	return this_children().size();
 }
 
 @Override
