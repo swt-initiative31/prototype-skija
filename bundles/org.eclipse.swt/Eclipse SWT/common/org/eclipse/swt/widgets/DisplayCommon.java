@@ -20,11 +20,12 @@ import org.eclipse.swt.graphics.DeviceData;
 public abstract class DisplayCommon extends Device {
 
 	Control focusControl;
+	private Control lightWeightFocusControl;
 
 	private ColorProvider colorProvider;
 	private RendererFactory rendererFactory;
 
-	public DisplayCommon(DeviceData data) {
+	protected DisplayCommon(DeviceData data) {
 		super(data);
 
 		colorProvider = DefaultColorProvider.createLightInstance();
@@ -32,6 +33,17 @@ public abstract class DisplayCommon extends Device {
 	}
 
 	protected Control getFocusControl() {
+		return getFocusControlCheckDisposed();
+	}
+
+	private Control getFocusControlCheckDisposed() {
+		if (lightWeightFocusControl != null) {
+			if (!lightWeightFocusControl.isDisposed()) {
+				return lightWeightFocusControl;
+			}
+
+			lightWeightFocusControl = null;
+		}
 		if (focusControl != null && focusControl.isDisposed()) {
 			focusControl = null;
 		}
@@ -71,5 +83,40 @@ public abstract class DisplayCommon extends Device {
 		if (colorProvider == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		this.colorProvider = colorProvider;
 		// todo: redraw all (custom-drawn) widgets
+	}
+
+	protected final Control getLightWeightFocusControl() {
+		if (lightWeightFocusControl != null && lightWeightFocusControl.isDisposed()) {
+			lightWeightFocusControl = null;
+		}
+		return lightWeightFocusControl;
+	}
+
+	protected final void setFocusControl(Control control) {
+		Control oldFocusControl = getFocusControlCheckDisposed();
+		if (oldFocusControl == control) {
+			return;
+		}
+
+		if (oldFocusControl != null) {
+			if (oldFocusControl.display == null) {
+				System.out.println();
+			}
+			System.out.println("Focus lost " + oldFocusControl.toDebugName());
+			oldFocusControl.sendEvent(SWT.FocusOut);
+		}
+
+		if (control != null && control.isLightWeight()) {
+			focusControl = Control.getNativeControl(control);
+			lightWeightFocusControl = control;
+		} else {
+			focusControl = control;
+			lightWeightFocusControl = null;
+		}
+
+		if (control != null) {
+			System.out.println("Focus gained " + control.toDebugName());
+			control.sendEvent(SWT.FocusIn);
+		}
 	}
 }
