@@ -259,7 +259,7 @@ public class Tree extends CustomComposite {
 			horizontalBar.addListener(SWT.Selection, listener);
 		}
 
-		initializeAccessible();
+//		initializeAccessible();
 	}
 
 	private void onDoubleClick(Event event) {

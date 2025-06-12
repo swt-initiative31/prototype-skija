@@ -108,7 +108,7 @@ public class Group extends CustomComposite {
 	}
 
 	private void onPaint(Event event) {
-		Drawing.drawWithGC(this, event.gc, renderer::paint);
+		renderer.paint(event.gc);
 	}
 
 	static int checkStyle(int style) {
@@ -150,7 +150,7 @@ public class Group extends CustomComposite {
 			return size;
 		}
 		Layout layout = getLayout();
-		Point layoutSize = (layout != null) ? DPIUtil.autoScaleDown(size) : computeChildrenSize(changed);
+		Point layoutSize = layout != null ? size : computeChildrenSize(changed);
 
 		final Point textExtent = renderer.getTextExtent();
 		int width = Math.max(10, Math.max(layoutSize.x, textExtent.x + CLIENT_INSET * 6));
@@ -177,7 +177,7 @@ public class Group extends CustomComposite {
 		trim.width = width + CLIENT_INSET * 2;
 		trim.height = height + CLIENT_INSET * 2;
 		trim.height += textExtent.y + CLIENT_INSET * 2;
-		return DPIUtil.autoScaleUp(trim);
+		return trim;
 	}
 
 	@Override

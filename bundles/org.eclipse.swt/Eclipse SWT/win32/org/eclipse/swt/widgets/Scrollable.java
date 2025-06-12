@@ -119,6 +119,9 @@ long callWindowProc (long hwnd, int msg, long wParam, long lParam) {
  * @see #getClientArea
  */
 public Rectangle computeTrim (int x, int y, int width, int height) {
+	if (isLightWeight()) {
+		return new Rectangle(x, y, width, height);
+	}
 	checkWidget ();
 	int zoom = getZoom();
 	Rectangle rectangle = DPIUtil.scaleUp(new Rectangle(x, y, width, height), zoom);
@@ -209,6 +212,11 @@ void destroyScrollBar (int type) {
  * @see #computeTrim
  */
 public Rectangle getClientArea () {
+	if (isLightWeight()) {
+		// TODO
+		final Point size = getSize();
+		return new Rectangle(0, 0, size.x, size.y);
+	}
 	checkWidget ();
 	return DPIUtil.scaleDown(getClientAreaInPixels(), getZoom());
 }

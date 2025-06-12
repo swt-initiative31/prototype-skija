@@ -170,7 +170,7 @@ public DateTime (Composite parent, int style) {
 		createPopupShell (-1, -1, -1);
 		addListener (SWT.Resize, event -> setDropDownButtonSize ());
 	}
-	initAccessible ();
+//	initAccessible ();
 
 	if (isDateWithDropDownButton ()) {
 		//Date w/ drop down button is in containers.

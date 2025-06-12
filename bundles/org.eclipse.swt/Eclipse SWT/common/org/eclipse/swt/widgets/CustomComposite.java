@@ -15,6 +15,11 @@ public abstract class CustomComposite extends Composite {
 	}
 
 	@Override
+	protected boolean requiresBeingNative() {
+		return false;
+	}
+
+	@Override
 	public final Color getBackground() {
 		return background != null ? background : getRenderer().getDefaultBackground();
 	}
@@ -24,7 +29,9 @@ public abstract class CustomComposite extends Composite {
 		if (color != null && color.isDisposed())
 			error(SWT.ERROR_INVALID_ARGUMENT);
 		this.background = color;
-		super.setBackground(color);
+		if (!isLightWeight()) {
+			super.setBackground(color);
+		}
 	}
 
 	@Override

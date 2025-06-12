@@ -180,7 +180,7 @@ public CCombo (Composite parent, int style) {
 		}
 	}
 
-	initAccessible();
+//	initAccessible();
 }
 static int checkStyle (int style) {
 	int mask = SWT.BORDER | SWT.READ_ONLY | SWT.FLAT | SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT | SWT.LEAD | SWT.CENTER | SWT.TRAIL;

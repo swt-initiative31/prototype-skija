@@ -33,6 +33,11 @@ public abstract class CustomControl extends NativeBasedCustomControl {
 	}
 
 	@Override
+	protected final boolean requiresBeingNative() {
+		return false;
+	}
+
+	@Override
 	public final Color getBackground() {
 		return background != null ? background : getRenderer().getDefaultBackground();
 	}
@@ -42,6 +47,10 @@ public abstract class CustomControl extends NativeBasedCustomControl {
 		if (color != null && color.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
 		this.background = color;
 		super.setBackground(color);
+	}
+
+	protected boolean isBackgroundSet() {
+		return background != null;
 	}
 
 	@Override

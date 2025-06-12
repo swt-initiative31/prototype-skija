@@ -277,7 +277,7 @@ class BasicLabelRenderer extends LabelRenderer {
 	}
 
 	private void fillBackground(GC gc, int width, int height, Color background) {
-		if (background.getAlpha() > 0) {
+		if (label.isBackgroundSet() && background.getAlpha() > 0) {
 			gc.setBackground(background);
 			gc.fillRectangle(0, 0, width, height);
 		}

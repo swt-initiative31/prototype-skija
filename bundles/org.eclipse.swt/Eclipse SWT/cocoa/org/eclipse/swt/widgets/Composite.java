@@ -51,7 +51,6 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
 public class Composite extends CompositeCommon {
-	Layout layout;
 	Control[] tabList;
 	int layoutCount, backgroundMode;
 	private boolean isStyledText; // This field is set to true if Object is StyledText
@@ -94,6 +93,11 @@ Composite () {
  */
 public Composite (Composite parent, int style) {
 	super (parent, style);
+}
+
+@Override
+protected boolean requiresBeingNative() {
+	return false;
 }
 
 Control [] _getChildren () {
@@ -344,6 +348,7 @@ void drawBackground (long id, NSGraphicsContext context, NSRect rect) {
 	}
 }
 
+@Override
 Composite findDeferredControl () {
 	return layoutCount > 0 ? this : parent.findDeferredControl ();
 }

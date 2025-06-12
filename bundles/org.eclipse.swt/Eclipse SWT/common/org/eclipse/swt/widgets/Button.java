@@ -155,7 +155,7 @@ public class Button extends CustomControl {
 		addListener(SWT.MouseEnter, listener);
 		addListener(SWT.MouseExit, listener);
 
-		initializeAccessible();
+//		initializeAccessible();
 	}
 
 	@Override
@@ -321,10 +321,7 @@ public class Button extends CustomControl {
 	}
 
 	private void onPaint(Event event) {
-		if (!isVisible()) {
-			return;
-		}
-		Drawing.drawWithGC(this, event.gc, renderer::paint);
+		renderer.paint(event.gc);
 	}
 
 	private void onDispose(Event event) {

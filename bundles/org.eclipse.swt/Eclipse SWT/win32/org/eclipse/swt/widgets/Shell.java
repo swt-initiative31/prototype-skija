@@ -164,6 +164,11 @@ public Shell () {
 	this ((Display) null);
 }
 
+@Override
+protected boolean requiresBeingNative() {
+	return true;
+}
+
 /**
  * Constructs a new instance of this class given only the style
  * value describing its behavior and appearance. This is equivalent

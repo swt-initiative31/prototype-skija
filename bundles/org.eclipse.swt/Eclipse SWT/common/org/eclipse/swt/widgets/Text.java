@@ -505,7 +505,7 @@ public class Text extends NativeBasedCustomScrollable {
 	}
 
 	private void paintControl(Event e) {
-		Drawing.drawWithGC(this, e.gc, renderer::paint);
+		renderer.paint(e.gc);
 	}
 
 	@Override

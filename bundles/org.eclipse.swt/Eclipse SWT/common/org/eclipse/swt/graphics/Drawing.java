@@ -42,6 +42,8 @@ public final class Drawing {
 		return gc;
 	}
 
+	private static boolean recursivelyCalled;
+
 	/**
 	 * Executes the given drawing operation of the given control on a GC. If the
 	 * given GC is not null, it is used as the target GC for the rendering result,
@@ -53,16 +55,17 @@ public final class Drawing {
 	 * @param drawOperation the operation that draws the control
 	 */
 	public static void drawWithGC(Control control, GC originalGC, Consumer<GC> drawOperation) {
-		Rectangle bounds = control.getBounds();
+		if (recursivelyCalled) {
+			drawOperation.accept(originalGC);
+			return;
+		}
+		boolean usingTemporaryGC = false;
 		if (originalGC != null && originalGC.innerGC instanceof NativeGC nativeGC
 				&& nativeGC.drawable instanceof Control gcControl) {
 			if (gcControl != control) {
 				throw new IllegalStateException("given GC was not created for given control");
 			}
-		}
-
-		boolean usingTemporaryGC = false;
-		if (originalGC == null) {
+		} else {
 			originalGC = new GC(control);
 			usingTemporaryGC = true;
 		}
@@ -71,17 +74,21 @@ public final class Drawing {
 		gc.setFont(control.getFont());
 		gc.setForeground(control.getForeground());
 		gc.setBackground(control.getBackground());
-		gc.setClipping(new Rectangle(0, 0, bounds.width, bounds.height));
+		final Point size = control.getSize();
+		gc.setClipping(new Rectangle(0, 0, size.x, size.y));
 		gc.setAntialias(SWT.ON);
 
+		recursivelyCalled = true;
 		try {
 			drawOperation.accept(gc);
+
 			gc.commit();
 		} finally {
 			gc.dispose();
 			if (usingTemporaryGC) {
 				originalGC.dispose();
 			}
+			recursivelyCalled = false;
 		}
 	}
 
@@ -124,6 +131,7 @@ public final class Drawing {
 	 * @return the result of the given operation
 	 */
 	public static <T> T measure(Control control, Function<GC, T> operation) {
+		control = Control.getNativeControl(control);
 		GC originalGC = new GC(control);
 		originalGC.setFont(control.getFont());
 		GC gc = createGraphicsContext(originalGC, control, true);

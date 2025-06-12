@@ -14,12 +14,24 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 
 abstract class ControlCommon extends Widget {
 
 	protected abstract boolean isLightWeight();
+
+	protected abstract int getBorderWidth();
+
+	public static Control getNativeControl(Control control) {
+		for (; control != null; control = control.parent) {
+			if (!control.isLightWeight()) {
+				return control;
+			}
+		}
+		return null;
+	}
 
 	public static String toDebugName(Control control) {
 		return control != null ? control.toDebugName() : "null";
@@ -53,6 +65,18 @@ abstract class ControlCommon extends Widget {
 
 	protected final void assertIsNative() {
 		if (isLightWeight()) error(SWT.ERROR_UNSPECIFIED);
+	}
+
+	protected boolean setParent(Composite parent) {
+		checkWidget();
+		if (parent == null) error(SWT.ERROR_NULL_ARGUMENT);
+		if (parent.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
+		if (this.parent == parent) return true;
+
+		this.parent.removeChild((Control)this);
+		this.parent = parent;
+		parent.addChild((Control)this);
+		return true;
 	}
 
 	public Point getLocation() {
@@ -105,6 +129,9 @@ abstract class ControlCommon extends Widget {
 		sendEvent(SWT.Resize);
 	}
 
+	protected void _updateLayout(boolean all) {
+	}
+
 	public Rectangle getBounds() {
 		return new Rectangle(x, y, width, height);
 	}
@@ -126,6 +153,9 @@ abstract class ControlCommon extends Widget {
 		this.y = y;
 		this.width = width;
 		this.height = height;
+		if (!isLightWeight()) {
+			return;
+		}
 		redraw();
 		if (move) {
 			moved();
@@ -133,6 +163,60 @@ abstract class ControlCommon extends Widget {
 		if (resize) {
 			resized();
 		}
+	}
+
+	protected Point toDisplay(int x, int y) {
+		assertIsLightWeight();
+		ControlCommon c = this;
+		do {
+			final Point location = c.getLocation();
+			x += location.x;
+			y += location.y;
+			c = c.parent;
+		} while (c.isLightWeight());
+		return c.toDisplay(x, y);
+	}
+
+	/**
+	 * Returns a point which is the result of converting the
+	 * argument, which is specified in coordinates relative to
+	 * the receiver, to display relative coordinates.
+	 * <p>
+	 * NOTE: To properly map a rectangle or a corner of a rectangle on a right-to-left platform, use
+	 * {@link Display#map(Control, Control, Rectangle)}.
+	 * </p>
+	 *
+	 * @param point the point to be translated (must not be null)
+	 * @return the translated coordinates
+	 *
+	 * @exception IllegalArgumentException <ul>
+	 *    <li>ERROR_NULL_ARGUMENT - if the point is null</li>
+	 * </ul>
+	 * @exception SWTException <ul>
+	 *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+	 *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+	 * </ul>
+	 */
+	public Point toDisplay(Point point) {
+		checkWidget();
+		if (point == null) error(SWT.ERROR_NULL_ARGUMENT);
+		return toDisplay(point.x, point.y);
+	}
+
+	public Point computeSize(int wHint, int hHint, boolean changed) {
+		checkWidget();
+		int width = DEFAULT_WIDTH;
+		int height = DEFAULT_HEIGHT;
+		if (wHint != SWT.DEFAULT) {
+			width = wHint;
+		}
+		if (hHint != SWT.DEFAULT) {
+			height = hHint;
+		}
+		int border = getBorderWidth();
+		width += border * 2;
+		height += border * 2;
+		return new Point(width, height);
 	}
 
 	public boolean getEnabled() {
@@ -168,11 +252,32 @@ abstract class ControlCommon extends Widget {
 			//TODO focus
 		}
 
+		final boolean parentVisible = parent.isVisible();
+		if (parentVisible && isLightWeight() && !visible) {
+			redraw();
+		}
+
 		this.visible = visible;
 
+		if (parentVisible && isLightWeight() && visible) {
+			redraw();
+		}
 		if (!visible) {
 			sendEvent(SWT.Hide);
 		}
+	}
+
+	boolean isShowing() {
+		if (!isVisible()) return false;
+		ControlCommon control = this;
+		while (control != null) {
+			Point size = control.getSize();
+			if (size.x == 0 || size.y == 0) {
+				return false;
+			}
+			control = control.parent;
+		}
+		return true;
 	}
 
 	public void redraw() {
