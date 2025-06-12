@@ -1411,16 +1411,20 @@ void release (boolean destroy) {
 		}
 		if ((state & RELEASED) == 0) {
 			state |= RELEASED;
-			if (destroy) {
-				releaseParent ();
-				releaseWidget ();
-				destroyWidget ();
-			} else {
-				releaseWidget ();
-				releaseHandle ();
-			}
+			doRelease(destroy);
 		}
 		notifyDisposalTracker();
+	}
+}
+
+protected void doRelease(boolean destroy) {
+	if (destroy) {
+		releaseParent ();
+		releaseWidget ();
+		destroyWidget ();
+	} else {
+		releaseWidget ();
+		releaseHandle ();
 	}
 }
 
