@@ -21,6 +21,9 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 
+import java.util.ArrayList;
+import java.util.List;
+
 abstract class ControlCommon extends Widget {
 
 	protected abstract boolean isLightWeight();
@@ -264,11 +267,15 @@ abstract class ControlCommon extends Widget {
 		checkWidget();
 		if (visible == this.visible) return;
 
+		boolean fixFocus = false;
 		if (visible) {
 			sendEvent(SWT.Show);
 			if (isDisposed()) return;
 		} else {
-			//TODO focus
+			fixFocus = isFocusControlOrParentOfFocusControl();
+			if (fixFocus) {
+				display.setFocusControl(null);
+			}
 		}
 
 		final boolean parentVisible = parent.isVisible();
@@ -286,10 +293,44 @@ abstract class ControlCommon extends Widget {
 		}
 		if (!visible) {
 			sendEvent(SWT.Hide);
+			if (isDisposed()) return;
+		}
+
+		if (fixFocus) {
+			focusNearestParent();
 		}
 	}
 
 	protected void updateNativeVisibility() {
+	}
+
+	private boolean isFocusControlOrParentOfFocusControl() {
+		Control control = display.getFocusControl();
+		while (true) {
+			if (control == null) {
+				return false;
+			}
+
+			if (control == this) {
+				return true;
+			}
+
+			if (control instanceof Shell) {
+				return false;
+			}
+
+			control = control.parent;
+		}
+	}
+
+	private void focusNearestParent() {
+		Composite c = parent;
+		while (true) {
+			if (c == null || c.setFocus() || c instanceof Shell) {
+				return;
+			}
+			c = c.parent;
+		}
 	}
 
 	boolean isShowing() {
@@ -349,5 +390,59 @@ abstract class ControlCommon extends Widget {
 
 	protected final ColorProvider getColorProvider() {
 		return display.getColorProvider();
+	}
+
+	public boolean isFocusControl() {
+		checkWidget();
+		return display.getLightWeightFocusControl() == this;
+	}
+
+	protected void getCurrentTabStopControls(List<Control> controls) {
+		if (isTabStop()) {
+			controls.add((Control) this);
+		}
+	}
+
+	protected boolean isTabStop() {
+		return (style & SWT.NO_FOCUS) == 0;
+	}
+
+	protected Composite getTabRoot() {
+		final Control[] controls = parent._getTabList();
+		if (controls != null) {
+			return parent;
+		}
+
+		return parent.getTabRoot();
+	}
+
+	boolean traverseGroup(boolean next) {
+		final Composite root = getTabRoot();
+		if (!root.isVisible() || !root.isEnabled()) {
+			return false;
+		}
+
+		final List<Control> tabControls = new ArrayList<>();
+		root.getCurrentTabStopControls(tabControls);
+		final int index = tabControls.indexOf(this);
+		if (index < 0) {
+			return false;
+		}
+
+		final int offset = next ? 1 : -1;
+		final int length = tabControls.size();
+		int i = index;
+		while (true) {
+			i = (i + offset + length) % length;
+			if (i == index) {
+				break;
+			}
+
+			final Control control = tabControls.get(i);
+			if (!control.isDisposed() && control.setFocus()) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

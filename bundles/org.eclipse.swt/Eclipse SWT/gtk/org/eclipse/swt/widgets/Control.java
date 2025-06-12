@@ -17,6 +17,7 @@ package org.eclipse.swt.widgets;
 
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.List;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
@@ -2951,6 +2952,17 @@ public boolean forceFocus () {
 	if (!isEnabled () || !isVisible ()) return false;
 	if (display.getActiveShell() != shell && !Display.isActivateShellOnForceFocus()) return false;
 	shell.bringToTop (false);
+	if (isLightWeight()) {
+		final Control nativeParent = getNativeControl(this);
+		if (nativeParent == null) return false;
+		long focusHandle = nativeParent.focusHandle();
+		if (GTK.gtk_widget_has_focus(focusHandle)) {
+			display.setFocusControl(this);
+			return true;
+		}
+		display.setPendingLightWeightFocusControl(this);
+		return nativeParent.forceFocus(focusHandle);
+	}
 	return forceFocus (focusHandle ());
 }
 
@@ -4043,7 +4055,8 @@ long gtk_key_press_event (long widget, long event) {
 	int [] eventKeyval = new int [1];
 	GDK.gdk_event_get_keyval(event, eventKeyval);
 
-	if (!hasFocus ()) {
+	Control focusControl = display.getFocusControl();
+	if (getNativeControl(focusControl) != this) {
 		/*
 		* Feature in GTK.  On AIX, the IME window deactivates the current shell and even
 		* though the widget receiving the key event is not in focus, it should filter the input in
@@ -4612,6 +4625,11 @@ boolean isFocusAncestor (Control control) {
  * </ul>
  */
 public boolean isFocusControl () {
+	if (isLightWeight()) {
+		checkWidget ();
+		return display.getLightWeightFocusControl() == this;
+	}
+
 	checkWidget();
 	Control focusControl = display.focusControl;
 	if (focusControl != null && !focusControl.isDisposed ()) {
@@ -6744,13 +6762,15 @@ boolean translateTraversal (long event) {
 	javaEvent.time = GDK.gdk_event_get_time(event);
 	if (!setKeyState (javaEvent, event)) return false;
 	Shell shell = getShell ();
-	Control control = this;
-	do {
-		if (control.traverse (javaEvent)) return true;
-		if (!javaEvent.doit && control.hooks (SWT.Traverse)) return false;
-		if (control == shell) return false;
-		control = control.parent;
-	} while (all && control != null);
+	Control control = display.getFocusControl();
+	if (control != null) {
+		do {
+			if (control.traverse (javaEvent)) return true;
+			if (!javaEvent.doit && control.hooks (SWT.Traverse)) return false;
+			if (control == shell) return false;
+			control = control.parent;
+		} while (all && control != null);
+	}
 	return false;
 }
 
@@ -6791,6 +6811,10 @@ boolean traverseEscape () {
 }
 
 boolean traverseGroup (boolean next) {
+	if (isLightWeight()) {
+		return super.traverseGroup(next);
+	}
+
 	Control root = computeTabRoot ();
 	Widget group = computeTabGroup ();
 	Widget [] list = root.computeTabList ();
@@ -6969,6 +6993,12 @@ Point getSurfaceOrigin () {
 	boolean success = GTK4.gtk_widget_translate_coordinates(fixedHandle, getShell().shellHandle, 0, 0, originX, originY);
 
 	return success ? new Point((int)originX[0], (int)originY[0]) : new Point(0, 0);
+}
+
+protected void getCurrentTabStopControls(List<Control> controls) {
+	if (isTabStop()) {
+		controls.add(this);
+	}
 }
 
 @Override
