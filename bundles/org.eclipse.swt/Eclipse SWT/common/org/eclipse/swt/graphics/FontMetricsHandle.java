@@ -13,6 +13,19 @@
  *******************************************************************************/
 package org.eclipse.swt.graphics;
 
-public abstract class FontMetricsHandle implements IFontMetrics {
-
+public abstract class FontMetricsHandle {
+	public abstract int getAscent();
+	public abstract int getDescent();
+	public abstract int getHeight();
+	public abstract int getLeading();
+	public abstract double getAverageCharacterWidth();
+	/**
+	 * Returns the average character width, measured in points,
+	 * of the font described by the receiver.
+	 *
+	 * @return the average character width of the font
+	 * @deprecated Use getAverageCharacterWidth() instead
+	 */
+	@Deprecated
+	public abstract int getAverageCharWidth();
 }
