@@ -1068,19 +1068,19 @@ public class SkijaGC extends GCHandle {
 	}
 
 	@Override
-	boolean isClipped() {
+	protected boolean isClipped() {
 		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		return false;
 	}
 
 	@Override
-	int getFillRule() {
+	protected int getFillRule() {
 		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 		return 0;
 	}
 
 	@Override
-	void getClipping(Region region) {
+	protected void getClipping(Region region) {
 		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
 
@@ -1197,7 +1197,7 @@ public class SkijaGC extends GCHandle {
 	}
 
 	@Override
-	void setFillRule(int rule) {
+	protected void setFillRule(int rule) {
 		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
 
