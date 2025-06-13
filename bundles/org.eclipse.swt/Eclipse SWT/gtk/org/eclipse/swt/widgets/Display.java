@@ -6307,4 +6307,5 @@ public boolean setRescalingAtRuntime(boolean activate) {
 	// not implemented for GTK
 	return false;
 }
+
 }

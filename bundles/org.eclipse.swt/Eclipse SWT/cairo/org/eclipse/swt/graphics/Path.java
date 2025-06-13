@@ -317,9 +317,13 @@ public void addString(String string, float x, float y, Font font) {
 	Font scaledFont = new Font(font.getDevice(), fd);
 	addStringInPixels(string, x, y, scaledFont);
 	scaledFont.dispose(); // Dispose the scaled up font
+<<<<<<< HEAD
 
 }
 
+=======
+}
+>>>>>>> f237ef6101 (Re-add/remove empty lines)
 void addStringInPixels(String string, float x, float y, Font font) {
 	moved = false;
 	NativeGC.addCairoString(handle, string, x, y, font);
