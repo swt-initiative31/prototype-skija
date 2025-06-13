@@ -336,7 +336,6 @@ public void addString(String string, float x, float y, Font font) {
 	scaledFont.dispose(); // Dispose the scaled up font
 }
 void addStringInPixels(String string, float x, float y, Font font) {
-
 	moved = false;
 	NativeGC.addCairoString(handle, string, x, y, font);
 	closed = true;

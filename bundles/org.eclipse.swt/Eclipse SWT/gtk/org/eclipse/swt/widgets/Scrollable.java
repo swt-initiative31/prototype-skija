@@ -641,5 +641,4 @@ private Point scrollBarSize(long scrollBarHandle) {
 	int spacing = padding[0];
 	return new Point(requisition.width + spacing, requisition.height + spacing);
 }
-
 }
