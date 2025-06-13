@@ -557,6 +557,7 @@ public class Display extends DisplayCommon implements Executor {
 		CommonWidgetsDPIChangeHandlers.registerCommonHandlers();
 	}
 
+
 /*
 * TEMPORARY CODE.
 */
