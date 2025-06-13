@@ -57,7 +57,7 @@ public class DefaultGroupRenderer extends GroupRenderer {
 	@Override
 	protected Point getTextExtent() {
 		if (textExtentCache == null) {
-			textExtentCache = Drawing.getTextExtent(group, group.getText(), DRAW_FLAGS);
+			textExtentCache = getTextExtent(group.getText(), DRAW_FLAGS);
 		}
 		return textExtentCache;
 	}
