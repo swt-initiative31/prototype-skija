@@ -541,9 +541,4 @@ public static Color win32_new(Device device, int handle, int alpha) {
 	return color;
 }
 
-public int getIntRGB() {
-	return handle;
-}
-
-
 }

@@ -548,16 +548,4 @@ public String toString () {
 	return "Color {" + getRed() + ", " + getGreen() + ", " + getBlue() + ", " + getAlpha() + "}";
 }
 
-public int getIntRGB() {
-	int red = (int) getRed();
-	int green = (int) getGreen();
-	int blue = (int) getBlue();
-
-	int intRGB = ((red & 0xFF)) | ((green & 0xFF) << 8) | ((blue & 0xFF) << 16);
-
-	System.out.println("red: " + red + ", green: " + green + ", blue: " + blue + " = (intRGB) " + intRGB);
-	return intRGB;
-
-}
-
 }
