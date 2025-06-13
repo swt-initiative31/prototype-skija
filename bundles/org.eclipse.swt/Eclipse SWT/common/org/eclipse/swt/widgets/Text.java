@@ -15,6 +15,7 @@ import java.util.*;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
+import org.eclipse.swt.dnd.*;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SegmentListener;
 import org.eclipse.swt.events.SelectionListener;
@@ -421,6 +422,8 @@ public class Text extends NativeBasedCustomScrollable {
 			switch (e.keyCode) {
 			case SWT.HOME -> model.moveCaretToTextStart(shiftPressed);
 			case SWT.END -> model.moveCaretToTextEnd(shiftPressed);
+			case SWT.ARROW_LEFT -> model.moveCaretToPreviousWord(shiftPressed);
+	     	case SWT.ARROW_RIGHT -> model.moveCaretToNextWord(shiftPressed);
 			}
 			if (!shiftPressed) {
 				switch (e.keyCode) {
@@ -443,6 +446,7 @@ public class Text extends NativeBasedCustomScrollable {
 		case SWT.END -> model.moveCaretToLineEnd(shiftPressed);
 		case SWT.BS -> model.removeCharacterBeforeCaret();
 		case SWT.DEL -> model.removeCharacterAfterCaret();
+		case SWT.CR, SWT.LF -> model.handleNewLine(style, this);
 		default -> {
 			if (e.keyCode == 0 || e.character != '\0') {
 				model.insert(e.character);
@@ -760,9 +764,14 @@ public class Text extends NativeBasedCustomScrollable {
 	 */
 	public void copy() {
 		checkWidget();
-		if ((style & SWT.PASSWORD) != 0)// || echoCharacter != '\0')
-			return;
-//		copyToClipboard(model.getSelectedText().toCharArray());
+		 if ((style & SWT.PASSWORD) != 0) return;
+		    String selectedText = model.getSelectedText();
+		    if (selectedText != null && !selectedText.isEmpty()) {
+		        Clipboard clipboard = new Clipboard(getDisplay());
+		        TextTransfer textTransfer = TextTransfer.getInstance();
+		        clipboard.setContents(new Object[] { selectedText }, new Transfer[] { textTransfer });
+		        clipboard.dispose();
+		    }
 	}
 
 	public void cut() {
@@ -772,8 +781,13 @@ public class Text extends NativeBasedCustomScrollable {
 
 	public void paste() {
 		checkWidget();
-		String clipboardText = ""; // getClipboardText();
-		model.insert(clipboardText);
+	    Clipboard clipboard = new Clipboard(getDisplay());
+	    TextTransfer textTransfer = TextTransfer.getInstance();
+	    String clipboardText = (String) clipboard.getContents(textTransfer);
+	    clipboard.dispose();
+	    if (clipboardText != null && !clipboardText.isEmpty()) {
+	        model.insert(clipboardText);
+	    }
 	}
 
 	public int getSelectionCount() {
