@@ -117,7 +117,7 @@ public class DefaultListRenderer extends ListRenderer {
 	}
 
 	private Point getTextExtent(String text) {
-		return Drawing.getTextExtent(list, text, FLAGS);
+		return getTextExtent(text, FLAGS);
 	}
 
 	public Point computeTextSize() {
