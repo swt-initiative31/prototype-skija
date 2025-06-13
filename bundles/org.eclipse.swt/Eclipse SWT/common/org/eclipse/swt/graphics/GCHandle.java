@@ -13,7 +13,70 @@
  *******************************************************************************/
 package org.eclipse.swt.graphics;
 
-public abstract class GCHandle extends Resource implements IGraphicsContext {
+public abstract class GCHandle extends Resource {
+
+	public void commit() {}
+
+	public abstract Point stringExtent(String string);
+
+	public abstract int getLineCap();
+	public abstract void drawLine(int x1, int y1, int x2, int y2);
+	public abstract void drawRectangle(int x, int y, int width, int height);
+	public abstract void fillRectangle(int x, int y, int width, int height);
+	public abstract void drawText(String string, int x, int y);
+	public abstract void drawText(String string, int x, int y, boolean isTransparent);
+	public abstract void drawImage(Image image, int x, int y);
+	public abstract void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle);
+	public abstract void drawOval(int x, int y, int width, int height);
+	public abstract void fillOval(int x, int y, int width, int height);
+	public abstract void drawPolyline(int[] pointArray);
+	public abstract void drawPolygon(int[] pointArray);
+	public abstract void fillPolygon(int[] pointArray);
+	public abstract void drawPoint(int x, int y);
+	public abstract void drawRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight);
+	public abstract void fillRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight);
+
+	public abstract Color getBackground();
+	public abstract void setBackground(Color color);
+	public abstract Color getForeground();
+	public abstract void setForeground(Color color);
+	public abstract Font getFont();
+	public abstract void setFont(Font font);
+	public abstract Rectangle getClipping();
+	public abstract void setClipping(int x, int y, int width, int height);
+	public abstract void setTransform(Transform transform);
+	public abstract int getAlpha();
+	public abstract void setAlpha(int alpha);
+	public abstract Point textExtent(String string, int dRAW_FLAGS);
+	public abstract Point textExtent(String string);
+	public abstract void fillRectangle(Rectangle rect);
+	public abstract void fillGradientRectangle(int i, int pos, int width, int gradientHeight,
+							   boolean b);
+	public abstract void setLineWidth(int i);
+	public abstract FontMetrics getFontMetrics();
+	public abstract void drawImage(Image img, int i, int j, int width, int imageHeight, int x,
+				   int imageY, int width2, int imageHeight2);
+	public abstract void drawText(String line, int lineX, int lineY, int dRAW_FLAGS);
+	public abstract void drawRectangle(Rectangle rectangle);
+
+	public abstract void setAntialias(int antialias);
+	public abstract int getAntialias();
+
+	public abstract void setAdvanced(boolean enable);
+
+	public abstract void setLineStyle(int lineStyle);
+	public abstract void drawFocus (int x, int y, int width, int height);
+	public abstract int getLineStyle();
+	public abstract int getLineWidth();
+	public abstract LineAttributes getLineAttributes();
+
+
+	public abstract void copyArea(Image image, int x, int y);
+	public abstract void copyArea(int srcX, int srcY, int width, int height, int destX, int destY);
+	public abstract void copyArea(int srcX, int srcY, int width, int height, int destX, int destY, boolean paint);
+	public abstract void drawPath(Path path);
+	public abstract void drawString(String string, int x, int y, boolean isTransparent);
+	public abstract void drawString(String string, int x, int y);
 
 	abstract void checkGC(int mask);
 
