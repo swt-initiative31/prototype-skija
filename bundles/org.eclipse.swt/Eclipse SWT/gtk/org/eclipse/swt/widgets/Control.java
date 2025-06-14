@@ -51,7 +51,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class Control extends Widget implements Drawable {
+public abstract class Control extends ControlCommon implements Drawable {
 
 	// allows to disable context menu entry for "insert emoji"
 	static final boolean DISABLE_EMOJI = Boolean.getBoolean("SWT_GTK_INPUT_HINT_NO_EMOJI");
@@ -258,7 +258,8 @@ boolean drawGripper (GC gc, int x, int y, int width, int height, boolean vertica
 	GTK.gtk_style_context_save (context);
 	GTK.gtk_style_context_add_class (context, GTK.GTK_STYLE_CLASS_PANE_SEPARATOR);
 	GTK.gtk_style_context_set_state (context, GTK.GTK_STATE_FLAG_NORMAL);
-	GTK.gtk_render_handle (context, gc.handle, x, y, width, height);
+	NativeGC ngc = (NativeGC) gc.innerGC;
+	GTK.gtk_render_handle(context, ngc.handle, x, y, width, height);
 	GTK.gtk_style_context_restore (context);
 	return true;
 }
@@ -641,7 +642,8 @@ public boolean print (GC gc) {
 	// Prevent allocation warnings
 	GTK.gtk_widget_get_preferred_size(topHandle, null, null);
 	GTK3.gtk_widget_size_allocate(topHandle, allocation);
-	GTK3.gtk_widget_draw(topHandle, gc.handle);
+	NativeGC ngc = (NativeGC) gc.innerGC;
+	GTK3.gtk_widget_draw(topHandle, ngc.handle);
 	return true;
 }
 
