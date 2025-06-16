@@ -101,13 +101,14 @@ public class ControlExample {
 			}
 		}
 		Button skijaToggle = new Button(parent, SWT.TOGGLE);
-		skijaToggle.setText("Use Skija");
+		skijaToggle.setText("Use Skija " + SWT.USE_SKIJA);
 		skijaToggle.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		skijaToggle.setSelection(SWT.USE_SKIJA);
 		skijaToggle.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
 				SWT.USE_SKIJA = skijaToggle.getSelection();
+				skijaToggle.setText("Use Skija " + SWT.USE_SKIJA);
 				parent.layout();
 				parent.redraw(0, 0, parent.getBounds().width, parent.getBounds().height, true);
 			}
