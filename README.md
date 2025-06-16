@@ -38,7 +38,8 @@ Starting with this, you can try out the SWT implementation with whatever applica
 
 The `ControlExample` is part of the example project. It is placed in `org.eclipse.swt.examples.controlexample`. You can run this class as a Java application. The application has tabs for the individual widgets. The tab that opens first is for the `Button`, which is completely custom-drawn. So almost everything you see on that page is custom-drawn via code of the prototype.
 
-At the bottom of the application, a toggle button allows to switch between using the native and the Skija-based renderer ( `GC`) at runtime (see [State](#state)). You can currently distinguish the two rendering engines by looking at the edges of buttons, which are currently not rounded when using the Skija-based GC. The following screenshot shows the rendering of that page based on Skija.
+At the bottom of the application, a toggle button allows to switch between using the native and the Skija-based renderer ( `GC`) at runtime (see [State](#state)). 
+If Skija is used the button will be labed "Use Skija true" otherwise "Use Skija false".
 
 ![ControlExample Button Page](readme_images/controls_button_windows_custom_skijagc.png)
 
