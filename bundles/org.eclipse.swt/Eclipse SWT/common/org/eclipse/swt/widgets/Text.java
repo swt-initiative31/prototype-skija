@@ -294,6 +294,12 @@ public class Text extends NativeBasedCustomScrollable {
 			size.x += 2 * getBorderWidth();
 			size.y += 2 * getBorderWidth();
 		}
+		if (wHint != SWT.DEFAULT) {
+			size.x = wHint;
+		}
+		if (hHint != SWT.DEFAULT) {
+			size.y = hHint;
+		}
 		return size;
 	}
 
