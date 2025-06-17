@@ -1555,15 +1555,13 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 			GCData data = new GCData ();
 			data.ps = ps;
 			data.hwnd = handle;
-			GC gc = GC.win32_new (this, data);
-
+			GC gc = NativeGC.win32_new (this, data);
 			/* Get the system region for the paint HDC */
 			long sysRgn = 0;
 			if ((style & (SWT.DOUBLE_BUFFERED | SWT.TRANSPARENT)) != 0 || (style & SWT.NO_MERGE_PAINTS) != 0) {
 				sysRgn = OS.CreateRectRgn (0, 0, 0, 0);
-				NativeGC ngc = (NativeGC) gc.innerGC;
-				if (OS.GetRandomRgn(ngc.handle, sysRgn, OS.SYSRGN) == 1) {
-					if ((OS.GetLayout(ngc.handle) & OS.LAYOUT_RTL) != 0) {
+				if (OS.GetRandomRgn(gc.handle, sysRgn, OS.SYSRGN) == 1) {
+					if ((OS.GetLayout(gc.handle) & OS.LAYOUT_RTL) != 0) {
 						int nBytes = OS.GetRegionData (sysRgn, 0, null);
 						int [] lpRgnData = new int [nBytes / 4];
 						OS.GetRegionData (sysRgn, nBytes, lpRgnData);

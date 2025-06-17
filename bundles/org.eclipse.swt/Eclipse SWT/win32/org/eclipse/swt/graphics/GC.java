@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.swt.graphics;
 
+
 import java.util.*;
 import java.util.stream.*;
 
@@ -67,6 +68,19 @@ import org.eclipse.swt.*;
 public class GC extends Resource {
 
 	public GCHandle innerGC;
+
+	/**
+	 * the handle to the OS device context
+	 * (Warning: This field is platform dependent)
+	 * <p>
+	 * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
+	 * public API. It is marked public only so that it can be shared
+	 * within the packages provided by SWT. It is not available on all
+	 * platforms and should never be accessed from application code.
+	 * </p>
+	 *
+	 * @noreference This field is not intended to be referenced by clients.
+	 */
 
 	static final int FOREGROUND = 1 << 0;
 	static final int BACKGROUND = 1 << 1;
@@ -172,263 +186,7 @@ void checkGC(int mask) {
 	innerGC.checkGC(mask);
 }
 
-void checkGC(int mask) {
-	if (Device.strictChecks) {
-		validateGCState();
-	}
-	int state = data.state;
-	if ((state & mask) == mask) return;
-	state = (state ^ mask) & mask;
-	data.state |= mask;
-	long gdipGraphics = data.gdipGraphics;
-	if (gdipGraphics != 0) {
-		long pen = data.gdipPen;
-		float width = data.lineWidth;
-		if ((state & FOREGROUND) != 0 || (pen == 0 && (state & (LINE_WIDTH | LINE_STYLE | LINE_MITERLIMIT | LINE_JOIN | LINE_CAP)) != 0)) {
-			if (data.gdipFgBrush != 0) Gdip.SolidBrush_delete(data.gdipFgBrush);
-			data.gdipFgBrush = 0;
-			long brush;
-			Pattern pattern = data.foregroundPattern;
-			if (pattern != null) {
-				if(data.alpha == 0xFF) {
-					brush = pattern.getHandle(getZoom());
-				} else {
-					brush = data.gdipFgPatternBrushAlpha != 0 ? Gdip.Brush_Clone(data.gdipFgPatternBrushAlpha) : createAlphaTextureBrush(pattern.getHandle(getZoom()), data.alpha);
-					data.gdipFgPatternBrushAlpha = brush;
-				}
-				if ((data.style & SWT.MIRRORED) != 0) {
-					switch (Gdip.Brush_GetType(brush)) {
-						case Gdip.BrushTypeTextureFill:
-							brush = Gdip.Brush_Clone(brush);
-							if (brush == 0) SWT.error(SWT.ERROR_NO_HANDLES);
-							Gdip.TextureBrush_ScaleTransform(brush, -1, 1, Gdip.MatrixOrderPrepend);
-							data.gdipFgBrush = brush;
-					}
-				}
-			} else {
-				int foreground = data.foreground;
-				int color = (data.alpha << 24) | ((foreground >> 16) & 0xFF) | (foreground & 0xFF00) | ((foreground & 0xFF) << 16);
-				brush = Gdip.SolidBrush_new(color);
-				if (brush == 0) SWT.error(SWT.ERROR_NO_HANDLES);
-				data.gdipFgBrush = brush;
-			}
-			if (pen != 0) {
-				Gdip.Pen_SetBrush(pen, brush);
-			} else {
-				pen = data.gdipPen = Gdip.Pen_new(brush, width);
-			}
-		}
-		if ((state & LINE_WIDTH) != 0) {
-			Gdip.Pen_SetWidth(pen, width);
-			switch (data.lineStyle) {
-				case SWT.LINE_CUSTOM:
-					state |= LINE_STYLE;
-			}
-		}
-		if ((state & LINE_STYLE) != 0) {
-			float[] dashes = null;
-			float dashOffset = 0;
-			int dashStyle = Gdip.DashStyleSolid;
-			switch (data.lineStyle) {
-				case SWT.LINE_SOLID: break;
-				case SWT.LINE_DOT: dashStyle = Gdip.DashStyleDot; if (width == 0) dashes = LINE_DOT_ZERO; break;
-				case SWT.LINE_DASH: dashStyle = Gdip.DashStyleDash; if (width == 0) dashes = LINE_DASH_ZERO; break;
-				case SWT.LINE_DASHDOT: dashStyle = Gdip.DashStyleDashDot; if (width == 0) dashes = LINE_DASHDOT_ZERO; break;
-				case SWT.LINE_DASHDOTDOT: dashStyle = Gdip.DashStyleDashDotDot; if (width == 0) dashes = LINE_DASHDOTDOT_ZERO; break;
-				case SWT.LINE_CUSTOM: {
-					if (data.lineDashes != null) {
-						dashOffset = data.lineDashesOffset / Math.max (1, width);
-						dashes = new float[data.lineDashes.length * 2];
-						for (int i = 0; i < data.lineDashes.length; i++) {
-							float dash = data.lineDashes[i] / Math.max (1, width);
-							dashes[i] = dash;
-							dashes[i + data.lineDashes.length] = dash;
-						}
-					}
-				}
-			}
-			if (dashes != null) {
-				Gdip.Pen_SetDashPattern(pen, dashes, dashes.length);
-				Gdip.Pen_SetDashStyle(pen, Gdip.DashStyleCustom);
-				Gdip.Pen_SetDashOffset(pen, dashOffset);
-			} else {
-				Gdip.Pen_SetDashStyle(pen, dashStyle);
-			}
-		}
-		if ((state & LINE_MITERLIMIT) != 0) {
-			Gdip.Pen_SetMiterLimit(pen, data.lineMiterLimit);
-		}
-		if ((state & LINE_JOIN) != 0) {
-			int joinStyle = 0;
-			switch (data.lineJoin) {
-				case SWT.JOIN_MITER: joinStyle = Gdip.LineJoinMiter; break;
-				case SWT.JOIN_BEVEL: joinStyle = Gdip.LineJoinBevel; break;
-				case SWT.JOIN_ROUND: joinStyle = Gdip.LineJoinRound; break;
-			}
-			Gdip.Pen_SetLineJoin(pen, joinStyle);
-		}
-		if ((state & LINE_CAP) != 0) {
-			int dashCap = Gdip.DashCapFlat, capStyle = 0;
-			switch (data.lineCap) {
-				case SWT.CAP_FLAT: capStyle = Gdip.LineCapFlat; break;
-				case SWT.CAP_ROUND: capStyle = Gdip.LineCapRound; dashCap = Gdip.DashCapRound; break;
-				case SWT.CAP_SQUARE: capStyle = Gdip.LineCapSquare; break;
-			}
-			Gdip.Pen_SetLineCap(pen, capStyle, capStyle, dashCap);
-		}
-		if ((state & BACKGROUND) != 0) {
-			if (data.gdipBgBrush != 0) Gdip.SolidBrush_delete(data.gdipBgBrush);
-			data.gdipBgBrush = 0;
-			Pattern pattern = data.backgroundPattern;
-			if (pattern != null) {
-				if(data.alpha == 0xFF) {
-					data.gdipBrush = pattern.getHandle(getZoom());
-				} else {
-					long brush = data.gdipBgPatternBrushAlpha != 0 ? Gdip.Brush_Clone(data.gdipBgPatternBrushAlpha) : createAlphaTextureBrush(pattern.getHandle(getZoom()), data.alpha);
-					data.gdipBrush = data.gdipBgBrush /*= data.gdipBgPatternBrushAlpha */ = brush;
-				}
-				if ((data.style & SWT.MIRRORED) != 0) {
-					switch (Gdip.Brush_GetType(data.gdipBrush)) {
-						case Gdip.BrushTypeTextureFill:
-							long brush = Gdip.Brush_Clone(data.gdipBrush);
-							if (brush == 0) SWT.error(SWT.ERROR_NO_HANDLES);
-							Gdip.TextureBrush_ScaleTransform(brush, -1, 1, Gdip.MatrixOrderPrepend);
-							data.gdipBrush = data.gdipBgBrush = brush;
-					}
-				}
-			} else {
-				int background = data.background;
-				int color = (data.alpha << 24) | ((background >> 16) & 0xFF) | (background & 0xFF00) | ((background & 0xFF) << 16);
-				long brush = Gdip.SolidBrush_new(color);
-				if (brush == 0) SWT.error(SWT.ERROR_NO_HANDLES);
-				data.gdipBrush = data.gdipBgBrush = brush;
-			}
-		}
-		if ((state & FONT) != 0) {
-			long fontHandle = SWTFontProvider.getFontHandle(data.font, data.nativeZoom);
-			OS.SelectObject(handle, fontHandle);
-			long[] hFont = new long[1];
-			long gdipFont = createGdipFont(handle, fontHandle, gdipGraphics, device.fontCollection, null, hFont);
-			if (hFont[0] != 0) OS.SelectObject(handle, hFont[0]);
-			if (data.hGDIFont != 0) OS.DeleteObject(data.hGDIFont);
-			data.hGDIFont = hFont[0];
-			if (data.gdipFont != 0) Gdip.Font_delete(data.gdipFont);
-			data.gdipFont = gdipFont;
-		}
-		if ((state & DRAW_OFFSET) != 0) {
-			int effectiveLineWidth = data.lineWidth < 1 ? 1 : Math.round(data.lineWidth);
-			if (effectiveLineWidth % 2 == 1) {
-				PointF offset = new PointF();
-				// In case the effective line width is odd, shift coordinates by (0.5, 0.5).
-				// I.e., a line starting at (0,0) will effectively start in the pixel right
-				// below that coordinate with its center at (0.5, 0.5).
-				offset.X = offset.Y = 0.5f;
-				// The offset will be applied to the coordinate system of the GC; so transform
-				// it from the drawing coordinate system to the coordinate system of the GC by
-				// applying the inverse transformation as the one applied to the GC and correct
-				// it by the line width.
-				long newMatrix = Gdip.Matrix_new(1, 0, 0, 1, 0, 0);
-				Gdip.Graphics_GetTransform(gdipGraphics, newMatrix);
-				Gdip.Matrix_Invert(newMatrix);
-				Gdip.Matrix_TransformVectors(newMatrix, offset, 1);
-				Gdip.Matrix_delete(newMatrix);
-				data.gdipXOffset = Math.abs(offset.X);
-				data.gdipYOffset = Math.abs(offset.Y);
-			} else {
-				data.gdipXOffset = data.gdipYOffset = 0;
-			}
-		}
-		return;
-	}
-	if ((state & (FOREGROUND | LINE_CAP | LINE_JOIN | LINE_STYLE | LINE_WIDTH)) != 0) {
-		int color = data.foreground;
-		int width = (int)data.lineWidth;
-		int[] dashes = null;
-		int lineStyle = OS.PS_SOLID;
-		switch (data.lineStyle) {
-			case SWT.LINE_SOLID: break;
-			case SWT.LINE_DASH: lineStyle = OS.PS_DASH; break;
-			case SWT.LINE_DOT: lineStyle = OS.PS_DOT; break;
-			case SWT.LINE_DASHDOT: lineStyle = OS.PS_DASHDOT; break;
-			case SWT.LINE_DASHDOTDOT: lineStyle = OS.PS_DASHDOTDOT; break;
-			case SWT.LINE_CUSTOM: {
-				if (data.lineDashes != null) {
-					lineStyle = OS.PS_USERSTYLE;
-					dashes = new int[data.lineDashes.length];
-					for (int i = 0; i < dashes.length; i++) {
-						dashes[i] = (int)data.lineDashes[i];
-					}
-				}
-				break;
-			}
-		}
-		if ((state & LINE_STYLE) != 0) {
-			OS.SetBkMode(handle, data.lineStyle == SWT.LINE_SOLID ? OS.OPAQUE : OS.TRANSPARENT);
-		}
-		int joinStyle = 0;
-		switch (data.lineJoin) {
-			case SWT.JOIN_MITER: joinStyle = OS.PS_JOIN_MITER; break;
-			case SWT.JOIN_ROUND: joinStyle = OS.PS_JOIN_ROUND; break;
-			case SWT.JOIN_BEVEL: joinStyle = OS.PS_JOIN_BEVEL; break;
-		}
-		int capStyle = 0;
-		switch (data.lineCap) {
-			case SWT.CAP_ROUND: capStyle = OS.PS_ENDCAP_ROUND; break;
-			case SWT.CAP_FLAT: capStyle = OS.PS_ENDCAP_FLAT; break;
-			case SWT.CAP_SQUARE: capStyle = OS.PS_ENDCAP_SQUARE;break;
-		}
-		int style = lineStyle | joinStyle | capStyle;
-		/*
-		* Feature in Windows.  Windows does not honour line styles other then
-		* PS_SOLID for pens wider than 1 pixel created with CreatePen().  The fix
-		* is to use ExtCreatePen() instead.
-		*/
-		long newPen;
-		if ((width == 0 && lineStyle != OS.PS_USERSTYLE) || style == 0) {
-			newPen = OS.CreatePen(style & OS.PS_STYLE_MASK, width, color);
-		} else {
-			LOGBRUSH logBrush = new LOGBRUSH();
-			logBrush.lbStyle = OS.BS_SOLID;
-			logBrush.lbColor = color;
-			/* Feature in Windows. PS_GEOMETRIC pens cannot have zero width. */
-			newPen = OS.ExtCreatePen (style | OS.PS_GEOMETRIC, Math.max(1, width), logBrush, dashes != null ? dashes.length : 0, dashes);
-		}
-		OS.SelectObject(handle, newPen);
-		data.state |= PEN;
-		data.state &= ~NULL_PEN;
-		if (data.hPen != 0) OS.DeleteObject(data.hPen);
-		data.hPen = data.hOldPen = newPen;
-	} else if ((state & PEN) != 0) {
-		OS.SelectObject(handle, data.hOldPen);
-		data.state &= ~NULL_PEN;
-	} else if ((state & NULL_PEN) != 0) {
-		data.hOldPen = OS.SelectObject(handle, OS.GetStockObject(OS.NULL_PEN));
-		data.state &= ~PEN;
-	}
-	if ((state & BACKGROUND) != 0) {
-		long newBrush = OS.CreateSolidBrush(data.background);
-		OS.SelectObject(handle, newBrush);
-		data.state |= BRUSH;
-		data.state &= ~NULL_BRUSH;
-		if (data.hBrush != 0) OS.DeleteObject(data.hBrush);
-		data.hOldBrush = data.hBrush = newBrush;
-	} else if ((state & BRUSH) != 0) {
-		OS.SelectObject(handle, data.hOldBrush);
-		data.state &= ~NULL_BRUSH;
-	} else if ((state & NULL_BRUSH) != 0) {
-		data.hOldBrush = OS.SelectObject(handle, OS.GetStockObject(OS.NULL_BRUSH));
-		data.state &= ~BRUSH;
-	}
-	if ((state & BACKGROUND_TEXT) != 0) {
-		OS.SetBkColor(handle, data.background);
-	}
-	if ((state & FOREGROUND_TEXT) != 0) {
-		OS.SetTextColor(handle, data.foreground);
-	}
-	if ((state & FONT) != 0) {
-		long fontHandle = SWTFontProvider.getFontHandle(data.font, data.nativeZoom);
-		OS.SelectObject(handle, fontHandle);
-	}
+
 @Override
 public void dispose() {
 	innerGC.dispose();
@@ -454,19 +212,6 @@ public void copyArea (Image image, int x, int y) {
 	innerGC.copyArea(image, x, y);
 }
 
-void copyAreaInPixels(Image image, int x, int y) {
-<<<<<<< HEAD
-	checkNonDisposed();
-	if (image == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	if (image.type != SWT.BITMAP || image.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	/* Copy the bitmap area */
-	Rectangle rect = image.getBounds(getZoom());
-	long memHdc = OS.CreateCompatibleDC(handle);
-	long hOldBitmap = OS.SelectObject(memHdc, Image.win32_getHandle(image, getZoom()));
-	OS.BitBlt(memHdc, 0, 0, rect.width, rect.height, handle, x, y, OS.SRCCOPY);
-	OS.SelectObject(memHdc, hOldBitmap);
-	OS.DeleteDC(memHdc);
-}
 
 /**
  * Copies a rectangular area of the receiver at the source
@@ -506,31 +251,9 @@ public void copyArea (int srcX, int srcY, int width, int height, int destX, int 
  * @since 3.1
  */
 public void copyArea (int srcX, int srcY, int width, int height, int destX, int destY, boolean paint) {
-	int zoom = getZoom();
-	Rectangle sourceRect = DPIUtil.scaleUp(drawable, new Rectangle(srcX, srcY, width, height), zoom);
-	Rectangle destRect = DPIUtil.scaleUp(drawable, new Rectangle(destX, destY, width, height), zoom);
-	copyAreaInPixels(sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height, destRect.x, destRect.y, paint);
+	innerGC.copyArea(srcX,srcY,width,height,destX,destY,paint);
 }
 
-void copyAreaInPixels(int srcX, int srcY, int width, int height, int destX, int destY, boolean paint) {
-	checkNonDisposed();
-	long hwnd = data.hwnd;
-	if (hwnd == 0) {
-		OS.BitBlt(handle, destX, destY, width, height, handle, srcX, srcY, OS.SRCCOPY);
-	} else {
-		RECT lprcClip = null;
-		long hrgn = OS.CreateRectRgn(0, 0, 0, 0);
-		if (OS.GetClipRgn(handle, hrgn) == 1) {
-			lprcClip = new RECT();
-			OS.GetRgnBox(hrgn, lprcClip);
-		}
-		OS.DeleteObject(hrgn);
-		RECT lprcScroll = new RECT();
-		OS.SetRect(lprcScroll, srcX, srcY, srcX + width, srcY + height);
-		int flags = paint ? OS.SW_INVALIDATE | OS.SW_ERASE : 0;
-		OS.ScrollWindowEx(hwnd, destX - srcX, destY - srcY, lprcScroll, lprcClip, 0, null, flags);
-	}
-}
 static long createGdipFont(long hDC, long hFont, long graphics, long fontCollection, long [] outFamily, long[] outFont) {
 	long font = Gdip.Font_new(hDC, hFont);
 	if (font == 0) SWT.error(SWT.ERROR_NO_HANDLES);
@@ -698,69 +421,9 @@ void destroy() {
  * </ul>
  */
 public void drawArc (int x, int y, int width, int height, int startAngle, int arcAngle) {
-	Rectangle rect = DPIUtil.scaleUp(drawable, new Rectangle(x, y, width, height), getZoom());
-	drawArcInPixels(rect.x, rect.y, rect.width, rect.height, startAngle, arcAngle);
-}
-
-void drawArcInPixels (int x, int y, int width, int height, int startAngle, int arcAngle) {
-	checkNonDisposed();
-	checkGC(DRAW);
-	if (width < 0) {
-		x = x + width;
-		width = -width;
-	}
-	if (height < 0) {
-		y = y + height;
-		height = -height;
-	}
-	if (width == 0 || height == 0 || arcAngle == 0) return;
-	long gdipGraphics = data.gdipGraphics;
-	if (gdipGraphics != 0) {
-		Gdip.Graphics_TranslateTransform(gdipGraphics, data.gdipXOffset, data.gdipYOffset, Gdip.MatrixOrderPrepend);
-		if (width == height) {
-			Gdip.Graphics_DrawArc(gdipGraphics, data.gdipPen, x, y, width, height, -startAngle, -arcAngle);
-		} else {
-			long path = Gdip.GraphicsPath_new(Gdip.FillModeAlternate);
-			if (path == 0) SWT.error(SWT.ERROR_NO_HANDLES);
-			long matrix = Gdip.Matrix_new(width, 0, 0, height, x, y);
-			if (matrix == 0) SWT.error(SWT.ERROR_NO_HANDLES);
-			Gdip.GraphicsPath_AddArc(path, 0, 0, 1, 1, -startAngle, -arcAngle);
-			Gdip.GraphicsPath_Transform(path, matrix);
-			Gdip.Graphics_DrawPath(gdipGraphics, data.gdipPen, path);
-			Gdip.Matrix_delete(matrix);
-			Gdip.GraphicsPath_delete(path);
-		}
-		Gdip.Graphics_TranslateTransform(gdipGraphics, -data.gdipXOffset, -data.gdipYOffset, Gdip.MatrixOrderPrepend);
-		return;
-	}
-	if ((data.style & SWT.MIRRORED) != 0) {
-		if (data.lineWidth != 0 && data.lineWidth % 2 == 0) x--;
-	}
-	int x1, y1, x2, y2,tmp;
-	boolean isNegative;
-	if (arcAngle >= 360 || arcAngle <= -360) {
-		x1 = x2 = x + width;
-		y1 = y2 = y + height / 2;
-	} else {
-		isNegative = arcAngle < 0;
-
-		arcAngle = arcAngle + startAngle;
-		if (isNegative) {
-			// swap angles
-			tmp = startAngle;
-			startAngle = arcAngle;
-			arcAngle = tmp;
-		}
-		x1 = cos(startAngle, width) + x + width/2;
-		y1 = -1 * sin(startAngle, height) + y + height/2;
-
-		x2 = cos(arcAngle, width) + x + width/2;
-		y2 = -1 * sin(arcAngle, height) + y + height/2;
-	}
-	OS.Arc(handle, x, y, x + width + 1, y + height + 1, x1, y1, x2, y2);
-}
 	innerGC.drawArc(x, y, width, height, startAngle, arcAngle);
 }
+
 
 
 /**
@@ -781,60 +444,7 @@ void drawArcInPixels (int x, int y, int width, int height, int startAngle, int a
  * @see #drawRectangle(int, int, int, int)
  */
 public void drawFocus (int x, int y, int width, int height) {
-<<<<<<< HEAD
-	Rectangle rect = DPIUtil.scaleUp(drawable, new Rectangle(x, y, width, height), getZoom());
-	drawFocusInPixels(rect.x, rect.y, rect.width, rect.height);
-}
-
-void drawFocusInPixels (int x, int y, int width, int height) {
-	checkNonDisposed();
-	if ((data.uiState & OS.UISF_HIDEFOCUS) != 0) return;
-	data.focusDrawn = true;
-	long hdc = handle;
-	int state = 0;
-	long gdipGraphics = data.gdipGraphics;
-	if (gdipGraphics != 0) {
-		long clipRgn = 0;
-		Gdip.Graphics_SetPixelOffsetMode(gdipGraphics, Gdip.PixelOffsetModeNone);
-		long rgn = Gdip.Region_new();
-		if (rgn == 0) SWT.error(SWT.ERROR_NO_HANDLES);
-		Gdip.Graphics_GetClip(gdipGraphics, rgn);
-		if (!Gdip.Region_IsInfinite(rgn, gdipGraphics)) {
-			clipRgn = Gdip.Region_GetHRGN(rgn, gdipGraphics);
-		}
-		Gdip.Region_delete(rgn);
-		Gdip.Graphics_SetPixelOffsetMode(gdipGraphics, Gdip.PixelOffsetModeHalf);
-		float[] lpXform = null;
-		long matrix = Gdip.Matrix_new(1, 0, 0, 1, 0, 0);
-		if (matrix == 0) SWT.error(SWT.ERROR_NO_HANDLES);
-		Gdip.Graphics_GetTransform(gdipGraphics, matrix);
-		if (!Gdip.Matrix_IsIdentity(matrix)) {
-			lpXform = new float[6];
-			Gdip.Matrix_GetElements(matrix, lpXform);
-		}
-		Gdip.Matrix_delete(matrix);
-		hdc = Gdip.Graphics_GetHDC(gdipGraphics);
-		state = OS.SaveDC(hdc);
-		if (lpXform != null) {
-			OS.SetGraphicsMode(hdc, OS.GM_ADVANCED);
-			OS.SetWorldTransform(hdc, lpXform);
-		}
-		if (clipRgn != 0) {
-			OS.SelectClipRgn(hdc, clipRgn);
-			OS.DeleteObject(clipRgn);
-		}
-	}
-	OS.SetBkColor(hdc, 0xFFFFFF);
-	OS.SetTextColor(hdc, 0x000000);
-	RECT rect = new RECT();
-	OS.SetRect(rect, x, y, x + width, y + height);
-	OS.DrawFocusRect(hdc, rect);
-	if (gdipGraphics != 0) {
-		OS.RestoreDC(hdc, state);
-		Gdip.Graphics_ReleaseHDC(gdipGraphics, hdc);
-	} else {
-		data.state &= ~(BACKGROUND_TEXT | FOREGROUND_TEXT);
-	}
+	innerGC.drawFocus(x, y, width, height);
 }
 
 /**
@@ -860,12 +470,6 @@ public void drawImage (Image image, int x, int y) {
 	innerGC.drawImage(image, x, y);
 }
 
-void drawImageInPixels(Image image, int x, int y) {
-	checkNonDisposed();
-	if (image == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
-	if (image.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	drawImage(image, 0, 0, -1, -1, x, y, -1, -1, true);
-}
 
 /**
  * Copies a rectangular area from the source image into a (potentially
@@ -900,17 +504,7 @@ void drawImageInPixels(Image image, int x, int y) {
  * </ul>
  */
 public void drawImage (Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight) {
-	checkNonDisposed();
-	if (srcWidth == 0 || srcHeight == 0 || destWidth == 0 || destHeight == 0) return;
-	if (srcX < 0 || srcY < 0 || srcWidth < 0 || srcHeight < 0 || destWidth < 0 || destHeight < 0) {
-		SWT.error (SWT.ERROR_INVALID_ARGUMENT);
-	}
-	if (image == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
-	if (image.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-
-	int gcZoom = getZoom();
-	int srcImageZoom = calculateZoomForImage(gcZoom, srcWidth, srcHeight, destWidth, destHeight);
-	drawImage(image, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, gcZoom, srcImageZoom);
+	innerGC.drawImage(image, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight);
 }
 
 private Collection<Integer> getAllCurrentMonitorZooms() {
@@ -943,231 +537,19 @@ private int calculateZoomForImage(int gcZoom, int srcWidth, int srcHeight, int d
 	return 100;
 }
 
-private void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY,
-		int destWidth, int destHeight, int imageZoom, int scaledImageZoom) {
-	Rectangle src = DPIUtil.scaleUp(drawable, new Rectangle(srcX, srcY, srcWidth, srcHeight), scaledImageZoom);
-	Rectangle dest = DPIUtil.scaleUp(drawable, new Rectangle(destX, destY, destWidth, destHeight), imageZoom);
-	if (scaledImageZoom != 100) {
-		/*
-		 * This is a HACK! Due to rounding errors at fractional scale factors,
-		 * the coordinates may be slightly off. The workaround is to restrict
-		 * coordinates to the allowed bounds.
-		 */
-		Rectangle b = image.getBounds(scaledImageZoom);
-		int errX = src.x + src.width - b.width;
-		int errY = src.y + src.height - b.height;
-		if (errX != 0 || errY != 0) {
-			if (errX <= scaledImageZoom / 100 && errY <= scaledImageZoom / 100) {
-				src.intersect(b);
-			} else {
-				SWT.error (SWT.ERROR_INVALID_ARGUMENT);
-			}
-		}
-	}
-	drawImage(image, src.x, src.y, src.width, src.height, dest.x, dest.y, dest.width, dest.height, false, scaledImageZoom);
-}
 
 void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
-	drawImage(srcImage, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple, getZoom());
+	innerGC.drawImage(srcImage, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
 }
 
-void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, int imageZoom) {
-	if (data.gdipGraphics != 0) {
-		//TODO - cache bitmap
-		long [] gdipImage = srcImage.createGdipImage(imageZoom);
-		long img = gdipImage[0];
-		int imgWidth = Gdip.Image_GetWidth(img);
-		int imgHeight = Gdip.Image_GetHeight(img);
 
-		if (simple) {
-			srcWidth = destWidth = imgWidth;
-			srcHeight = destHeight = imgHeight;
-		} else {
-			if (srcX + srcWidth > imgWidth || srcY + srcHeight > imgHeight) {
-				SWT.error (SWT.ERROR_INVALID_ARGUMENT);
-			}
-			simple = srcX == 0 && srcY == 0 &&
-				srcWidth == destWidth && destWidth == imgWidth &&
-				srcHeight == destHeight && destHeight == imgHeight;
-		}
-		Rect rect = new Rect();
-		rect.X = destX;
-		rect.Y = destY;
-		rect.Width = destWidth;
-		rect.Height = destHeight;
-		/*
-		* Note that if the wrap mode is not WrapModeTileFlipXY, the scaled image
-		* is translucent around the borders.
-		*/
-		long attrib = Gdip.ImageAttributes_new();
-		Gdip.ImageAttributes_SetWrapMode(attrib, Gdip.WrapModeTileFlipXY);
-		if (data.alpha != 0xFF) {
-			float[] matrix = new float[]{
-				1,0,0,0,0,
-				0,1,0,0,0,
-				0,0,1,0,0,
-				0,0,0,data.alpha / (float)0xFF,0,
-				0,0,0,0,1,
-			};
-			Gdip.ImageAttributes_SetColorMatrix(attrib, matrix, Gdip.ColorMatrixFlagsDefault, Gdip.ColorAdjustTypeBitmap);
-		}
-		int gstate = 0;
-		if ((data.style & SWT.MIRRORED) != 0) {
-			gstate = Gdip.Graphics_Save(data.gdipGraphics);
-			Gdip.Graphics_ScaleTransform(data.gdipGraphics, -1, 1, Gdip.MatrixOrderPrepend);
-			Gdip.Graphics_TranslateTransform(data.gdipGraphics, - 2 * destX - destWidth, 0, Gdip.MatrixOrderPrepend);
-		}
-		Gdip.Graphics_DrawImage(data.gdipGraphics, img, rect, srcX, srcY, srcWidth, srcHeight, Gdip.UnitPixel, attrib, 0, 0);
-		if ((data.style & SWT.MIRRORED) != 0) {
-			Gdip.Graphics_Restore(data.gdipGraphics, gstate);
-		}
-		Gdip.ImageAttributes_delete(attrib);
-		Gdip.Bitmap_delete(img);
-		if (gdipImage[1] != 0) {
-			long hHeap = OS.GetProcessHeap ();
-			OS.HeapFree(hHeap, 0, gdipImage[1]);
-		}
-		return;
-	}
-	long imageHandle = Image.win32_getHandle(srcImage, imageZoom);
-	switch (srcImage.type) {
-		case SWT.BITMAP:
-			drawBitmap(srcImage, imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
-			break;
-		case SWT.ICON:
-			drawIcon(imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
-			break;
-	}
+void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, int imageZoom) {
+	innerGC.drawImage(srcImage, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple, imageZoom);
 }
 
 void drawIcon(long imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
-	int technology = OS.GetDeviceCaps(handle, OS.TECHNOLOGY);
 
-	boolean drawIcon = true;
-	int flags = OS.DI_NORMAL;
-	int offsetX = 0, offsetY = 0;
-
-	if ((OS.GetLayout(handle) & OS.LAYOUT_RTL) != 0) {
-		flags |= OS.DI_NOMIRROR;
-		/*
-		* Bug in Windows.  For some reason, DrawIconEx() does not take
-		* into account the window origin when the DI_NOMIRROR and
-		* LAYOUT_RTL are set.  The fix is to set the window origin to
-		* (0, 0) and offset the drawing ourselves.
-		*/
-		POINT pt = new POINT();
-		OS.GetWindowOrgEx(handle, pt);
-		offsetX = pt.x;
-		offsetY = pt.y;
-	}
-
-	/* Simple case: no stretching, entire icon */
-	if (simple && technology != OS.DT_RASPRINTER && drawIcon) {
-		if (offsetX != 0 || offsetY != 0) OS.SetWindowOrgEx(handle, 0, 0, null);
-		OS.DrawIconEx(handle, destX - offsetX, destY - offsetY, imageHandle, 0, 0, 0, 0, flags);
-		if (offsetX != 0 || offsetY != 0) OS.SetWindowOrgEx(handle, offsetX, offsetY, null);
-		return;
-	}
-
-	/* Get the icon info */
-	ICONINFO srcIconInfo = new ICONINFO();
-	OS.GetIconInfo(imageHandle, srcIconInfo);
-
-	/* Get the icon width and height */
-	long hBitmap = srcIconInfo.hbmColor;
-	if (hBitmap == 0) hBitmap = srcIconInfo.hbmMask;
-	BITMAP bm = new BITMAP();
-	OS.GetObject(hBitmap, BITMAP.sizeof, bm);
-	int iconWidth = bm.bmWidth, iconHeight = bm.bmHeight;
-	if (hBitmap == srcIconInfo.hbmMask) iconHeight /= 2;
-
-	if (simple) {
-		srcWidth = destWidth = iconWidth;
-		srcHeight = destHeight = iconHeight;
-	}
-
-	/* Draw the icon */
-	boolean failed = srcX + srcWidth > iconWidth || srcY + srcHeight > iconHeight;
-	if (!failed) {
-		simple = srcX == 0 && srcY == 0 &&
-			srcWidth == destWidth && srcHeight == destHeight &&
-			srcWidth == iconWidth && srcHeight == iconHeight;
-		if (!drawIcon) {
-			drawBitmapMask(srcIconInfo.hbmColor, srcIconInfo.hbmMask, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple, iconWidth, iconHeight, false);
-		} else if (simple && technology != OS.DT_RASPRINTER) {
-			/* Simple case: no stretching, entire icon */
-			if (offsetX != 0 || offsetY != 0) OS.SetWindowOrgEx(handle, 0, 0, null);
-			OS.DrawIconEx(handle, destX - offsetX, destY - offsetY, imageHandle, 0, 0, 0, 0, flags);
-			if (offsetX != 0 || offsetY != 0) OS.SetWindowOrgEx(handle, offsetX, offsetY, null);
-		} else {
-			/* Create the icon info and HDC's */
-			ICONINFO newIconInfo = new ICONINFO();
-			newIconInfo.fIcon = true;
-			long srcHdc = OS.CreateCompatibleDC(handle);
-			long dstHdc = OS.CreateCompatibleDC(handle);
-
-			/* Blt the color bitmap */
-			int srcColorY = srcY;
-			long srcColor = srcIconInfo.hbmColor;
-			if (srcColor == 0) {
-				srcColor = srcIconInfo.hbmMask;
-				srcColorY += iconHeight;
-			}
-			long oldSrcBitmap = OS.SelectObject(srcHdc, srcColor);
-			newIconInfo.hbmColor = OS.CreateCompatibleBitmap(srcHdc, destWidth, destHeight);
-			if (newIconInfo.hbmColor == 0) SWT.error(SWT.ERROR_NO_HANDLES);
-			long oldDestBitmap = OS.SelectObject(dstHdc, newIconInfo.hbmColor);
-			boolean stretch = !simple && (srcWidth != destWidth || srcHeight != destHeight);
-			if (stretch) {
-				OS.SetStretchBltMode(dstHdc, OS.COLORONCOLOR);
-				OS.StretchBlt(dstHdc, 0, 0, destWidth, destHeight, srcHdc, srcX, srcColorY, srcWidth, srcHeight, OS.SRCCOPY);
-			} else {
-				OS.BitBlt(dstHdc, 0, 0, destWidth, destHeight, srcHdc, srcX, srcColorY, OS.SRCCOPY);
-			}
-
-			/* Blt the mask bitmap */
-			OS.SelectObject(srcHdc, srcIconInfo.hbmMask);
-			newIconInfo.hbmMask = OS.CreateBitmap(destWidth, destHeight, 1, 1, null);
-			if (newIconInfo.hbmMask == 0) SWT.error(SWT.ERROR_NO_HANDLES);
-			OS.SelectObject(dstHdc, newIconInfo.hbmMask);
-			if (stretch) {
-				OS.StretchBlt(dstHdc, 0, 0, destWidth, destHeight, srcHdc, srcX, srcY, srcWidth, srcHeight, OS.SRCCOPY);
-			} else {
-				OS.BitBlt(dstHdc, 0, 0, destWidth, destHeight, srcHdc, srcX, srcY, OS.SRCCOPY);
-			}
-
-			if (technology == OS.DT_RASPRINTER) {
-				OS.SelectObject(srcHdc, newIconInfo.hbmColor);
-				OS.SelectObject(dstHdc, newIconInfo.hbmMask);
-				drawBitmapTransparentByClipping(srcHdc, dstHdc, 0, 0, destWidth, destHeight, destX, destY, destWidth, destHeight, true, destWidth, destHeight);
-				OS.SelectObject(srcHdc, oldSrcBitmap);
-				OS.SelectObject(dstHdc, oldDestBitmap);
-			} else {
-				OS.SelectObject(srcHdc, oldSrcBitmap);
-				OS.SelectObject(dstHdc, oldDestBitmap);
-				long hIcon = OS.CreateIconIndirect(newIconInfo);
-				if (hIcon == 0) SWT.error(SWT.ERROR_NO_HANDLES);
-				if (offsetX != 0 || offsetY != 0) OS.SetWindowOrgEx(handle, 0, 0, null);
-				OS.DrawIconEx(handle, destX - offsetX, destY - offsetY, hIcon, destWidth, destHeight, 0, 0, flags);
-				if (offsetX != 0 || offsetY != 0) OS.SetWindowOrgEx(handle, offsetX, offsetY, null);
-				OS.DestroyIcon(hIcon);
-			}
-
-			/* Destroy the new icon src and mask and hdc's*/
-			OS.DeleteObject(newIconInfo.hbmMask);
-			OS.DeleteObject(newIconInfo.hbmColor);
-			OS.DeleteDC(dstHdc);
-			OS.DeleteDC(srcHdc);
-		}
-	}
-
-	/* Free icon info */
-	OS.DeleteObject(srcIconInfo.hbmMask);
-	if (srcIconInfo.hbmColor != 0) {
-		OS.DeleteObject(srcIconInfo.hbmColor);
-	}
-
-	if (failed) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+	innerGC.drawIcon();
 }
 
 void drawBitmap(Image srcImage, long imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
@@ -1361,6 +743,7 @@ void drawBitmapAlpha(long imageHandle, int srcX, int srcY, int srcWidth, int src
 	/* Draw the composed pixels */
 	OS.MoveMemory(dibBM.bmBits, destData, sizeInBytes);
 	OS.BitBlt(handle, destX, destY, destWidth, destHeight, memHdc, 0, 0, OS.SRCCOPY);
+
 	/* Free resources */
 	OS.SelectObject(memHdc, oldMemBitmap);
 	OS.DeleteDC(memHdc);
@@ -1588,19 +971,10 @@ void drawBitmapTransparent(Image srcImage, long imageHandle, int srcX, int srcY,
 }
 
 void drawBitmapColor(long imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
-	long srcHdc = OS.CreateCompatibleDC(handle);
-	long oldSrcBitmap = OS.SelectObject(srcHdc, imageHandle);
-	int dwRop = OS.GetROP2(handle) == OS.R2_XORPEN ? OS.SRCINVERT : OS.SRCCOPY;
-	if (!simple && (srcWidth != destWidth || srcHeight != destHeight)) {
-		int mode = OS.SetStretchBltMode(handle, OS.COLORONCOLOR);
-		OS.StretchBlt(handle, destX, destY, destWidth, destHeight, srcHdc, srcX, srcY, srcWidth, srcHeight, dwRop);
-		OS.SetStretchBltMode(handle, mode);
-	} else {
-		OS.BitBlt(handle, destX, destY, destWidth, destHeight, srcHdc, srcX, srcY, dwRop);
-	}
-	OS.SelectObject(srcHdc, oldSrcBitmap);
-	OS.DeleteDC(srcHdc);
-}
+
+	innerGC.drawBitmapColor(imageHandle,src);
+
+
 
 /**
  * Draws a line, using the foreground color, between the points
@@ -1619,28 +993,6 @@ public void drawLine (int x1, int y1, int x2, int y2) {
 	innerGC.drawLine(x1, y1, x2, y2);
 }
 
-void drawLineInPixels (int x1, int y1, int x2, int y2) {
-	checkNonDisposed();
-	checkGC(DRAW);
-	long gdipGraphics = data.gdipGraphics;
-	if (gdipGraphics != 0) {
-		Gdip.Graphics_TranslateTransform(gdipGraphics, data.gdipXOffset, data.gdipYOffset, Gdip.MatrixOrderPrepend);
-		Gdip.Graphics_DrawLine(gdipGraphics, data.gdipPen, x1, y1, x2, y2);
-		Gdip.Graphics_TranslateTransform(gdipGraphics, -data.gdipXOffset, -data.gdipYOffset, Gdip.MatrixOrderPrepend);
-		return;
-	}
-	if ((data.style & SWT.MIRRORED) != 0) {
-		if (data.lineWidth != 0 && data.lineWidth % 2 == 0) {
-			x1--;
-			x2--;
-		}
-	}
-	OS.MoveToEx (handle, x1, y1, 0);
-	OS.LineTo (handle, x2, y2);
-	if (data.lineWidth <= 1) {
-		OS.SetPixel (handle, x2, y2, data.foreground);
-	}
-}
 
 /**
  * Draws the outline of an oval, using the foreground color,
@@ -1691,16 +1043,7 @@ public void drawOval (int x, int y, int width, int height) {
  * @since 3.1
  */
 public void drawPath (Path path) {
-	checkNonDisposed();
-	if (path == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	long pathHandle = path.getHandle(getZoom());
-	if (pathHandle == 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	initGdip();
-	checkGC(DRAW);
-	long gdipGraphics = data.gdipGraphics;
-	Gdip.Graphics_TranslateTransform(gdipGraphics, data.gdipXOffset, data.gdipYOffset, Gdip.MatrixOrderPrepend);
-	Gdip.Graphics_DrawPath(gdipGraphics, data.gdipPen, pathHandle);
-	Gdip.Graphics_TranslateTransform(gdipGraphics, -data.gdipXOffset, -data.gdipYOffset, Gdip.MatrixOrderPrepend);
+	innerGC.drawPath(path);
 }
 
 /**
@@ -1721,6 +1064,7 @@ public void drawPath (Path path) {
  * @since 3.0
  */
 public void drawPoint (int x, int y) {
+<<<<<<< HEAD
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp (drawable, x, deviceZoom);
 	y = DPIUtil.scaleUp (drawable, y, deviceZoom);
@@ -1735,6 +1079,9 @@ void drawPointInPixels (int x, int y) {
 		return;
 	}
 	OS.SetPixel (handle, x, y, data.foreground);
+=======
+	innerGC.drawPoint(x, y);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -1755,6 +1102,7 @@ void drawPointInPixels (int x, int y) {
  * </ul>
  */
 public void drawPolygon (int[] pointArray) {
+<<<<<<< HEAD
 	if (pointArray == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	drawPolygonInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
 }
@@ -1784,6 +1132,9 @@ void drawPolygonInPixels(int[] pointArray) {
 			}
 		}
 	}
+=======
+	innerGC.drawPolygon(pointArray);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -1804,6 +1155,7 @@ void drawPolygonInPixels(int[] pointArray) {
  * </ul>
  */
 public void drawPolyline (int[] pointArray) {
+<<<<<<< HEAD
 	drawPolylineInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
 }
 
@@ -1839,6 +1191,9 @@ void drawPolylineInPixels(int[] pointArray) {
 			}
 		}
 	}
+=======
+	innerGC.drawPolyline(pointArray);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -1857,6 +1212,7 @@ void drawPolylineInPixels(int[] pointArray) {
  * </ul>
  */
 public void drawRectangle (int x, int y, int width, int height) {
+<<<<<<< HEAD
 	drawRectangle(new Rectangle(x, y, width, height));
 }
 
@@ -1892,6 +1248,9 @@ void drawRectangleInPixels (int x, int y, int width, int height) {
 		}
 	}
 	OS.Rectangle (handle, x, y, x + width + 1, y + height + 1);
+=======
+	innerGC.drawRectangle(x, y, width, height);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -1936,6 +1295,7 @@ public void drawRectangle (Rectangle rect) {
  * </ul>
  */
 public void drawRoundRectangle (int x, int y, int width, int height, int arcWidth, int arcHeight) {
+<<<<<<< HEAD
 	int zoom = getZoom();
 	Rectangle rect = DPIUtil.scaleUp(drawable, new Rectangle(x, y, width, height), zoom);
 	arcWidth = DPIUtil.scaleUp (drawable, arcWidth, zoom);
@@ -2008,6 +1368,17 @@ void drawRoundRectangleGdip (long gdipGraphics, long pen, int x, int y, int widt
 	Gdip.Graphics_TranslateTransform(gdipGraphics, -data.gdipXOffset, -data.gdipYOffset, Gdip.MatrixOrderPrepend);
 }
 
+@Override
+public boolean isDisposed() {
+	// TODO Auto-generated method stub
+	return false;
+}
+=======
+	innerGC.drawRoundRectangle(x, y, width, height, arcWidth, arcHeight);
+}
+
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
+
 /**
  * Draws the given string, using the receiver's current font and
  * foreground color. No tab expansion or carriage return processing
@@ -2062,6 +1433,7 @@ public void drawString (String string, int x, int y) {
  * </ul>
  */
 public void drawString (String string, int x, int y, boolean isTransparent) {
+<<<<<<< HEAD
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
 	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
@@ -2129,6 +1501,9 @@ void drawStringInPixels (String string, int x, int y, boolean isTransparent) {
 		}
 	}
 	OS.SetBkMode(handle, oldBkMode);
+=======
+	innerGC.drawString(string, x, y, isTransparent);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -2225,6 +1600,7 @@ public void drawText (String string, int x, int y, boolean isTransparent) {
  * </ul>
  */
 public void drawText (String string, int x, int y, int flags) {
+<<<<<<< HEAD
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
 	y = DPIUtil.scaleUp(drawable, y, deviceZoom);
@@ -2555,6 +1931,9 @@ void drawTextGDIP(long gdipGraphics, String string, int x, int y, int flags, boo
 		size.x = (int)Math.ceil(bounds.Width);
 		size.y = (int)Math.ceil(bounds.Height);
 	}
+=======
+	innerGC.drawText(string, x, y, flags);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -2605,6 +1984,7 @@ public boolean equals (Object object) {
  * @see #drawArc
  */
 public void fillArc (int x, int y, int width, int height, int startAngle, int arcAngle) {
+<<<<<<< HEAD
 	Rectangle rect = DPIUtil.scaleUp(drawable, new Rectangle(x, y, width, height), getZoom());
 	fillArcInPixels(rect.x, rect.y, rect.width, rect.height, startAngle, arcAngle);
 }
@@ -2658,6 +2038,9 @@ void fillArcInPixels (int x, int y, int width, int height, int startAngle, int a
 		y2 = -1 * sin(arcAngle, height) + y + height/2;
 	}
 	OS.Pie(handle, x, y, x + width + 1, y + height + 1, x1, y1, x2, y2);
+=======
+	innerGC.fillArc(x, y, width, height, startAngle, arcAngle);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -2681,6 +2064,7 @@ void fillArcInPixels (int x, int y, int width, int height, int startAngle, int a
  * @see #drawRectangle(int, int, int, int)
  */
 public void fillGradientRectangle (int x, int y, int width, int height, boolean vertical) {
+<<<<<<< HEAD
 	Rectangle rect = DPIUtil.scaleUp(drawable, new Rectangle(x, y, width, height), getZoom());
 	fillGradientRectangleInPixels(rect.x, rect.y, rect.width, rect.height, vertical);
 }
@@ -2777,6 +2161,9 @@ void fillGradientRectangleInPixels(int x, int y, int width, int height, boolean 
 	ImageData.fillGradientRectangle(this, data.device,
 		x, y, width, height, vertical, fromRGB, toRGB,
 		bitResolution, bitResolution, bitResolution);
+=======
+	innerGC.fillGradientRectangle(x, y, width, height, vertical);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -2796,6 +2183,7 @@ void fillGradientRectangleInPixels(int x, int y, int width, int height, boolean 
  * @see #drawOval
  */
 public void fillOval (int x, int y, int width, int height) {
+<<<<<<< HEAD
 	Rectangle rect = DPIUtil.scaleUp(drawable, new Rectangle(x, y, width, height), getZoom());
 	fillOvalInPixels(rect.x, rect.y, rect.width, rect.height);
 }
@@ -2809,6 +2197,9 @@ void fillOvalInPixels (int x, int y, int width, int height) {
 	}
 	if ((data.style & SWT.MIRRORED) != 0) x--;
 	OS.Ellipse(handle, x, y, x + width + 1, y + height + 1);
+=======
+	innerGC.fillOval(x, y, width, height);
+>>>>>>> 585bf26dc8 (GC class as wrapper.)
 }
 
 /**
@@ -2835,15 +2226,7 @@ void fillOvalInPixels (int x, int y, int width, int height) {
  * @since 3.1
  */
 public void fillPath (Path path) {
-	checkNonDisposed();
-	if (path == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	final long pathHandle = path.getHandle(getZoom());
-	if (pathHandle == 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	initGdip();
-	checkGC(FILL);
-	int mode = OS.GetPolyFillMode(handle) == OS.WINDING ? Gdip.FillModeWinding : Gdip.FillModeAlternate;
-	Gdip.GraphicsPath_SetFillMode(pathHandle, mode);
-	Gdip.Graphics_FillPath(data.gdipGraphics, data.gdipBrush, pathHandle);
+	innerGC.fillPath(path);
 }
 
 /**
@@ -2866,38 +2249,7 @@ public void fillPath (Path path) {
  * @see #drawPolygon
  */
 public void fillPolygon (int[] pointArray) {
-	if (pointArray == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	fillPolygonInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
-}
-
-void fillPolygonInPixels (int[] pointArray) {
-	checkNonDisposed();
-	checkGC(FILL);
-	if (data.gdipGraphics != 0) {
-		int mode = OS.GetPolyFillMode(handle) == OS.WINDING ? Gdip.FillModeWinding : Gdip.FillModeAlternate;
-		/*
-		 * GC.fillPolygon method paints at wrong coordinates when GDI+ is used, the
-		 * difference is marginal, hence applying the transformation with additional
-		 * 0.5f pixel correction to avoid the issue seen in bug 139791
-		 */
-		float offsetCorrection = 0.5f;
-		Gdip.Graphics_TranslateTransform(data.gdipGraphics, data.gdipXOffset + offsetCorrection, data.gdipYOffset + offsetCorrection, Gdip.MatrixOrderPrepend);
-		Gdip.Graphics_FillPolygon(data.gdipGraphics, data.gdipBrush, pointArray, pointArray.length / 2, mode);
-		Gdip.Graphics_TranslateTransform(data.gdipGraphics, -(data.gdipXOffset + offsetCorrection), -(data.gdipYOffset + offsetCorrection), Gdip.MatrixOrderPrepend);
-		return;
-	}
-	if ((data.style & SWT.MIRRORED) != 0) {
-		for (int i = 0; i < pointArray.length; i+=2) {
-			pointArray[i]--;
-		}
-	}
-	OS.Polygon(handle, pointArray, pointArray.length / 2);
-	if ((data.style & SWT.MIRRORED) != 0) {
-		for (int i = 0; i < pointArray.length; i+=2) {
-			pointArray[i]++;
-		}
-	}
-
+	innerGC.fillPolygon(pointArray);
 }
 
 /**
@@ -2916,26 +2268,7 @@ void fillPolygonInPixels (int[] pointArray) {
  * @see #drawRectangle(int, int, int, int)
  */
 public void fillRectangle (int x, int y, int width, int height) {
-	fillRectangle(new Rectangle(x, y, width, height));
-}
-
-void fillRectangleInPixels (int x, int y, int width, int height) {
-	checkNonDisposed();
-	checkGC(FILL);
-	if (data.gdipGraphics != 0) {
-		if (width < 0) {
-			x = x + width;
-			width = -width;
-		}
-		if (height < 0) {
-			y = y + height;
-			height = -height;
-		}
-		Gdip.Graphics_FillRectangle(data.gdipGraphics, data.gdipBrush, x, y, width, height);
-		return;
-	}
-	int dwRop = OS.GetROP2(handle) == OS.R2_XORPEN ? OS.PATINVERT : OS.PATCOPY;
-	OS.PatBlt(handle, x, y, width, height, dwRop);
+	innerGC.fillRectangle(x, y, width, height);
 }
 
 /**
@@ -2975,6 +2308,7 @@ public void fillRectangle (Rectangle rect) {
  * @see #drawRoundRectangle
  */
 public void fillRoundRectangle (int x, int y, int width, int height, int arcWidth, int arcHeight) {
+<<<<<<< HEAD
 	int zoom = getZoom();
 	Rectangle rect = DPIUtil.scaleUp(drawable, new Rectangle(x, y, width, height), zoom);
 	arcWidth = DPIUtil.scaleUp (drawable, arcWidth, zoom);
@@ -3015,7 +2349,7 @@ void fillRoundRectangleGdip (long gdipGraphics, long brush, int x, int y, int wi
 		nah = 0 - nah;
 
 	if (naw == 0 || nah == 0) {
-		Gdip.Graphics_FillRectangle(data.gdipGraphics, data.gdipBrush, x, y, width, height);
+		Gdip.Graphics_FillRectangle(innerGC.data.gdipGraphics, data.gdipBrush, x, y, width, height);
 	} else {
 		long path = Gdip.GraphicsPath_new(Gdip.FillModeAlternate);
 		if (path == 0) SWT.error(SWT.ERROR_NO_HANDLES);
@@ -3043,18 +2377,6 @@ void fillRoundRectangleGdip (long gdipGraphics, long brush, int x, int y, int wi
 	}
 }
 
-void flush () {
-	if (data.gdipGraphics != 0) {
-		Gdip.Graphics_Flush(data.gdipGraphics, 0);
-		/*
-		* Note Flush() does not flush the output to the
-		* underline HDC. This is done by calling GetHDC()
-		* followed by ReleaseHDC().
-		*/
-		long hdc = Gdip.Graphics_GetHDC(data.gdipGraphics);
-		Gdip.Graphics_ReleaseHDC(data.gdipGraphics, hdc);
-	}
-}
 
 /**
  * Returns the <em>advance width</em> of the specified character in
@@ -3072,11 +2394,7 @@ void flush () {
  * </ul>
  */
 public int getAdvanceWidth(char ch) {
-	checkNonDisposed();
-	checkGC(FONT);
-	int[] width = new int[1];
-	OS.GetCharWidth(handle, ch, ch, width);
-	return width[0];
+	return innerGC.getAdvanceWidth(ch);
 }
 
 /**
@@ -3105,8 +2423,7 @@ public int getAdvanceWidth(char ch) {
  * @since 3.1
  */
 public boolean getAdvanced() {
-	checkNonDisposed();
-	return data.gdipGraphics != 0;
+	return innerGC.getAdvanced();
 }
 
 /**
@@ -3122,8 +2439,7 @@ public boolean getAdvanced() {
  * @since 3.1
  */
 public int getAlpha() {
-	checkNonDisposed();
-	return data.alpha;
+	return innerGC.getAlpha();
 }
 
 /**
@@ -3143,18 +2459,7 @@ public int getAlpha() {
  * @since 3.1
  */
 public int getAntialias() {
-	checkNonDisposed();
-	if (data.gdipGraphics == 0) return SWT.DEFAULT;
-	int mode = Gdip.Graphics_GetSmoothingMode(data.gdipGraphics);
-	switch (mode) {
-		case Gdip.SmoothingModeDefault: return SWT.DEFAULT;
-		case Gdip.SmoothingModeHighSpeed:
-		case Gdip.SmoothingModeNone: return SWT.OFF;
-		case Gdip.SmoothingModeAntiAlias:
-		case Gdip.SmoothingModeAntiAlias8x8:
-		case Gdip.SmoothingModeHighQuality: return SWT.ON;
-	}
-	return SWT.DEFAULT;
+	return innerGC.getAntialias();
 }
 
 /**
@@ -3167,8 +2472,7 @@ public int getAntialias() {
  * </ul>
  */
 public Color getBackground() {
-	checkNonDisposed();
-	return Color.win32_new(data.device, data.background);
+	return innerGC.getBackground();
 }
 
 /**
@@ -3186,8 +2490,7 @@ public Color getBackground() {
  * @since 3.1
  */
 public Pattern getBackgroundPattern() {
-	checkNonDisposed();
-	return data.backgroundPattern;
+	return innerGC.getBackgroundPattern();
 }
 
 /**
@@ -3207,21 +2510,7 @@ public Pattern getBackgroundPattern() {
  * </ul>
  */
 public int getCharWidth(char ch) {
-	checkNonDisposed();
-	checkGC(FONT);
-
-	/* GetCharABCWidths only succeeds on truetype fonts */
-	int[] width = new int[3];
-	if (OS.GetCharABCWidths(handle, ch, ch, width)) {
-		return width[1];
-	}
-
-	/* It wasn't a truetype font */
-	TEXTMETRIC lptm = new TEXTMETRIC();
-	OS.GetTextMetrics(handle, lptm);
-	SIZE size = new SIZE();
-	OS.GetTextExtentPoint32(handle, new char[]{ch}, 1, size);
-	return size.cx - lptm.tmOverhang;
+	return innerGC.getCharWidth(ch);
 }
 
 /**
@@ -3237,22 +2526,7 @@ public int getCharWidth(char ch) {
  * </ul>
  */
 public Rectangle getClipping () {
-	return DPIUtil.scaleDown(drawable, getClippingInPixels(), getZoom());
-}
-
-Rectangle getClippingInPixels() {
-	checkNonDisposed();
-	long gdipGraphics = data.gdipGraphics;
-	if (gdipGraphics != 0) {
-		Rect rect = new Rect();
-		Gdip.Graphics_SetPixelOffsetMode(gdipGraphics, Gdip.PixelOffsetModeNone);
-		Gdip.Graphics_GetVisibleClipBounds(gdipGraphics, rect);
-		Gdip.Graphics_SetPixelOffsetMode(gdipGraphics, Gdip.PixelOffsetModeHalf);
-		return new Rectangle(rect.X, rect.Y, rect.Width, rect.Height);
-	}
-	RECT rect = new RECT();
-	OS.GetClipBox(handle, rect);
-	return new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
+	return innerGC.getClipping();
 }
 
 /**
@@ -3270,71 +2544,7 @@ Rectangle getClippingInPixels() {
  * </ul>
  */
 public void getClipping (Region region) {
-	checkNonDisposed();
-	if (region == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
-	if (region.isDisposed()) SWT.error (SWT.ERROR_INVALID_ARGUMENT);
-	long gdipGraphics = data.gdipGraphics;
-	if (gdipGraphics != 0) {
-		long rgn = Gdip.Region_new();
-		Gdip.Graphics_GetClip(data.gdipGraphics, rgn);
-		if (Gdip.Region_IsInfinite(rgn, gdipGraphics)) {
-			Rect rect = new Rect();
-			Gdip.Graphics_SetPixelOffsetMode(gdipGraphics, Gdip.PixelOffsetModeNone);
-			Gdip.Graphics_GetVisibleClipBounds(gdipGraphics, rect);
-			Gdip.Graphics_SetPixelOffsetMode(gdipGraphics, Gdip.PixelOffsetModeHalf);
-			OS.SetRectRgn(Region.win32_getHandle(region, getZoom()), rect.X, rect.Y, rect.X + rect.Width, rect.Y + rect.Height);
-		} else {
-			long matrix = Gdip.Matrix_new(1, 0, 0, 1, 0, 0);
-			long identity = Gdip.Matrix_new(1, 0, 0, 1, 0, 0);
-			Gdip.Graphics_GetTransform(gdipGraphics, matrix);
-			Gdip.Graphics_SetTransform(gdipGraphics, identity);
-			long hRgn = Gdip.Region_GetHRGN(rgn, data.gdipGraphics);
-			Gdip.Graphics_SetTransform(gdipGraphics, matrix);
-			Gdip.Matrix_delete(identity);
-			Gdip.Matrix_delete(matrix);
-			POINT pt = new POINT ();
-			OS.GetWindowOrgEx (handle, pt);
-			OS.OffsetRgn (hRgn, pt.x, pt.y);
-			OS.CombineRgn(Region.win32_getHandle(region, getZoom()), hRgn, 0, OS.RGN_COPY);
-			OS.DeleteObject(hRgn);
-		}
-		Gdip.Region_delete(rgn);
-		return;
-	}
-	POINT pt = new POINT ();
-	OS.GetWindowOrgEx (handle, pt);
-	int result = OS.GetClipRgn (handle, Region.win32_getHandle(region, getZoom()));
-	if (result != 1) {
-		RECT rect = new RECT();
-		OS.GetClipBox(handle, rect);
-		OS.SetRectRgn(Region.win32_getHandle(region, getZoom()), rect.left, rect.top, rect.right, rect.bottom);
-	} else {
-		OS.OffsetRgn (Region.win32_getHandle(region, getZoom()), pt.x, pt.y);
-	}
-	long metaRgn = OS.CreateRectRgn (0, 0, 0, 0);
-	if (OS.GetMetaRgn (handle, metaRgn) != 0) {
-		OS.OffsetRgn (metaRgn, pt.x, pt.y);
-		OS.CombineRgn (Region.win32_getHandle(region, getZoom()), metaRgn, Region.win32_getHandle(region, getZoom()), OS.RGN_AND);
-	}
-	OS.DeleteObject(metaRgn);
-	long hwnd = data.hwnd;
-	if (hwnd != 0 && data.ps != null) {
-		long sysRgn = OS.CreateRectRgn (0, 0, 0, 0);
-		if (OS.GetRandomRgn (handle, sysRgn, OS.SYSRGN) == 1) {
-			if ((OS.GetLayout(handle) & OS.LAYOUT_RTL) != 0) {
-				int nBytes = OS.GetRegionData (sysRgn, 0, null);
-				int [] lpRgnData = new int [nBytes / 4];
-				OS.GetRegionData (sysRgn, nBytes, lpRgnData);
-				long newSysRgn = OS.ExtCreateRegion(new float [] {-1, 0, 0, 1, 0, 0}, nBytes, lpRgnData);
-				OS.DeleteObject(sysRgn);
-				sysRgn = newSysRgn;
-			}
-			OS.MapWindowPoints (0, hwnd, pt, 1);
-			OS.OffsetRgn (sysRgn, pt.x, pt.y);
-			OS.CombineRgn (Region.win32_getHandle(region, getZoom()), sysRgn, Region.win32_getHandle(region, getZoom()), OS.RGN_AND);
-		}
-		OS.DeleteObject(sysRgn);
-	}
+	innerGC.getClipping(region);
 }
 
 
@@ -3351,8 +2561,7 @@ public void getClipping (Region region) {
  * @since 3.1
  */
 public int getFillRule() {
-	checkNonDisposed();
-	return OS.GetPolyFillMode(handle) == OS.WINDING ? SWT.FILL_WINDING : SWT.FILL_EVEN_ODD;
+	return innerGC.getFillRule();
 }
 
 /**
@@ -3366,8 +2575,7 @@ public int getFillRule() {
  * </ul>
  */
 public Font getFont () {
-	checkNonDisposed();
-	return data.font;
+	return innerGC.getFont();
 }
 
 /**
@@ -3382,11 +2590,7 @@ public Font getFont () {
  * </ul>
  */
 public FontMetrics getFontMetrics() {
-	checkNonDisposed();
-	checkGC(FONT);
-	TEXTMETRIC lptm = new TEXTMETRIC();
-	OS.GetTextMetrics(handle, lptm);
-	return FontMetrics.win32_new(lptm, data.nativeZoom);
+	return innerGC.getFontMetrics();
 }
 
 /**
@@ -3399,8 +2603,7 @@ public FontMetrics getFontMetrics() {
  * </ul>
  */
 public Color getForeground() {
-	checkNonDisposed();
-	return Color.win32_new(data.device, data.foreground);
+	return innerGC.getForeground();
 }
 
 /**
@@ -3418,8 +2621,7 @@ public Color getForeground() {
  * @since 3.1
  */
 public Pattern getForegroundPattern() {
-	checkNonDisposed();
-	return data.foregroundPattern;
+	return innerGC.getForegroundPattern();
 }
 
 /**
@@ -3445,8 +2647,7 @@ public Pattern getForegroundPattern() {
  * @since 3.2
  */
 public GCData getGCData() {
-	checkNonDisposed();
-	return data;
+	return innerGC.getGCData();
 }
 
 /**
@@ -3463,20 +2664,7 @@ public GCData getGCData() {
  * @since 3.1
  */
 public int getInterpolation() {
-	checkNonDisposed();
-	if (data.gdipGraphics == 0) return SWT.DEFAULT;
-	int mode = Gdip.Graphics_GetInterpolationMode(data.gdipGraphics);
-	switch (mode) {
-		case Gdip.InterpolationModeDefault: return SWT.DEFAULT;
-		case Gdip.InterpolationModeNearestNeighbor: return SWT.NONE;
-		case Gdip.InterpolationModeBilinear:
-		case Gdip.InterpolationModeLowQuality: return SWT.LOW;
-		case Gdip.InterpolationModeBicubic:
-		case Gdip.InterpolationModeHighQualityBilinear:
-		case Gdip.InterpolationModeHighQualityBicubic:
-		case Gdip.InterpolationModeHighQuality: return SWT.HIGH;
-	}
-	return SWT.DEFAULT;
+	return innerGC.getInterpolation();
 }
 
 /**
@@ -3491,23 +2679,7 @@ public int getInterpolation() {
  * @since 3.3
  */
 public LineAttributes getLineAttributes () {
-	LineAttributes attributes = getLineAttributesInPixels();
-	int deviceZoom = getZoom();
-	attributes.width = DPIUtil.scaleDown(drawable, attributes.width, deviceZoom);
-	if(attributes.dash != null) {
-		attributes.dash = DPIUtil.scaleDown(drawable, attributes.dash, deviceZoom);
-	}
-	return attributes;
-}
-
-LineAttributes getLineAttributesInPixels () {
-	checkNonDisposed();
-	float[] dashes = null;
-	if (data.lineDashes != null) {
-		dashes = new float[data.lineDashes.length];
-		System.arraycopy(data.lineDashes, 0, dashes, 0, dashes.length);
-	}
-	return new LineAttributes(data.lineWidth, data.lineCap, data.lineJoin, data.lineStyle, dashes, data.lineDashesOffset, data.lineMiterLimit);
+	return innerGC.getLineAttributes();
 }
 
 /**
@@ -3524,8 +2696,7 @@ LineAttributes getLineAttributesInPixels () {
  * @since 3.1
  */
 public int getLineCap() {
-	checkNonDisposed();
-	return data.lineCap;
+	return innerGC.getLineCap();
 }
 
 /**
@@ -3541,14 +2712,7 @@ public int getLineCap() {
  * @since 3.1
  */
 public int[] getLineDash() {
-	checkNonDisposed();
-	if (data.lineDashes == null) return null;
-	int[] lineDashes = new int[data.lineDashes.length];
-	int deviceZoom = getZoom();
-	for (int i = 0; i < lineDashes.length; i++) {
-		lineDashes[i] = DPIUtil.scaleDown(drawable, (int)data.lineDashes[i], deviceZoom);
-	}
-	return lineDashes;
+	return innerGC.getLineDash();
 }
 
 /**
@@ -3565,8 +2729,7 @@ public int[] getLineDash() {
  * @since 3.1
  */
 public int getLineJoin() {
-	checkNonDisposed();
-	return data.lineJoin;
+	return innerGC.getLineJoin();
 }
 
 /**
@@ -3582,8 +2745,7 @@ public int getLineJoin() {
  * </ul>
  */
 public int getLineStyle() {
-	checkNonDisposed();
-	return data.lineStyle;
+	return innerGC.getLineStyle();
 }
 
 /**
@@ -3599,12 +2761,7 @@ public int getLineStyle() {
  * </ul>
  */
 public int getLineWidth () {
-	return DPIUtil.scaleDown(drawable, getLineWidthInPixels(), getZoom());
-}
-
-int getLineWidthInPixels() {
-	checkNonDisposed();
-	return (int)data.lineWidth;
+	return innerGC.getLineWidth();
 }
 
 /**
@@ -3626,8 +2783,7 @@ int getLineWidthInPixels() {
  * @since 2.1.2
  */
 public int getStyle () {
-	checkNonDisposed();
-	return data.style;
+	return innerGC.getStyle();
 }
 
 /**
@@ -3647,18 +2803,7 @@ public int getStyle () {
  * @since 3.1
  */
 public int getTextAntialias() {
-	checkNonDisposed();
-	if (data.gdipGraphics == 0) return SWT.DEFAULT;
-	int mode = Gdip.Graphics_GetTextRenderingHint(data.gdipGraphics);
-	switch (mode) {
-		case Gdip.TextRenderingHintSystemDefault: return SWT.DEFAULT;
-		case Gdip.TextRenderingHintSingleBitPerPixel:
-		case Gdip.TextRenderingHintSingleBitPerPixelGridFit: return SWT.OFF;
-		case Gdip.TextRenderingHintAntiAlias:
-		case Gdip.TextRenderingHintAntiAliasGridFit:
-		case Gdip.TextRenderingHintClearTypeGridFit: return SWT.ON;
-	}
-	return SWT.DEFAULT;
+	return innerGC.getTextAntialias();
 }
 
 /**
@@ -3680,19 +2825,7 @@ public int getTextAntialias() {
  * @since 3.1
  */
 public void getTransform(Transform transform) {
-	checkNonDisposed();
-	if (transform == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	if (transform.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	long gdipGraphics = data.gdipGraphics;
-	if (gdipGraphics != 0) {
-		Gdip.Graphics_GetTransform(gdipGraphics, transform.getHandle(getZoom()));
-		long identity = identity();
-		Gdip.Matrix_Invert(identity);
-		Gdip.Matrix_Multiply(transform.getHandle(getZoom()), identity, Gdip.MatrixOrderAppend);
-		Gdip.Matrix_delete(identity);
-	} else {
-		transform.setElements(1, 0, 0, 1, 0, 0);
-	}
+	innerGC.getTransform(transform);
 }
 
 /**
@@ -3890,19 +3023,7 @@ public int hashCode () {
  * </ul>
  */
 public boolean isClipped() {
-	checkNonDisposed();
-	long gdipGraphics = data.gdipGraphics;
-	if (gdipGraphics != 0) {
-		long rgn = Gdip.Region_new();
-		Gdip.Graphics_GetClip(data.gdipGraphics, rgn);
-		boolean isInfinite = Gdip.Region_IsInfinite(rgn, gdipGraphics);
-		Gdip.Region_delete(rgn);
-		return !isInfinite;
-	}
-	long region = OS.CreateRectRgn(0, 0, 0, 0);
-	int result = OS.GetClipRgn(handle, region);
-	OS.DeleteObject(region);
-	return result > 0;
+	return innerGC.isClipped();
 }
 
 private void checkNonDisposed() {
@@ -3974,20 +3095,7 @@ public Device getDevice() {
  * @since 3.1
  */
 public void setAdvanced(boolean advanced) {
-	checkNonDisposed();
-	if (advanced && data.gdipGraphics != 0) return;
-	if (advanced) {
-		initGdip();
-	} else {
-		disposeGdip();
-		data.alpha = 0xFF;
-		data.backgroundPattern = data.foregroundPattern = null;
-		data.state = 0;
-		setClipping(0);
-		if ((data.style & SWT.MIRRORED) != 0) {
-			OS.SetLayout(handle, OS.GetLayout(handle) | OS.LAYOUT_RTL);
-		}
-	}
+	innerGC.setAdvanced(advanced);
 }
 
 /**
@@ -4019,24 +3127,7 @@ public void setAdvanced(boolean advanced) {
  * @since 3.1
  */
 public void setAntialias(int antialias) {
-	checkNonDisposed();
-	if (data.gdipGraphics == 0 && antialias == SWT.DEFAULT) return;
-	int mode = 0;
-	switch (antialias) {
-		case SWT.DEFAULT:
-			mode = Gdip.SmoothingModeDefault;
-			break;
-		case SWT.OFF:
-			mode = Gdip.SmoothingModeNone;
-			break;
-		case SWT.ON:
-			mode = Gdip.SmoothingModeAntiAlias;
-			break;
-		default:
-			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	}
-	initGdip();
-	Gdip.Graphics_SetSmoothingMode(data.gdipGraphics, mode);
+	innerGC.setAntialias(antialias);
 }
 
 /**
@@ -4060,19 +3151,7 @@ public void setAntialias(int antialias) {
  * @since 3.1
  */
 public void setAlpha(int alpha) {
-	checkNonDisposed();
-	if (data.gdipGraphics == 0 && (alpha & 0xFF) == 0xFF) return;
-	initGdip();
-	data.alpha = alpha & 0xFF;
-	data.state &= ~(BACKGROUND | FOREGROUND);
-	if(data.gdipFgPatternBrushAlpha != 0) {
-		Gdip.TextureBrush_delete(data.gdipFgPatternBrushAlpha);
-		data.gdipFgPatternBrushAlpha = 0;
-	}
-	if(data.gdipBgPatternBrushAlpha != 0) {
-		Gdip.TextureBrush_delete(data.gdipBgPatternBrushAlpha);
-		data.gdipBgPatternBrushAlpha = 0;
-	}
+	innerGC.setAlpha(alpha);
 }
 
 /**
@@ -4091,13 +3170,7 @@ public void setAlpha(int alpha) {
  * </ul>
  */
 public void setBackground (Color color) {
-	checkNonDisposed();
-	if (color == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	if (color.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	if (data.backgroundPattern == null && data.background == color.handle) return;
-	data.backgroundPattern = null;
-	data.background = color.handle;
-	data.state &= ~(BACKGROUND | BACKGROUND_TEXT);
+	innerGC.setBackground(color);
 }
 
 /**
@@ -4125,17 +3198,7 @@ public void setBackground (Color color) {
  * @since 3.1
  */
 public void setBackgroundPattern (Pattern pattern) {
-	checkNonDisposed();
-	if (pattern != null && pattern.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	if (data.gdipGraphics == 0 && pattern == null) return;
-	initGdip();
-	if (data.backgroundPattern == pattern) return;
-	data.backgroundPattern = pattern;
-	data.state &= ~BACKGROUND;
-	if(data.gdipBgPatternBrushAlpha != 0) {
-		Gdip.TextureBrush_delete(data.gdipBgPatternBrushAlpha);
-		data.gdipBgPatternBrushAlpha = 0;
-	}
+	innerGC.setBackgroundPattern(pattern);
 }
 
 
@@ -4154,14 +3217,7 @@ public void setBackgroundPattern (Pattern pattern) {
  * </ul>
  */
 public void setClipping (int x, int y, int width, int height) {
-	setClipping(new Rectangle(x, y, width, height));
-}
-
-void setClippingInPixels (int x, int y, int width, int height) {
-	checkNonDisposed();
-	long hRgn = OS.CreateRectRgn(x, y, x + width, y + height);
-	setClipping(hRgn);
-	OS.DeleteObject(hRgn);
+	innerGC.setClipping(x, y, width, height);
 }
 
 /**
@@ -4191,16 +3247,7 @@ void setClippingInPixels (int x, int y, int width, int height) {
  * @since 3.1
  */
 public void setClipping (Path path) {
-	checkNonDisposed();
-	if (path != null && path.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	setClipping(0);
-	if (path != null) {
-		initGdip();
-		int mode = OS.GetPolyFillMode(handle) == OS.WINDING ? Gdip.FillModeWinding : Gdip.FillModeAlternate;
-		final long pathHandle = path.getHandle(getZoom());
-		Gdip.GraphicsPath_SetFillMode(pathHandle, mode);
-		Gdip.Graphics_SetClipPath(data.gdipGraphics, pathHandle);
-	}
+	innerGC.setClipping(path);
 }
 
 /**
@@ -4217,14 +3264,7 @@ public void setClipping (Path path) {
  * </ul>
  */
 public void setClipping (Rectangle rect) {
-	checkNonDisposed();
-	if (rect == null) {
-		setClipping(0);
-	}
-	else {
-		rect = DPIUtil.scaleUp(drawable, rect, getZoom());
-		setClippingInPixels(rect.x, rect.y, rect.width, rect.height);
-	}
+	innerGC.setClipping(rect);
 }
 
 /**
@@ -4244,9 +3284,7 @@ public void setClipping (Rectangle rect) {
  * </ul>
  */
 public void setClipping (Region region) {
-	checkNonDisposed();
-	if (region != null && region.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	setClipping(region != null ? Region.win32_getHandle(region, getZoom()) : 0);
+	innerGC.setClipping(region);
 }
 
 /**
@@ -4266,15 +3304,7 @@ public void setClipping (Region region) {
  * @since 3.1
  */
 public void setFillRule(int rule) {
-	checkNonDisposed();
-	int mode = OS.ALTERNATE;
-	switch (rule) {
-		case SWT.FILL_WINDING: mode = OS.WINDING; break;
-		case SWT.FILL_EVEN_ODD: mode = OS.ALTERNATE; break;
-		default:
-			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	}
-	OS.SetPolyFillMode(handle, mode);
+	innerGC.setFillRule(rule);
 }
 
 /**
@@ -4293,10 +3323,7 @@ public void setFillRule(int rule) {
  * </ul>
  */
 public void setFont (Font font) {
-	checkNonDisposed();
-	if (font != null && font.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	data.font = font != null ? SWTFontProvider.getFont(device, font.getFontData()[0], data.nativeZoom) : SWTFontProvider.getSystemFont(device, data.nativeZoom);
-	data.state &= ~FONT;
+	innerGC.setFont(font);
 }
 
 /**
@@ -4314,13 +3341,7 @@ public void setFont (Font font) {
  * </ul>
  */
 public void setForeground (Color color) {
-	checkNonDisposed();
-	if (color == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	if (color.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	if (data.foregroundPattern == null && color.handle == data.foreground) return;
-	data.foregroundPattern = null;
-	data.foreground = color.handle;
-	data.state &= ~(FOREGROUND | FOREGROUND_TEXT);
+	innerGC.setForeground(color);
 }
 
 /**
@@ -4347,17 +3368,7 @@ public void setForeground (Color color) {
  * @since 3.1
  */
 public void setForegroundPattern (Pattern pattern) {
-	checkNonDisposed();
-	if (pattern != null && pattern.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	if (data.gdipGraphics == 0 && pattern == null) return;
-	initGdip();
-	if (data.foregroundPattern == pattern) return;
-	data.foregroundPattern = pattern;
-	data.state &= ~FOREGROUND;
-	if(data.gdipFgPatternBrushAlpha != 0) {
-		Gdip.TextureBrush_delete(data.gdipFgPatternBrushAlpha);
-		data.gdipFgPatternBrushAlpha = 0;
-	}
+	innerGC.setForegroundPattern(pattern);
 }
 
 /**
@@ -4387,19 +3398,7 @@ public void setForegroundPattern (Pattern pattern) {
  * @since 3.1
  */
 public void setInterpolation(int interpolation) {
-	checkNonDisposed();
-	if (data.gdipGraphics == 0 && interpolation == SWT.DEFAULT) return;
-	int mode = 0;
-	switch (interpolation) {
-		case SWT.DEFAULT: mode = Gdip.InterpolationModeDefault; break;
-		case SWT.NONE: mode = Gdip.InterpolationModeNearestNeighbor; break;
-		case SWT.LOW: mode = Gdip.InterpolationModeLowQuality; break;
-		case SWT.HIGH: mode = Gdip.InterpolationModeHighQuality; break;
-		default:
-			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	}
-	initGdip();
-	Gdip.Graphics_SetInterpolationMode(data.gdipGraphics, mode);
+	innerGC.setInterpolation(interpolation);
 }
 
 /**
@@ -4433,98 +3432,7 @@ public void setLineAttributes (LineAttributes attributes) {
 }
 
 void setLineAttributesInPixels (LineAttributes attributes) {
-	checkNonDisposed();
-	int mask = 0;
-	float lineWidth = attributes.width;
-	if (lineWidth != data.lineWidth) {
-		mask |= LINE_WIDTH | DRAW_OFFSET;
-	}
-	int lineStyle = attributes.style;
-	if (lineStyle != data.lineStyle) {
-		mask |= LINE_STYLE;
-		switch (lineStyle) {
-			case SWT.LINE_SOLID:
-			case SWT.LINE_DASH:
-			case SWT.LINE_DOT:
-			case SWT.LINE_DASHDOT:
-			case SWT.LINE_DASHDOTDOT:
-				break;
-			case SWT.LINE_CUSTOM:
-				if (attributes.dash == null) lineStyle = SWT.LINE_SOLID;
-				break;
-			default:
-				SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-		}
-	}
-	int join = attributes.join;
-	if (join != data.lineJoin) {
-		mask |= LINE_JOIN;
-		switch (join) {
-			case SWT.JOIN_MITER:
-			case SWT.JOIN_ROUND:
-			case SWT.JOIN_BEVEL:
-				break;
-			default:
-				SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-		}
-	}
-	int cap = attributes.cap;
-	if (cap != data.lineCap) {
-		mask |= LINE_CAP;
-		switch (cap) {
-			case SWT.CAP_FLAT:
-			case SWT.CAP_ROUND:
-			case SWT.CAP_SQUARE:
-				break;
-			default:
-				SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-		}
-	}
-	float[] dashes = attributes.dash;
-	float[] lineDashes = data.lineDashes;
-	if (dashes != null && dashes.length > 0) {
-		boolean changed = lineDashes == null || lineDashes.length != dashes.length;
-		for (int i = 0; i < dashes.length; i++) {
-			float dash = dashes[i];
-			if (dash <= 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-			if (!changed && lineDashes[i] != dash) changed = true;
-		}
-		if (changed) {
-			float[] newDashes = new float[dashes.length];
-			int deviceZoom = getZoom();
-			for (int i = 0; i < newDashes.length; i++) {
-				newDashes[i] = DPIUtil.scaleUp(drawable, dashes[i], deviceZoom);
-			}
-			dashes = newDashes;
-			mask |= LINE_STYLE;
-		} else {
-			dashes = lineDashes;
-		}
-	} else {
-		if (lineDashes != null && lineDashes.length > 0) {
-			mask |= LINE_STYLE;
-		} else {
-			dashes = lineDashes;
-		}
-	}
-	float dashOffset = attributes.dashOffset;
-	if (dashOffset != data.lineDashesOffset) {
-		mask |= LINE_STYLE;
-	}
-	float miterLimit = attributes.miterLimit;
-	if (miterLimit != data.lineMiterLimit) {
-		mask |= LINE_MITERLIMIT;
-	}
-	initGdip();
-	if (mask == 0) return;
-	data.lineWidth = lineWidth;
-	data.lineStyle = lineStyle;
-	data.lineCap = cap;
-	data.lineJoin = join;
-	data.lineDashes = dashes;
-	data.lineDashesOffset = dashOffset;
-	data.lineMiterLimit = miterLimit;
-	data.state &= ~mask;
+	innerGC.setLineAttributes(attributes);
 }
 
 /**
@@ -4544,18 +3452,7 @@ void setLineAttributesInPixels (LineAttributes attributes) {
  * @since 3.1
  */
 public void setLineCap(int cap) {
-	checkNonDisposed();
-	if (data.lineCap == cap) return;
-	switch (cap) {
-		case SWT.CAP_ROUND:
-		case SWT.CAP_FLAT:
-		case SWT.CAP_SQUARE:
-			break;
-		default:
-			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	}
-	data.lineCap = cap;
-	data.state &= ~LINE_CAP;
+	innerGC.setLineCap(cap);
 }
 
 /**
@@ -4576,26 +3473,7 @@ public void setLineCap(int cap) {
  * @since 3.1
  */
 public void setLineDash(int[] dashes) {
-	checkNonDisposed();
-	float[] lineDashes = data.lineDashes;
-	if (dashes != null && dashes.length > 0) {
-		boolean changed = data.lineStyle != SWT.LINE_CUSTOM || lineDashes == null || lineDashes.length != dashes.length;
-		float[] newDashes = new float[dashes.length];
-		int deviceZoom = getZoom();
-		for (int i = 0; i < dashes.length; i++) {
-			if (dashes[i] <= 0) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-			newDashes[i] = DPIUtil.scaleUp(drawable, (float) dashes[i], deviceZoom);
-			if (!changed && lineDashes[i] != newDashes[i]) changed = true;
-		}
-		if (!changed) return;
-		data.lineDashes = newDashes;
-		data.lineStyle = SWT.LINE_CUSTOM;
-	} else {
-		if (data.lineStyle == SWT.LINE_SOLID && (lineDashes == null || lineDashes.length == 0)) return;
-		data.lineDashes = null;
-		data.lineStyle = SWT.LINE_SOLID;
-	}
-	data.state &= ~LINE_STYLE;
+	innerGC.setLineDash(dashes);
 }
 
 /**
@@ -4615,18 +3493,7 @@ public void setLineDash(int[] dashes) {
  * @since 3.1
  */
 public void setLineJoin(int join) {
-	checkNonDisposed();
-	if (data.lineJoin == join) return;
-	switch (join) {
-		case SWT.JOIN_MITER:
-		case SWT.JOIN_ROUND:
-		case SWT.JOIN_BEVEL:
-			break;
-		default:
-			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	}
-	data.lineJoin = join;
-	data.state &= ~LINE_JOIN;
+	innerGC.setLineJoin(join);
 }
 
 /**
@@ -4645,23 +3512,7 @@ public void setLineJoin(int join) {
  * </ul>
  */
 public void setLineStyle(int lineStyle) {
-	checkNonDisposed();
-	if (data.lineStyle == lineStyle) return;
-	switch (lineStyle) {
-		case SWT.LINE_SOLID:
-		case SWT.LINE_DASH:
-		case SWT.LINE_DOT:
-		case SWT.LINE_DASHDOT:
-		case SWT.LINE_DASHDOTDOT:
-			break;
-		case SWT.LINE_CUSTOM:
-			if (data.lineDashes == null) lineStyle = SWT.LINE_SOLID;
-			break;
-		default:
-			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	}
-	data.lineStyle = lineStyle;
-	data.state &= ~LINE_STYLE;
+	innerGC.setLineStyle(lineStyle);
 }
 
 /**
@@ -4685,15 +3536,7 @@ public void setLineStyle(int lineStyle) {
  * </ul>
  */
 public void setLineWidth(int lineWidth) {
-	lineWidth = DPIUtil.scaleUp (drawable, lineWidth, getZoom());
-	setLineWidthInPixels(lineWidth);
-}
-
-void setLineWidthInPixels(int lineWidth) {
-	checkNonDisposed();
-	if (data.lineWidth == lineWidth) return;
-	data.lineWidth = lineWidth;
-	data.state &= ~(LINE_WIDTH | DRAW_OFFSET);
+	innerGC.setLineWidth(lineWidth);
 }
 
 /**
@@ -4711,8 +3554,7 @@ void setLineWidthInPixels(int lineWidth) {
  * </ul>
  */
 public void setXORMode(boolean xor) {
-	checkNonDisposed();
-	OS.SetROP2(handle, xor ? OS.R2_XORPEN : OS.R2_COPYPEN);
+	innerGC.setXORMode(xor);
 }
 
 /**
@@ -4744,30 +3586,7 @@ public void setXORMode(boolean xor) {
  * @since 3.1
  */
 public void setTextAntialias(int antialias) {
-	checkNonDisposed();
-	if (data.gdipGraphics == 0 && antialias == SWT.DEFAULT) return;
-	int textMode = 0;
-	switch (antialias) {
-		case SWT.DEFAULT:
-			textMode = Gdip.TextRenderingHintSystemDefault;
-			break;
-		case SWT.OFF:
-			textMode = Gdip.TextRenderingHintSingleBitPerPixelGridFit;
-			break;
-		case SWT.ON:
-			int[] type = new int[1];
-			OS.SystemParametersInfo(OS.SPI_GETFONTSMOOTHINGTYPE, 0, type, 0);
-			if (type[0] == OS.FE_FONTSMOOTHINGCLEARTYPE) {
-				textMode = Gdip.TextRenderingHintClearTypeGridFit;
-			} else {
-				textMode = Gdip.TextRenderingHintAntiAliasGridFit;
-			}
-			break;
-		default:
-			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	}
-	initGdip();
-	Gdip.Graphics_SetTextRenderingHint(data.gdipGraphics, textMode);
+	innerGC.setTextAntialias(antialias);
 }
 
 /**
@@ -4797,17 +3616,7 @@ public void setTextAntialias(int antialias) {
  * @since 3.1
  */
 public void setTransform(Transform transform) {
-	checkNonDisposed();
-	if (transform != null && transform.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	if (data.gdipGraphics == 0 && transform == null) return;
-	initGdip();
-	long identity = identity();
-	if (transform != null) {
-		Gdip.Matrix_Multiply(identity, transform.getHandle(getZoom()), Gdip.MatrixOrderPrepend);
-	}
-	Gdip.Graphics_SetTransform(data.gdipGraphics, identity);
-	Gdip.Matrix_delete(identity);
-	data.state &= ~DRAW_OFFSET;
+	innerGC.setTransform(transform);
 }
 
 /**
@@ -4910,32 +3719,7 @@ public Point textExtent (String string) {
  * </ul>
  */
 public Point textExtent (String string, int flags) {
-	return DPIUtil.scaleDown(drawable, textExtentInPixels(string, flags), getZoom());
-}
-
-Point textExtentInPixels(String string, int flags) {
-	checkNonDisposed();
-	if (string == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
-	checkGC(FONT);
-	long gdipGraphics = data.gdipGraphics;
-	if (gdipGraphics != 0) {
-		Point size = new Point(0, 0);
-		drawText(gdipGraphics, string, 0, 0, flags, size);
-		return size;
-	}
-	if (string.length () == 0) {
-		SIZE size = new SIZE();
-		OS.GetTextExtentPoint32(handle, new char [] {' '}, 1, size);
-		return new Point(0, size.cy);
-	}
-	RECT rect = new RECT();
-	char [] buffer = string.toCharArray();
-	int uFormat = OS.DT_LEFT | OS.DT_CALCRECT;
-	if ((flags & SWT.DRAW_DELIMITER) == 0) uFormat |= OS.DT_SINGLELINE;
-	if ((flags & SWT.DRAW_TAB) != 0) uFormat |= OS.DT_EXPANDTABS;
-	if ((flags & SWT.DRAW_MNEMONIC) == 0) uFormat |= OS.DT_NOPREFIX;
-	OS.DrawText(handle, buffer, buffer.length, rect, uFormat);
-	return new Point(rect.right, rect.bottom);
+	return innerGC.textExtent(string,flags);
 }
 
 /**
@@ -5000,4 +3784,5 @@ public static GC win32_new(long hDC, GCData data) {
 public void commit() {
 	innerGC.commit();
 }
+
 }

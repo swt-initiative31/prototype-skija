@@ -78,5 +78,15 @@ public abstract class GCHandle extends Resource implements IGraphicsContext {
 	protected abstract void setXORMode(boolean xor);
 
 	protected abstract void setTextAntialias(int antialias);
+
+	abstract void init(Drawable drawable, GCData data, long hDC);
+
+	abstract void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth,
+			int destHeight, boolean simple) ;
+
+	abstract void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth,
+			int destHeight, boolean simple, int imageZoom) ;
+
+	abstract void drawIcon(long imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple);
 }
 

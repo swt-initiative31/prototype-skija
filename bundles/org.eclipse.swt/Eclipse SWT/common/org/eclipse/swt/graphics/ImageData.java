@@ -2610,7 +2610,7 @@ static void buildDitheredGradientChannel(int from, int to, int steps,
  * @param greenBits the number of significant green bits, 0 for palette modes
  * @param blueBits the number of significant blue bits, 0 for palette modes
  */
-static void fillGradientRectangle(GC gc, Device device,
+static void fillGradientRectangle(NativeGC gc, Device device,
 	int x, int y, int width, int height, boolean vertical,
 	RGB fromRGB, RGB toRGB,
 	int redBits, int greenBits, int blueBits) {

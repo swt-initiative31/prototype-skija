@@ -139,8 +139,6 @@ public final class Image extends Resource implements Drawable {
 
 	private Map<Integer, ImageHandle> zoomLevelToImageHandle = new HashMap<>();
 
-	private boolean genericImage;
-
 private Image (Device device, int type, long handle, int nativeZoom) {
 	super(device);
 	this.type = type;
@@ -1139,11 +1137,6 @@ public Rectangle getBounds() {
 }
 
 Rectangle getBounds(int zoom) {
-	if (this.genericImage) {
-		var d = imageProvider.getImageData(100);
-		return new Rectangle(0, 0, d.width, d.height);
-	}
-
 	if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (zoomLevelToImageHandle.containsKey(zoom)) {
 		ImageHandle imageMetadata = zoomLevelToImageHandle.get(zoom);
@@ -1223,10 +1216,6 @@ public ImageData getImageData() {
  * @since 3.106
  */
 public ImageData getImageData (int zoom) {
-	if (this.genericImage) {
-		return imageProvider.getImageData(zoom);
-	}
-
 	if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (zoomLevelToImageHandle.containsKey(zoom)) {
 		return zoomLevelToImageHandle.get(zoom).getImageData();
@@ -1256,10 +1245,6 @@ public ImageData getImageData (int zoom) {
  */
 @Deprecated
 public ImageData getImageDataAtCurrentZoom() {
-	if (Image.this.genericImage) {
-		return imageProvider.getImageData(100);
-	}
-
 	return applyUsingAnyHandle(ImageHandle::getImageData);
 }
 
@@ -1791,10 +1776,6 @@ public void internal_dispose_GC (long hDC, GCData data) {
  */
 @Override
 public boolean isDisposed() {
-	if (this.genericImage) {
-		return false;
-	}
-
 	return !isInitialized || isDestroyed;
 }
 
@@ -2571,10 +2552,12 @@ private class ImageGcDrawerWrapper extends DynamicImageProviderWrapper {
 		} else {
 			image = new Image(device, width, height);
 		}
-		GC gc = new GC(new DrawableWrapper(image, zoom), gcStyle);
+		NativeGC gc =  new NativeGC(new DrawableWrapper(image, zoom), gcStyle);
+		GC ogc = new GC();
+		ogc.innerGC = gc;
 		try {
-			((NativeGC) gc.innerGC).data.nativeZoom = zoom;
-			drawer.drawOn(gc, width, height);
+			gc.data.nativeZoom = zoom;
+			drawer.drawOn(ogc, width, height);
 			ImageData imageData = image.getImageMetadata(zoom).getImageData();
 			drawer.postProcess(imageData);
 			ImageData newData = adaptImageDataIfDisabledOrGray(imageData);
@@ -2987,41 +2970,5 @@ private class ImageHandle {
 		}
 		handle = 0;
 	}
-}
-void setImageDataProvider(ImageDataProvider imgDataProv) {
-    if (!this.isDisposed())
-	dispose();
-    this.genericImage = true;
-	this.imageProvider = new ImageDataProviderWrapper(imgDataProv);
-
-}
-
-/**
- * constructor with imageData only in order to prevent conversion because of the
- * device. This constructor is mainly for the usage with Skija. Don't use this
- *
- * @param res
- */
-Image(ImageDataProvider imgDataProvider) {
-    this.genericImage = true;
-	this.imageProvider = new ImageDataProviderWrapper(imgDataProvider);
-}
-void setImageDataProvider(ImageDataProvider imgDataProv) {
-    if (!this.isDisposed())
-	dispose();
-    this.genericImage = true;
-	this.imageProvider = new ImageDataProviderWrapper(imgDataProv);
-
-}
-
-/**
- * constructor with imageData only in order to prevent conversion because of the
- * device. This constructor is mainly for the usage with Skija. Don't use this
- *
- * @param res
- */
-Image(ImageDataProvider imgDataProvider) {
-    this.genericImage = true;
-	this.imageProvider = new ImageDataProviderWrapper(imgDataProvider);
 }
 }

@@ -24,7 +24,7 @@ import org.eclipse.swt.internal.win32.*;
  * <code>FontMetrics</code> are obtained from <code>GC</code>s
  * using the <code>getFontMetrics()</code> method.
  *
- * @see GC#getFontMetrics
+ * @see NativeGC#getFontMetrics
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
 public final class FontMetrics {

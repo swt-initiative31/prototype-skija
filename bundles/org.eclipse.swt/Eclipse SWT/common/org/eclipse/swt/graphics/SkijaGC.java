@@ -1033,7 +1033,13 @@ public class SkijaGC extends GCHandle {
 			Canvas imageCanvas = imageSurface.getCanvas();
 			imageCanvas.drawImage(copiedArea, 0, 0);
 			skijaImage = imageSurface.makeImageSnapshot();
-			ImageUtils.setImageDataProvider(image, new SkijaImageDataProvider(skijaImage));
+
+			NativeGC gc = new NativeGC(image);
+
+			// TODO set the right command here...
+			gc.drawImage(image, x, y, y, y, x, y, x, y, getAdvanced());
+
+			gc.dispose();
 
 		} else {
 			System.err.println(

@@ -2120,7 +2120,7 @@ Accessible new_Accessible (Control control) {
 
 @Override
 GC new_GC (GCData data) {
-	return GC.win32_new (this, data);
+	return NativeGC.win32_new (this, data);
 }
 
 /**
@@ -2195,7 +2195,7 @@ public boolean print (GC gc) {
 	NativeGC ngc = (NativeGC) gc.innerGC;
 	long hdc = ngc.handle;
 	int state = 0;
-	long gdipGraphics = gc.getGCData().gdipGraphics;
+	long gdipGraphics = ngc.getGCData().gdipGraphics;
 	if (gdipGraphics != 0) {
 		long clipRgn = 0;
 		Gdip.Graphics_SetPixelOffsetMode(gdipGraphics, Gdip.PixelOffsetModeNone);

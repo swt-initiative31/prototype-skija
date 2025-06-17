@@ -255,22 +255,6 @@ public void addString (String string, float x, float y, Font font) {
 	if (font == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	if (font.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 	storeAndApplyOperationOnAllHandles(new AddStringOperation(string, x, y, font));
-	char[] buffer = string.toCharArray();
-	long hDC = device.internal_new_GC(null);
-	long [] family = new long [1];
-	long gdipFont = NativeGC.createGdipFont(hDC,
-			SWTFontProvider.getFont(device, font.getFontData()[0], initialZoom).handle, 0, device.fontCollection,
-			family, null);
-	PointF point = new PointF();
-	point.X = x - (Gdip.Font_GetSize(gdipFont) / 6);
-	point.Y = y;
-	int style = Gdip.Font_GetStyle(gdipFont);
-	float size = Gdip.Font_GetSize(gdipFont);
-	Gdip.GraphicsPath_AddString(getHandle(initialZoom), buffer, buffer.length, family[0], style, size, point, 0);
-	Gdip.GraphicsPath_GetLastPoint(getHandle(initialZoom), currentPoint);
-	Gdip.FontFamily_delete(family[0]);
-	Gdip.Font_delete(gdipFont);
-	device.internal_dispose_GC(hDC, null);
 }
 
 /**
@@ -317,19 +301,6 @@ public boolean contains (float x, float y, GC gc, boolean outline) {
 	return applyUsingAnyHandle(handle -> {
 		return handle.contains(x, y, gc, outline);
 	});
-	//TODO - should use GC transformation
-	NativeGC ngc = (NativeGC) gc.innerGC;
-
-	ngc.initGdip();
-	gc.checkGC(GC.LINE_CAP | GC.LINE_JOIN | GC.LINE_STYLE | GC.LINE_WIDTH);
-	int mode = OS.GetPolyFillMode(ngc.handle) == OS.WINDING ? Gdip.FillModeWinding : Gdip.FillModeAlternate;
-	Gdip.GraphicsPath_SetFillMode(getHandle(initialZoom), mode);
-	if (outline) {
-		return Gdip.GraphicsPath_IsOutlineVisible(getHandle(initialZoom), x, y, ngc.data.gdipPen,
-				ngc.data.gdipGraphics);
-	} else {
-		return Gdip.GraphicsPath_IsVisible(getHandle(initialZoom), x, y, ngc.data.gdipGraphics);
-	}
 }
 
 /**
@@ -550,8 +521,9 @@ private static class PathHandle {
 		return containsInPixels(xInPixels, yInPixels, gc, outline);
 	}
 
-	private boolean containsInPixels(float x, float y, GC gc, boolean outline) {
+	private boolean containsInPixels(float x, float y, GC ogc, boolean outline) {
 		//TODO - should use GC transformation
+		NativeGC gc = NativeGC.innerGC(ogc);
 		gc.initGdip();
 		gc.checkGC(GC.LINE_CAP | GC.LINE_JOIN | GC.LINE_STYLE | GC.LINE_WIDTH);
 		int mode = OS.GetPolyFillMode(gc.handle) == OS.WINDING ? Gdip.FillModeWinding : Gdip.FillModeAlternate;
@@ -559,7 +531,7 @@ private static class PathHandle {
 		if (outline) {
 			return Gdip.GraphicsPath_IsOutlineVisible(handle, x, y, gc.data.gdipPen, gc.data.gdipGraphics);
 		} else {
-			return Gdip.GraphicsPath_IsVisible(handle, x, y, gc.data.gdipGraphics);
+			return Gdip.GraphicsPath_IsVisible(handle, x, y,gc.data.gdipGraphics);
 		}
 	}
 
@@ -792,7 +764,7 @@ private class AddStringOperation implements Operation {
 		char[] buffer = string.toCharArray();
 		long hDC = device.internal_new_GC(null);
 		long [] family = new long [1];
-		long gdipFont = GC.createGdipFont(hDC, SWTFontProvider.getFontHandle(device, this.fontData, zoom), 0, device.fontCollection, family, null);
+		long gdipFont = NativeGC.createGdipFont(hDC, SWTFontProvider.getFontHandle(device, this.fontData, zoom), 0, device.fontCollection, family, null);
 		PointF point = new PointF();
 		point.X = x - (Gdip.Font_GetSize(gdipFont) / 6);
 		point.Y = y;

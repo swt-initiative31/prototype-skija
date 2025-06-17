@@ -23,7 +23,7 @@ import org.eclipse.swt.internal.win32.*;
  * width. <code>FontMetrics</code> are obtained from <code>GC</code>s using the
  * <code>getFontMetrics()</code> method.
  *
- * @see GC#getFontMetrics
+ * @see SkijaGC#getFontMetrics
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further
  *      information</a>
  */
