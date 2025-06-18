@@ -2183,7 +2183,8 @@ public boolean print (GC gc) {
 	if (gc == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (gc.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
 	long topHandle = topHandle ();
-	long hdc = gc.handle;
+	NativeGC ngc = (NativeGC) gc.innerGC;
+	long hdc = ngc.handle;
 	int state = 0;
 	long gdipGraphics = gc.getGCData().gdipGraphics;
 	if (gdipGraphics != 0) {
@@ -2235,7 +2236,8 @@ void printWidget (long hwnd, long hdc, GC gc) {
 	* WM_PRINT in this case.
 	*/
 	boolean success = false;
-	if (!(OS.GetDeviceCaps(gc.handle, OS.TECHNOLOGY) == OS.DT_RASPRINTER)) {
+	NativeGC ngc = (NativeGC) gc.innerGC;
+	if (!(OS.GetDeviceCaps(ngc.handle, OS.TECHNOLOGY) == OS.DT_RASPRINTER)) {
 		/*
 		* Bug in Windows.  When PrintWindow() will only draw that
 		* portion of a control that is not obscured by the shell.

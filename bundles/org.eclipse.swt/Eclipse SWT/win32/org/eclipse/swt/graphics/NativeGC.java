@@ -19,47 +19,7 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gdip.*;
 import org.eclipse.swt.internal.win32.*;
 
-/**
- * Class <code>GC</code> is where all of the drawing capabilities that are
- * supported by SWT are located. Instances are used to draw on either an
- * <code>Image</code>, a <code>Control</code>, or directly on a <code>Display</code>.
- * <dl>
- * <dt><b>Styles:</b></dt>
- * <dd>LEFT_TO_RIGHT, RIGHT_TO_LEFT</dd>
- * </dl>
- *
- * <p>
- * The SWT drawing coordinate system is the two-dimensional space with the origin
- * (0,0) at the top left corner of the drawing area and with (x,y) values increasing
- * to the right and downward respectively.
- * </p>
- *
- * <p>
- * The result of drawing on an image that was created with an indexed
- * palette using a color that is not in the palette is platform specific.
- * Some platforms will match to the nearest color while other will draw
- * the color itself. This happens because the allocated image might use
- * a direct palette on platforms that do not support indexed palette.
- * </p>
- *
- * <p>
- * Application code must explicitly invoke the <code>GC.dispose()</code>
- * method to release the operating system resources managed by each instance
- * when those instances are no longer required. This is <em>particularly</em>
- * important on Windows95 and Windows98 where the operating system has a limited
- * number of device contexts available.
- * </p>
- *
- * <p>
- * Note: Only one of LEFT_TO_RIGHT and RIGHT_TO_LEFT may be specified.
- * </p>
- *
- * @see org.eclipse.swt.events.PaintEvent
- * @see <a href="http://www.eclipse.org/swt/snippets/#gc">GC snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Examples: GraphicsExample, PaintExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
- */
-public final class GC extends Resource {
+public final class NativeGC extends GCHandle {
 
 	/**
 	 * the handle to the OS device context
@@ -77,6 +37,8 @@ public final class GC extends Resource {
 
 	Drawable drawable;
 	GCData data;
+
+	private GC parentGC;
 
 	static final int FOREGROUND = 1 << 0;
 	static final int BACKGROUND = 1 << 1;
@@ -105,7 +67,11 @@ public final class GC extends Resource {
 /**
  * Prevents uninitialized instances from being created outside the package.
  */
-GC() {
+NativeGC() {
+}
+
+void setParentGC(GC parentGC) {
+	this.parentGC = parentGC;
 }
 
 /**
@@ -131,7 +97,7 @@ GC() {
  * </ul>
  * @see #dispose()
  */
-public GC(Drawable drawable) {
+public NativeGC(Drawable drawable) {
 	this(drawable, SWT.NONE);
 }
 
@@ -164,7 +130,7 @@ public GC(Drawable drawable) {
  *
  * @since 2.1.2
  */
-public GC(Drawable drawable, int style) {
+public NativeGC(Drawable drawable, int style) {
 	if (drawable == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	GCData data = new GCData ();
 	data.style = checkStyle(style);
@@ -175,6 +141,12 @@ public GC(Drawable drawable, int style) {
 	this.device = data.device = device;
 	init (drawable, data, hDC);
 	init();
+}
+
+@Override
+void initNonDisposeTracking() {
+	// do not yet use resource handling for NativeGC
+	// TODO use the resource handling and prevent the error messages for not closed resources.
 }
 
 static int checkStyle(int style) {
@@ -200,6 +172,7 @@ private void validateGCState() {
 	}
 }
 
+@Override
 void checkGC(int mask) {
 	if (Device.strictChecks) {
 		validateGCState();
@@ -475,6 +448,7 @@ void checkGC(int mask) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void copyArea (Image image, int x, int y) {
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
@@ -510,6 +484,7 @@ void copyAreaInPixels(Image image, int x, int y) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void copyArea (int srcX, int srcY, int width, int height, int destX, int destY) {
 	copyArea (srcX, srcY, width, height, destX, destY, true);
 }
@@ -532,6 +507,7 @@ public void copyArea (int srcX, int srcY, int width, int height, int destX, int 
  *
  * @since 3.1
  */
+@Override
 public void copyArea (int srcX, int srcY, int width, int height, int destX, int destY, boolean paint) {
 	int deviceZoom = getZoom();
 	srcX = DPIUtil.scaleUp(drawable, srcX, deviceZoom);
@@ -779,6 +755,7 @@ void disposeGdip() {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void drawArc (int x, int y, int width, int height, int startAngle, int arcAngle) {
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
@@ -863,6 +840,7 @@ void drawArcInPixels (int x, int y, int width, int height, int startAngle, int a
  *
  * @see #drawRectangle(int, int, int, int)
  */
+@Override
 public void drawFocus (int x, int y, int width, int height) {
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp (drawable, x, deviceZoom);
@@ -942,6 +920,7 @@ void drawFocusInPixels (int x, int y, int width, int height) {
  *    <li>ERROR_NO_HANDLES - if no handles are available to perform the operation</li>
  * </ul>
  */
+@Override
 public void drawImage (Image image, int x, int y) {
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
@@ -988,6 +967,7 @@ void drawImageInPixels(Image image, int x, int y) {
  *    <li>ERROR_NO_HANDLES - if no handles are available to perform the operation</li>
  * </ul>
  */
+@Override
 public void drawImage (Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (srcWidth == 0 || srcHeight == 0 || destWidth == 0 || destHeight == 0) return;
@@ -1234,7 +1214,12 @@ void drawBitmap(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight,
 			srcHeight == destHeight && destHeight == imgHeight;
 	}
 	boolean mustRestore = false;
-	GC memGC = srcImage.memGC;
+	GC g = srcImage.memGC;
+	NativeGC memGC = null;
+	if (g != null) {
+		memGC = (NativeGC) g.innerGC;
+	}
+
 	if (memGC != null && !memGC.isDisposed()) {
 		memGC.flush();
 		mustRestore = true;
@@ -1663,6 +1648,7 @@ void drawBitmapColor(Image srcImage, int srcX, int srcY, int srcWidth, int srcHe
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void drawLine (int x1, int y1, int x2, int y2) {
 	int deviceZoom = getZoom();
 	x1 = DPIUtil.scaleUp (drawable, x1, deviceZoom);
@@ -1716,6 +1702,7 @@ void drawLineInPixels (int x1, int y1, int x2, int y2) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void drawOval (int x, int y, int width, int height) {
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp (drawable, x, deviceZoom);
@@ -1764,6 +1751,7 @@ void drawOvalInPixels (int x, int y, int width, int height) {
  *
  * @since 3.1
  */
+@Override
 public void drawPath (Path path) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (path == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -1794,6 +1782,7 @@ public void drawPath (Path path) {
  *
  * @since 3.0
  */
+@Override
 public void drawPoint (int x, int y) {
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp (drawable, x, deviceZoom);
@@ -1828,6 +1817,7 @@ void drawPointInPixels (int x, int y) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void drawPolygon (int[] pointArray) {
 	if (pointArray == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	drawPolygonInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
@@ -1877,6 +1867,7 @@ void drawPolygonInPixels(int[] pointArray) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void drawPolyline (int[] pointArray) {
 	drawPolylineInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
 }
@@ -1930,6 +1921,7 @@ void drawPolylineInPixels(int[] pointArray) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void drawRectangle (int x, int y, int width, int height) {
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp (drawable, x, deviceZoom);
@@ -1989,6 +1981,7 @@ void drawRectangleInPixels (int x, int y, int width, int height) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void drawRectangle (Rectangle rect) {
 	if (rect == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	rect = DPIUtil.scaleUp(drawable, rect, getZoom());
@@ -2016,6 +2009,7 @@ public void drawRectangle (Rectangle rect) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void drawRoundRectangle (int x, int y, int width, int height, int arcWidth, int arcHeight) {
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp (drawable, x, deviceZoom);
@@ -2114,6 +2108,7 @@ void drawRoundRectangleGdip (long gdipGraphics, long pen, int x, int y, int widt
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void drawString (String string, int x, int y) {
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
@@ -2148,6 +2143,7 @@ public void drawString (String string, int x, int y) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void drawString (String string, int x, int y, boolean isTransparent) {
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
@@ -2240,6 +2236,7 @@ void drawStringInPixels (String string, int x, int y, boolean isTransparent) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void drawText (String string, int x, int y) {
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
@@ -2275,6 +2272,7 @@ void drawTextInPixels (String string, int x, int y) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void drawText (String string, int x, int y, boolean isTransparent) {
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
@@ -2327,6 +2325,7 @@ void drawTextInPixels (String string, int x, int y, boolean isTransparent) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void drawText (String string, int x, int y, int flags) {
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
@@ -2672,7 +2671,7 @@ void drawTextGDIP(long gdipGraphics, String string, int x, int y, int flags, boo
  */
 @Override
 public boolean equals (Object object) {
-	return (object == this) || ((object instanceof GC) && (handle == ((GC)object).handle));
+	return (object == this) || ((object instanceof NativeGC) && (handle == ((NativeGC)object).handle));
 }
 
 /**
@@ -2707,6 +2706,7 @@ public boolean equals (Object object) {
  *
  * @see #drawArc
  */
+@Override
 public void fillArc (int x, int y, int width, int height, int startAngle, int arcAngle) {
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp (drawable, x, deviceZoom);
@@ -2787,6 +2787,7 @@ void fillArcInPixels (int x, int y, int width, int height, int startAngle, int a
  *
  * @see #drawRectangle(int, int, int, int)
  */
+@Override
 public void fillGradientRectangle (int x, int y, int width, int height, boolean vertical) {
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp (drawable, x, deviceZoom);
@@ -2885,7 +2886,7 @@ void fillGradientRectangleInPixels(int x, int y, int width, int height, boolean 
 
 	final int depth = OS.GetDeviceCaps(handle, OS.BITSPIXEL);
 	final int bitResolution = (depth >= 24) ? 8 : (depth >= 15) ? 5 : 0;
-	ImageData.fillGradientRectangle(this, data.device,
+	ImageData.fillGradientRectangle(parentGC, data.device,
 		x, y, width, height, vertical, fromRGB, toRGB,
 		bitResolution, bitResolution, bitResolution);
 }
@@ -2906,6 +2907,7 @@ void fillGradientRectangleInPixels(int x, int y, int width, int height, boolean 
  *
  * @see #drawOval
  */
+@Override
 public void fillOval (int x, int y, int width, int height) {
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp (drawable, x, deviceZoom);
@@ -2949,6 +2951,7 @@ void fillOvalInPixels (int x, int y, int width, int height) {
  *
  * @since 3.1
  */
+@Override
 public void fillPath (Path path) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (path == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -2980,6 +2983,7 @@ public void fillPath (Path path) {
  *
  * @see #drawPolygon
  */
+@Override
 public void fillPolygon (int[] pointArray) {
 	if (pointArray == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	fillPolygonInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
@@ -3030,6 +3034,7 @@ void fillPolygonInPixels (int[] pointArray) {
  *
  * @see #drawRectangle(int, int, int, int)
  */
+@Override
 public void fillRectangle (int x, int y, int width, int height) {
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp (drawable, x, deviceZoom);
@@ -3073,6 +3078,7 @@ void fillRectangleInPixels (int x, int y, int width, int height) {
  *
  * @see #drawRectangle(int, int, int, int)
  */
+@Override
 public void fillRectangle (Rectangle rect) {
 	if (rect == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	rect = DPIUtil.scaleUp(drawable, rect, getZoom());
@@ -3096,6 +3102,7 @@ public void fillRectangle (Rectangle rect) {
  *
  * @see #drawRoundRectangle
  */
+@Override
 public void fillRoundRectangle (int x, int y, int width, int height, int arcWidth, int arcHeight) {
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp (drawable, x, deviceZoom);
@@ -3196,6 +3203,7 @@ void flush () {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public int getAdvanceWidth(char ch) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	checkGC(FONT);
@@ -3229,6 +3237,7 @@ public int getAdvanceWidth(char ch) {
  *
  * @since 3.1
  */
+@Override
 public boolean getAdvanced() {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	return data.gdipGraphics != 0;
@@ -3246,6 +3255,7 @@ public boolean getAdvanced() {
  *
  * @since 3.1
  */
+@Override
 public int getAlpha() {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	return data.alpha;
@@ -3267,6 +3277,7 @@ public int getAlpha() {
  *
  * @since 3.1
  */
+@Override
 public int getAntialias() {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (data.gdipGraphics == 0) return SWT.DEFAULT;
@@ -3291,6 +3302,7 @@ public int getAntialias() {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public Color getBackground() {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	return Color.win32_new(data.device, data.background);
@@ -3310,6 +3322,7 @@ public Color getBackground() {
  *
  * @since 3.1
  */
+@Override
 public Pattern getBackgroundPattern() {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	return data.backgroundPattern;
@@ -3331,6 +3344,7 @@ public Pattern getBackgroundPattern() {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public int getCharWidth(char ch) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	checkGC(FONT);
@@ -3361,6 +3375,7 @@ public int getCharWidth(char ch) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public Rectangle getClipping () {
 	return DPIUtil.scaleDown(drawable, getClippingInPixels(), getZoom());
 }
@@ -3394,6 +3409,7 @@ Rectangle getClippingInPixels() {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void getClipping (Region region) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (region == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
@@ -3478,6 +3494,7 @@ long getFgBrush() {
  *
  * @since 3.1
  */
+@Override
 public int getFillRule() {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	return OS.GetPolyFillMode(handle) == OS.WINDING ? SWT.FILL_WINDING : SWT.FILL_EVEN_ODD;
@@ -3493,6 +3510,7 @@ public int getFillRule() {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public Font getFont () {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	return data.font;
@@ -3509,6 +3527,7 @@ public Font getFont () {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public FontMetrics getFontMetrics() {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	checkGC(FONT);
@@ -3526,6 +3545,7 @@ public FontMetrics getFontMetrics() {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public Color getForeground() {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	return Color.win32_new(data.device, data.foreground);
@@ -3545,6 +3565,7 @@ public Color getForeground() {
  *
  * @since 3.1
  */
+@Override
 public Pattern getForegroundPattern() {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	return data.foregroundPattern;
@@ -3572,6 +3593,7 @@ public Pattern getForegroundPattern() {
  *
  * @since 3.2
  */
+@Override
 public GCData getGCData() {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	return data;
@@ -3590,6 +3612,7 @@ public GCData getGCData() {
  *
  * @since 3.1
  */
+@Override
 public int getInterpolation() {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (data.gdipGraphics == 0) return SWT.DEFAULT;
@@ -3618,6 +3641,7 @@ public int getInterpolation() {
  *
  * @since 3.3
  */
+@Override
 public LineAttributes getLineAttributes () {
 	LineAttributes attributes = getLineAttributesInPixels();
 	int deviceZoom = getZoom();
@@ -3651,6 +3675,7 @@ LineAttributes getLineAttributesInPixels () {
  *
  * @since 3.1
  */
+@Override
 public int getLineCap() {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	return data.lineCap;
@@ -3668,6 +3693,7 @@ public int getLineCap() {
  *
  * @since 3.1
  */
+@Override
 public int[] getLineDash() {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (data.lineDashes == null) return null;
@@ -3692,6 +3718,7 @@ public int[] getLineDash() {
  *
  * @since 3.1
  */
+@Override
 public int getLineJoin() {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	return data.lineJoin;
@@ -3709,6 +3736,7 @@ public int getLineJoin() {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public int getLineStyle() {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	return data.lineStyle;
@@ -3726,6 +3754,7 @@ public int getLineStyle() {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public int getLineWidth () {
 	return DPIUtil.scaleDown(drawable, getLineWidthInPixels(), getZoom());
 }
@@ -3753,6 +3782,7 @@ int getLineWidthInPixels() {
  *
  * @since 2.1.2
  */
+@Override
 public int getStyle () {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	return data.style;
@@ -3774,6 +3804,7 @@ public int getStyle () {
  *
  * @since 3.1
  */
+@Override
 public int getTextAntialias() {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (data.gdipGraphics == 0) return SWT.DEFAULT;
@@ -3807,6 +3838,7 @@ public int getTextAntialias() {
  *
  * @since 3.1
  */
+@Override
 public void getTransform(Transform transform) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (transform == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -3837,6 +3869,7 @@ public void getTransform(Transform transform) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public boolean getXORMode() {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	return OS.GetROP2(handle) == OS.R2_XORPEN;
@@ -3954,7 +3987,7 @@ void init(Drawable drawable, GCData data, long hDC) {
 	Image image = data.image;
 	if (image != null) {
 		data.hNullBitmap = OS.SelectObject(hDC, Image.win32_getHandle(image, DPIUtil.getZoomForAutoscaleProperty(data.nativeZoom)));
-		image.memGC = this;
+		image.memGC = parentGC;
 	}
 	int layout = data.layout;
 	if (layout != -1) {
@@ -4017,6 +4050,7 @@ public int hashCode () {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public boolean isClipped() {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	long gdipGraphics = data.gdipGraphics;
@@ -4097,6 +4131,7 @@ float measureSpace(long font, long format) {
  *
  * @since 3.1
  */
+@Override
 public void setAdvanced(boolean advanced) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (advanced && data.gdipGraphics != 0) return;
@@ -4142,6 +4177,7 @@ public void setAdvanced(boolean advanced) {
  *
  * @since 3.1
  */
+@Override
 public void setAntialias(int antialias) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (data.gdipGraphics == 0 && antialias == SWT.DEFAULT) return;
@@ -4183,6 +4219,7 @@ public void setAntialias(int antialias) {
  *
  * @since 3.1
  */
+@Override
 public void setAlpha(int alpha) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (data.gdipGraphics == 0 && (alpha & 0xFF) == 0xFF) return;
@@ -4214,6 +4251,7 @@ public void setAlpha(int alpha) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void setBackground (Color color) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (color == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -4248,6 +4286,7 @@ public void setBackground (Color color) {
  *
  * @since 3.1
  */
+@Override
 public void setBackgroundPattern (Pattern pattern) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (pattern != null && pattern.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -4301,6 +4340,7 @@ void setClipping(long clipRgn) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void setClipping (int x, int y, int width, int height) {
 	int deviceZoom = getZoom();
 	x = DPIUtil.scaleUp(drawable, x, deviceZoom);
@@ -4343,6 +4383,7 @@ void setClippingInPixels (int x, int y, int width, int height) {
  *
  * @since 3.1
  */
+@Override
 public void setClipping (Path path) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (path != null && path.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -4369,6 +4410,7 @@ public void setClipping (Path path) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void setClipping (Rectangle rect) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (rect == null) {
@@ -4396,6 +4438,7 @@ public void setClipping (Rectangle rect) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void setClipping (Region region) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (region != null && region.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -4418,6 +4461,7 @@ public void setClipping (Region region) {
  *
  * @since 3.1
  */
+@Override
 public void setFillRule(int rule) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	int mode = OS.ALTERNATE;
@@ -4445,6 +4489,7 @@ public void setFillRule(int rule) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void setFont (Font font) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (font != null && font.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -4466,6 +4511,7 @@ public void setFont (Font font) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void setForeground (Color color) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (color == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -4499,6 +4545,7 @@ public void setForeground (Color color) {
  *
  * @since 3.1
  */
+@Override
 public void setForegroundPattern (Pattern pattern) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (pattern != null && pattern.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -4539,6 +4586,7 @@ public void setForegroundPattern (Pattern pattern) {
  *
  * @since 3.1
  */
+@Override
 public void setInterpolation(int interpolation) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (data.gdipGraphics == 0 && interpolation == SWT.DEFAULT) return;
@@ -4579,6 +4627,7 @@ public void setInterpolation(int interpolation) {
  *
  * @since 3.3
  */
+@Override
 public void setLineAttributes (LineAttributes attributes) {
 	if (attributes == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	attributes.width = DPIUtil.scaleUp(drawable, attributes.width, getZoom());
@@ -4696,6 +4745,7 @@ void setLineAttributesInPixels (LineAttributes attributes) {
  *
  * @since 3.1
  */
+@Override
 public void setLineCap(int cap) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (data.lineCap == cap) return;
@@ -4728,6 +4778,7 @@ public void setLineCap(int cap) {
  *
  * @since 3.1
  */
+@Override
 public void setLineDash(int[] dashes) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	float[] lineDashes = data.lineDashes;
@@ -4767,6 +4818,7 @@ public void setLineDash(int[] dashes) {
  *
  * @since 3.1
  */
+@Override
 public void setLineJoin(int join) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (data.lineJoin == join) return;
@@ -4797,6 +4849,7 @@ public void setLineJoin(int join) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void setLineStyle(int lineStyle) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (data.lineStyle == lineStyle) return;
@@ -4837,6 +4890,7 @@ public void setLineStyle(int lineStyle) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void setLineWidth(int lineWidth) {
 	lineWidth = DPIUtil.scaleUp (drawable, lineWidth, getZoom());
 	setLineWidthInPixels(lineWidth);
@@ -4863,6 +4917,7 @@ void setLineWidthInPixels(int lineWidth) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public void setXORMode(boolean xor) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	OS.SetROP2(handle, xor ? OS.R2_XORPEN : OS.R2_COPYPEN);
@@ -4896,6 +4951,7 @@ public void setXORMode(boolean xor) {
  *
  * @since 3.1
  */
+@Override
 public void setTextAntialias(int antialias) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (data.gdipGraphics == 0 && antialias == SWT.DEFAULT) return;
@@ -4949,6 +5005,7 @@ public void setTextAntialias(int antialias) {
  *
  * @since 3.1
  */
+@Override
 public void setTransform(Transform transform) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (transform != null && transform.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -4982,6 +5039,7 @@ public void setTransform(Transform transform) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public Point stringExtent (String string) {
 	if (string == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	return DPIUtil.scaleDown(drawable, stringExtentInPixels(string), getZoom());
@@ -5028,6 +5086,7 @@ Point stringExtentInPixels (String string) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public Point textExtent (String string) {
 	return DPIUtil.scaleDown(drawable, textExtentInPixels(string, SWT.DRAW_DELIMITER | SWT.DRAW_TAB), getZoom());
 }
@@ -5063,6 +5122,7 @@ public Point textExtent (String string) {
  *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
  * </ul>
  */
+@Override
 public Point textExtent (String string, int flags) {
 	return DPIUtil.scaleDown(drawable, textExtentInPixels(string, flags), getZoom());
 }
@@ -5121,8 +5181,8 @@ public String toString () {
  *
  * @noreference This method is not intended to be referenced by clients.
  */
-public static GC win32_new(Drawable drawable, GCData data) {
-	GC gc = new GC();
+public static NativeGC win32_new(Drawable drawable, GCData data) {
+	NativeGC gc = new NativeGC();
 	long hDC = drawable.internal_new_GC(data);
 	gc.device = data.device;
 	gc.init(drawable, data, hDC);
@@ -5146,8 +5206,8 @@ public static GC win32_new(Drawable drawable, GCData data) {
  *
  * @noreference This method is not intended to be referenced by clients.
  */
-public static GC win32_new(long hDC, GCData data) {
-	GC gc = new GC();
+public static NativeGC win32_new(long hDC, GCData data) {
+	NativeGC gc = new NativeGC();
 	gc.device = data.device;
 	data.style |= SWT.LEFT_TO_RIGHT;
 	int flags = OS.GetLayout (hDC);
