@@ -988,7 +988,8 @@ public void drawImage (Image image, int srcX, int srcY, int srcWidth, int srcHei
 	drawImage(image, src.x, src.y, src.width, src.height, dest.x, dest.y, dest.width, dest.height, false);
 }
 
-void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+@Override
+public void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
 	if (data.gdipGraphics != 0) {
 		//TODO - cache bitmap
 		long [] gdipImage = srcImage.createGdipImage(getZoom());

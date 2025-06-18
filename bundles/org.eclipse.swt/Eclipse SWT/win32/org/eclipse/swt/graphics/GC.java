@@ -367,8 +367,9 @@ public void drawImage (Image image, int srcX, int srcY, int srcWidth, int srcHei
 	innerGC.drawImage(image, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight);
 }
 
-
-
+void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+	innerGC.drawImage(srcImage, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+}
 
 /**
  * Draws a line, using the foreground color, between the points

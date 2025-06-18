@@ -262,6 +262,11 @@ public class SkijaGC extends GCHandle {
 				createScaledRectangle(destX, destY, destWidth, destHeight));
 	}
 
+	@Override
+	public void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+		throw new UnsupportedOperationException();
+	}
+
 	private static ColorType getColorType(ImageData imageData) {
 		PaletteData palette = imageData.palette;
 
