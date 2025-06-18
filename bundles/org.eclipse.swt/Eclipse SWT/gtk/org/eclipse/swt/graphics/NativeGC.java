@@ -108,14 +108,14 @@ public final class NativeGC extends GCHandle implements IGraphicsContext {
 	final static int DRAW = FOREGROUND | LINE_WIDTH | LINE_STYLE  | LINE_CAP  | LINE_JOIN | LINE_MITERLIMIT | DRAW_OFFSET;
 	final static int FILL = BACKGROUND;
 
-	static final float[] LINE_DOT = new float[] { 1, 1 };
-	static final float[] LINE_DASH = new float[] { 3, 1 };
-	static final float[] LINE_DASHDOT = new float[] { 3, 1, 1, 1 };
-	static final float[] LINE_DASHDOTDOT = new float[] { 3, 1, 1, 1, 1, 1 };
-	static final float[] LINE_DOT_ZERO = new float[] { 3, 3 };
-	static final float[] LINE_DASH_ZERO = new float[] { 18, 6 };
-	static final float[] LINE_DASHDOT_ZERO = new float[] { 9, 6, 3, 6 };
-	static final float[] LINE_DASHDOTDOT_ZERO = new float[] { 9, 3, 3, 3, 3, 3 };
+	static final float[] LINE_DOT = new float[]{1, 1};
+	static final float[] LINE_DASH = new float[]{3, 1};
+	static final float[] LINE_DASHDOT = new float[]{3, 1, 1, 1};
+	static final float[] LINE_DASHDOTDOT = new float[]{3, 1, 1, 1, 1, 1};
+	static final float[] LINE_DOT_ZERO = new float[]{3, 3};
+	static final float[] LINE_DASH_ZERO = new float[]{18, 6};
+	static final float[] LINE_DASHDOT_ZERO = new float[]{9, 6, 3, 6};
+	static final float[] LINE_DASHDOTDOT_ZERO = new float[]{9, 3, 3, 3, 3, 3};
 
 NativeGC() {
 }
