@@ -128,7 +128,7 @@ public final class Image extends Resource implements Drawable {
 	/**
 	 * The GC the image is currently selected in.
 	 */
-	GC memGC;
+	NativeGC memGC;
 
 	/**
 	 * The width of the image.
@@ -171,6 +171,7 @@ public final class Image extends Resource implements Drawable {
 	 * Attribute to cache current device zoom level
 	 */
 	private int currentDeviceZoom = 100;
+	private boolean genericImage = false;
 
 Image(Device device) {
 	super(device);
@@ -977,6 +978,7 @@ public Color getBackground() {
 	//NOT DONE
 	return null;
 }
+
 /**
  * Returns the bounds of the receiver. The rectangle will always
  * have x and y values of 0, and the width and height of the
@@ -990,6 +992,11 @@ public Color getBackground() {
  * </ul>
  */
 public Rectangle getBounds() {
+	if (this.genericImage) {
+		var imgD = imageDataProvider.getImageData(100);
+		return new Rectangle(0, 0, imgD.width, imgD.height);
+	}
+
 	if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	return DPIUtil.autoScaleDown(getBoundsInPixels());
 }
@@ -1037,7 +1044,6 @@ public Rectangle getBoundsInPixels() {
 public ImageData getImageData () {
 	if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	return getImageData(100);
-
 }
 
 /**
@@ -1061,6 +1067,10 @@ public ImageData getImageData () {
  */
 @Deprecated
 public ImageData getImageDataAtCurrentZoom () {
+	if (this.genericImage) {
+		return imageDataProvider.getImageData(100);
+	}
+
 	if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 
 	long surface = ImageList.convertSurface(this);
@@ -1489,6 +1499,10 @@ public void internal_dispose_GC (long hDC, GCData data) {
  */
 @Override
 public boolean isDisposed() {
+	if (this.genericImage) {
+		return false;
+	}
+
 	return surface == 0;
 }
 
@@ -1551,4 +1565,16 @@ public String toString () {
 	return "Image {" + surface + "}";
 }
 
+void setImageDataProvider(ImageDataProvider imgDataProv) {
+	if (!this.isDisposed()) {
+		dispose();
+	}
+	this.genericImage = true;
+	this.imageDataProvider = imgDataProv;
+}
+
+Image(ImageDataProvider imgDataProv) {
+	this.genericImage = true;
+	this.imageDataProvider = imgDataProv;
+}
 }

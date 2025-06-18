@@ -1866,7 +1866,7 @@ private ImageData scaleToUsingSmoothScaling(int width, int height, ImageData ima
 	Image resultImage = new Image (device, (ImageDataProvider) zoom -> resultData);
 	GC gc = new GC (resultImage);
 	gc.setAntialias (SWT.ON);
-	gc.drawImage (original, 0, 0, imageData.width, imageData.height,
+	((NativeGC)gc.innerGC).drawImage (original, 0, 0, imageData.width, imageData.height,
 			/* E.g. destWidth here is effectively DPIUtil.autoScaleDown (scaledWidth), but avoiding rounding errors.
 			 * Nevertheless, we still have some rounding errors due to the point-based API GC#drawImage(..).
 			 */
@@ -2549,7 +2549,7 @@ private class ImageGcDrawerWrapper extends DynamicImageProviderWrapper {
 		Image image = new Image(device, width, height, zoom);
 		GC gc = new GC(image, drawer.getGcStyle());
 		try {
-			gc.data.nativeZoom = zoom;
+			((NativeGC)gc.innerGC).data.nativeZoom = zoom;
 			drawer.drawOn(gc, width, height);
 			ImageData imageData = image.getImageMetadata(zoom).getImageData();
 			drawer.postProcess(imageData);
