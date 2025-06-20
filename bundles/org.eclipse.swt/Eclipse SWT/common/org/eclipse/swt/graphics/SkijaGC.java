@@ -262,11 +262,6 @@ public class SkijaGC extends GCHandle {
 				createScaledRectangle(destX, destY, destWidth, destHeight));
 	}
 
-	@Override
-	public void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
-		throw new UnsupportedOperationException();
-	}
-
 	private static ColorType getColorType(ImageData imageData) {
 		PaletteData palette = imageData.palette;
 
@@ -380,6 +375,8 @@ public class SkijaGC extends GCHandle {
 
 		boolean byteSourceContainsAlpha = bytesPerPixel > 3;
 
+		var cols = imageData.palette.colors;
+
 		for (int y = 0; y < imageData.height; y++) {
 			for (int x = 0; x < imageData.width; x++) {
 				int pixel = imageData.getPixel(x, y);
@@ -388,6 +385,16 @@ public class SkijaGC extends GCHandle {
 				byte r = (byte) ((pixel & imageData.palette.redMask) >>> -imageData.palette.redShift);
 				byte g = (byte) ((pixel & imageData.palette.greenMask) >>> -imageData.palette.greenShift);
 				byte b = (byte) ((pixel & imageData.palette.blueMask) >>> -imageData.palette.blueShift);
+
+				if (cols != null) {
+
+					var rgb = cols[pixel];
+
+					r = (byte) rgb.red;
+					b = (byte) rgb.blue;
+					g = (byte) rgb.green;
+
+				}
 
 				byte a = (byte)255;
 				if (transparencyData != null) {
@@ -403,13 +410,13 @@ public class SkijaGC extends GCHandle {
 				convertedData[index + 2] = (byte) b;
 				convertedData[index + 3] = (byte) a;
 
-				if (alphaData != null && alphaData.length > arrayPos) {
-					convertedData[index + 3] = alphaData[arrayPos];
-				} else if (imageData.alpha != -1) {
-					convertedData[index + 3] = defaultAlpha;
-				} else if(!byteSourceContainsAlpha) {
-					convertedData[index + 3] = defaultAlpha;
-				}
+//				if (alphaData != null && alphaData.length > arrayPos) {
+//					convertedData[index + 3] = alphaData[arrayPos];
+//				} else if (imageData.alpha != -1) {
+//					convertedData[index + 3] = defaultAlpha;
+//				} else if(!byteSourceContainsAlpha) {
+//					convertedData[index + 3] = defaultAlpha;
+//				}
 			}
 		}
 
@@ -1038,8 +1045,13 @@ public class SkijaGC extends GCHandle {
 			Canvas imageCanvas = imageSurface.getCanvas();
 			imageCanvas.drawImage(copiedArea, 0, 0);
 			skijaImage = imageSurface.makeImageSnapshot();
-			ImageUtils.setImageDataProvider(image, new SkijaImageDataProvider(skijaImage));
+			var imgData = convertToSkijaImageData(skijaImage);
+			Image i = new Image(device, imgData);
 
+			NativeGC gc = new NativeGC(image);
+			gc.drawImage(i, 0,0 );
+			gc.dispose();
+			i.dispose();
 		} else {
 			System.err.println(
 					"WARN: Area copied at given x,y co-ordinates is null: " + new Throwable().getStackTrace()[0]);
@@ -1356,6 +1368,13 @@ public class SkijaGC extends GCHandle {
 	public static int[] getPixelOrder(ColorType colorType) {
 		Map<ColorType, int[]> colorTypeMap = createColorTypeMap();
 		return colorTypeMap.get(colorType);
+	}
+
+	@Override
+	public void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY,
+			int destWidth, int destHeight, boolean simple) {
+		// TODO Auto-generated method stub
+
 	}
 
 }

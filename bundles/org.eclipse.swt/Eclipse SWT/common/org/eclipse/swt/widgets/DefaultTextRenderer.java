@@ -1,10 +1,7 @@
 package org.eclipse.swt.widgets;
 
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.*;
+import org.eclipse.swt.graphics.*;
 
 public class DefaultTextRenderer extends TextRenderer {
 
@@ -70,7 +67,7 @@ public class DefaultTextRenderer extends TextRenderer {
 	}
 
 	@Override
-	protected Point getLocationByTextLocation(TextLocation textLocation, GC gc) {
+	Point getLocationByTextLocation(TextLocation textLocation, GC gc) {
 		String completeText = model.getLines()[textLocation.line];
 		String beforeSelection = completeText.substring(0, textLocation.column);
 		gc.setFont(text.getFont());

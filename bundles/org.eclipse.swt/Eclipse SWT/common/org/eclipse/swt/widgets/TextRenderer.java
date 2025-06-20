@@ -1,14 +1,12 @@
 package org.eclipse.swt.widgets;
 
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.*;
 
 public abstract class TextRenderer extends ControlRenderer {
 
 	protected abstract Rectangle getVisibleArea();
 
-	protected abstract Point getLocationByTextLocation(TextLocation textLocation, GC gc);
+	abstract Point getLocationByTextLocation(TextLocation textLocation, GC gc);
 
 	protected abstract int getLineHeight(GC gc);
 

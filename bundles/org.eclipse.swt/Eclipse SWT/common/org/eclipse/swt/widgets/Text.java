@@ -11,12 +11,8 @@
  *******************************************************************************/
 package org.eclipse.swt.widgets;
 
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.SWTException;
-import org.eclipse.swt.events.ModifyListener;
-import org.eclipse.swt.events.SegmentListener;
-import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.events.VerifyListener;
+import org.eclipse.swt.*;
+import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 
 /**
@@ -890,7 +886,7 @@ public class Text extends NativeBasedCustomScrollable {
 		this.tabs = tabs;
 	}
 
-	public TextCaret getCaret() {
+	TextCaret getCaret() {
 		return caret;
 	}
 
