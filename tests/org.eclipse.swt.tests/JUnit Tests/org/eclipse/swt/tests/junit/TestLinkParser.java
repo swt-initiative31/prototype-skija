@@ -24,7 +24,7 @@ public class TestLinkParser {
 	public void testNormal() {
 		testLink(List.of(), "");
 
-		testLink(List.of(new LinkParser.Part("hello", null)), "hello");
+		testLink(List.of(new LinkParser.Part("hello", null)), "helloa");
 
 		testLink(List.of(new LinkParser.Part("", "")), "<a></a>");
 		testLink(List.of(new LinkParser.Part("", "")), "<A></A>");
