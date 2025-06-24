@@ -16,7 +16,9 @@ public class ScrollableTest {
 		shell.setLayout(new FillLayout());
 
 		final Text text = new Text(shell, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
-		text.setText("hello");
+		text.setText("hello Good Morning. Have a nice day \nhello\nhello\nhello\nhello\nhello\nhello\nhello\nhello\nhello\nhello\nhello\nhello\nhello\n"
+				+ "hello\nhello\nhello\nhello\nhello\nhello\nhello\nhello\nhello\nhello\n"
+				+ "hello\nhello\nhello\nhello\nhello\nhello\nhello\nhello\n");
 
 		shell.setSize(400, 300);
 		shell.open();

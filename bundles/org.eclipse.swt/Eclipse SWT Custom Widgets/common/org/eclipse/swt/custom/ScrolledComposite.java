@@ -500,6 +500,7 @@ public void setContent(Control content) {
 		if (hBar != null) hBar.setVisible(alwaysShowScroll);
 		if (vBar != null) vBar.setVisible(alwaysShowScroll);
 	}
+	setContentControl(this.content);
 }
 /**
  * Configure the ScrolledComposite to resize the content object to be as wide as the

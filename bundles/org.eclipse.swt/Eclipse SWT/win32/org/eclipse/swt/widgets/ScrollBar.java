@@ -124,7 +124,10 @@ public class ScrollBar extends Widget {
 ScrollBar (Scrollable parent, int style) {
 	super (parent, checkStyle (style));
 	this.parent = parent;
-	customScrollBar = parent instanceof CustomComposite || parent instanceof NativeBasedCustomScrollable ? new CustomScrollBar(parent, style) : null;
+//	customScrollBar = parent instanceof CustomComposite || parent instanceof NativeBasedCustomScrollable
+//			? new CustomScrollBar(parent, style)
+//			: null;
+	customScrollBar = new CustomScrollBar(parent, style);
 	createWidget ();
 }
 

@@ -78,6 +78,23 @@ public class CustomScrollBar {
 
 		final RendererFactory rendererFactory = control.display.getRendererFactory();
 		renderer = rendererFactory.createScrollBarRenderer(this);
+		
+		Display display = control.getDisplay(); // control = ScrolledComposite
+
+		display.addFilter(SWT.MouseDown, event -> {
+			Point global = new Point(event.x, event.y);
+			Point local = control.toControl(global);
+
+			System.out.println("Filtered MouseDown at: " + local);
+
+			if (bounds.contains(local)) {
+				onMouseDown(event);
+				event.doit = false;
+			}
+		});
+
+		control.setFocus();
+
 	}
 
 	public boolean getEnabled() {
@@ -100,7 +117,7 @@ public class CustomScrollBar {
 		return (style & SWT.VERTICAL) == 0;
 	}
 
-	private void onPaint(Event event) {
+	void onPaint(Event event) {
 		Drawing.drawWithGC(control, event.gc, gc -> renderer.paint(gc, bounds.x, bounds.y, bounds.width, bounds.height));
 		this.thumbRectangle = renderer.getThumbRectangle();
 		this.trackRectangle = renderer.getTrackRectangle();
@@ -165,7 +182,7 @@ public class CustomScrollBar {
 		if (event.button != 1) {
 			return;
 		}
-
+		System.out.println("ScrollBar mousedown event");
 		control.setCapture(true);
 
 		// Drag of the thumb.
@@ -452,37 +469,56 @@ public class CustomScrollBar {
 		}
 	}
 
+//	private void setThumb(int thumb, boolean redraw) {
+//		if (thumb <= 0 || this.thumb == thumb) {
+//			return;
+//		}
+//
+//		if (thumb <= this.maximum && thumb <= this.selection) {
+//			this.thumb = thumb;
+//			if (redraw) {
+//				redraw();
+//			}
+//			return;
+//		}
+//
+//		if (thumb <= (this.maximum - this.minimum) && thumb > this.selection) {
+//			this.selection = this.maximum - thumb;
+//			this.thumb = thumb;
+//		}
+//
+//		if (thumb > (this.maximum - this.minimum) && thumb > this.selection) {
+//			this.thumb = this.maximum - this.minimum;
+//			this.selection = this.minimum;
+//		}
+//		if (redraw) {
+//			redraw();
+//		}
+//	}
+
 	public void setThumb(int thumb) {
 		checkWidget();
 		setThumb(thumb, true);
 	}
 
 	private void setThumb(int thumb, boolean redraw) {
-		if (thumb <= 0 || this.thumb == thumb) {
-			return;
-		}
+		int scrollRange = this.maximum - this.minimum;
 
-		if (thumb <= this.maximum && thumb <= this.selection) {
-			this.thumb = thumb;
-			if (redraw) {
-				redraw();
-			}
-			return;
-		}
+		this.thumb = Math.max(1, thumb); // always valid
 
-		if (thumb <= (this.maximum - this.minimum) && thumb > this.selection) {
-			this.selection = this.maximum - thumb;
-			this.thumb = thumb;
+		// Only clamp selection if thumb is valid (i.e., within scroll range)
+		if (scrollRange > 0 && this.selection > scrollRange) {
+			this.selection = scrollRange;
 		}
-
-		if (thumb > (this.maximum - this.minimum) && thumb > this.selection) {
-			this.thumb = this.maximum - this.minimum;
+		if (this.selection < this.minimum) {
 			this.selection = this.minimum;
 		}
+
 		if (redraw) {
 			redraw();
 		}
 	}
+
 
 	public void setValues(int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement) {
 		checkWidget();
@@ -503,7 +539,7 @@ public class CustomScrollBar {
 		control.checkWidget();
 	}
 
-	private void redraw() {
+	void redraw() {
 		if (bounds.width > 0 && bounds.height > 0) {
 			control.redraw(bounds.x, bounds.y, bounds.width, bounds.height, false);
 		}

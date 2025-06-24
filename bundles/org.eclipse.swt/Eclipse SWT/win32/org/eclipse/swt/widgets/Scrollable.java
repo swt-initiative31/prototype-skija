@@ -40,6 +40,7 @@ public abstract class Scrollable extends Control {
 	ScrollBar horizontalBar, verticalBar;
 	private int clientWidth;
 	private int clientHeight;
+	CustomScrollable customScrollable;
 
 	/**
 	 * The regular expression used to determine the string which should be deleted
@@ -84,8 +85,7 @@ Scrollable () {
  * @see Widget#getStyle
  */
 public Scrollable (Composite parent, int style) {
-	super (parent, style);
-
+	super(parent, style);
 	addListener(SWT.Resize, event -> {
 		int horizontalBarHeight = 0;
 		int verticalBarWidth = 0;
@@ -110,11 +110,30 @@ public Scrollable (Composite parent, int style) {
 		if (verticalBar != null) {
 			verticalBar.setBounds(size.x - verticalBarWidth, 0, verticalBarWidth, clientHeight);
 		}
+		if (customScrollable != null) {
+			customScrollable.layoutContent();
+			customScrollable.layoutScrollbars();
+		}
 	});
+	// customScrollable = parent instanceof CustomComposite ? new
+	// CustomScrollable(parent, style, this) : null;
+	customScrollable = new CustomScrollable(parent, style, this);
+	// customScrollable = null;
+	if (customScrollable != null) {
+		if (horizontalBar != null) {
+			customScrollable.setHorizontalBar(horizontalBar);
+		}
+		if (verticalBar != null) {
+			customScrollable.setVerticalBar(verticalBar);
+		}
+	}
 }
 
 @Override
 long callWindowProc (long hwnd, int msg, long wParam, long lParam) {
+	if (customScrollable != null) {
+		return 0;
+	}
 	if (handle == 0) return 0;
 	return OS.DefWindowProc (hwnd, msg, wParam, lParam);
 }
@@ -147,6 +166,9 @@ long callWindowProc (long hwnd, int msg, long wParam, long lParam) {
  * @see #getClientArea
  */
 public Rectangle computeTrim (int x, int y, int width, int height) {
+	if (customScrollable != null) {
+		return customScrollable.computeTrim(x, y, width, height);
+	}
 	checkWidget ();
 	int zoom = getZoom();
 	Rectangle rectangle = DPIUtil.scaleUp(new Rectangle(x, y, width, height), zoom);
@@ -154,6 +176,9 @@ public Rectangle computeTrim (int x, int y, int width, int height) {
 }
 
 Rectangle computeTrimInPixels (int x, int y, int width, int height) {
+	if (customScrollable != null) {
+		throw new UnsupportedOperationException();
+	}
 	long scrolledHandle = scrolledHandle ();
 	RECT rect = new RECT ();
 	OS.SetRect (rect, x, y, x + width, y + height);
@@ -168,11 +193,14 @@ Rectangle computeTrimInPixels (int x, int y, int width, int height) {
 
 @Override
 void createHandle () {
+	if (customScrollable != null) {
+		throw new UnsupportedOperationException();
+	}
 	super.createHandle();
 	maybeEnableDarkSystemTheme();
 }
 
-private ScrollBar createScrollBar (int type) {
+protected ScrollBar createScrollBar(int type) {
 	ScrollBar bar = new ScrollBar (this, type);
 	if ((state & CANVAS) != 0) {
 		bar.setMaximum (100);
@@ -209,6 +237,9 @@ int applyThemeBackground () {
 }
 
 void destroyScrollBar (int type) {
+	if (customScrollable != null) {
+		return;
+	}
 	long hwnd = scrolledHandle ();
 	int bits = OS.GetWindowLong (hwnd, OS.GWL_STYLE);
 	if ((type & SWT.HORIZONTAL) != 0) {
@@ -237,11 +268,17 @@ void destroyScrollBar (int type) {
  * @see #computeTrim
  */
 public Rectangle getClientArea () {
+	if (customScrollable != null) {
+		return customScrollable.getClientArea();
+	}
 	checkWidget ();
 	return DPIUtil.scaleDown(getClientAreaInPixels(), getZoom());
 }
 
 Rectangle getClientAreaInPixels () {
+	if (customScrollable != null) {
+		throw new UnsupportedOperationException();
+	}
 	forceResize ();
 	RECT rect = new RECT ();
 	long scrolledHandle = scrolledHandle ();
@@ -270,7 +307,10 @@ Rectangle getClientAreaInPixels () {
  * </ul>
  */
 public ScrollBar getHorizontalBar () {
-	checkWidget ();
+	if (customScrollable != null) {
+		return customScrollable.getHorizontalBar();
+	}
+	checkWidget();
 	return horizontalBar;
 }
 
@@ -339,7 +379,10 @@ public void setScrollbarsMode (int mode) {
  * </ul>
  */
 public ScrollBar getVerticalBar () {
-	checkWidget ();
+	if (customScrollable != null) {
+		return customScrollable.getVerticalBar();
+	}
+	checkWidget();
 	return verticalBar;
 }
 
@@ -364,6 +407,9 @@ void reskinChildren (int flags) {
 }
 
 long scrolledHandle () {
+	if (customScrollable != null) {
+		return 0;
+	}
 	return handle;
 }
 
@@ -377,16 +423,25 @@ int widgetStyle () {
 
 @Override
 TCHAR windowClass () {
+//	if (customScrollable != null) {
+//		throw new UnsupportedOperationException();
+//	}
 	return display.windowClass;
 }
 
 @Override
 long windowProc () {
+//	if (customScrollable != null) {
+//		throw new UnsupportedOperationException();
+//	}
 	return display.windowProc;
 }
 
 @Override
 LRESULT WM_HSCROLL (long wParam, long lParam) {
+	if (customScrollable != null) {
+		throw new UnsupportedOperationException();
+	}
 	LRESULT result = super.WM_HSCROLL (wParam, lParam);
 	if (result != null) return result;
 	if (horizontalBar != null && lParam == 0) {
@@ -397,16 +452,28 @@ LRESULT WM_HSCROLL (long wParam, long lParam) {
 
 @Override
 LRESULT WM_MOUSEWHEEL (long wParam, long lParam) {
+	if (customScrollable != null) {
+		LRESULT zero = LRESULT.ZERO;
+		return zero;
+	}
 	return wmScrollWheel ((state & CANVAS) != 0, wParam, lParam, false);
 }
 
 @Override
 LRESULT WM_MOUSEHWHEEL (long wParam, long lParam) {
+	if (customScrollable != null) {
+		LRESULT zero = LRESULT.ZERO;
+		return zero;
+	}
 	return wmScrollWheel ((state & CANVAS) != 0, -1 * wParam, lParam, true);
 }
 
 @Override
 LRESULT WM_SIZE (long wParam, long lParam) {
+	if (customScrollable != null) {
+		LRESULT zero = LRESULT.ZERO;
+		return zero;
+	}
 	long code = callWindowProc (handle, OS.WM_SIZE, wParam, lParam);
 	super.WM_SIZE (wParam, lParam);
 	// widget may be disposed at this point
@@ -416,6 +483,10 @@ LRESULT WM_SIZE (long wParam, long lParam) {
 
 @Override
 LRESULT WM_VSCROLL (long wParam, long lParam) {
+	if (customScrollable != null) {
+		LRESULT zero = LRESULT.ZERO;
+		return zero;
+	}
 	LRESULT result = super.WM_VSCROLL (wParam, lParam);
 	if (result != null) return result;
 	if (verticalBar != null && lParam == 0) {
@@ -425,6 +496,10 @@ LRESULT WM_VSCROLL (long wParam, long lParam) {
 }
 
 LRESULT wmScrollWheel (boolean update, long wParam, long lParam, boolean horzWheel) {
+	if (customScrollable != null) {
+		LRESULT zero = LRESULT.ZERO;
+		return zero;
+	}
 	LRESULT result = horzWheel ? super.WM_MOUSEHWHEEL(wParam, lParam) : super.WM_MOUSEWHEEL(wParam, lParam);
 	if (result != null) return result;
 	/*
@@ -498,6 +573,10 @@ LRESULT wmScrollWheel (boolean update, long wParam, long lParam, boolean horzWhe
 }
 
 LRESULT wmScroll (ScrollBar bar, boolean update, long hwnd, int msg, long wParam, long lParam) {
+	if (customScrollable != null) {
+		LRESULT zero = LRESULT.ZERO;
+		return zero;
+	}
 	LRESULT result = null;
 	if (update) {
 		int type = msg == OS.WM_HSCROLL ? OS.SB_HORZ : OS.SB_VERT;
@@ -541,6 +620,46 @@ LRESULT wmScroll (ScrollBar bar, boolean update, long hwnd, int msg, long wParam
 	}
 	bar.wmScrollChild (wParam, lParam);
 	return result;
+}
+
+protected void setContentControl(Control content) {
+	if (customScrollable != null) {
+		customScrollable.setContentControl(content);
+	} else {
+		return;
+	}
+}
+
+public void setMinSize(int width, int height) {
+	if (customScrollable != null) {
+		customScrollable.setMinSize(width, height);
+	} else {
+		return;
+	}
+}
+
+public void setMinSize(Point size) {
+	if (customScrollable != null) {
+		customScrollable.setMinSize(size);
+	} else {
+		return;
+	}
+}
+
+public void setExpandHorizontal(boolean expand) {
+	if (customScrollable != null) {
+		customScrollable.setExpandHorizontal(expand);
+	} else {
+		return;
+	}
+}
+
+public void setExpandVertical(boolean expand) {
+	if (customScrollable != null) {
+		customScrollable.setExpandVertical(expand);
+	} else {
+		return;
+	}
 }
 
 }
