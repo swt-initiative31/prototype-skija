@@ -72,6 +72,11 @@ public class SkijaGC extends GCHandle {
 		initFont();
 	}
 
+	public SkijaGC(Surface skiaSurface) {
+		this.surface = skiaSurface;
+		this.originalDrawingSize = new Point(100,100);
+	}
+
 	private static Point extractSize(Drawable drawable) {
 		Point size = new Point(0, 0);
 		if (drawable instanceof Image image) {

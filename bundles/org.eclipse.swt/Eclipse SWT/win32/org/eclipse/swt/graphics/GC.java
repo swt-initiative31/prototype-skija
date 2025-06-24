@@ -88,7 +88,7 @@ public class GC extends Resource {
 /**
  * Prevents uninitialized instances from being created outside the package.
  */
-GC() {
+public GC() {
 }
 
 /**

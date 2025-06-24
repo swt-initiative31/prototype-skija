@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-17"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-17">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="src" path="Eclipse SWT/win32"/>
 	<classpathentry kind="src" path="Eclipse SWT Tests/common"/>
 	<classpathentry kind="src" path="Eclipse SWT/common"/>
@@ -33,7 +37,15 @@
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
 	<classpathentry kind="lib" path="lib/skija-shared-0.116.3.jar" sourcepath="lib/skija-shared-0.116.3-sources.jar"/>
-	<classpathentry kind="lib" path="lib/skija-windows-x64-0.116.3.jar"/>
-	<classpathentry kind="lib" path="lib/types-0.1.1.jar"/>
+	<classpathentry kind="lib" path="lib/gluegen-rt-2.5.0.jar"/>
+	<classpathentry kind="lib" path="lib/gluegen-rt-2.5.0-natives-windows-amd64.jar"/>
+	<classpathentry kind="lib" path="lib/gluegen-rt-2.5.0-sources.jar"/>
+	<classpathentry kind="lib" path="lib/jogl-all-2.5.0.jar"/>
+	<classpathentry kind="lib" path="lib/jogl-all-2.5.0-natives-windows-amd64.jar"/>
+	<classpathentry kind="lib" path="lib/jogl-all-2.5.0-sources.jar"/>
+	<classpathentry kind="lib" path="lib/skija-shared-0.116.3-sources.jar"/>
+	<classpathentry kind="lib" path="lib/types-0.1.1-sources.jar"/>
+	<classpathentry kind="lib" path="C:/SAPDevelop/git/prototype-skija/binaries/org.eclipse.swt.win32.win32.x86_64/lib/skija-windows-x64-0.116.3.jar"/>
+	<classpathentry kind="lib" path="C:/SAPDevelop/git/prototype-skija/binaries/org.eclipse.swt.win32.win32.x86_64/lib/types-0.1.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
