@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
+	<classpathentry exported="true" kind="lib" path="lib/skija-linux-x64-0.116.3.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/skija-shared-0.116.3.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/skija-shared-0.116.3-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/types-0.1.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/types-0.1.1-sources.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-17">
 		<attributes>
 			<attribute name="module" value="true"/>
@@ -35,10 +40,5 @@
 	<classpathentry kind="src" path="Eclipse SWT OpenGL/glx"/>
 	<classpathentry kind="src" path="Eclipse SWT OpenGL/common"/>
 	<classpathentry kind="src" path="Eclipse SWT WebKit/gtk"/>
-	<classpathentry kind="lib" path="/home/d071174/git/prototype-skija/binaries/org.eclipse.swt.gtk.linux.x86_64/lib/skija-linux-x64-0.116.3.jar"/>
-	<classpathentry kind="lib" path="/home/d071174/git/prototype-skija/binaries/org.eclipse.swt.gtk.linux.x86_64/lib/skija-shared-0.116.3.jar"/>
-	<classpathentry kind="lib" path="/home/d071174/git/prototype-skija/binaries/org.eclipse.swt.gtk.linux.x86_64/lib/skija-shared-0.116.3-sources.jar"/>
-	<classpathentry kind="lib" path="/home/d071174/git/prototype-skija/binaries/org.eclipse.swt.gtk.linux.x86_64/lib/types-0.1.1.jar"/>
-	<classpathentry kind="lib" path="/home/d071174/git/prototype-skija/binaries/org.eclipse.swt.gtk.linux.x86_64/lib/types-0.1.1-sources.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
