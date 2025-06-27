@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
+import org.eclipse.swt.widgets.*;
 
 /**
  * Class <code>GC</code> is where all of the drawing capabilities that are
@@ -278,6 +279,12 @@ public static GC gtk_new(long handle, GCData data) {
  */
 public static GC gtk_new(Drawable drawable, GCData data) {
 	GC gc = new GC();
+	if(drawable instanceof SkiaRasterCanvas skiaRasterCanvas ){
+		gc = skiaRasterCanvas.createGC(gc);
+	}
+	if(drawable instanceof SkiaCanvas skiaCanvas) {
+		gc = skiaCanvas.createGC(gc);
+	}
 	long gdkGC = drawable.internal_new_GC(data);
 	gc.device = data.device;
 	gc.init(drawable, data, gdkGC);

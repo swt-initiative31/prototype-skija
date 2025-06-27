@@ -1,8 +1,18 @@
+/*******************************************************************************
+ * Copyright (c) 2025 SAP SE and others.
+
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *******************************************************************************/
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.opengl.*;
 
 import io.github.humbleui.skija.*;
@@ -10,13 +20,10 @@ import io.github.humbleui.skija.*;
 public class SkiaCanvas extends GLCanvas {
 
 	public DirectContext skijaContext;
-	private BackendRenderTarget renderTarget;
 	public Surface surface;
-	private boolean redrawTriggered;
-
 
 	public SkiaCanvas(Composite parent, int style) {
-		this(parent,style,createGLData());
+		this(parent, style, createGLData());
 	}
 
 	private static GLData createGLData() {
@@ -25,25 +32,19 @@ public class SkiaCanvas extends GLCanvas {
 		return data;
 	}
 
-
 	public SkiaCanvas(Composite parent, int style, GLData data) {
 		super(parent, style, data);
-
 		state |= FOREIGN_HANDLE;
-
 		setCurrent();
 		skijaContext = DirectContext.makeGL();
-
-
-		addListener(SWT.Resize, e -> onResize(e));
-
+		addListener(SWT.Resize, this::onResize);
 	}
 
 	private void onResize(Event e) {
 		Rectangle rect = getClientArea();
 
-		renderTarget = BackendRenderTarget.makeGL(rect.width, rect.height, /* samples */0, /* stencil */8,
-				/* fbid */0, FramebufferFormat.GR_GL_RGBA8);
+		BackendRenderTarget renderTarget = BackendRenderTarget.makeGL(rect.width, rect.height, /* samples */0,
+				/* stencil */8, /* fbid */0, FramebufferFormat.GR_GL_RGBA8);
 
 		System.out.println("CreateOpenGLRenderTarget");
 
@@ -56,51 +57,11 @@ public class SkiaCanvas extends GLCanvas {
 		surface.getCanvas().clear(0xFFFFFFFF);
 
 		skijaContext.flush();
-		swapBuffers();
 		redraw();
 	}
 
-//	private void onPaint(Event e) {
-//		glPrepareSurface();
-//		doPaint();
-//		glFinishDrawing();
-//	}
-
-
-	long startTime = System.currentTimeMillis();
-
-	private void drawSurface() {
-
-			surface.getCanvas().clear(0xFFFFFFFF);
-
-			Point size = getSize();
-
-			long currentPosTime = System.currentTimeMillis() - startTime;
-
-			currentPosTime = currentPosTime % 10000;
-
-			double position = (double) currentPosTime / (double) 10000;
-
-			int colorAsRGB = 0xFF42FFF4;
-			int colorRed = 0xFFFF0000;
-			int colorGreen = 0xFF00FF00;
-			int colorBlue = 0xFF0000FF;
-
-			try (var paint = new Paint()) {
-				paint.setColor(colorBlue);
-				surface.getCanvas().drawCircle(  (int) (position * size.x), 100, 100, paint);
-			}
-		}
-
-
-	public static GC gtk_new(Drawable drawable, GCData data) {
-		// TODO: here a gc could be created... I don't know whether this is the right way because of other method calls inside the GC and in Control
-//		GC gc = new SkiaGC(((SkiaCanvas)drawable).surface);
-//		long gdkGC = drawable.internal_new_GC(data);
-//		gc.device = data.device;
-//		gc.handle = gdkGC;
-////		gc.init(drawable, data, gdkGC);
-		return new SkiaGC();
+	public GC createGC(GC innerGC) {
+		return new SkiaGLGC(innerGC, this);
 	}
 
 }

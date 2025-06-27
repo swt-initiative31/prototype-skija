@@ -27,7 +27,7 @@ import io.github.humbleui.skija.Canvas;
 import io.github.humbleui.skija.Font;
 import io.github.humbleui.types.*;
 
-public final class SkiaGC extends GC {
+public abstract class AbstractSkiaGC extends GC {
 
 
 	@Override
@@ -42,19 +42,7 @@ public final class SkiaGC extends GC {
 	private static final Map<FontData, Font> FONT_CACHE = new ConcurrentHashMap<>();
 	private static final Map<Color, Paint> PAINT_CACHE = new ConcurrentHashMap<>();
 
-	public static SkiaGC createDefaultInstance(GC gc) {
-		return new SkiaGC(gc, gc.drawable, false);
-	}
-
-	public static SkiaGC createDefaultInstance(GC gc, Control control) {
-		return new SkiaGC(gc, control, false);
-	}
-
-	public static SkiaGC createMeasureInstance(GC gc, Control control) {
-		return new SkiaGC(gc, control, true);
-	}
-
-	public Surface surface;
+	private Surface surface;
 
 	private GC innerGC;
 
@@ -71,37 +59,11 @@ public final class SkiaGC extends GC {
 
 	private static Map<ColorType, int[]> colorTypeMap = null;
 
-	private SkiaGC(GC gc, Drawable drawable, boolean onlyForMeasuring) {
+	protected AbstractSkiaGC(GC gc, Drawable src, Surface surface) {
 		innerGC = gc;
-		device = gc.device;
-		originalDrawingSize = extractSize(drawable);
-
-		if (drawable instanceof SkiaCanvas sc) {
-			this.surface = sc.surface;
-			this.device = sc.getDisplay();
-		}
-		this.skiaFont = convertToSkijaFont(this.device.getSystemFont());
-
-
-//			if (onlyForMeasuring) {
-//				surface = createMeasureSurface();
-//			} else {
-//				surface = createDrawingSurface();
-//				initializeWithParentBackground();
-//			}
-	}
-
-	public SkiaGC(SkiaRasterCanvas src, Surface surface) {
-
 		this.surface = surface;
 		this.drawable = src;
-		device = src.getDisplay();
 		originalDrawingSize = extractSize(drawable);
-		initFont();
-
-	}
-
-	public SkiaGC() {
 	}
 
 	private static Point extractSize(Drawable drawable) {
@@ -160,26 +122,11 @@ public final class SkiaGC extends GC {
 
 	@Override
 	public void dispose() {
-
-		if (drawable instanceof SkiaCanvas)
-			glFinishDrawing();
-//		if(drawable instanceof SkiaRasterCanvas src ) {
-//
-//			var cairoSurface = src.cairoSurface;
-//
-//			var cairo = getGCData().cairo;
-//			Cairo.cairo_set_source_surface(cairo, cairoSurface, 0, 0);
-//			Cairo.cairo_paint(cairo);
-//			Cairo.cairo_surface_flush(cairoSurface);
-//			Cairo.cairo_surface_flush(cairo);
-//
-//		}
-
+		super.dispose();
 		drawable = null;
 		innerGC = null;
 		skiaFont = null;
 		swtFont = null;
-		super.dispose();
 	}
 
 	private void performDraw(Consumer<Paint> operations) {
@@ -874,7 +821,7 @@ public final class SkiaGC extends GC {
 		if (cachedFont != null && cachedFont.isClosed()) {
 			FONT_CACHE.remove(fontData);
 		}
-		return FONT_CACHE.computeIfAbsent(fontData, SkiaGC::createSkijaFont);
+		return FONT_CACHE.computeIfAbsent(fontData, AbstractSkiaGC::createSkijaFont);
 	}
 
 	static Font createSkijaFont(FontData fontData) {
@@ -1149,8 +1096,7 @@ public final class SkiaGC extends GC {
 
 	@Override
 	public GCData getGCData() {
-		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
-		return null;
+		return data;
 	}
 
 	@Override
@@ -1404,17 +1350,11 @@ public final class SkiaGC extends GC {
 	@Override
 	public
 	void init(Drawable drawable, GCData data, long hDC) {
-
-		this.innerGC = this;
-		if (drawable instanceof SkiaCanvas sc) {
-			surface = sc.surface;
-			this.device = sc.getDisplay();
-			glPrepareSurface();
-		} else if(drawable instanceof SkiaRasterCanvas sc) {
-			// TODO handle init somehow...
-		}
+		this.data = data;
+		data.cairo = hDC;
+		handle = hDC;
+		innerGC.init(drawable, data, hDC);
 		initFont();
-
 	}
 
 	protected void glFinishDrawing() {
