@@ -52,6 +52,7 @@ public class Pattern extends Resource {
 	public long handle;
 
 	long surface;
+	private final Image image;
 
 /**
  * Constructs a new Pattern given an image. Drawing with the resulting
@@ -86,6 +87,7 @@ public Pattern(Device device, Image image) {
 	if (image == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	if (image.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 	image.createSurface();
+	this.image=image;
 	handle = Cairo.cairo_pattern_create_for_surface(image.surface);
 	if (handle == 0) SWT.error(SWT.ERROR_NO_HANDLES);
 	Cairo.cairo_pattern_set_extend(handle, Cairo.CAIRO_EXTEND_REPEAT);
@@ -181,6 +183,7 @@ public Pattern(Device device, float x1, float y1, float x2, float y2, Color colo
 	NativeGC.setCairoPatternColor(handle, 0, color1, alpha1);
 	NativeGC.setCairoPatternColor(handle, 1, color2, alpha2);
 	Cairo.cairo_pattern_set_extend(handle, Cairo.CAIRO_EXTEND_REPEAT);
+	this.image=null;
 	init();
 }
 
@@ -216,5 +219,7 @@ public String toString() {
 	if (isDisposed()) return "Pattern {*DISPOSED*}";
 	return "Pattern {" + handle + "}";
 }
-
+public Image getImage() {
+	return image;
+}
 }
