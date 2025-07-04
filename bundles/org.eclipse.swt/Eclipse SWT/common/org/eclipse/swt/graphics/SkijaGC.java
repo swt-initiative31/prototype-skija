@@ -1,6 +1,5 @@
 /*******************************************************************************
  * Copyright (c) 2024 SAP SE and others.
-
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -8,6 +7,9 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
+ *  Contributors:
+ *     SAP SE and others - initial API and implementation
+ * 	   Latha Patil (ETAS GmbH) - Implementation of SkijaGC APIs
  *******************************************************************************/
 package org.eclipse.swt.graphics;
 
@@ -54,10 +56,13 @@ public class SkijaGC extends GCHandle {
 	private int lineWidth;
 	private int lineStyle;
 	private int antialias;
+	private int alpha = 255;
+	private boolean hasAlphaLayer = false;
 
 	private final Point originalDrawingSize;
 
 	private static Map<ColorType, int[]> colorTypeMap = null;
+	private Matrix33 currentTransform = Matrix33.IDENTITY;
 
 	private SkijaGC(NativeGC gc, Drawable drawable, boolean onlyForMeasuring) {
 		innerGC = gc;
@@ -134,6 +139,10 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void dispose() {
+		if (hasAlphaLayer) {
+			surface.getCanvas().restore();
+			hasAlphaLayer = false;
+		}
 		surface.close();
 		innerGC = null;
 		skiaFont = null;
@@ -147,6 +156,9 @@ public class SkijaGC extends GCHandle {
 
 	private void performDraw(Consumer<Paint> operations) {
 		Paint paint = new Paint();
+		if (!hasAlphaLayer) {
+			paint.setAlphaf(alpha / 255.0f);
+		}
 		operations.accept(paint);
 		paint.close();
 	}
@@ -207,6 +219,11 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void commit() {
+		if (hasAlphaLayer) {
+			surface.getCanvas().restore();
+			hasAlphaLayer = false;
+		}
+
 		if (isEmpty(originalDrawingSize)) {
 			return;
 		}
@@ -698,7 +715,10 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void drawPath(Path path) {
-		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
+		io.github.humbleui.skija.Path skijaPath = convertSWTPathToSkijaPath(path);
+		if (skijaPath == null) return;
+		performDrawLine(paint -> surface.getCanvas().drawPath(skijaPath, paint));
+		skijaPath.close();
 	}
 
 	@Override
@@ -825,7 +845,13 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void fillPath(Path path) {
-		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
+		io.github.humbleui.skija.Path skijaPath = convertSWTPathToSkijaPath(path);
+		if (skijaPath == null)
+			return;
+		int fillRule = innerGC.getFillRule();
+		skijaPath.setFillMode(fillRule == SWT.FILL_EVEN_ODD ? PathFillMode.EVEN_ODD : PathFillMode.WINDING);
+		performDrawFilled(paint -> surface.getCanvas().drawPath(skijaPath, paint));
+		skijaPath.close();
 	}
 
 	@Override
@@ -935,19 +961,57 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void setTransform(Transform transform) {
-		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
+		if (transform == null) {
+			currentTransform = Matrix33.IDENTITY;
+			surface.getCanvas().setMatrix(currentTransform);
+		} else {
+			if (transform.isDisposed()) {
+				SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+			}
+			float[] elements = new float[6];
+			transform.getElements(elements);
+			// SWT Transform: [m11, m12, m21, m22, dx, dy]
+			// Skija Matrix33: [scaleX, skewX, transX, skewY, scaleY, transY, persp0,
+			// persp1, persp2]
+			// Correct mapping: SWT [0,1,2,3,4,5] -> Skija [0,2,4,1,3,5,0,0,1]
+			float[] skijaMat = new float[] { elements[0], // m11 -> scaleX
+					elements[2], // m21 -> skewX
+					elements[4], // dx -> transX
+					elements[1], // m12 -> skewY
+					elements[3], // m22 -> scaleY
+					elements[5], // dy -> transY
+					0, 0, 1 // perspective elements
+			};
+			currentTransform = new Matrix33(skijaMat);
+			surface.getCanvas().setMatrix(currentTransform);
+		}
 	}
 
 	@Override
 	public void setAlpha(int alpha) {
-		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
-	}
+        if (alpha < 0 || alpha > 255) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        if (this.alpha != alpha) {
+            if (hasAlphaLayer) {
+                surface.getCanvas().restore();
+                hasAlphaLayer = false;
+            }
+            this.alpha = alpha;
+            if (alpha < 255) {
+                Paint layerPaint = new Paint();
+                layerPaint.setAlphaf(alpha / 255.0f);
+                surface.getCanvas().saveLayer(null, layerPaint);
+                layerPaint.close();
+                hasAlphaLayer = true;
+            }
+        }
+    }
 
-	@Override
-	public int getAlpha() {
-		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
-		return 0;
-	}
+    @Override
+    public int getAlpha() {
+        return this.alpha;
+    }
 
 	@Override
 	public void setLineWidth(int i) {
@@ -1222,7 +1286,14 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	protected void getTransform(Transform transform) {
-		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
+		if (transform == null) {
+			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		}
+		float[] m = currentTransform.getMat();
+		// Skija Matrix33: [scaleX, skewX, transX, skewY, scaleY, transY, persp0, persp1, persp2]
+		// SWT Transform: [m11, m12, m21, m22, dx, dy]
+		// Correct inverse mapping: Skija [0,1,2,3,4,5] -> SWT [0,3,1,4,2,5]
+		transform.setElements(m[0], m[3], m[1], m[4], m[2], m[5]);
 	}
 
 	@Override
@@ -1428,4 +1499,43 @@ public class SkijaGC extends GCHandle {
 			int destWidth, int destHeight, boolean simple) {
 		// TODO Auto-generated method stub
 	}
+    /**
+     * Converts an SWT Path to a Skija Path.
+     */
+	private io.github.humbleui.skija.Path convertSWTPathToSkijaPath(Path swtPath) {
+        if (swtPath == null || swtPath.isDisposed()) return null;
+        PathData data = swtPath.getPathData();
+		io.github.humbleui.skija.Path skijaPath = new io.github.humbleui.skija.Path();
+        float[] pts = data.points;
+        byte[] types = data.types;
+        int pi = 0;
+        for (int i = 0; i < types.length; i++) {
+            switch (types[i]) {
+                case SWT.PATH_MOVE_TO:
+                    skijaPath.moveTo(DPIUtil.autoScaleUp(pts[pi++]), DPIUtil.autoScaleUp(pts[pi++]));
+                    break;
+                case SWT.PATH_LINE_TO:
+                    skijaPath.lineTo(DPIUtil.autoScaleUp(pts[pi++]), DPIUtil.autoScaleUp(pts[pi++]));
+                    break;
+                case SWT.PATH_CUBIC_TO:
+                    skijaPath.cubicTo(
+                        DPIUtil.autoScaleUp(pts[pi++]), DPIUtil.autoScaleUp(pts[pi++]),
+                        DPIUtil.autoScaleUp(pts[pi++]), DPIUtil.autoScaleUp(pts[pi++]),
+                        DPIUtil.autoScaleUp(pts[pi++]), DPIUtil.autoScaleUp(pts[pi++])
+                    );
+                    break;
+                case SWT.PATH_QUAD_TO:
+                    skijaPath.quadTo(
+                        DPIUtil.autoScaleUp(pts[pi++]), DPIUtil.autoScaleUp(pts[pi++]),
+                        DPIUtil.autoScaleUp(pts[pi++]), DPIUtil.autoScaleUp(pts[pi++])
+                    );
+                    break;
+                case SWT.PATH_CLOSE:
+                    skijaPath.closePath();
+                    break;
+                default:
+            }
+        }
+        return skijaPath;
+    }
 }
