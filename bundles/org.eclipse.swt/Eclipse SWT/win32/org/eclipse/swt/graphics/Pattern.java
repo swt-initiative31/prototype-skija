@@ -357,4 +357,8 @@ private abstract class PatternHandle {
 		}
 	}
 }
+/**Used in SkijaGC to convert SWT Pattern Image to Skija Shader**/
+public Image getImage() {
+	return image;
+}
 }

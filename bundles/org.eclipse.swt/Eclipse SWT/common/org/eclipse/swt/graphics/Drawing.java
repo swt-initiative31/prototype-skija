@@ -78,7 +78,10 @@ public final class Drawing {
 			drawOperation.accept(gc);
 			gc.commit();
 		} finally {
-			gc.dispose();
+			// Only dispose gc if it is not the originalGC from paint event
+			if (gc != originalGC) {
+				gc.dispose();
+			}
 			if (usingTemporaryGC) {
 				originalGC.dispose();
 			}

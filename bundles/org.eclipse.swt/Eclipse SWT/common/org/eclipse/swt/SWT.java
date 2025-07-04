@@ -1390,6 +1390,10 @@ public class SWT {
 	 */
 	public static final int HIGH = 2;
 
+	public static final int INTERPOLATION_MITCHELL = 3;
+
+	public static final int INTERPOLATION_CATMULL_ROM = 4;
+
 	/**
 	 * Style constant for menu bar behavior (value is 1&lt;&lt;1).
 	 * <p><b>Used By:</b></p>
