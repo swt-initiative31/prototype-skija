@@ -244,7 +244,8 @@ public class TreeItemRenderer {
 		}
 		Rectangle textRec = getTextBounds(columnIndex);
 
-		drawText(item.getText(columnIndex), textRec, gc);
+		if (!item.getParent().customDraw)
+			drawText(item.getText(columnIndex), textRec, gc);
 
 		gc.setForeground(prevFG);
 		gc.setBackground(prevBG);
@@ -331,7 +332,8 @@ public class TreeItemRenderer {
 
 				if (event.doit) {
 					drawImage(item.getImage(), getImageBounds(0), gc);
-					drawText(item.getText(), getTextBounds(0), gc);
+					if (!item.getParent().customDraw)
+						drawText(item.getText(), getTextBounds(0), gc);
 				}
 			}
 			else {
