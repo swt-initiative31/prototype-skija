@@ -147,6 +147,7 @@ public class SkijaGC extends GCHandle {
 
 	private void performDraw(Consumer<Paint> operations) {
 		Paint paint = new Paint();
+		paint.setAlphaf(alpha / 255.0f);
 		operations.accept(paint);
 		paint.close();
 	}
@@ -936,14 +937,16 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void setAlpha(int alpha) {
-		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
-	}
+        if (alpha < 0 || alpha > 255) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        this.alpha = alpha;
+    }
 
-	@Override
-	public int getAlpha() {
-		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
-		return 0;
-	}
+    @Override
+    public int getAlpha() {
+        return this.alpha;
+    }
 
 	@Override
 	public void setLineWidth(int i) {
@@ -1424,4 +1427,6 @@ public class SkijaGC extends GCHandle {
 			int destWidth, int destHeight, boolean simple) {
 		// TODO Auto-generated method stub
 	}
+
+	private int alpha = 255; // Default fully opaque
 }
