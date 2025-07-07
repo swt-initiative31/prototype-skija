@@ -37,4 +37,6 @@ public interface RendererFactory {
 	SashRenderer createSashRenderer(Sash sash);
 
 	ExpandBarRenderer createExpandBarRenderer(ExpandBar expandBar);
+
+	DateTimeRenderer createDateTimeRenderer(CDateTime customDateTime);
 }

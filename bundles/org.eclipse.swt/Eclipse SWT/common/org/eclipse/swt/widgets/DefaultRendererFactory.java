@@ -73,4 +73,9 @@ class DefaultRendererFactory implements RendererFactory {
 	public ExpandBarRenderer createExpandBarRenderer(ExpandBar expandBar) {
 		return new DefaultExpandBarRenderer(expandBar);
 	}
+
+	@Override
+	public DateTimeRenderer createDateTimeRenderer(CDateTime dateTime) {
+		return new DefaultDateTimeRenderer(dateTime);
+	}
 }
