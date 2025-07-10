@@ -38,5 +38,4 @@ public interface RendererFactory {
 
 	ExpandBarRenderer createExpandBarRenderer(ExpandBar expandBar);
 
-	DateTimeRenderer createDateTimeRenderer(CDateTime customDateTime);
 }
