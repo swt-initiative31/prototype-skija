@@ -48,7 +48,7 @@ public class ProgressBar extends CustomControl {
 	int maximum = 100;
 	private int minimum = 0;
 	private int selection = 0;
-	private DefaultProgressBarRenderer renderer;
+	private DefaultProgressBarRenderer renderer = new DefaultProgressBarRenderer(this);
 	private Listener listener;
 	private int progressBarState = SWT.NORMAL;
 
@@ -92,14 +92,15 @@ public class ProgressBar extends CustomControl {
 	public ProgressBar(Composite parent, int style) {
 		super(parent, checkStyle(style));
 
-		this.renderer = new DefaultProgressBarRenderer(this);
 
 
 		listener = e -> {
 
 			switch (e.type) {
 			case SWT.Paint:
-				this.renderer.paint(e.gc);
+				
+				onPaint(e);
+				
 				break;
 			case SWT.Resize:
 			{
@@ -119,6 +120,13 @@ public class ProgressBar extends CustomControl {
 
 
 	}
+
+	private void onPaint(Event e) {
+		drawRectangle(e);
+		drawSelection(e);
+		
+	}
+
 
 	@Override
 	public void dispose() {
@@ -329,14 +337,131 @@ public class ProgressBar extends CustomControl {
 			this.progressBarState = state;
 	}
 
-	@Override
-	protected Point computeDefaultSize() {
-		return renderer.computeDefaultSize();
-	}
 
 	@Override
 	protected ControlRenderer getRenderer() {
 		return renderer;
 	}
+	
+
+	private void drawSelection(Event e) {
+
+		var gc = e.gc;
+		var s = getSize();
+		var width = s.x;
+		var height =s.y;
+		
+		Rectangle b = null;
+		
+		if(e.widget == this) {
+			b = new Rectangle(0, 0, width, height);
+		}else {
+			b = getBounds();
+		}
+		
+		
+		var prevBG = gc.getBackground();
+		gc.setBackground(getDisplay().getSystemColor(SWT.COLOR_WHITE));
+
+		gc.fillRectangle(b.x + 1, b.y + 1, b.width - 2, b.height - 2);
+		gc.setBackground(getDisplay().getSystemColor(SWT.COLOR_BLUE));
+		if (getState() == SWT.PAUSED)
+			gc.setBackground(getDisplay().getSystemColor(SWT.COLOR_YELLOW));
+		else if (getState() == SWT.ERROR) {
+			gc.setBackground(getDisplay().getSystemColor(SWT.COLOR_RED));
+		}
+
+		if ((SWT.INDETERMINATE & getStyle()) != 0) {
+
+			int middleHeight = b.height / 2;
+			int middleWidth  = b.width / 2;
+
+			gc.fillRectangle(new Rectangle(b.x + 1, b.y + middleHeight - 1, b.width - 2, 2));
+
+			if (b.width > 50) {
+				drawDiamond(gc, b, b.width / 4);
+				drawDiamond(gc, b, b.width / 2);
+				drawDiamond(gc, b, b.width / 4 + b.width / 2);
+			}
+
+		} else if ((getStyle() & SWT.HORIZONTAL) != 0) {
+
+			int value = getSelection();
+			int min = getMinimum();
+			int max = getMaximum();
+
+			int completeDiff = max - min;
+			var diff = value - min;
+
+
+			int pixelWidth = (int) ((b.width - 2) * (((double) diff) / (double) (completeDiff)));
+
+
+			gc.fillRectangle(new Rectangle(b.x + 1, b.y + 1, pixelWidth, b.height - 2));
+
+		} else if ((getStyle() & SWT.VERTICAL) != 0) {
+
+			int value = getSelection();
+			int min = getMinimum();
+			int max = getMaximum();
+
+			int completeDiff = max - min;
+
+			var diff = value - min;
+
+			int pixelheight = (int) ((b.height - 2) * (((double) diff) / (double) (completeDiff)));
+
+
+			gc.fillRectangle(
+					new Rectangle(b.x + 1, b.y + 1 + ((b.height - 2) - pixelheight), b.width - 2, pixelheight));
+
+		}
+
+		gc.setBackground(prevBG);
+
+	}
+
+	private void drawDiamond(GC gc, Rectangle b, int position) {
+
+		int middleHeight = b.height / 2;
+
+		// draw a diamond
+		gc.fillPolygon(new int[] { b.x + position - 5, b.y + middleHeight, // left of center
+				b.x + position, b.y, // middle up
+				b.x + position + 5, b.y + middleHeight, // right of center
+				b.x + position, b.y + b.height, // middle down
+		});
+
+	}
+
+	private void drawRectangle(Event e) {
+
+		var gc = e.gc;
+		var s = getSize();
+
+		Rectangle b = null;
+		if(e.widget == this)
+			b = new Rectangle(0, 0, s.x, s.y);
+		
+		if(e.widget == getParent()) {
+			b = getBounds();
+		}
+		
+		
+		var prevFG = gc.getForeground();
+
+		gc.setForeground(getDisplay().getSystemColor(SWT.COLOR_BLACK));
+		gc.drawRectangle(b);
+		gc.setForeground(prevFG);
+
+	}
+
+	@Override
+	public Point computeDefaultSize() {
+
+		return new Point(30, 30);
+
+	}
+	
 
 }
