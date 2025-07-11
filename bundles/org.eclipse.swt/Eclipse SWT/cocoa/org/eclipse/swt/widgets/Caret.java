@@ -34,6 +34,9 @@ import org.eclipse.swt.graphics.*;
  *      information</a>
  */
 public class Caret extends Widget {
+
+	public static final String WS_COCOA = "cocoa";//$NON-NLS-1$
+
 	static Caret currentCaret;
 	Canvas parent;
 	int x, y, width, height;
@@ -45,19 +48,13 @@ public class Caret extends Widget {
 	// performance
 	final static boolean blinkCaretActive = false;
 
-	final static boolean IS_MAC, IS_GTK;
-	static {
-		String platform = SWT.getPlatform();
-		IS_MAC = "cocoa".equals(platform);
-		IS_GTK = "gtk".equals(platform);
-	}
-	
 	static final int DEFAULT_WIDTH = 10;
 
 	private Listener paintListener = e -> {
 		if (e.type == SWT.Paint) {
 			// here actually Drawing.drawWithGC(parent, e.gc, this::paint); should be used
-			// but this causes a drastic performance decrease, so we always use the classic GC
+			// but this causes a drastic performance decrease, so we always use the classic
+			// GC
 			paint(e.gc);
 		}
 	};
@@ -306,8 +303,8 @@ public class Caret extends Widget {
 	 */
 	public Point getSize() {
 		checkWidget();
-		if(isVisible)
-			return new Point(0,0);
+		if (isVisible)
+			return new Point(0, 0);
 		if (image != null) {
 			Rectangle rect = image.getBounds();
 			return new Point(rect.width, rect.height);
@@ -487,7 +484,7 @@ public class Caret extends Widget {
 			listenerSet = true;
 			parent.addListener(SWT.Paint, paintListener);
 			var b = getBounds();
-			parent.redraw(b.x,b.y,b.width,b.height,false);
+			parent.redraw(b.x, b.y, b.width, b.height, false);
 		}
 
 		if (isCurrentCart()) {
@@ -693,13 +690,25 @@ public class Caret extends Widget {
 
 		if (isShowing && isVisible) {
 			var b = getBounds();
-			
+
+			if (isCocoa()) {
+
+				Color oldBackground = gc.getBackground();
+				Color oldForeground = gc.getForeground();
+				gc.setBackground(parent.getBackground());
+				gc.setForeground(parent.getForeground());
+				gc.fillRectangle(b.x, b.y, 2, b.height);
+				gc.setBackground(oldBackground);
+				gc.setForeground(oldForeground);
+				
+			} else {
 				Color oldBackground = gc.getBackground();
 				gc.setBackground(parent.getForeground());
 				gc.fillRectangle(b.x, b.y, 2, b.height);
 				gc.setBackground(oldBackground);
-				
-			
+
+			}
+
 		}
 	}
 
@@ -720,4 +729,10 @@ public class Caret extends Widget {
 		System.out.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 
 	}
+
+	private static boolean isCocoa() {
+		final String ws = SWT.getPlatform();
+		return WS_COCOA.equals(ws);
+	}
+
 }
