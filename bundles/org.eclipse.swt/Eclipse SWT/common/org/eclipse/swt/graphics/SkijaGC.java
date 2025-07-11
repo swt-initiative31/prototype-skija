@@ -7,7 +7,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- *  Contributors:
+ * Contributors:
  *     SAP SE and others - initial API and implementation
  * 	   Latha Patil (ETAS GmbH) - Implementation of SkijaGC APIs
  *******************************************************************************/
@@ -55,6 +55,8 @@ public class SkijaGC extends GCHandle {
 	private float baseSymbolHeight = 0; // Height of symbol with "usual" height, like "T", to be vertically centered
 	private int lineWidth;
 	private int lineStyle;
+	private int lineCap = SWT.CAP_FLAT; // Default line cap style
+	private int lineJoin = SWT.JOIN_MITER; // Default line join style
 	private int antialias;
 	private int alpha = 255;
 	private boolean hasAlphaLayer = false;
@@ -169,6 +171,39 @@ public class SkijaGC extends GCHandle {
 			paint.setMode(PaintMode.STROKE);
 			paint.setStrokeWidth(lineWidth > 0 ? DPIUtil.autoScaleUp(lineWidth) : 1);
 			paint.setAntiAlias(true);
+
+			// Apply line cap setting
+			PaintStrokeCap skijaLineCap;
+			switch (lineCap) {
+				case SWT.CAP_ROUND:
+					skijaLineCap = PaintStrokeCap.ROUND;
+					break;
+				case SWT.CAP_SQUARE:
+					skijaLineCap = PaintStrokeCap.SQUARE;
+					break;
+				case SWT.CAP_FLAT:
+				default:
+					skijaLineCap = PaintStrokeCap.BUTT;
+					break;
+			}
+			paint.setStrokeCap(skijaLineCap);
+
+			// Apply line join setting
+			PaintStrokeJoin skijaLineJoin;
+			switch (lineJoin) {
+				case SWT.JOIN_MITER:
+					skijaLineJoin = PaintStrokeJoin.MITER;
+					break;
+				case SWT.JOIN_ROUND:
+					skijaLineJoin = PaintStrokeJoin.ROUND;
+					break;
+				case SWT.JOIN_BEVEL:
+				default:
+					skijaLineJoin = PaintStrokeJoin.BEVEL;
+					break;
+			}
+			paint.setStrokeJoin(skijaLineJoin);
+
 			operations.accept(paint);
 		});
 	}
@@ -713,6 +748,13 @@ public class SkijaGC extends GCHandle {
 						paint));
 	}
 
+	/**
+	 * Draws the outline of a path using the current foreground color and line attributes.
+	 * The path is rendered as a series of connected lines and curves based on the path data.
+	 *
+	 * @param path the path to draw, must not be null or disposed
+	 * @throws SWTException if the path is null or disposed
+	 */
 	@Override
 	public void drawPath(Path path) {
 		io.github.humbleui.skija.Path skijaPath = convertSWTPathToSkijaPath(path);
@@ -728,14 +770,51 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void drawPolygon(int[] pointArray) {
-		performDrawLine(paint -> surface.getCanvas().drawPolygon(convertToFloat(pointArray), paint));
+		if (pointArray == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		drawPolygonInPixels(DPIUtil.autoScaleUp(pointArray));
 	}
 
-	@Override
-	public void drawPolyline(int[] pointArray) {
-		performDrawLine(paint -> surface.getCanvas().drawLines(convertToFloat(pointArray), paint));
-	}
+	void drawPolygonInPixels(int[] pointArray) {
+		if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+		checkGC(innerGC.DRAW);
+		if (pointArray.length < 6 || pointArray.length % 2 != 0) return;
 
+		// Handle SWT.MIRRORED style (adjust x-coordinates if needed)
+		int style = getStyle();
+		boolean mirrored = (style & SWT.MIRRORED) != 0;
+		boolean adjustX = mirrored && lineWidth != 0 && lineWidth % 2 == 0;
+		if (adjustX) {
+			for (int i = 0; i < pointArray.length; i += 2) {
+				pointArray[i]--;
+			}
+		}
+
+		// Create Skija path for the polygon
+		io.github.humbleui.skija.Path path = new io.github.humbleui.skija.Path();
+		
+		// Move to first point
+		path.moveTo(pointArray[0], pointArray[1]);
+		
+		// Add lines to subsequent points
+		for (int i = 2; i < pointArray.length; i += 2) {
+			path.lineTo(pointArray[i], pointArray[i + 1]);
+		}
+		
+		// Close the path to form a polygon
+		path.closePath();
+
+		// Draw the polygon outline
+		performDrawLine(paint -> surface.getCanvas().drawPath(path, paint));
+		
+		path.close();
+
+		// Restore x-coordinates if mirrored
+		if (adjustX) {
+			for (int i = 0; i < pointArray.length; i += 2) {
+				pointArray[i]++;
+			}
+		}
+	}
 	private static float[] convertToFloat(int[] array) {
 		float[] arrayAsFloat = new float[array.length];
 		for (int i = 0; i < array.length; i++) {
@@ -843,6 +922,13 @@ public class SkijaGC extends GCHandle {
 				paint -> surface.getCanvas().drawOval(createScaledRectangle(x, y, width, height), paint));
 	}
 
+	/**
+	 * Fills the interior of a path using the current background color.
+	 * The fill operation respects the current fill rule (even-odd or winding).
+	 *
+	 * @param path the path to fill, must not be null or disposed
+	 * @throws SWTException if the path is null or disposed
+	 */
 	@Override
 	public void fillPath(Path path) {
 		io.github.humbleui.skija.Path skijaPath = convertSWTPathToSkijaPath(path);
@@ -959,6 +1045,14 @@ public class SkijaGC extends GCHandle {
 		setClipping(new Rectangle(x, y, width, height));
 	}
 
+	/**
+	 * Sets the current transformation matrix for this graphics context.
+	 * The transformation matrix affects all subsequent drawing operations by applying
+	 * scaling, rotation, translation, and shearing transformations.
+	 *
+	 * @param transform the transformation to apply, or null to reset to identity transform
+	 * @throws SWTException if the transform is disposed
+	 */
 	@Override
 	public void setTransform(Transform transform) {
 		if (transform == null) {
@@ -987,6 +1081,17 @@ public class SkijaGC extends GCHandle {
 		}
 	}
 
+	/**
+	 * Sets the alpha value for drawing operations. The alpha value controls the transparency
+	 * of all subsequent drawing operations.
+	 * <p>
+	 * When alpha is less than 255, a new layer is created with the specified alpha level.
+	 * This affects all drawing operations until the alpha is changed again.
+	 * </p>
+	 *
+	 * @param alpha the alpha value, must be between 0 (fully transparent) and 255 (fully opaque)
+	 * @throws SWTException if the alpha value is not in the valid range [0, 255]
+	 */
 	@Override
 	public void setAlpha(int alpha) {
         if (alpha < 0 || alpha > 255) {
@@ -1008,6 +1113,12 @@ public class SkijaGC extends GCHandle {
         }
     }
 
+    /**
+     * Returns the current alpha value used for drawing operations.
+     * The alpha value controls the transparency of drawing operations.
+     *
+     * @return the current alpha value, between 0 (fully transparent) and 255 (fully opaque)
+     */
     @Override
     public int getAlpha() {
         return this.alpha;
@@ -1145,10 +1256,22 @@ public class SkijaGC extends GCHandle {
 		return textExtent(string);
 	}
 
+	/**
+	 * Returns the current line cap style used for drawing lines.
+	 *
+	 * The line cap style determines how the ends of lines are drawn.
+	 *
+	 * **Returns:**
+	 *
+	 * - `SWT.CAP_FLAT` – flat cap (default)
+	 * - `SWT.CAP_ROUND` – rounded cap
+	 * - `SWT.CAP_SQUARE` – square cap
+	 *
+	 * @return the current line cap style
+	 */
 	@Override
 	public int getLineCap() {
-		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
-		return 0;
+		return lineCap;
 	}
 
 	@Override
@@ -1266,11 +1389,23 @@ public class SkijaGC extends GCHandle {
 		return null;
 	}
 
-	@Override
-	protected int getLineJoin() {
-		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
-		return 0;
-	}
+    /**
+     * Returns the current line join style used for drawing lines.
+     *
+     * The line join style determines how the corners where two lines meet are drawn.
+     *
+     * **Returns:**
+	 *
+	 * - `SWT.JOIN_MITER` – sharp, pointed join (default)
+	 * - `SWT.JOIN_ROUND` – rounded join
+	 * - `SWT.JOIN_BEVEL` – flat, cut-off join
+	 *
+     * @return the current line join style
+     */
+    @Override
+    protected int getLineJoin() {
+        return lineJoin;
+    }
 
 	@Override
 	int getStyle() {
@@ -1284,6 +1419,15 @@ public class SkijaGC extends GCHandle {
 		return 0;
 	}
 
+	/**
+	 * Copies the current transformation matrix into the specified Transform object.
+	 * The transformation matrix represents the current scaling, rotation, translation,
+	 * and shearing transformations applied to this graphics context.
+	 *
+	 * @param transform the Transform object to fill with the current transformation matrix,
+	 *                  must not be null
+	 * @throws SWTException if the transform parameter is null
+	 */
 	@Override
 	protected void getTransform(Transform transform) {
 		if (transform == null) {
@@ -1357,20 +1501,52 @@ public class SkijaGC extends GCHandle {
 		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
 
-	@Override
-	protected void setLineCap(int cap) {
-		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
-	}
+	/**
+	 * Sets the line cap style for drawing lines.
+	 *
+	 * The line cap style determines how the ends of lines are drawn.
+	 *
+	 * @param cap the line cap style to set. Must be one of:
+	 * <ul>
+	 *   <li>{@link SWT#CAP_FLAT} – flat cap (default)</li>
+	 *   <li>{@link SWT#CAP_ROUND} – rounded cap</li>
+	 *   <li>{@link SWT#CAP_SQUARE} – square cap</li>
+	 * </ul>
+	 * @throws SWTException if the cap style is not one of the valid values
+	 */
+    @Override
+    protected void setLineCap(int cap) {
+        if (cap != SWT.CAP_FLAT && cap != SWT.CAP_ROUND && cap != SWT.CAP_SQUARE) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        this.lineCap = cap;
+    }
 
 	@Override
 	protected void setLineDash(int[] dashes) {
 		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
 	}
 
-	@Override
-	protected void setLineJoin(int join) {
-		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
-	}
+    /**
+     * Sets the line join style for drawing lines.
+     *
+     * The line join style determines how the corners where two lines meet are drawn.
+     *
+     * @param join the line join style to set. Must be one of:
+     * <ul>
+     *   <li>{@link SWT#JOIN_MITER} – sharp, pointed join (default)</li>
+     *   <li>{@link SWT#JOIN_ROUND} – rounded join</li>
+     *   <li>{@link SWT#JOIN_BEVEL} – flat, cut-off join</li>
+     * </ul>
+     * @throws SWTException if the join style is not one of the valid values
+     */
+    @Override
+    protected void setLineJoin(int join) {
+        if (join != SWT.JOIN_MITER && join != SWT.JOIN_ROUND && join != SWT.JOIN_BEVEL) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        this.lineJoin = join;
+    }
 
 	@Override
 	protected void setXORMode(boolean xor) {
@@ -1477,7 +1653,7 @@ public class SkijaGC extends GCHandle {
 		colorTypeMap.put(ColorType.RGB_101010X, new int[] { 0, 1, 2, 3 }); // RGB, ignore X
 		colorTypeMap.put(ColorType.BGR_101010X, new int[] { 2, 1, 0, 3 }); // BGR, ignore X
 		colorTypeMap.put(ColorType.RGBA_F16NORM, new int[] { 0, 1, 2, 3 }); // RGBA
-		colorTypeMap.put(ColorType.RGBA_F16, new int[] { 0, 1, 2, 3 }); // RGBA
+	 colorTypeMap.put(ColorType.RGBA_F16, new int[] { 0, 1, 2, 3 }); // RGBA
 		colorTypeMap.put(ColorType.RGBA_F32, new int[] { 0, 1, 2, 3 }); // RGBA
 		colorTypeMap.put(ColorType.R8G8_UNORM, new int[] { 0, 1 }); // RG
 		colorTypeMap.put(ColorType.A16_FLOAT, new int[] { 0 }); // Alpha
@@ -1538,4 +1714,50 @@ public class SkijaGC extends GCHandle {
         }
         return skijaPath;
     }
+	
+	@Override
+	public void drawPolyline(int[] pointArray) {
+		if (pointArray == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		drawPolylineInPixels(DPIUtil.autoScaleUp(pointArray));
+	}
+
+	public void drawPolylineInPixels(int[] pointArray) {
+		if (pointArray == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+		// Check GC for draw operation (optional, for parity)
+		checkGC(innerGC.DRAW);
+		if (pointArray.length < 4 || pointArray.length % 2 != 0) return;
+
+		// Handle SWT.MIRRORED style (adjust x-coordinates if needed)
+		int style = getStyle();
+		boolean mirrored = (style & SWT.MIRRORED) != 0;
+		boolean adjustX = mirrored && lineWidth != 0 && lineWidth % 2 == 0;
+		if (adjustX) {
+			for (int i = 0; i < pointArray.length; i += 2) {
+				pointArray[i]--;
+			}
+		}
+		// Draw polyline
+		io.github.humbleui.skija.Path path = new io.github.humbleui.skija.Path();
+		float[] pts = convertToFloat(pointArray);
+		path.moveTo(pts[0], pts[1]);
+		for (int i = 2; i < pts.length; i += 2) {
+			path.lineTo(pts[i], pts[i + 1]);
+		}
+		performDrawLine(paint -> surface.getCanvas().drawPath(path, paint));
+
+		// Draw last point if lineWidth <= 1 (to match SetPixel behavior)
+		if (pointArray.length >= 2 && lineWidth <= 1) {
+			int lastX = pointArray[pointArray.length - 2];
+			int lastY = pointArray[pointArray.length - 1];
+			drawPoint(lastX, lastY);
+		}
+
+		// Restore x-coordinates if mirrored
+		if (adjustX) {
+			for (int i = 0; i < pointArray.length; i += 2) {
+				pointArray[i]++;
+			}
+		}
+	}
 }
