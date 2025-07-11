@@ -226,6 +226,9 @@ private void drawCaret(long widget, long cairo) {
 
 		Cairo.cairo_fill(cairo);
 		Cairo.cairo_restore(cairo);
+		if (caret.embeddedInto == null) {
+			drawFlag = false;
+		}
 	} else {
 		drawFlag = true;
 	}
