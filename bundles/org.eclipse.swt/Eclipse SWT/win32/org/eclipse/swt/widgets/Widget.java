@@ -65,7 +65,6 @@ public abstract class Widget {
 	 * @noreference This field is not intended to be referenced by clients.
 	 */
 	public int nativeZoom;
-	// autoScale does not work properly in Skia-SWT.
 	boolean autoScaleDisabled = false;
 	int style, state;
 	Display display;
