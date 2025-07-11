@@ -73,4 +73,5 @@ class DefaultRendererFactory implements RendererFactory {
 	public ExpandBarRenderer createExpandBarRenderer(ExpandBar expandBar) {
 		return new DefaultExpandBarRenderer(expandBar);
 	}
+
 }
