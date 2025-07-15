@@ -36,6 +36,15 @@ public class SnippetTableColumn {
 		shell.setLayout(new RowLayout(SWT.VERTICAL));
 		final Table table = new Table(shell, SWT.BORDER | SWT.MULTI | SWT.CHECK);
 		table.setHeaderVisible(true);
+		
+		// resize the row height using a MeasureItem listener
+		table.addListener(SWT.MeasureItem, new Listener() {
+		   public void handleEvent(Event event) {
+		      // height cannot be per row so simply set
+		      event.height = 67;
+		   }
+		});
+		
 		for (int i = 0; i < 5; i++) {
 			TableColumn column = new TableColumn(table, SWT.NONE);
 			column.setText("Column " + i);
