@@ -34,7 +34,7 @@ public class SnippetListOnly {
 		final Display display = new Display();
 		final Shell shell = new Shell(display);
 		shell.setText("SnippetListOnly");
-		shell.setLayout(new RowLayout(SWT.VERTICAL));
+//		shell.setLayout(new RowLayout(SWT.VERTICAL));
 
 		Color color = display.getSystemColor(SWT.COLOR_CYAN);
 		shell.setBackground(color);
@@ -50,7 +50,7 @@ public class SnippetListOnly {
 	}
 	static void createChildren(Composite parent) {
 //		parent.setLayout(new RowLayout());
-	    var list = new List(parent, SWT.BORDER | SWT.MULTI );
+	    var list = new List(parent, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL  );
 
 		list.addSelectionListener(new SelectionListener() {
 

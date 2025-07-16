@@ -6,6 +6,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.internal.*;
+import org.eclipse.swt.internal.win32.*;
 
 import io.github.humbleui.skija.*;
 
@@ -13,7 +14,7 @@ public class EventHandler implements Listener {
 
 	private Composite composite;
 	int[] events = new int[] { SWT.Paint, SWT.MouseMove, SWT.MouseEnter, SWT.MouseExit, SWT.Dispose, SWT.MouseDown,
-			SWT.MouseUp };
+			SWT.MouseUp, SWT.MouseWheel };
 
 	public EventHandler(Composite c) {
 		this.composite = c;
@@ -40,8 +41,41 @@ public class EventHandler implements Listener {
 			break;
 		case SWT.MouseUp:
 			onMouseUp(e);
+		case SWT.MouseWheel:
+			onMouseWheel(e);
 		}
 
+	}
+
+	private void onMouseWheel(Event e) {
+		
+		Composite s = (Composite) e.widget;
+
+		var chs = s.getChildren();
+
+		for (var c : chs) {
+
+			if (c instanceof CustomControl || c instanceof CustomComposite || c instanceof NativeBasedCustomScrollable) {
+				if (c.getBounds().contains(e.x, e.y)) {
+					var ev = createChildEvent(e, c);
+					c.sendEvent(ev);
+					
+					if(c instanceof Scrollable sc ) {
+						if( !sc.isNativeScrollable() ) {
+							
+							if(sc.getVerticalBar() != null) {
+								var vb = sc.getVerticalBar();
+								int scrollAmount = e.count > 0 ? -1 : 1;
+								vb.setSelection(scrollAmount + vb.getSelection());
+							}
+							// TODO handle horizontal probably with onHMouseWheel
+						}
+					}
+					
+				}
+			}
+
+		}
 	}
 
 	private void onMouseUp(Event e) {
@@ -51,10 +85,10 @@ public class EventHandler implements Listener {
 
 		for (var c : chs) {
 
-			if (c instanceof CustomControl cc) {
-				if (cc.getBounds().contains(e.x, e.y)) {
-					var ev = createChildEvent(e, cc);
-					cc.sendEvent(ev);
+			if (c instanceof CustomControl || c instanceof CustomComposite || c instanceof NativeBasedCustomScrollable) {
+				if (c.getBounds().contains(e.x, e.y)) {
+					var ev = createChildEvent(e, c);
+					c.sendEvent(ev);
 				}
 			}
 
@@ -70,10 +104,10 @@ public class EventHandler implements Listener {
 
 		for (var c : chs) {
 
-			if (c instanceof CustomControl cc) {
-				if (cc.getBounds().contains(e.x, e.y)) {
-					var ev = createChildEvent(e, cc);
-					cc.sendEvent(ev);
+			if (c instanceof CustomControl || c instanceof CustomComposite || c instanceof NativeBasedCustomScrollable) {
+				if (c.getBounds().contains(e.x, e.y)) {
+					var ev = createChildEvent(e, c);
+					c.sendEvent(ev);
 				}
 			}
 
@@ -97,25 +131,25 @@ public class EventHandler implements Listener {
 		boolean elementHovered = false;
 
 		for (var c : chs) {
-			if (c instanceof CustomControl cc) {
-				if (cc.getBounds().contains(event.x, event.y)) {
+			if (c instanceof CustomControl || c instanceof CustomComposite || c instanceof NativeBasedCustomControl) {
+				if (c.getBounds().contains(event.x, event.y)) {
 					elementHovered = true;
-					if (hoverControl != cc) {
+					if (hoverControl != c) {
 						if (hoverControl != null && !hoverControl.isDisposed()) {
-							var e = createChildEvent(event, cc);
+							var e = createChildEvent(event, c);
 							e.type = SWT.MouseExit;
 							hoverControl.sendEvent(e);
 						}
 
-						var e = createChildEvent(event, cc);
+						var e = createChildEvent(event, c);
 						e.type = SWT.MouseEnter;
-						cc.sendEvent(e);
-						hoverControl = cc;
-						hoverControl = cc;
+						c.sendEvent(e);
+						hoverControl = c;
+						hoverControl = c;
 					}
 
-					var e = createChildEvent(event, cc);
-					cc.sendEvent(e);
+					var e = createChildEvent(event, c);
+					c.sendEvent(e);
 				}
 			}
 		}
@@ -135,27 +169,42 @@ public class EventHandler implements Listener {
 		var chs = s.getChildren();
 
 		for (var c : chs) {
-			if (c instanceof CustomControl cc) {
-				var e = createChildEvent(event, cc);
-				cc.sendEvent(e);
-				transferImage(event, e, cc);
+			if (c instanceof CustomControl || c instanceof CustomComposite || c instanceof NativeBasedCustomScrollable) {
+				var e = createChildEvent(event, c);
+				c.sendEvent(e);
+				transferImage(event, e, c);
+				
+				if(c instanceof Scrollable sc ) {
+					drawScrollBars( sc ,event );
+				}
+				
 			}
 			
-			if (c instanceof CustomComposite cc) {
-				var e = createChildEvent(event, cc);
-				cc.sendEvent(e);
-				transferImage(event, e, cc);
+		}
+	}
+	
+	private void drawScrollBars(Scrollable sc, Event e) {
+		
+	
+		
+		if (e.gc != null) {
+			var verticalBar = sc.getVerticalBar();
+			if(verticalBar != null && (sc.getStyle() & SWT.V_SCROLL) != 0) {
+				var ev = createChildEvent(e, sc);
+				verticalBar.drawBar(ev.gc);
+				transferImage(e, ev, sc);
+			}
+			var horizontalBar = sc.getHorizontalBar();
+			if(horizontalBar != null && (sc.getStyle() & SWT.H_SCROLL) != 0) {
+				var ev = createChildEvent(e, sc);
+				horizontalBar.drawBar(ev.gc);
+				transferImage(e, ev, sc);
 			}
 			
-			if (c instanceof NativeBasedCustomScrollable cc) {
-				var e = createChildEvent(event, cc);
-				cc.sendEvent(e);
-				transferImage(event, e, cc);
-			}
 		}
 	}
 
-	CustomControl hoverControl = null;
+	Control hoverControl = null;
 
 	private static void transferImage(Event event, Event e, Control cc) {
 
@@ -163,7 +212,7 @@ public class EventHandler implements Listener {
 
 		SkijaGC sgc = (SkijaGC) e.gc.innerGC;
 
-		if (sgc.isEmpty(sgc.originalDrawingSize)) {
+		if (SkijaGC.isEmpty(sgc.originalDrawingSize)) {
 			return;
 		}
 
@@ -192,6 +241,7 @@ public class EventHandler implements Listener {
 		e.display = cc.getDisplay();
 		e.type = event.type;
 		e.button = event.button;
+		e.count = event.count;
 
 		e.x = event.x - b.x;
 		e.y = event.y - b.y;

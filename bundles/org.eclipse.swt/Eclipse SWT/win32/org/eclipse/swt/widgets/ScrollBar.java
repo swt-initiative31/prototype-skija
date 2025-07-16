@@ -674,14 +674,16 @@ LRESULT wmScrollChild (long wParam, long lParam) {
 	return null;
 }
 
+
 int scrollBarType() {
 	return (style & SWT.VERTICAL) != 0 ? OS.SB_VERT : OS.SB_HORZ;
 }
 
 public void drawBar(GC gc) {
 	delegate.drawBar(gc);
-	
 }
+
+
 
 public Rectangle getBounds() {
 	return delegate.getBounds();

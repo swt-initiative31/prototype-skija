@@ -169,4 +169,8 @@ abstract class NativeBasedCustomScrollable extends Scrollable {
 		redraw();
 	}
 	
+	public void redraw () {
+		getParent().redraw();
+	}
+	
 }

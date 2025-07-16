@@ -31,8 +31,9 @@ public class CustomScrollBar extends ScrollBarDelegate {
 			case SWT.MouseDown -> onMouseDown(event);
 			case SWT.MouseMove -> onMouseMove(event);
 			case SWT.MouseUp -> onMouseUp(event);
-			case SWT.MouseEnter -> onMouseEnter();
-			case SWT.MouseExit -> onMouseExit();
+			case SWT.MouseEnter -> onMouseEnter(event);
+			case SWT.MouseExit -> onMouseExit(event);
+			case SWT.MouseWheel -> onMouseWheel(event);
 			}
 		};
 		
@@ -44,11 +45,15 @@ public class CustomScrollBar extends ScrollBarDelegate {
 		
 	}
 
-	private void onMouseExit() {
+	private void onMouseWheel(Event event) {
+		// TODO Auto-generated method stub
+	}
+
+	private void onMouseExit(Event event) {
 		mouseEntered = false;
 	}
 
-	private void onMouseEnter() {
+	private void onMouseEnter(Event event) {
 		mouseEntered = true;
 	}
 
