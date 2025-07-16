@@ -140,12 +140,24 @@ public class EventHandler implements Listener {
 				cc.sendEvent(e);
 				transferImage(event, e, cc);
 			}
+			
+			if (c instanceof CustomComposite cc) {
+				var e = createChildEvent(event, cc);
+				cc.sendEvent(e);
+				transferImage(event, e, cc);
+			}
+			
+			if (c instanceof NativeBasedCustomScrollable cc) {
+				var e = createChildEvent(event, cc);
+				cc.sendEvent(e);
+				transferImage(event, e, cc);
+			}
 		}
 	}
 
 	CustomControl hoverControl = null;
 
-	private static void transferImage(Event event, Event e, CustomControl cc) {
+	private static void transferImage(Event event, Event e, Control cc) {
 
 		var l = cc.getLocation();
 
@@ -168,7 +180,7 @@ public class EventHandler implements Listener {
 
 	}
 
-	private static Event createChildEvent(Event event, CustomControl cc) {
+	private static Event createChildEvent(Event event, Control cc) {
 
 		Event e = new Event();
 

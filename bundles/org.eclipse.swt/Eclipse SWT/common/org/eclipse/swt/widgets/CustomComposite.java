@@ -9,7 +9,6 @@ public abstract class CustomComposite extends Composite {
 		return null;
 	}
 
-
 	private int x;
 	private int y;
 	private int width;
@@ -23,7 +22,7 @@ public abstract class CustomComposite extends Composite {
 	}
 	
 	boolean isNativeScrollable(){
-		return true;
+		return false;
 	}
 	
 	void createHandle () {
