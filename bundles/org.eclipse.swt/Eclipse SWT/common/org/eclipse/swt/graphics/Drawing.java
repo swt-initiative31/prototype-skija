@@ -41,8 +41,6 @@ public final class Drawing {
 	public static void drawWithGC(Control control, GC originalGC, Consumer<GC> drawOperation) {
 
 		var bounds = control.getBounds();
-		System.out.println("List_Bounds: " + bounds);
-		
 		GC gc = originalGC;
 		gc.setFont(control.getFont());
 		gc.setForeground(control.getForeground());

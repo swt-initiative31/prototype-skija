@@ -29,7 +29,7 @@ public class SnippetText {
 public static void main (String [] args) {
 	Display display = new Display ();
 	Shell shell = new Shell (display);
-	shell.setText("Snippet 12");
+	shell.setText("Snippet Text");
 	Text text = new Text(shell, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
 	Rectangle clientArea = shell.getClientArea ();
 	text.setBounds (clientArea.x + 10, clientArea.y + 10, 100, 100);

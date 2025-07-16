@@ -242,6 +242,7 @@ public class SkijaGC extends GCHandle {
 	@Override
 	public void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY,
 			int destWidth, int destHeight) {
+		initSurface();
 		if (image == null) {
 			System.out.println("SkijaGC.drawImage(..): Error draw image that is null!!");
 			return;
@@ -1269,6 +1270,7 @@ public class SkijaGC extends GCHandle {
 		
 		if(surface == null) {
 			surface = createDrawingSurface();
+			fillRectangle(0, 0,surface.getWidth() , surface.getHeight());
 		}
 		
 		

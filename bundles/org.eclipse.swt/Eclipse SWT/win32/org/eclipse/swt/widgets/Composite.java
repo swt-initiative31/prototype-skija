@@ -221,6 +221,7 @@ Widget [] computeTabList () {
 
 @Override
 Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
+	System.out.println("Composite: compuste size in pixel");
 	display.runSkin ();
 	Point size;
 	if (layout != null) {

@@ -171,12 +171,13 @@ public class EventHandler implements Listener {
 		for (var c : chs) {
 			if (c instanceof CustomControl || c instanceof CustomComposite || c instanceof NativeBasedCustomScrollable) {
 				var e = createChildEvent(event, c);
+				System.out.println("PaintEvent: " + c);
 				c.sendEvent(e);
 				transferImage(event, e, c);
 				
-				if(c instanceof Scrollable sc ) {
-					drawScrollBars( sc ,event );
-				}
+//				if(c instanceof Scrollable sc ) {
+//					drawScrollBars( sc ,event );
+//				}
 				
 			}
 			

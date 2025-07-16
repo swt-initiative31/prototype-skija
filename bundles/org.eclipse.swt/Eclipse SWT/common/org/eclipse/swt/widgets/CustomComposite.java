@@ -3,10 +3,20 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.*;
 
-public abstract class CustomComposite extends Composite {
+public class CustomComposite extends Composite {
 
 	protected ControlRenderer getRenderer() {
-		return null;
+		return new ControlRenderer(this) {
+			
+			@Override
+			protected void paint(GC gc, int width, int height) {
+				
+			}
+		};
+	}
+	
+	void createHandle () {
+		parent.addWidget(this);
 	}
 
 	private int x;
@@ -16,19 +26,50 @@ public abstract class CustomComposite extends Composite {
 
 	protected Color background;
 	protected Color foreground;
+	
+	private boolean visible = true;
+	private boolean enabled = true;
 
-	protected CustomComposite(Composite parent, int style) {
+	public CustomComposite(Composite parent, int style) {
 		super(parent, style);
+		addListener(SWT.Paint, e->onPaint(e));
 	}
 	
+	private void onPaint(Event e) {
+		
+		
+	}
+
 	boolean isNativeScrollable(){
 		return false;
 	}
 	
-	void createHandle () {
-		parent.addWidget(this);
+	public boolean isVisible () {
+		return getVisible () && parent.isVisible ();
 	}
-
+	
+	public boolean getVisible() {
+		return visible ;
+	}
+	
+	public void setVisible(boolean visible) {
+		this.visible = visible;
+	}
+	
+	public boolean isEnabled () {
+		checkWidget ();
+		return getEnabled () && parent.isEnabled ();
+	}
+	
+	public boolean getEnabled () {
+		return enabled;
+	}
+	
+	public void setEnabled ( boolean enable ) {
+		this.enabled = enable;
+	}
+	
+	
 	@Override
 	public final Color getBackground() {
 		return background != null ? background : getRenderer().getDefaultBackground();
@@ -132,20 +173,27 @@ public abstract class CustomComposite extends Composite {
 		super.setBounds(rect);
 		redraw();
 	}
+	
+	public void redraw () {
+		getParent().redraw();
+	}
+	
+	public void redraw (int x, int y, int width, int height, boolean all) {
+		getParent().redraw();
+	}
+	
 
 	@Override
 	public void setBounds(int x, int y, int width, int height) {
 		setBounds(new Rectangle(x, y, width, height));
 	}
-
+	
 	@Override
-	public void setEnabled(boolean enabled) {
-		if (enabled == getEnabled()) {
-			return;
-		}
-		super.setEnabled(enabled);
-		if (parent.isEnabled()) {
-			redraw();
-		}
+	Point minimumSize (int wHint, int hHint, boolean changed) {
+
+		var p = super.minimumSize(wHint, hHint, changed);
+		
+		return new Point (Math.max(p.x ,  40), Math.max( p.y , 40)  );
 	}
+
 }
