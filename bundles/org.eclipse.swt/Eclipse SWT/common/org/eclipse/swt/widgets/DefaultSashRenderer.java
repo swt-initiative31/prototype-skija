@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.swt.widgets;
 
+import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 
 /**
@@ -165,7 +166,7 @@ public class DefaultSashRenderer extends SashRenderer {
 	 */
 	@Override
 	protected void paint(GC gc, int width, int height) {
-		gc.setBackground(BACKGROUND_COLOR);
+		gc.setBackground(sash.getDisplay().getSystemColor(SWT.COLOR_GREEN));
 		if (!isBrandRequired()) {
 			gc.fillRectangle(sashBounds);
 		}

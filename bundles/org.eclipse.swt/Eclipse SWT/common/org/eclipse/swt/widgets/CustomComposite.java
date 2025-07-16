@@ -5,7 +5,9 @@ import org.eclipse.swt.graphics.*;
 
 public abstract class CustomComposite extends Composite {
 
-	protected abstract ControlRenderer getRenderer();
+	protected ControlRenderer getRenderer() {
+		return null;
+	}
 
 
 	private int x;
@@ -21,7 +23,11 @@ public abstract class CustomComposite extends Composite {
 	}
 	
 	boolean isNativeScrollable(){
-		return false;
+		return true;
+	}
+	
+	void createHandle () {
+		parent.addWidget(this);
 	}
 
 	@Override

@@ -15,9 +15,11 @@ import java.io.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.internal.*;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 
+import io.github.humbleui.skija.*;
 
 public class SnippetButton {
 
@@ -93,26 +95,6 @@ public class SnippetButton {
 			button.setImage(image3);
 		}
 
-//		{
-//			Image image3 = new Image(display, 5, 5);
-//			var b3 = image3.getBounds();
-//			var gc3 = new GC(image3);
-//			gc3.setBackground(display.getSystemColor(SWT.COLOR_BLUE));
-//			gc3.fillRectangle(b3);
-//			var button = new Button(shell, SWT.PUSH);
-//			button.addListener(SWT.Selection, event -> System.out.println("Click!!!"));
-//
-//			// When the shell is active and the user presses ENTER, the button is
-//			// pressed
-//			// shell.setDefaultButton(button);
-//
-//			button.setImage(ImageUtils.createGenericImage(new SkijaImageDataProvider(image3.getImageData())));
-//			button.setText("Button Blue");
-//			button.setSize(100, 100);
-//			button.setLocation(300, 300);
-//			button.setImage(image3);
-//		}
-
 		shell.setSize(300, 500);
 		shell.open();
 		while (!shell.isDisposed()) {
@@ -121,4 +103,6 @@ public class SnippetButton {
 		}
 		display.dispose();
 	}
+
+
 }

@@ -117,7 +117,7 @@ class TextCaret extends Widget {
 	}
 
 	void init() {
-		blinkRate = 570;
+		blinkRate = 0;
 		isVisible = true;
 		if (parent.getCaret() == null) {
 			parent.setCaret(this);

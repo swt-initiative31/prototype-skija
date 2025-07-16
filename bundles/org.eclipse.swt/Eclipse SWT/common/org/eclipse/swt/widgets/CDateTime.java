@@ -21,9 +21,9 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.layout.*;
 
-public class CDateTime extends Composite {
+public class CDateTime extends CustomComposite {
 
-	private static final class ArrowButtons extends Composite {
+	private static final class ArrowButtons extends CustomComposite {
 
 		private final Button arrowUp, arrowDown;
 
@@ -479,5 +479,11 @@ private void onTextMouseDown(Event event) {
 		text.setSelection(6, 10);
 	}
 
+}
+
+@Override
+protected ControlRenderer getRenderer() {
+	// TODO Auto-generated method stub
+	return null;
 }
 }

@@ -221,7 +221,7 @@ public Rectangle getClientArea () {
 	var b = getBounds();
 	if((style & SWT.V_SCROLL )!= 0 && (style & SWT.H_SCROLL )!= 0 )
 	{
-		return new Rectangle(0, 0, b.width - 10, b.height -10 );
+		return new Rectangle(b.x, b.y, b.width - 10, b.height -10 );
 		
 	}
 	
@@ -238,10 +238,6 @@ public Rectangle getClientArea () {
 	}
 	
 	return b;
-	
-	
-	
-	
 }
 
 Rectangle getClientAreaInPixels () {

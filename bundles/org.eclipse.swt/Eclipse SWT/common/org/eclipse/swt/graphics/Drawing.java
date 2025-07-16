@@ -25,21 +25,7 @@ public final class Drawing {
 	}
 
 	private static GC createGraphicsContext(GC originalGC, Control control, boolean onlyForMeasuring) {
-		if (!SWT.USE_SKIJA) {
-			return originalGC;
-		}
-
-		if (!(originalGC.innerGC instanceof NativeGC originalNativeGC)) {
-			return originalGC;
-		}
-
-		GC gc = new GC();
-
-		gc.innerGC = onlyForMeasuring
-				? SkijaGC.createMeasureInstance(originalNativeGC, control)
-				: SkijaGC.createDefaultInstance(originalNativeGC, control);
-
-		return gc;
+		return originalGC;
 	}
 
 	/**
@@ -53,36 +39,17 @@ public final class Drawing {
 	 * @param drawOperation the operation that draws the control
 	 */
 	public static void drawWithGC(Control control, GC originalGC, Consumer<GC> drawOperation) {
-		Rectangle bounds = control.getBounds();
-		if (originalGC != null && originalGC.innerGC instanceof NativeGC nativeGC
-				&& nativeGC.drawable instanceof Control gcControl) {
-			if (gcControl != control) {
-				throw new IllegalStateException("given GC was not created for given control");
-			}
-		}
 
-		boolean usingTemporaryGC = false;
-		if (originalGC == null) {
-			originalGC = new GC(control);
-			usingTemporaryGC = true;
-		}
-
-		GC gc = createGraphicsContext(originalGC, control);
+		var bounds = control.getBounds();
+		
+		GC gc = originalGC;
 		gc.setFont(control.getFont());
 		gc.setForeground(control.getForeground());
 		gc.setBackground(control.getBackground());
 		gc.setClipping(new Rectangle(0, 0, bounds.width, bounds.height));
 		gc.setAntialias(SWT.ON);
 
-		try {
-			drawOperation.accept(gc);
-			gc.commit();
-		} finally {
-			gc.dispose();
-			if (usingTemporaryGC) {
-				originalGC.dispose();
-			}
-		}
+		drawOperation.accept(gc);
 	}
 
 	/**
@@ -96,14 +63,15 @@ public final class Drawing {
 	 * @return the result of the given operation
 	 */
 	public static <T> T executeOnGC(Control control, Function<GC, T> operation) {
-		GC originalGC = new GC(control);
-		GC gc = createGraphicsContext(originalGC, control);
+		GC gc = new GC();
+		var sgc = new SkijaGC(control);
+		gc.innerGC = sgc;
 		try {
 			T result = operation.apply(gc);
 			return result;
 		} finally {
 			gc.dispose();
-			originalGC.dispose();
+			sgc.surface.close();
 		}
 	}
 
@@ -124,14 +92,16 @@ public final class Drawing {
 	 * @return the result of the given operation
 	 */
 	public static <T> T measure(Control control, Function<GC, T> operation) {
-		GC originalGC = new GC(control);
-		originalGC.setFont(control.getFont());
-		GC gc = createGraphicsContext(originalGC, control, true);
+		GC gc = new GC();
+		 SkijaGC sgc = new SkijaGC(control);
+		 gc.innerGC = sgc;
+		 
 		try {
 			return operation.apply(gc);
 		} finally {
 			gc.dispose();
-			originalGC.dispose();
+			if(sgc.surface != null && !sgc.surface.isClosed())
+				sgc.surface.close();
 		}
 	}
 }

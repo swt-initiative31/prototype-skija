@@ -23,14 +23,14 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
-public class Snippet56 {
+public class SnippetProgressBar {
 
 	public static void main(String[] args) {
 		final Display display = new Display();
 		Shell shell = new Shell(display);
 		shell.setText("Snippet 56");
 //		var bar = new ProgressBar_Old(shell, SWT.INDETERMINATE);
-		var bar = new ProgressBar(shell, SWT.SMOOTH | SWT.VERTICAL | SWT.INDETERMINATE);
+		var bar = new ProgressBar(shell, SWT.SMOOTH  );
 
 		bar.setState(SWT.ERROR);
 		Rectangle ca = shell.getClientArea();

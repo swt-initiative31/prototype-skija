@@ -519,6 +519,9 @@ public class Text extends NativeBasedCustomScrollable {
 	}
 
 	private void paintControl(Event e) {
+		
+		System.out.println("Widget to draw: " + e.widget );
+		
 		Drawing.drawWithGC(this, e.gc, renderer::paint);
 	}
 

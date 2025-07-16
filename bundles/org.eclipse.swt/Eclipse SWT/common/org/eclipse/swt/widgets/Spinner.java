@@ -44,9 +44,9 @@ import org.eclipse.swt.layout.*;
  * @since 3.1
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Spinner extends Composite {
+public class Spinner extends CustomComposite {
 
-	private static final class ArrowButtons extends Composite {
+	private static final class ArrowButtons extends CustomComposite {
 
 		private final Button arrowUp, arrowDown;
 

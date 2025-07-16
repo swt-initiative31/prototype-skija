@@ -208,6 +208,8 @@ public class Sash extends CustomControl {
 		return step;
 	}
 
+	boolean leftMouseDown = false;
+
 	/**
 	 * Handles the `SWT.MouseDown` event for the left mouse button. This method
 	 * initiates the dragging process for the sash when the left mouse button is
@@ -221,10 +223,14 @@ public class Sash extends CustomControl {
 		if (e.button != 1) {
 			return;
 		}
-		Rectangle sashBounds = isGTK ? getBounds() : sashRenderer.getSashBounds();
+		
+		drg = dragListener;
+		
+		Rectangle sashBounds =  getBounds() ;
 		if (sashBounds == null) {
 			return;
 		}
+		leftMouseDown = true;
 		if (isGTK && e.widget == getParent()) {
 			if (!(sashBounds.contains(e.x, e.y))) {
 				return;
@@ -246,7 +252,42 @@ public class Sash extends CustomControl {
 			createBandImage();
 			redrawDragOverlay();
 		}
+		
+		getDisplay().addFilter(SWT.MouseMove, dragListener);
+		getDisplay().addFilter(SWT.MouseUp, dragListener);
+		
+		
 	}
+	
+	Listener drg;
+	
+	Listener dragListener = e -> {
+		
+		switch(e.type){
+			case SWT.MouseUp:
+				leftMouseDown = false;
+				((SashRenderer)getRenderer()).setDragging(false);
+				getDisplay().removeFilter(SWT.MouseUp, drg);
+				getDisplay().removeFilter(SWT.MouseMove,drg);
+				setCursor(null);
+				break;
+			case SWT.MouseMove:
+				if(leftMouseDown)
+					onMouseMove(e);
+				else {
+					leftMouseDown = false;
+					((SashRenderer)getRenderer()).setDragging(false);
+					getDisplay().removeFilter(SWT.MouseUp, drg);
+					getDisplay().removeFilter(SWT.MouseMove,drg);
+					setCursor(null);
+				}
+				
+				break;
+		}
+		
+		
+	};
+	
 
 	private Event convertToSash(Event e) {
 		Event ret = new Event();
@@ -321,6 +362,7 @@ public class Sash extends CustomControl {
 	 * @param event the mouse event containing details about the mouse action
 	 */
 	private void onLeftMouseUp(Event event) {
+		leftMouseDown = false;
 		if (event.button != 1 || !sashRenderer.isDragging()) {
 			return;
 		}
@@ -362,7 +404,7 @@ public class Sash extends CustomControl {
 		boolean insideSash = isGTK ? sashBounds.contains(event.x, event.y)
 				: sashBounds.contains(event.x + sashBounds.x, event.y + sashBounds.y);
 
-		if (isGTK && eventFromParent) {
+		if ( eventFromParent) {
 			event = convertToSash(event);
 		}
 		// Show resize cursor when inside bounds
@@ -430,7 +472,8 @@ public class Sash extends CustomControl {
 	}
 
 	private boolean isSmooth() {
-		return (style & SWT.SMOOTH) != 0;
+		return true;
+//		return (style & SWT.SMOOTH) != 0;
 	}
 
 	/**
@@ -474,6 +517,10 @@ public class Sash extends CustomControl {
 	 */
 	private void onPaint(Event event) {
 		Rectangle sashBounds = getBounds();
+		if(event.widget == this) {
+			sashBounds.x = 0;
+			sashBounds.y = 0;
+		}
 		sashRenderer.setSashBounds(sashBounds.x, sashBounds.y, sashBounds.width, sashBounds.height);
 		Drawing.drawWithGC(this, event.gc, sashRenderer::paint);
 	}
