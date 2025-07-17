@@ -158,7 +158,11 @@ class DefaultLinkRenderer extends LinkRenderer {
 
 	@Override
 	public boolean isOverLink(int x, int y) {
+		
+		System.out.println("Point: " + x + "  " + y + "  " + links);
+		
 		for (TextSegment link : links) {
+			System.out.println(link.rect);
 			if (link.rect.contains(x, y)) {
 				return true;
 			}

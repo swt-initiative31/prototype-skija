@@ -42,9 +42,8 @@ public class SkijaGC extends GCHandle {
 		return new SkijaGC(gc, control, true);
 	}
 
-	private final Surface surface;
+	public Surface surface;
 
-	private NativeGC innerGC;
 
 	private Color background;
 	private Color foreground;
@@ -55,12 +54,13 @@ public class SkijaGC extends GCHandle {
 	private int lineStyle;
 	private int antialias;
 
-	private final Point originalDrawingSize;
+	public final Point originalDrawingSize;
+
+	private Control control;
 
 	private static Map<ColorType, int[]> colorTypeMap = null;
 
 	private SkijaGC(NativeGC gc, Drawable drawable, boolean onlyForMeasuring) {
-		innerGC = gc;
 		device = gc.device;
 		originalDrawingSize = extractSize(drawable);
 		if (onlyForMeasuring) {
@@ -70,6 +70,11 @@ public class SkijaGC extends GCHandle {
 			initializeWithParentBackground();
 		}
 		initFont();
+	}
+
+	public SkijaGC(Control cc) {
+		this.control = cc;
+		originalDrawingSize = extractSize(cc);
 	}
 
 	private static Point extractSize(Drawable drawable) {
@@ -95,7 +100,7 @@ public class SkijaGC extends GCHandle {
 		// resources.
 	}
 
-	private static boolean isEmpty(Point area) {
+	public static boolean isEmpty(Point area) {
 		return area.x <= 0 || area.y <= 0;
 	}
 
@@ -117,31 +122,27 @@ public class SkijaGC extends GCHandle {
 
 	private void initializeWithParentBackground() {
 		if (originalDrawingSize.x > 0 && originalDrawingSize.y > 0) {
-			Image image = new Image(innerGC.device, originalDrawingSize.x, originalDrawingSize.y);
-			innerGC.copyArea(image, 0, 0);
-			drawImage(image, 0, 0);
-			image.dispose();
 		}
 	}
 
 	private void initFont() {
-		org.eclipse.swt.graphics.Font originalFont = innerGC.getFont();
+		org.eclipse.swt.graphics.Font originalFont = control.getFont();
 		if (originalFont == null || originalFont.isDisposed()) {
-			originalFont = innerGC.getDevice().getSystemFont();
+			originalFont = control.getDisplay().getSystemFont();
 		}
 		setFont(originalFont);
 	}
 
 	@Override
 	public void dispose() {
-		surface.close();
-		innerGC = null;
 		skiaFont = null;
 		swtFont = null;
 	}
 
 	@Override
 	public Color getBackground() {
+		if(background == null)
+			return control.getBackground();
 		return background;
 	}
 
@@ -207,18 +208,7 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void commit() {
-		if (isEmpty(originalDrawingSize)) {
-			return;
-		}
-		io.github.humbleui.skija.Image im = surface.makeImageSnapshot();
-		byte[] imageBytes = EncoderPNG.encode(im).getBytes();
 
-		Image transferImage = new Image(innerGC.getDevice(), new ByteArrayInputStream(imageBytes));
-
-		Point drawingSizeInPixels = DPIUtil.autoScaleUp(originalDrawingSize);
-		innerGC.drawImage(transferImage, 0, 0, drawingSizeInPixels.x, drawingSizeInPixels.y, //
-				0, 0, originalDrawingSize.x, originalDrawingSize.y);
-		transferImage.dispose();
 	}
 
 	@Override
@@ -252,6 +242,7 @@ public class SkijaGC extends GCHandle {
 	@Override
 	public void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY,
 			int destWidth, int destHeight) {
+		initSurface();
 		if (image == null) {
 			System.out.println("SkijaGC.drawImage(..): Error draw image that is null!!");
 			return;
@@ -543,6 +534,10 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public Color getForeground() {
+		
+		if(foreground == null)
+			return control.getForeground();
+		
 		return foreground;
 	}
 
@@ -726,6 +721,7 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void drawRectangle(int x, int y, int width, int height) {
+		initSurface();
 		performDrawLine(
 				paint -> surface.getCanvas()
 						.drawRect(offsetRectangle(createScaledRectangle(x, y, width, height)), paint));
@@ -855,6 +851,7 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public void fillRectangle(int x, int y, int width, int height) {
+		initSurface();
 		performDrawFilled(
 				paint -> surface.getCanvas().drawRect(createScaledRectangle(x, y, width, height), paint));
 	}
@@ -867,6 +864,11 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public Point textExtent(String string, int flags) {
+		
+		if(skiaFont == null) {
+			skiaFont = convertToSkijaFont(getFont());
+		}
+		
 		float height = skiaFont.getMetrics().getHeight();
 		float width = skiaFont.measureTextWidth(replaceMnemonics(string));
 		return new Point(DPIUtil.autoScaleDownToInt(width), DPIUtil.autoScaleDownToInt(height));
@@ -879,11 +881,10 @@ public class SkijaGC extends GCHandle {
 				SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 			}
 		} else {
-			font = innerGC.getFont();
+			font = control.getFont();
 		}
 		this.swtFont = font;
-		innerGC.setFont(font);
-
+		
 		this.skiaFont = convertToSkijaFont(font);
 		this.baseSymbolHeight = this.skiaFont.measureText("T").getHeight();
 	}
@@ -925,6 +926,8 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public org.eclipse.swt.graphics.Font getFont() {
+		if(swtFont == null)
+			return control.getFont();
 		return swtFont;
 	}
 
@@ -1073,7 +1076,7 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public Rectangle getClipping() {
-		return innerGC.getClipping();
+		return null;
 	}
 
 	@Override
@@ -1249,6 +1252,8 @@ public class SkijaGC extends GCHandle {
 		 * this is a minimal implementation for set clipping with skija.
 		 */
 
+		initSurface();
+		
 		// skija seems to work with state layer which will be set on top of each other.
 		// if more layers will be used a more complex handling is necessary
 		surface.getCanvas().restore();
@@ -1259,6 +1264,16 @@ public class SkijaGC extends GCHandle {
 		surface.getCanvas().save();
 		surface.getCanvas().clipRect(createScaledRectangle(rect));
 
+	}
+
+	private void initSurface() {
+		
+		if(surface == null) {
+			surface = createDrawingSurface();
+			fillRectangle(0, 0,surface.getWidth() , surface.getHeight());
+		}
+		
+		
 	}
 
 	@Override

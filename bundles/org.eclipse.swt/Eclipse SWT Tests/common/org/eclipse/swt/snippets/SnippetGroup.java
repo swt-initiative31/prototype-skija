@@ -28,13 +28,13 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 
-public class SnippetList {
+public class SnippetGroup {
 
 	public static void main(String[] args) {
 		final Display display = new Display();
 		final Shell shell = new Shell(display);
 		shell.setText("List: Composite.setBackgroundMode()");
-		shell.setLayout(new RowLayout(SWT.VERTICAL));
+//		shell.setLayout(new RowLayout(SWT.VERTICAL));
 
 		Color color = display.getSystemColor(SWT.COLOR_CYAN);
 
@@ -42,19 +42,15 @@ public class SnippetList {
 		group.setText("SWT.INHERIT_NONE");
 		group.setBackground(color);
 		group.setBackgroundMode(SWT.INHERIT_NONE);
-		createChildren(group);
-
-		group = new Group(shell, SWT.NONE);
-		group.setBackground(color);
-		group.setText("SWT.INHERIT_DEFAULT");
-		group.setBackgroundMode(SWT.INHERIT_DEFAULT);
-		createChildren(group);
-
-		group = new Group(shell, SWT.NONE);
-		group.setBackground(color);
-		group.setText("SWT.INHERIT_FORCE");
-		group.setBackgroundMode(SWT.INHERIT_FORCE);
-		createChildren(group);
+		
+		group.setSize(400, 400);
+		
+		
+		Button b = new Button(group, SWT.NONE);
+		b.setText("Test Button");
+		b.setSize(100, 100);
+		b.setLocation(50,50);
+		b.setBackground(display.getSystemColor(SWT.COLOR_YELLOW));
 
 		shell.pack();
 		shell.open();

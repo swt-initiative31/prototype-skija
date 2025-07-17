@@ -324,6 +324,7 @@ public class Button extends CustomControl {
 		if (!isVisible()) {
 			return;
 		}
+		System.out.println("Widget to draw: " + event.widget );
 		Drawing.drawWithGC(this, event.gc, renderer::paint);
 	}
 

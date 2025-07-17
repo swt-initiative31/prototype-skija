@@ -190,8 +190,10 @@ public class DefaultTextRenderer extends TextRenderer {
 	}
 
 	private void drawCaret(GC gc, Rectangle visibleArea) {
-		int caretOffset = model.getCaretOffset();
 		final TextCaret caret = text.getCaret();
+		if(caret == null)
+			return;
+		int caretOffset = model.getCaretOffset();
 		if (caretOffset >= 0) {
 			int offset = model.getCaretOffset();
 			TextLocation textLocation = model.getLocation(offset);

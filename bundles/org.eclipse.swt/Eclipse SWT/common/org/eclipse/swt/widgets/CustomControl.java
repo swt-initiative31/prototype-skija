@@ -31,11 +31,42 @@ public abstract class CustomControl extends NativeBasedCustomControl {
 	private int height;
 	protected Color background;
 	protected Color foreground;
+	private boolean visible = true;
+	private boolean enabled = true;
 
 	protected CustomControl(Composite parent, int style) {
 		super(parent, style);
 	}
 
+	void createHandle () {
+		parent.addWidget(this);
+	}
+	
+	public boolean isVisible () {
+		return getVisible () && parent.isVisible ();
+	}
+	
+	public boolean getVisible() {
+		return visible ;
+	}
+	
+	public void setVisible(boolean visible) {
+		this.visible = visible;
+	}
+	
+	public boolean isEnabled () {
+		checkWidget ();
+		return getEnabled () && parent.isEnabled ();
+	}
+	
+	public boolean getEnabled () {
+		return enabled;
+	}
+	
+	public void setEnabled ( boolean enable ) {
+		this.enabled = enable;
+	}
+	
 	@Override
 	public Point getSize() {
 		return new Point(width, height);
@@ -52,6 +83,10 @@ public abstract class CustomControl extends NativeBasedCustomControl {
 		this.height = height;
 		super.setSize(this.width, this.height);
 		redraw();
+	}
+	
+	public void setCursor (Cursor cursor) {
+		getParent().setCursor(cursor);
 	}
 
 	@Override
@@ -114,16 +149,6 @@ public abstract class CustomControl extends NativeBasedCustomControl {
 		setBounds(new Rectangle(x, y, width, height));
 	}
 
-	@Override
-	public void setEnabled(boolean enabled) {
-		if (enabled == getEnabled()) {
-			return;
-		}
-		super.setEnabled(enabled);
-		if (parent.isEnabled()) {
-			redraw();
-		}
-	}
 
 	@Override
 	public final Color getBackground() {
@@ -158,4 +183,9 @@ public abstract class CustomControl extends NativeBasedCustomControl {
 		int height = hHint == SWT.DEFAULT ? defaultSize.y : hHint;
 		return new Point(width, height);
 	}
+	
+	public void redraw () {
+		getParent().redraw();
+	}
+	
 }

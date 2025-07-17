@@ -28,35 +28,23 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 
-public class SnippetList {
+public class SnippetComposite {
 
 	public static void main(String[] args) {
 		final Display display = new Display();
 		final Shell shell = new Shell(display);
-		shell.setText("List: Composite.setBackgroundMode()");
+		shell.setText("Composite");
 		shell.setLayout(new RowLayout(SWT.VERTICAL));
 
 		Color color = display.getSystemColor(SWT.COLOR_CYAN);
 
-		Group group = new Group(shell, SWT.NONE);
-		group.setText("SWT.INHERIT_NONE");
+		CustomComposite group = new CustomComposite(shell, SWT.BORDER);
+
+//		group.setText("Text Group");
 		group.setBackground(color);
 		group.setBackgroundMode(SWT.INHERIT_NONE);
-		createChildren(group);
+		group.setSize(400, 400);
 
-		group = new Group(shell, SWT.NONE);
-		group.setBackground(color);
-		group.setText("SWT.INHERIT_DEFAULT");
-		group.setBackgroundMode(SWT.INHERIT_DEFAULT);
-		createChildren(group);
-
-		group = new Group(shell, SWT.NONE);
-		group.setBackground(color);
-		group.setText("SWT.INHERIT_FORCE");
-		group.setBackgroundMode(SWT.INHERIT_FORCE);
-		createChildren(group);
-
-		shell.pack();
 		shell.open();
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch())
@@ -64,9 +52,10 @@ public class SnippetList {
 		}
 		display.dispose();
 	}
+
 	static void createChildren(Composite parent) {
 //		parent.setLayout(new RowLayout());
-	    var list = new List(parent, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
+		var list = new List(parent, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
 
 		list.addSelectionListener(new SelectionListener() {
 
@@ -84,50 +73,48 @@ public class SnippetList {
 
 			}
 		});
-		
-		if(list.getVerticalBar() != null)
+
+		if (list.getVerticalBar() != null)
 			list.getVerticalBar().addSelectionListener(new SelectionListener() {
-			
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				
-				System.out.println("widgetSelected");
-				printData(e.widget);
-				
-				
-			}
-			
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-			}
-		});
-		
+
+				@Override
+				public void widgetSelected(SelectionEvent e) {
+
+					System.out.println("widgetSelected");
+					printData(e.widget);
+
+				}
+
+				@Override
+				public void widgetDefaultSelected(SelectionEvent e) {
+				}
+			});
 
 		String blanks = "_!";
 		for (int i = 0; i < 100; i++) {
-		    list.add(i + " List item " + blanks);
-		    blanks += "_!";
+			list.add(i + " List item " + blanks);
+			blanks += "_!";
 		}
 		list.setSize(200, 200);
 
 	}
+
 	protected static void printData(Widget widget) {
-		
+
 		ScrollBar sb = (ScrollBar) widget;
-		
+
 		System.out.println("-------------------");
-		System.out.println("min:"+sb.getMinimum());
-		System.out.println("max:"+sb.getMaximum());
-		System.out.println("sel:"+sb.getSelection());
-		System.out.println("thumb:"+sb.getThumb());
-		System.out.println("thumbBounds:"+sb.getThumbBounds());
-		System.out.println("thumbTrackBounds:"+sb.getThumbTrackBounds());
-		System.out.println("inc:"+sb.getIncrement());
-		System.out.println("incPage:"+sb.getPageIncrement());
-		System.out.println("visible:"+sb.getVisible());
-		System.out.println("enabled:"+sb.getEnabled());
+		System.out.println("min:" + sb.getMinimum());
+		System.out.println("max:" + sb.getMaximum());
+		System.out.println("sel:" + sb.getSelection());
+		System.out.println("thumb:" + sb.getThumb());
+		System.out.println("thumbBounds:" + sb.getThumbBounds());
+		System.out.println("thumbTrackBounds:" + sb.getThumbTrackBounds());
+		System.out.println("inc:" + sb.getIncrement());
+		System.out.println("incPage:" + sb.getPageIncrement());
+		System.out.println("visible:" + sb.getVisible());
+		System.out.println("enabled:" + sb.getEnabled());
 		System.out.println("-------------------");
-		
-		
+
 	}
 }

@@ -20,6 +20,10 @@ public class DefaultGroupRenderer extends GroupRenderer {
 
 	@Override
 	protected void paint(GC gc, int width, int height) {
+		
+//		gc.setBackground(group.getBackground());
+//		gc.fillRectangle(0,0,width,height);
+		
 		final Point textExtent = getTextExtent();
 		int titleWidth = textExtent.x;
 		int titleHeight = textExtent.y;

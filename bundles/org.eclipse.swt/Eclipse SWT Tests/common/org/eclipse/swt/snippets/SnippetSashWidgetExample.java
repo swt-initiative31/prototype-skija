@@ -18,7 +18,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 
-public class SashWidgetExample {
+public class SnippetSashWidgetExample {
 	public static void main(String[] args) {
 		Display display = new Display();
 		Shell shell = new Shell(display);
@@ -40,7 +40,7 @@ public class SashWidgetExample {
 
 		// Vertical Sash
 		Sash verticalSash = new Sash(shell, SWT.VERTICAL);
-		verticalSash.setBackground(display.getSystemColor(SWT.COLOR_GRAY));
+		verticalSash.setBackground(display.getSystemColor(SWT.COLOR_GREEN));
 
 		// Horizontal Sash
 		Sash horizontalSash = new Sash(shell, SWT.HORIZONTAL);

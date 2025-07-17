@@ -366,12 +366,14 @@ public class Text extends NativeBasedCustomScrollable {
 	}
 
 	protected void focusLost(Event e) {
-		caret.killFocus();
+		if(caret != null)
+			caret.killFocus();
 		redraw();
 	}
 
 	protected void focusGained(Event e) {
-		caret.setFocus();
+		if(caret != null)
+			caret.setFocus();
 		redraw();
 	}
 
@@ -473,7 +475,7 @@ public class Text extends NativeBasedCustomScrollable {
 		model.clearSelection();
 	}
 
-	private TextLocation getTextLocation(int selectedX, int selectedY) {
+	TextLocation getTextLocation(int selectedX, int selectedY) {
 		Rectangle visibleArea = renderer.getVisibleArea();
 		int x = Math.max(selectedX + visibleArea.x, 0);
 		int y = Math.max(selectedY + visibleArea.y, 0);
@@ -512,10 +514,14 @@ public class Text extends NativeBasedCustomScrollable {
 	}
 
 	protected void widgetDisposed(Event e) {
-		caret.dispose();
+		if(caret != null)
+			caret.dispose();
 	}
 
 	private void paintControl(Event e) {
+		
+		System.out.println("Widget to draw: " + e.widget );
+		
 		Drawing.drawWithGC(this, e.gc, renderer::paint);
 	}
 
@@ -929,7 +935,8 @@ public class Text extends NativeBasedCustomScrollable {
 	public boolean setFocus() {
 		final boolean focused = super.setFocus();
 		if (focused) {
-			caret.setFocus();
+			if(caret != null)
+				caret.setFocus();
 		}
 		return focused;
 	}

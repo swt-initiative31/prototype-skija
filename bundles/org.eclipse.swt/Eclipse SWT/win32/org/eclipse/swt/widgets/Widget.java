@@ -227,7 +227,9 @@ void _removeListener (int eventType, Listener listener) {
  * @see #notifyListeners
  */
 public void addListener (int eventType, Listener listener) {
-	checkWidget();
+	
+	if(!(listener instanceof EventHandler))
+		checkWidget();
 	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
 	_addListener (eventType, listener);
 }
@@ -1209,10 +1211,10 @@ boolean sendDragEvent (int button, int stateMask, int x, int y) {
 	return event.doit;
 }
 
-void sendEvent (Event event) {
-	Display display = event.display;
-	if (!display.filterEvent (event)) {
-		if (eventTable != null) display.sendEvent(eventTable, event);
+public void sendEvent (Event e) {
+	Display display = e.display;
+	if (!display.filterEvent (e)) {
+		if (eventTable != null) display.sendEvent(eventTable, e);
 	}
 }
 

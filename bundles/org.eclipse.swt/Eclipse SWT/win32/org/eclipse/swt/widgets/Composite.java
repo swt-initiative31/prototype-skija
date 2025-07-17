@@ -14,6 +14,8 @@
 package org.eclipse.swt.widgets;
 
 
+import java.util.*;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
@@ -54,6 +56,9 @@ public class Composite extends Scrollable {
 	WINDOWPOS [] lpwp;
 	Control [] tabList;
 	int layoutCount, backgroundMode;
+	private final java.util.List<Control> widgets = new ArrayList<>();
+	private final EventHandler eventHandler = new EventHandler(this);
+	
 
 	static final int TOOLTIP_LIMIT = 4096;
 
@@ -105,6 +110,10 @@ public Composite (Composite parent, int style) {
 
 Control [] _getChildren () {
 	int count = 0;
+	
+	if(true)
+		return widgets.toArray(new Control[0]);
+	
 	long hwndChild = OS.GetWindow (handle, OS.GW_CHILD);
 	if (hwndChild == 0) return new Control [0];
 	while (hwndChild != 0) {
@@ -212,6 +221,7 @@ Widget [] computeTabList () {
 
 @Override
 Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
+	System.out.println("Composite: compuste size in pixel");
 	display.runSkin ();
 	Point size;
 	if (layout != null) {
@@ -1686,7 +1696,26 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 			}
 		}
 	}
+	
+	
+//	if((style & SWT.H_SCROLL) != 0  || (style & SWT.V_SCROLL) != 0 )
+//		drawScrollBars();
+	
 	return LRESULT.ZERO;
+}
+
+private void drawScrollBars() {
+	GCData data = new GCData ();
+	data.hwnd = handle;
+	GC gc = new_GC (data);
+	
+	if (gc != null) {
+		if(verticalBar != null && (style & SWT.V_SCROLL) != 0)
+			verticalBar.drawBar(gc);
+		if(horizontalBar != null && (style & SWT.H_SCROLL) != 0)
+			horizontalBar.drawBar(gc);
+		gc.dispose ();
+	}
 }
 
 @Override
@@ -1991,5 +2020,9 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 		DPIZoomChangeRegistry.applyChange(child, newZoom, scalingFactor);
 	}
 	composite.redrawInPixels (null, true);
+}
+
+public void addWidget(Control customComposite) {
+	widgets .add(customComposite);
 }
 }
