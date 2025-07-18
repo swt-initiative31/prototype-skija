@@ -76,10 +76,16 @@ public class SkijaGC extends GCHandle {
 	private static Map<ColorType, int[]> colorTypeMap = null;
 	private Matrix33 currentTransform = Matrix33.IDENTITY;
 
+	private SamplingMode interpolationMode=SamplingMode.DEFAULT;
+
+	private boolean isClipSet;
+	private Rectangle currentClipBounds;
+
 	private SkijaGC(NativeGC gc, Drawable drawable, boolean onlyForMeasuring) {
 		innerGC = gc;
 		device = gc.device;
 		originalDrawingSize = extractSize(drawable);
+		currentClipBounds = new Rectangle(0, 0, originalDrawingSize.x, originalDrawingSize.y);
 		if (onlyForMeasuring) {
 			surface = createMeasureSurface();
 		} else {
@@ -419,7 +425,7 @@ public class SkijaGC extends GCHandle {
 		Canvas canvas = surface.getCanvas();
 		canvas.drawImageRect(convertSWTImageToSkijaImage(image),
 				createScaledRectangle(srcX, srcY, srcWidth, srcHeight),
-				createScaledRectangle(destX, destY, destWidth, destHeight));
+				createScaledRectangle(destX, destY, destWidth, destHeight),interpolationMode,null,true);
 	}
 
 	private static ColorType getColorType(ImageData imageData) {
@@ -1346,7 +1352,19 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	public Rectangle getClipping() {
-		return innerGC.getClipping();
+		return DPIUtil.autoScaleDown(getClippingInPixels());
+	}
+
+	Rectangle getClippingInPixels() {
+		if (isDisposed()){
+		SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+		}
+		return new Rectangle(
+			DPIUtil.autoScaleUp(currentClipBounds.x),
+			DPIUtil.autoScaleUp(currentClipBounds.y),
+			DPIUtil.autoScaleUp(currentClipBounds.width),
+			DPIUtil.autoScaleUp(currentClipBounds.height)
+		);
 	}
 
 	@Override
@@ -1452,8 +1470,7 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	protected Pattern getBackgroundPattern() {
-		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
-		return null;
+		return backgroundPattern;
 	}
 
 	@Override
@@ -1475,8 +1492,22 @@ public class SkijaGC extends GCHandle {
 
 	@Override
 	protected int getInterpolation() {
-		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
-		return 0;
+		if (interpolationMode == SamplingMode.DEFAULT) {
+	        return SWT.NONE;
+	    } else if (interpolationMode == SamplingMode.LINEAR) {
+	        return SWT.HIGH;
+	    } else if (interpolationMode == SamplingMode.MITCHELL) {
+	        return SWT.INTERPOLATION_MITCHELL;
+	    } else if (interpolationMode == SamplingMode.CATMULL_ROM) {
+	        return SWT.INTERPOLATION_CATMULL_ROM;
+	    } else if (interpolationMode instanceof FilterMipmap) {
+	        FilterMipmap fm = (FilterMipmap) interpolationMode;
+	        if (fm.getFilterMode() == FilterMode.LINEAR &&
+	            fm.getMipmapMode() == MipmapMode.LINEAR) {
+	            return SWT.LOW;
+	        }
+	    }
+	    return SWT.DEFAULT;
 	}
 
 	@Override
@@ -1554,29 +1585,51 @@ public class SkijaGC extends GCHandle {
 		this.backgroundPattern = pattern;
 	}
 
-	@Override
 	protected void setClipping(Path path) {
-		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
-
+	    Canvas canvas = surface.getCanvas();
+	    if (isClipSet) {
+	        canvas.restore();
+	        isClipSet = false;
+	    }
+	    if (path == null) {
+	        return;
+	    }
+	    if (path.isDisposed()) {
+	        SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+	    }
+	    io.github.humbleui.skija.Path skijaPath = convertSWTPathToSkijaPath(path);
+	    if (skijaPath == null) {
+	        return;
+	    }
+	    skijaPath.setFillMode(fillRule == SWT.FILL_EVEN_ODD
+	        ? PathFillMode.EVEN_ODD
+	        : PathFillMode.WINDING);
+	    canvas.save();
+	    isClipSet = true;
+	    canvas.clipPath(skijaPath, ClipMode.INTERSECT, true);
 	}
 
 	@Override
 	public void setClipping(Rectangle rect) {
-
 		/**
 		 * this is a minimal implementation for set clipping with skija.
 		 */
 
 		// skija seems to work with state layer which will be set on top of each other.
 		// if more layers will be used a more complex handling is necessary
-		surface.getCanvas().restore();
+		Canvas canvas = surface.getCanvas();
+		if (isClipSet) {
+			canvas.restore();
+			isClipSet = false;
+		}	
 		if (rect == null) {
+			currentClipBounds = new Rectangle(0, 0, originalDrawingSize.x, originalDrawingSize.y);
 			return;
-		}
-
-		surface.getCanvas().save();
-		surface.getCanvas().clipRect(createScaledRectangle(rect));
-
+		}		
+		currentClipBounds = new Rectangle(rect.x, rect.y, rect.width, rect.height);
+		canvas.save();
+		canvas.clipRect(createScaledRectangle(rect));
+		isClipSet = true;
 	}
 
 	@Override
@@ -1601,7 +1654,28 @@ public class SkijaGC extends GCHandle {
 	}
 	@Override
 	protected void setInterpolation(int interpolation) {
-		System.err.println("WARN: Not implemented yet: " + new Throwable().getStackTrace()[0]);
+		switch (interpolation) {
+		case SWT.NONE:
+			this.interpolationMode = SamplingMode.DEFAULT; // Nearest neighbor
+			break;
+		case SWT.LOW:
+			this.interpolationMode = new FilterMipmap(FilterMode.LINEAR, MipmapMode.LINEAR);
+			break;
+		case SWT.HIGH:
+		case SWT.DEFAULT:
+			this.interpolationMode = SamplingMode.LINEAR;
+			break;
+
+		case SWT.INTERPOLATION_MITCHELL:
+			this.interpolationMode = SamplingMode.MITCHELL;
+			break;
+		case SWT.INTERPOLATION_CATMULL_ROM:
+			this.interpolationMode = SamplingMode.CATMULL_ROM;
+			break;
+
+		default:
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
 	}
 
 	@Override
@@ -2017,21 +2091,15 @@ public class SkijaGC extends GCHandle {
 	private Shader convertSWTPatternToSkijaShader(Pattern pattern) {
 		if (pattern == null || pattern.isDisposed()) {
 			return null;
-		}
-		
-		// Get the pattern's image
+		}		
 		Image patternImage = pattern.getImage();
 		if (patternImage == null || patternImage.isDisposed()) {
 			return null;
-		}
-		
-		// Convert SWT Image to Skija Image
+		}		
 		io.github.humbleui.skija.Image skijaImage = convertSWTImageToSkijaImage(patternImage);
 		if (skijaImage == null) {
 			return null;
-		}
-		
-		// Create a repeating shader from the image using Image.makeShader()
+		}		
 		return skijaImage.makeShader(FilterTileMode.REPEAT, FilterTileMode.REPEAT, null);
 	}
 }
