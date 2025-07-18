@@ -228,5 +228,7 @@ public String toString() {
 	if (isDisposed()) return "Pattern {*DISPOSED*}";
 	return "Pattern {" + (color != null ? color.id : gradient.id) + "}";
 }
-
+public Image getImage() {
+	return image;
+}
 }
