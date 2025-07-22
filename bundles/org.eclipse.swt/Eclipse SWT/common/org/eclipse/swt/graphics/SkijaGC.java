@@ -885,10 +885,6 @@ public class SkijaGC extends GCHandle {
 	@Override
 	public void drawPolygon(int[] pointArray) {
 		if (pointArray == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-		drawPolygonInPixels(DPIUtil.autoScaleUp(pointArray));
-	}
-
-	void drawPolygonInPixels(int[] pointArray) {
 		if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 		checkGC(innerGC.DRAW);
 		if (pointArray.length < 6 || pointArray.length % 2 != 0) return;
@@ -2021,11 +2017,6 @@ public class SkijaGC extends GCHandle {
 	
 	@Override
 	public void drawPolyline(int[] pointArray) {
-		if (pointArray == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-		drawPolylineInPixels(DPIUtil.autoScaleUp(pointArray));
-	}
-
-	public void drawPolylineInPixels(int[] pointArray) {
 		if (pointArray == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 		// Check GC for draw operation (optional, for parity)
