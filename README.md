@@ -21,7 +21,7 @@ The prototype is currently based on the Eclipse release 2025-06.
 1. Set up a Eclipse IDE for Committers 2025-06, e.g.:
    - [Eclipse IDE for Committers 2025-06](https://www.eclipse.org/downloads/packages/release/2025-06/r/eclipse-ide-eclipse-committers)
    - [Eclipse SDK Development Environment](https://github.com/eclipse-platform/eclipse.platform?tab=readme-ov-file#how-to-contribute) using product version "4.35 - 2025-06" in the installer
-2. Clone this repository
+2. Clone this repository - install [git LFS](https://git-lfs.com) if it's not available on your system
 3. Start the downloaded IDE and import the following projects:
    - The SWT bundle `org.eclipse.swt`
    - The OS-specific fragment `org.eclipse.swt.$WS.$OS.$ARCH` with the placeholders according to your environment, such as `org.eclipse.swt.win32.win32.x86_64` for the Windows fragment
