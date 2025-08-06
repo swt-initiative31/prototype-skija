@@ -415,6 +415,14 @@ public class SkijaGC extends GCHandle {
 		canvas.drawImage(convertSWTImageToSkijaImage(image), DPIUtil.autoScaleUp(x), DPIUtil.autoScaleUp(y));
 	}
 
+	public void drawImage(Image image, int x, int y, boolean zoomImage) {
+		Canvas canvas = surface.getCanvas();
+		if (zoomImage)
+			canvas.drawImage(convertSWTImageToSkijaImage(image), DPIUtil.autoScaleUp(x), DPIUtil.autoScaleUp(y));
+		else
+			canvas.drawImage(convertSWTImageToSkijaImage(image, 100), DPIUtil.autoScaleUp(x), DPIUtil.autoScaleUp(y));
+	}
+
 	@Override
 	public void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY,
 			int destWidth, int destHeight) {
@@ -500,9 +508,13 @@ public class SkijaGC extends GCHandle {
 //				+ "__" + Integer.toBinaryString(palette.greenMask) + "__" + Integer.toBinaryString(palette.blueMask));
 	}
 
-	private static io.github.humbleui.skija.Image convertSWTImageToSkijaImage(Image swtImage) {
-		ImageData imageData = swtImage.getImageData(DPIUtil.getDeviceZoom());
+	private static io.github.humbleui.skija.Image convertSWTImageToSkijaImage(Image swtImage, int zoom) {
+		ImageData imageData = swtImage.getImageData(zoom);
 		return convertSWTImageToSkijaImage(imageData);
+	}
+
+	private static io.github.humbleui.skija.Image convertSWTImageToSkijaImage(Image swtImage) {
+		return convertSWTImageToSkijaImage(swtImage, DPIUtil.getDeviceZoom());
 	}
 
 	static io.github.humbleui.skija.Image convertSWTImageToSkijaImage(ImageData imageData) {
