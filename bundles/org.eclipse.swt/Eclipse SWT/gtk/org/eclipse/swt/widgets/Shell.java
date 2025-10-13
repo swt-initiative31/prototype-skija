@@ -21,6 +21,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Region;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
@@ -29,6 +30,7 @@ import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
 
 import io.github.humbleui.skija.*;
+import io.github.humbleui.types.*;
 
 /**
  * Instances of this class represent the "windows"
@@ -163,6 +165,9 @@ public class Shell extends Decorations {
 	static final double SHELL_TO_MONITOR_RATIO = 0.625; // Fractional: 5 / 8
 	private static final boolean directDrawing = true;
 
+	final static int RECTANGLES_PER_LINE = 200;
+	private static final boolean USE_SKIA = false;
+
 /**
  * Constructs a new instance of this class. This is equivalent
  * to calling <code>Shell((Display) null)</code>.
@@ -291,6 +296,19 @@ public Shell (Display display, int style) {
 	this (display, null, style, 0, false);
 }
 
+public static int convertSWTColorToSkijaColor(org.eclipse.swt.graphics.Color swtColor) {
+	// extract RGB-components
+	final int red = swtColor.getRed();
+	final int green = swtColor.getGreen();
+	final int blue = swtColor.getBlue();
+	final int alpha = swtColor.getAlpha();
+
+	// create ARGB 32-Bit-color
+	final int skijaColor = (alpha << 24) | (red << 16) | (green << 8) | blue;
+
+	return skijaColor;
+}
+
 Shell (Display display, Shell parent, int style, long handle, boolean embedded) {
 	super ();
 	checkSubclass ();
@@ -365,21 +383,56 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
 
 				currentPosTime = currentPosTime % 10000;
 
-				double position = (double) currentPosTime / (double) 10000;
+			final var size = getSize();
 
-				int colorAsRGB = 0xFF42FFF4;
-				int colorRed = 0xFFFF0000;
-				int colorGreen = 0xFF00FF00;
-				int colorBlue = 0xFF0000FF;
+			currentPosTime = currentPosTime % 10000;
 
-				try (var paint = new Paint()) {
-					paint.setColor(colorRed);
+			final double position = (double) currentPosTime / (double) 10000;
 
-					surface.getCanvas().drawCircle((int) (position * width), 100, 100, paint);
+			final int shift = (int) (position * size.x);
+			final int shiftDown = 20;
+
+			int colorAsRGB = 0xFF42FFF4;
+			int colorRed = 0xFFFF0000;
+			int colorGreen = 0xFF00FF00;
+			int colorBlue = 0xFF0000FF;
+
+			int[] col = new int[16];
+
+			for (int i = 0; i < 16; i++) {
+				col[i] = convertSWTColorToSkijaColor(Display.getDefault().getSystemColor((i) % 16));
+			}
+
+			try (var paint = new Paint()) {
+
+			for (int x = 0; x < RECTANGLES_PER_LINE; x++) {
+				for (int y = 0; y < RECTANGLES_PER_LINE; y++) {
+
+						int left = shift + 2 * x;
+						int top = shiftDown + 2 * y;
+						int right = left + 2;
+						int bottom = top + 2;
+
+						if (USE_SKIA) {
+							paint.setColor(col[(x + y) % 16]);
+							surface.getCanvas().drawRect(new Rect(left, top, right, bottom), paint);
+
+						} else {
+							e.gc.setForeground(Display.getDefault().getSystemColor((x + y) % 16));
+							e.gc.drawRectangle(left, top, 2, 2);
+
+						}
+
 
 				}
+			}
 
 			}
+
+
+			}
+
+		if (USE_SKIA) {
 
 			if (this.directDrawing) {
 				var cairo = e.gc.getGCData().cairo;
@@ -399,6 +452,7 @@ Shell (Display display, Shell parent, int style, long handle, boolean embedded) 
 				transferImage.dispose();
 
 			}
+		}
 
 		lock.unlock();
 
