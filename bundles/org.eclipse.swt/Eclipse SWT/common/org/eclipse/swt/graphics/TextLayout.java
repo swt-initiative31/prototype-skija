@@ -477,8 +477,12 @@ public final class TextLayout extends Resource {
 			org.eclipse.swt.graphics.Image transferImage = new org.eclipse.swt.graphics.Image(
 					gc.getDevice(), new ByteArrayInputStream(imageBytes));
 
-			gc.drawImage(transferImage, x, y);
 
+			if (gc.innerGC instanceof SkijaGC sgc) {
+				sgc.drawImage(transferImage, x, y, false);
+			} else {
+				gc.drawImage(transferImage, x, y);
+			}
 			transferImage.dispose();
 		}
 
